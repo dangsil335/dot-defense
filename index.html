@@ -72,12 +72,17 @@
     flex-direction: column;
     gap: 4px;
     box-sizing: border-box;
-    transform: translateY(120%);
+    /* 자기 키(100%) + anchor 거리 + 여유 — 토글/배속 영역 아래로 완전히 숨김 */
+    transform: translateY(calc(100% + var(--abilities-anchor, 220px) + 20px));
     transition: transform 0.35s cubic-bezier(0.2, 0.7, 0.2, 1);
     z-index: 5;
     box-shadow: 0 -8px 20px rgba(0, 0, 0, 0.5);
+    pointer-events: none;
   }
-  #wrap.portrait #abilities.expanded { transform: translateY(0); }
+  #wrap.portrait #abilities.expanded {
+    transform: translateY(0);
+    pointer-events: auto;
+  }
   #wrap.portrait #randomBtn { padding: 16px; font-size: 15px; min-height: 52px; }
   #wrap.portrait .speed-btn { padding: 14px 0; font-size: 14px; min-height: 48px; }
   #wrap.portrait #stats { font-size: 14px; }
