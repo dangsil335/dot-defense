@@ -35,8 +35,49 @@
     padding: 16px;
     gap: 12px;
   }
-  #wrap.portrait .ability-row { padding: 10px 12px; }
+  /* 능력 행 높이를 고정해서 빈 슬롯/채워진 슬롯 관계없이 패널 크기가 일정 (몰입 유지) */
+  .ability-row { min-height: 50px; box-sizing: border-box; }
+  #wrap.portrait .ability-row { padding: 10px 12px; min-height: 82px; }
   #wrap.portrait .ability-row button { padding: 12px 14px; font-size: 14px; min-height: 44px; }
+
+  /* === 능력 목록 접기/펴기 === */
+  /* 세로 모드: 능력창은 절대 위치 오버레이 — 아래에서 슬라이드 업, 게임 화면 위로 덮음.
+     게임 크기는 변하지 않음. 가로 모드는 기존대로 인라인 표시. */
+  .ability-toggle {
+    display: none;
+    width: 100%;
+    padding: 12px;
+    background: #1f2735;
+    color: #e8eaf0;
+    border: 1px solid #3a4256;
+    font-family: inherit;
+    font-size: 13px;
+    cursor: pointer;
+    touch-action: manipulation;
+  }
+  .ability-toggle:hover { background: #2a3550; }
+  #wrap.portrait .ability-toggle { display: block; padding: 14px; font-size: 14px; min-height: 48px; }
+  #wrap.portrait #panel { position: relative; }
+  #wrap.portrait #abilities {
+    position: absolute;
+    left: 12px; right: 12px;
+    bottom: var(--abilities-anchor, 220px);
+    max-height: 60vh;
+    overflow-y: auto;
+    background: rgba(20, 24, 34, 0.96);
+    border: 1px solid #2a2f3a;
+    border-radius: 6px;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    box-sizing: border-box;
+    transform: translateY(120%);
+    transition: transform 0.35s cubic-bezier(0.2, 0.7, 0.2, 1);
+    z-index: 5;
+    box-shadow: 0 -8px 20px rgba(0, 0, 0, 0.5);
+  }
+  #wrap.portrait #abilities.expanded { transform: translateY(0); }
   #wrap.portrait #randomBtn { padding: 16px; font-size: 15px; min-height: 52px; }
   #wrap.portrait .speed-btn { padding: 14px 0; font-size: 14px; min-height: 48px; }
   #wrap.portrait #stats { font-size: 14px; }
@@ -208,6 +249,48 @@
   }
   .codex-card.locked .name { color: #4a5163; }
   .codex-card.locked .desc { color: #3a4153; font-style: italic; }
+
+  /* ===== 기록 화면 ===== */
+  #records, #recordDetail { padding: 24px; align-items: stretch; }
+  #records-list, #record-detail-content {
+    max-width: 720px; width: 100%; margin: 0 auto;
+    overflow-y: auto; flex: 1; padding-bottom: 24px;
+  }
+  .record-card {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    background: #141822;
+    border: 1px solid #2a2f3a;
+    padding: 14px;
+    margin-bottom: 8px;
+    cursor: pointer;
+    transition: background .12s, border-color .12s;
+  }
+  .record-card:hover { background: #1a1f2b; border-color: #3a4256; }
+  .record-card.win { border-left: 4px solid #ffe070; }
+  .record-card .rank {
+    font-size: 26px; font-weight: bold; color: #7ad7ff;
+    width: 44px; text-align: center;
+  }
+  .record-card.win .rank { color: #ffe070; }
+  .record-card .info { flex: 1; }
+  .record-card .score { font-size: 18px; font-weight: bold; color: #e8eaf0; }
+  .record-card .meta { color: #9aa3b3; font-size: 12px; margin-top: 4px; }
+  .record-card .arrow { color: #6b7283; font-size: 18px; }
+  .record-empty { color: #6b7283; text-align: center; padding: 40px; }
+  #record-detail-header {
+    text-align: center; margin-bottom: 22px;
+  }
+  #record-detail-header .big-score { font-size: 32px; color: #7ad7ff; margin-bottom: 6px; }
+  #record-detail-header.win .big-score { color: #ffe070; }
+  #record-detail-header .sub { color: #9aa3b3; font-size: 13px; }
+  #record-detail-header .when { color: #6b7283; font-size: 11px; margin-top: 4px; }
+  #record-detail-abilities {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 10px;
+  }
 </style>
 </head>
 <body>
@@ -217,6 +300,25 @@
   <div class="subtitle">픽셀 디펜스 · 능력 조합 빌더</div>
   <button id="startBtn" class="menu-btn">▶ 스타트</button>
   <button id="codexBtn" class="menu-btn">📖 도감</button>
+  <button id="recordsBtn" class="menu-btn">🏆 기록</button>
+</div>
+
+<!-- ===== 기록 화면 ===== -->
+<div id="records" class="screen">
+  <div class="codex-header">
+    <h2>기록</h2>
+    <button id="recordsBack" class="codex-back">← 메뉴로</button>
+  </div>
+  <div id="records-list"></div>
+</div>
+
+<!-- ===== 기록 상세 화면 ===== -->
+<div id="recordDetail" class="screen">
+  <div class="codex-header">
+    <h2>기록 상세</h2>
+    <button id="recordDetailBack" class="codex-back">← 기록 목록</button>
+  </div>
+  <div id="record-detail-content"></div>
 </div>
 
 <!-- ===== 도감 화면 ===== -->
@@ -247,6 +349,7 @@
     <hr/>
     <button id="randomBtn">🎲 랜덤 능력 획득 (50G)</button>
     <div id="abilities"></div>
+    <button id="abilityToggle" class="ability-toggle">▲ 능력 확인</button>
     <div class="footer">
       <div class="speed-row">
         <button id="pauseBtn" class="speed-btn" style="flex:1.4">⏸ 일시정지</button>
@@ -2348,21 +2451,30 @@
   }
 
   // ===== 라운드 설정 =====
-  // 5라운드마다 보스 라운드: 잡몹 수 절반(10마리, 2초 간격) + 보스 1마리.
-  // 일반: 25초간 1초에 1마리씩 (총 20마리). 마지막 5초는 휴식.
+  // 일반: 30초간 1초에 1마리씩 (총 20마리). 다 잡으면 즉시 다음 라운드 + 보너스 점수.
+  // 5라운드마다 보스 라운드: 잡몹 절반 + 보스 1마리.
+  // 100라운드: 5라운드분 시간(150초) + 보스 3마리 + 잡몹 다수 (최종전).
+  const MAX_ROUND = 100;
+  function enemyHpFor(n) {
+    // R1~25 지수 성장, R26+ 선형(완만화) — R100도 도전 가능하게
+    if (n <= 25) return Math.ceil(3 * Math.pow(1.35, n - 1));
+    const base = Math.ceil(3 * Math.pow(1.35, 24));
+    return Math.ceil(base * (1 + (n - 25) * 0.18));
+  }
   function roundConfig(n) {
-    const hp = Math.ceil(3 * Math.pow(1.35, n - 1));
-    const isBoss = n > 0 && n % 5 === 0;
+    const hp = enemyHpFor(n);
+    const isFinal = n === MAX_ROUND;
+    const isBoss  = n > 0 && n % 5 === 0 && !isFinal;
     return {
-      duration:      25 * FPS,
-      spawnCount:    isBoss ? 10 : 20,
-      spawnInterval: isBoss ? 2 * FPS : 1 * FPS,
+      duration:      (isFinal ? 150 : 30) * FPS,
+      spawnCount:    isFinal ? 50 : (isBoss ? 10 : 20),
+      spawnInterval: isFinal ? 3 * FPS : (isBoss ? 2 * FPS : 1 * FPS),
       enemyHp:       hp,
       enemySpeed:    0.008 + (n - 1) * 0.0005,
       enemyGold:     Math.max(1, Math.ceil(hp / 3)),
-      isBoss,
-      bossHp:        Math.ceil(hp * 12),
-      bossGold:      Math.ceil(hp * 4),
+      isBoss, isFinal,
+      bossHp:        Math.ceil(hp * (isFinal ? 22 : 12)),
+      bossGold:      Math.ceil(hp * (isFinal ? 10 : 4)),
     };
   }
 
@@ -2386,10 +2498,51 @@
       score: 0,
       gameOver: false,
       gameOverReason: '',
+      gameWin: false,
       t: 0,
     };
     planRound();
     paused = false;
+  }
+
+  // 라운드 진행 — 100라운드 이상이면 승리
+  function advanceRound() {
+    state.round++;
+    if (state.round > MAX_ROUND) {
+      endGame('🏆 100라운드 클리어!', true);
+    } else {
+      planRound();
+    }
+  }
+  function endGame(reason, win) {
+    if (state.gameOver) return;
+    state.gameOver = true;
+    state.gameOverReason = reason;
+    state.gameWin = !!win;
+    saveRecord();
+    renderPanel();
+  }
+
+  // ===== 점수 기록 (상위 10) — localStorage 영구 저장 =====
+  const RECORDS_KEY = 'dot-defense-records';
+  function loadRecords() {
+    try { return JSON.parse(localStorage.getItem(RECORDS_KEY) || '[]'); }
+    catch { return []; }
+  }
+  function saveRecord() {
+    // 점수 0 + R1에서 즉시 끝낸 경우는 저장 안 함
+    if (state.score === 0 && state.round <= 1) return;
+    const records = loadRecords();
+    records.push({
+      score: state.score,
+      round: state.gameWin ? MAX_ROUND : Math.max(1, state.round - (state.gameWin ? 0 : 1)),
+      date: Date.now(),
+      abilities: state.tower.abilities.map(a => ({ id: a.id, level: a.level })),
+      win: !!state.gameWin,
+    });
+    records.sort((a, b) => b.score - a.score);
+    records.length = Math.min(records.length, 10);
+    try { localStorage.setItem(RECORDS_KEY, JSON.stringify(records)); } catch {}
   }
 
   function planRound() {
@@ -2399,8 +2552,14 @@
     for (let i = 0; i < cfg.spawnCount; i++) {
       state.spawnPlan.push((i + 1) * cfg.spawnInterval);
     }
-    // 보스 라운드: 1초 후 보스 등장 예약
-    state.bossSpawnAt = cfg.isBoss ? 60 : -1;
+    // 보스 스폰 큐. 일반: [], 보스 라운드: [60], 최종: [60, +50s, +100s]
+    if (cfg.isFinal) {
+      state.bossSpawns = [60, 60 + 50 * FPS, 60 + 100 * FPS];
+    } else if (cfg.isBoss) {
+      state.bossSpawns = [60];
+    } else {
+      state.bossSpawns = [];
+    }
   }
 
   // ===== 능력용 헬퍼 =====
@@ -2526,6 +2685,15 @@
   // ===== 적 스폰 =====
   const ENEMY_MIN_R = CORE_R + 40;
   const ENEMY_MAX_R = ARENA_R - 20;
+  // 적 타입은 라운드별로 순환 — 비주얼 변화 + 라운드 진척 체감
+  // R1:소행성  R2:얼음  R3:드론  R4:플라즈마  R5:크리스탈+보스  R6~ 반복
+  const ENEMY_TYPES = ['asteroid', 'ice', 'drone', 'plasma', 'crystal'];
+  function getEnemyType(round) {
+    return ENEMY_TYPES[(round - 1) % ENEMY_TYPES.length];
+  }
+  // seed 기반 결정적 난수 (개체별 디테일 변형용)
+  function srand(s) { const x = Math.sin(s) * 10000; return x - Math.floor(x); }
+
   function spawnEnemy() {
     const cfg = roundConfig(state.round);
     const a = Math.random() * Math.PI * 2;
@@ -2543,6 +2711,10 @@
       goldDrop: cfg.enemyGold,
       slowFrames: 0,
       isBoss: false,
+      type: getEnemyType(state.round),
+      seed: Math.random() * 1000,
+      rotation: Math.random() * Math.PI * 2,
+      rotSpeed: (Math.random() - 0.5) * 0.04,
     });
   }
   function spawnBoss() {
@@ -2561,6 +2733,10 @@
       goldDrop: cfg.bossGold,
       slowFrames: 0,
       isBoss: true,
+      type: 'boss',
+      seed: Math.random() * 1000,
+      rotation: 0,
+      rotSpeed: 0.012,
     });
   }
 
@@ -2576,29 +2752,38 @@
       state.spawnPlan.shift();
       spawnEnemy();
     }
-    // 보스 스폰 (예약 시점에 1회)
-    if (state.bossSpawnAt > 0 && state.roundFrame >= state.bossSpawnAt) {
+    // 보스 스폰 (큐에 있는 시점 도달 시 차례로)
+    while (state.bossSpawns && state.bossSpawns.length && state.roundFrame >= state.bossSpawns[0]) {
+      state.bossSpawns.shift();
       // 이전 보스를 처치하지 못했으면 게임오버
       if (state.enemies.some(e => e.isBoss)) {
-        state.gameOver = true;
-        state.gameOverReason = '이전 보스를 처치하지 못함';
-        renderPanel();
+        endGame('이전 보스를 처치하지 못함', false);
+        break;
       } else {
         spawnBoss();
       }
-      state.bossSpawnAt = -1;
     }
-    // 라운드 종료 → 다음 라운드
-    if (state.roundFrame >= cfg.duration) {
-      state.round++;
-      planRound();
+    if (state.gameOver) return;
+
+    // 조기 클리어: 모든 적 처치 + 더 이상 스폰 없음 → 즉시 다음 라운드 + 시간 보너스
+    if (state.enemies.length === 0
+        && state.spawnPlan.length === 0
+        && state.bossSpawns.length === 0
+        && state.roundFrame > 60) {
+      const timeSaved = (cfg.duration - state.roundFrame) / FPS;
+      const bonus = Math.floor(timeSaved * 10 * state.round);
+      state.score += bonus;
+      toast(`R${state.round} 클리어! +${bonus} (${timeSaved.toFixed(1)}s 단축)`);
+      advanceRound();
+    }
+    // 라운드 시간 만료 → 다음 라운드 (적이 남았어도 진행)
+    else if (state.roundFrame >= cfg.duration) {
+      advanceRound();
     }
 
     // 게임오버 체크 (적 누적)
     if (state.enemies.length >= MAX_ALIVE) {
-      state.gameOver = true;
-      state.gameOverReason = `적이 ${MAX_ALIVE}마리를 넘김`;
-      renderPanel();
+      endGame(`적이 ${MAX_ALIVE}마리를 넘김`, false);
     }
 
     // 적 이동: 각속도로 회전 + 목표 반경을 향해 천천히 이동
@@ -2681,6 +2866,7 @@
     for (const p of state.particles) { p.x+=p.vx; p.y+=p.vy; p.vx*=0.92; p.vy*=0.92; p.life--; }
     state.particles = state.particles.filter(p => p.life > 0);
     if (state.comboFlash > 0) state.comboFlash--;
+    updateBackground();
 
     renderStats();
   }
@@ -2695,14 +2881,137 @@
     }
   }
 
+  // ===== 우주 배경 =====
+  const BG = { stars: [], planets: [], nebulae: [], meteors: [], meteorTimer: 200 };
+  function initBackground() {
+    BG.stars.length = 0;
+    BG.planets.length = 0;
+    BG.nebulae.length = 0;
+    BG.meteors.length = 0;
+    // 별: 3개 레이어 패럴랙스
+    for (let i = 0; i < 80; i++) BG.stars.push({       // 멀리 (옅고 작음)
+      x: Math.random()*W, y: Math.random()*H, size: 1,
+      brightness: 0.25 + Math.random()*0.3,
+      tw: Math.random()*Math.PI*2, twSpeed: 0.01 + Math.random()*0.02,
+      vx: -0.03 - Math.random()*0.02,
+    });
+    for (let i = 0; i < 40; i++) BG.stars.push({       // 중간
+      x: Math.random()*W, y: Math.random()*H, size: Math.random() < 0.5 ? 1 : 2,
+      brightness: 0.5 + Math.random()*0.3,
+      tw: Math.random()*Math.PI*2, twSpeed: 0.02 + Math.random()*0.03,
+      vx: -0.07 - Math.random()*0.04,
+    });
+    for (let i = 0; i < 15; i++) BG.stars.push({       // 가까이 (밝고 빠름)
+      x: Math.random()*W, y: Math.random()*H, size: 2,
+      brightness: 0.75 + Math.random()*0.25,
+      tw: Math.random()*Math.PI*2, twSpeed: 0.03 + Math.random()*0.04,
+      vx: -0.12 - Math.random()*0.06,
+    });
+    // 행성
+    BG.planets.push({ x: 95,  y: 110, r: 52, c1: '#4a2870', c2: '#1a0f30', ring: false });
+    BG.planets.push({ x: 545, y: 560, r: 36, c1: '#703020', c2: '#28100a', ring: false });
+    BG.planets.push({ x: 525, y: 95,  r: 26, c1: '#205070', c2: '#0d1c30', ring: true, ringC: '#6a8aa8' });
+    // 성운
+    BG.nebulae.push({ x: 180, y: 480, r: 240, c: 'rgba(110, 60, 210, 0.07)' });
+    BG.nebulae.push({ x: 480, y: 210, r: 200, c: 'rgba(60, 180, 220, 0.06)' });
+    BG.nebulae.push({ x: 320, y: 320, r: 320, c: 'rgba(160, 80, 200, 0.03)' });
+  }
+  function updateBackground() {
+    for (const s of BG.stars) {
+      s.x += s.vx;
+      if (s.x < -3) s.x = W + 3;
+      s.tw += s.twSpeed;
+    }
+    BG.meteorTimer--;
+    if (BG.meteorTimer <= 0) {
+      BG.meteorTimer = 240 + Math.random()*500;
+      const fromTop = Math.random() < 0.5;
+      BG.meteors.push({
+        x: fromTop ? Math.random()*W : W + 50,
+        y: fromTop ? -20 : Math.random()*H*0.5,
+        vx: -4 - Math.random()*3,
+        vy: 3 + Math.random()*2,
+        life: 250,
+      });
+    }
+    for (const m of BG.meteors) { m.x += m.vx; m.y += m.vy; m.life--; }
+    BG.meteors = BG.meteors.filter(m => m.life > 0 && m.x > -60 && m.y < H + 60);
+  }
+  function drawBackground() {
+    // 어두운 우주 베이스
+    ctx.fillStyle = '#06081a';
+    ctx.fillRect(0, 0, W, H);
+    // 성운 — 광역 그라데이션
+    for (const n of BG.nebulae) {
+      const g = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, n.r);
+      g.addColorStop(0, n.c);
+      g.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, W, H);
+    }
+    // 별
+    for (const s of BG.stars) {
+      const tw = (Math.sin(s.tw) + 1) / 2;
+      ctx.globalAlpha = s.brightness * (0.55 + tw * 0.45);
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(s.x, s.y, s.size, s.size);
+    }
+    ctx.globalAlpha = 1;
+    // 행성
+    for (const p of BG.planets) {
+      // 광원 방향(좌상)에서 밝게, 반대편 어둡게 그라데이션
+      const g = ctx.createRadialGradient(p.x - p.r*0.35, p.y - p.r*0.35, 0, p.x, p.y, p.r);
+      g.addColorStop(0, p.c1);
+      g.addColorStop(1, p.c2);
+      ctx.fillStyle = g;
+      ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI*2); ctx.fill();
+      // 그림자 (우하 절반)
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
+      ctx.beginPath();
+      ctx.arc(p.x + p.r*0.35, p.y + p.r*0.35, p.r * 0.92, 0, Math.PI*2);
+      ctx.fill();
+      // 고리
+      if (p.ring) {
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.scale(1, 0.32);
+        ctx.strokeStyle = p.ringC; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.arc(0, 0, p.r * 1.9, 0, Math.PI*2); ctx.stroke();
+        ctx.restore();
+      }
+    }
+    // 배경 유성 (분위기용)
+    for (const m of BG.meteors) {
+      const alpha = Math.min(1, m.life / 50);
+      const len = Math.hypot(m.vx, m.vy);
+      const tx = m.x - (m.vx / len) * 28;
+      const ty = m.y - (m.vy / len) * 28;
+      const grad = ctx.createLinearGradient(m.x, m.y, tx, ty);
+      grad.addColorStop(0, `rgba(255, 224, 128, ${alpha * 0.85})`);
+      grad.addColorStop(1, 'rgba(255, 224, 128, 0)');
+      ctx.strokeStyle = grad; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(m.x, m.y); ctx.lineTo(tx, ty); ctx.stroke();
+      ctx.globalAlpha = alpha;
+      ctx.fillStyle = '#ffffff'; ctx.fillRect(m.x - 1, m.y - 1, 3, 3);
+    }
+    ctx.globalAlpha = 1;
+  }
+
   // ===== 렌더 =====
   function drawArena() {
-    ctx.strokeStyle = '#1d2230';
-    ctx.lineWidth = 2;
+    // 홀로그래픽 동심원 — 옅은 청록
+    ctx.strokeStyle = 'rgba(80, 170, 220, 0.10)';
+    ctx.lineWidth = 1;
     for (let r = 60; r <= ARENA_R; r += 40) {
       ctx.beginPath(); ctx.arc(CX, CY, r, 0, Math.PI*2); ctx.stroke();
     }
-    ctx.strokeStyle = '#2a3142';
+    // 외곽 포스 필드 (옅은 글로우)
+    ctx.strokeStyle = 'rgba(120, 220, 255, 0.10)';
+    ctx.lineWidth = 8;
+    ctx.beginPath(); ctx.arc(CX, CY, ARENA_R, 0, Math.PI*2); ctx.stroke();
+    // 외곽 포스 필드 본체
+    ctx.strokeStyle = 'rgba(120, 220, 255, 0.45)';
+    ctx.lineWidth = 2;
     ctx.beginPath(); ctx.arc(CX, CY, ARENA_R, 0, Math.PI*2); ctx.stroke();
   }
   function drawTower() {
@@ -2713,27 +3022,220 @@
     ctx.fillStyle = '#3d5380'; ctx.fillRect(CX-12, CY-12, 24, 24);
     ctx.fillStyle = '#7ad7ff'; ctx.fillRect(CX-4,  CY-4,   8,  8);
   }
+  // ====== 적 타입별 렌더러 ======
+  function drawAsteroidE(e, x, y, slow) {
+    const s = e.size;
+    ctx.save(); ctx.translate(x, y); ctx.rotate(e.rotation);
+    const base = slow ? '#7a9098' : '#9d7e5c';
+    const dark = slow ? '#4a5e64' : '#6b513a';
+    const lite = slow ? '#b0cad0' : '#c8a780';
+    // 8각형 본체 (소행성 느낌)
+    ctx.fillStyle = base;
+    ctx.beginPath();
+    ctx.moveTo(-s+2, -s); ctx.lineTo(s-2, -s);
+    ctx.lineTo(s, -s+2); ctx.lineTo(s, s-2);
+    ctx.lineTo(s-2, s); ctx.lineTo(-s+2, s);
+    ctx.lineTo(-s, s-2); ctx.lineTo(-s, -s+2);
+    ctx.closePath(); ctx.fill();
+    // 하이라이트 (좌상)
+    ctx.fillStyle = lite;
+    ctx.fillRect(-s+2, -s+2, 2, 2);
+    // 크레이터 (seed 기반 3개 — 개체별 다른 패턴)
+    ctx.fillStyle = dark;
+    const w = s*2 - 4;
+    ctx.fillRect(-s+2 + Math.floor(srand(e.seed)   * w), -s+2 + Math.floor(srand(e.seed+1) * w), 2, 2);
+    ctx.fillRect(-s+2 + Math.floor(srand(e.seed+2) * w), -s+2 + Math.floor(srand(e.seed+3) * w), 1, 1);
+    ctx.fillRect(-s+2 + Math.floor(srand(e.seed+4) * w), -s+2 + Math.floor(srand(e.seed+5) * w), 2, 1);
+    ctx.restore();
+  }
+
+  function drawIceE(e, x, y, slow) {
+    const s = e.size;
+    ctx.save(); ctx.translate(x, y); ctx.rotate(e.rotation * 0.6);
+    const base = slow ? '#7eb0c8' : '#a0c8e0';
+    const dark = slow ? '#3a6a88' : '#5a8aa8';
+    const lite = slow ? '#dce8f4' : '#e8f4ff';
+    // 다이아몬드 모양 (얼음 결정)
+    ctx.fillStyle = base;
+    ctx.beginPath();
+    ctx.moveTo(0, -s); ctx.lineTo(s, 0);
+    ctx.lineTo(0, s); ctx.lineTo(-s, 0);
+    ctx.closePath(); ctx.fill();
+    // 페이셋 라인
+    ctx.strokeStyle = dark; ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(0, -s); ctx.lineTo(0, s);
+    ctx.moveTo(-s, 0); ctx.lineTo(s, 0);
+    ctx.stroke();
+    // 상단 하이라이트
+    ctx.fillStyle = lite;
+    ctx.fillRect(-1, -s+2, 2, 2);
+    // 반짝이
+    const sx = Math.floor((srand(e.seed) - 0.5) * (s-2));
+    const sy = Math.floor((srand(e.seed+1) - 0.5) * (s-2));
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(sx, sy, 1, 1);
+    ctx.restore();
+  }
+
+  function drawDroneE(e, x, y, slow) {
+    const s = e.size;
+    ctx.save(); ctx.translate(x, y);
+    // 약간의 호버 흔들림 (드론 느낌)
+    const wobble = Math.sin(state.t * 0.12 + e.seed) * 0.06;
+    ctx.rotate(wobble);
+    const base = slow ? '#5a8090' : '#7a8088';
+    const dark = slow ? '#2a4858' : '#3a3e44';
+    const lite = slow ? '#a8c8d8' : '#b8c0c8';
+    // 외곽 (어두운 테두리)
+    ctx.fillStyle = dark;
+    ctx.fillRect(-s, -s+1, s*2, s*2-2);
+    // 본체
+    ctx.fillStyle = base;
+    ctx.fillRect(-s+1, -s+2, s*2-2, s*2-4);
+    // 상단 하이라이트
+    ctx.fillStyle = lite;
+    ctx.fillRect(-s+1, -s+2, s*2-2, 1);
+    // 빨간 눈 (펄스)
+    const pulse = 0.5 + 0.5 * Math.sin(state.t * 0.22 + e.seed);
+    const eyeColor = slow ? `rgba(120, 180, 255, ${0.7 + pulse * 0.3})` : `rgba(255, 60, 60, ${0.7 + pulse * 0.3})`;
+    ctx.fillStyle = eyeColor;
+    ctx.fillRect(-2, -1, 4, 2);
+    // 안테나
+    ctx.fillStyle = dark;
+    ctx.fillRect(-1, -s-2, 2, 2);
+    ctx.fillStyle = slow ? '#80b0ff' : '#ff6060';
+    ctx.fillRect(-1, -s-3, 2, 1);
+    ctx.restore();
+  }
+
+  function drawPlasmaE(e, x, y, slow) {
+    const s = e.size;
+    ctx.save(); ctx.translate(x, y);
+    const pulse = 1 + Math.sin(state.t * 0.15 + e.seed) * 0.14;
+    const base = slow ? '#7080c0' : '#aa55cc';
+    const dark = slow ? '#3a4878' : '#6a2a88';
+    const lite = slow ? '#c0d0ff' : '#e0a0ff';
+    // 외곽 글로우
+    ctx.fillStyle = slow ? 'rgba(112, 128, 192, 0.35)' : 'rgba(170, 85, 204, 0.35)';
+    ctx.beginPath(); ctx.arc(0, 0, (s + 3) * pulse, 0, Math.PI*2); ctx.fill();
+    // 본체 (원)
+    ctx.fillStyle = base;
+    ctx.beginPath(); ctx.arc(0, 0, s * pulse, 0, Math.PI*2); ctx.fill();
+    // 내부 어두운 패치 (seed 기반)
+    ctx.fillStyle = dark;
+    const px = Math.floor((srand(e.seed) - 0.5) * (s-2));
+    const py = Math.floor((srand(e.seed+1) - 0.5) * (s-2));
+    ctx.fillRect(px, py, 2, 2);
+    ctx.fillRect(-(px), -(py), 1, 1);
+    // 코어 (밝음)
+    ctx.fillStyle = lite;
+    ctx.fillRect(-1, -1, 2, 2);
+    ctx.restore();
+  }
+
+  function drawCrystalE(e, x, y, slow) {
+    const s = e.size;
+    ctx.save(); ctx.translate(x, y); ctx.rotate(e.rotation * 0.4);
+    const base = slow ? '#6090a0' : '#50d0a0';
+    const dark = slow ? '#2a5060' : '#2a8060';
+    const lite = slow ? '#c0e0e8' : '#a0f0d0';
+    // 6각형 (크리스탈 결정)
+    ctx.fillStyle = base;
+    ctx.beginPath();
+    for (let k = 0; k < 6; k++) {
+      const a = (Math.PI * 2 / 6) * k - Math.PI / 2;
+      const px = Math.cos(a) * s;
+      const py = Math.sin(a) * s;
+      if (k === 0) ctx.moveTo(px, py);
+      else ctx.lineTo(px, py);
+    }
+    ctx.closePath(); ctx.fill();
+    // 페이셋 (꼭지점→중심 라인)
+    ctx.strokeStyle = dark; ctx.lineWidth = 1;
+    ctx.beginPath();
+    for (let k = 0; k < 6; k++) {
+      const a = (Math.PI * 2 / 6) * k - Math.PI / 2;
+      ctx.moveTo(0, 0);
+      ctx.lineTo(Math.cos(a) * s, Math.sin(a) * s);
+    }
+    ctx.stroke();
+    // 코어
+    ctx.fillStyle = lite;
+    ctx.fillRect(-2, -2, 4, 4);
+    // 반짝이
+    const sang = srand(e.seed) * Math.PI * 2;
+    const sr = s * 0.55;
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(Math.cos(sang)*sr, Math.sin(sang)*sr, 1, 1);
+    ctx.restore();
+  }
+
+  function drawBossE(e, x, y, slow) {
+    const s = e.size;
+    ctx.save(); ctx.translate(x, y); ctx.rotate(e.rotation);
+    // 외곽 펄스 오라
+    const pulse = 1 + Math.sin(state.t * 0.1) * 0.18;
+    ctx.fillStyle = slow ? 'rgba(136, 200, 255, 0.20)' : 'rgba(255, 60, 100, 0.22)';
+    ctx.beginPath(); ctx.arc(0, 0, s + 8*pulse, 0, Math.PI*2); ctx.fill();
+    // 색상
+    const base = slow ? '#3a5570' : '#7a1030';
+    const mid  = slow ? '#7aa8d0' : '#cc2244';
+    const lite = slow ? '#cee0ff' : '#ff8aa0';
+    const dark = slow ? '#1a2540' : '#3a0510';
+    // 본체 (8각 큰 형태)
+    ctx.fillStyle = base;
+    ctx.beginPath();
+    ctx.moveTo(-s+4, -s); ctx.lineTo(s-4, -s);
+    ctx.lineTo(s, -s+4); ctx.lineTo(s, s-4);
+    ctx.lineTo(s-4, s); ctx.lineTo(-s+4, s);
+    ctx.lineTo(-s, s-4); ctx.lineTo(-s, -s+4);
+    ctx.closePath(); ctx.fill();
+    // 내부 패널
+    ctx.fillStyle = mid;
+    ctx.fillRect(-s+4, -s+4, s*2-8, s*2-8);
+    // 모서리 다크 액센트
+    ctx.fillStyle = dark;
+    ctx.fillRect(-s+4, -s+4, 3, 3);
+    ctx.fillRect(s-7, -s+4, 3, 3);
+    ctx.fillRect(-s+4, s-7, 3, 3);
+    ctx.fillRect(s-7, s-7, 3, 3);
+    // 중앙 코어 (큰 사각)
+    ctx.fillStyle = lite;
+    ctx.fillRect(-6, -6, 12, 12);
+    ctx.fillStyle = dark;
+    ctx.fillRect(-4, -4, 8, 8);
+    ctx.fillStyle = lite;
+    ctx.fillRect(-2, -2, 4, 4);
+    // 4방향 스파이크
+    ctx.fillStyle = base;
+    ctx.fillRect(-2, -s-3, 4, 3);
+    ctx.fillRect(-2, s, 4, 3);
+    ctx.fillRect(-s-3, -2, 3, 4);
+    ctx.fillRect(s, -2, 3, 4);
+    // 스파이크 끝 (밝은 점)
+    ctx.fillStyle = mid;
+    ctx.fillRect(-1, -s-3, 2, 1);
+    ctx.fillRect(-1, s+2, 2, 1);
+    ctx.fillRect(-s-3, -1, 1, 2);
+    ctx.fillRect(s+2, -1, 1, 2);
+    ctx.restore();
+  }
+
   function drawEnemies() {
     for (const e of state.enemies) {
-      const [x,y] = enemyXY(e);
+      // 회전 업데이트 (개체별 rotSpeed 적용)
+      e.rotation = (e.rotation || 0) + (e.rotSpeed || 0);
+      const [x, y] = enemyXY(e);
       const slow = e.slowFrames > 0;
-      if (e.isBoss) {
-        // 보스: 큰 크기, 진한 빨강, 펄스 외곽
-        const pulse = 1 + Math.sin(state.t * 0.1) * 0.18;
-        ctx.fillStyle = slow ? 'rgba(136, 200, 255, 0.18)' : 'rgba(255, 60, 100, 0.18)';
-        ctx.beginPath(); ctx.arc(x, y, e.size + 6*pulse, 0, Math.PI*2); ctx.fill();
-        ctx.fillStyle = slow ? '#3a5570' : '#5a0820';
-        ctx.fillRect(x - e.size, y - e.size, e.size*2, e.size*2);
-        ctx.fillStyle = slow ? '#7aa8d0' : '#ee2244';
-        ctx.fillRect(x - e.size + 2, y - e.size + 2, e.size*2 - 4, e.size*2 - 4);
-        ctx.fillStyle = slow ? '#cee0ff' : '#ffaabb';
-        ctx.fillRect(x - 4, y - 4, 8, 8);
-      } else {
-        ctx.fillStyle = slow ? '#5a8ab8' : '#ff5b6e';
-        ctx.fillRect(x - e.size, y - e.size, e.size*2, e.size*2);
-        ctx.fillStyle = slow ? '#bcd4ee' : '#ffd0d6';
-        ctx.fillRect(x - 2, y - 2, 4, 4);
-      }
+      // 타입별 디스패치
+      if (e.isBoss)               drawBossE(e, x, y, slow);
+      else if (e.type === 'ice')  drawIceE(e, x, y, slow);
+      else if (e.type === 'drone')   drawDroneE(e, x, y, slow);
+      else if (e.type === 'plasma')  drawPlasmaE(e, x, y, slow);
+      else if (e.type === 'crystal') drawCrystalE(e, x, y, slow);
+      else                        drawAsteroidE(e, x, y, slow);
+      // HP 바
       if (e.hp < e.maxHp) {
         const w = e.size*2;
         ctx.fillStyle = '#3a1418'; ctx.fillRect(x - e.size, y - e.size - 5, w, 2);
@@ -2802,21 +3304,29 @@
       ctx.textAlign='start';
     }
     if (state.gameOver) {
-      ctx.fillStyle = 'rgba(0,0,0,0.7)'; ctx.fillRect(0,0,W,H);
-      ctx.fillStyle = '#ff8a98'; ctx.textAlign='center'; ctx.font='36px Consolas, monospace';
-      ctx.fillText('GAME OVER', CX, CY - 40);
+      ctx.fillStyle = 'rgba(0,0,0,0.75)'; ctx.fillRect(0,0,W,H);
+      if (state.gameWin) {
+        ctx.fillStyle = '#ffe070'; ctx.textAlign='center'; ctx.font='36px Consolas, monospace';
+        ctx.fillText('VICTORY', CX, CY - 40);
+      } else {
+        ctx.fillStyle = '#ff8a98'; ctx.textAlign='center'; ctx.font='36px Consolas, monospace';
+        ctx.fillText('GAME OVER', CX, CY - 40);
+      }
       if (state.gameOverReason) {
-        ctx.fillStyle = '#ffaaaa'; ctx.font='14px Consolas, monospace';
+        ctx.fillStyle = state.gameWin ? '#fff080' : '#ffaaaa';
+        ctx.font='14px Consolas, monospace';
         ctx.fillText(state.gameOverReason, CX, CY - 12);
       }
       ctx.fillStyle = '#fff'; ctx.font='16px Consolas, monospace';
-      ctx.fillText(`도달 라운드: ${state.round}   점수: ${state.score}`, CX, CY + 14);
+      const lastRound = state.gameWin ? MAX_ROUND : state.round;
+      ctx.fillText(`도달 라운드: ${lastRound}   점수: ${state.score.toLocaleString()}`, CX, CY + 14);
       ctx.fillText('R 키로 다시 시작', CX, CY + 42);
       ctx.textAlign='start';
     }
   }
   function render() {
     ctx.clearRect(0,0,W,H);
+    drawBackground();
     drawArena();
     drawTower();
     drawEnemies();
@@ -2907,6 +3417,8 @@
         else actDelete(i);
       };
     });
+    // ability-row에 min-height 고정이 걸려 있어 빈 슬롯/채워진 슬롯 높이가 같음
+    // → 패널 자연 크기가 변하지 않아 매번 fitScale 안 해도 됨
   }
 
   let toastTimer = 0;
@@ -2956,24 +3468,46 @@
   });
 
   // ===== 반응형: 창 크기에 맞춰 전체 UI 스케일 + 가로/세로 자동 전환 =====
-  // 캔버스 내부 해상도는 640x640 그대로 (게임 좌표 보존).
-  // 동작:
-  //  1) 뷰포트 비율로 가로/세로 모드 결정 (#wrap.portrait 토글)
-  //  2) transform 해제 후 자연 크기 측정 → 들어맞는 스케일 적용
-  //  3) 세로 모드에서는 패널 글자/버튼이 크게 디자인되어 터치 친화적
   const wrapEl = document.getElementById('wrap');
+  const abilitiesEl = document.getElementById('abilities');
+  const toggleBtn = document.getElementById('abilityToggle');
+  let abilitiesCollapsed = false;  // 세로 모드에서 기본 접힘
+
   function fitScale() {
-    if (wrapEl.style.display === 'none') return;  // 게임 화면이 숨김이면 패스
+    if (wrapEl.style.display === 'none') return;
     const vw = window.innerWidth;
     const vh = window.innerHeight;
     const usePortrait = vh > vw * 1.05;
+    const wasPortrait = wrapEl.classList.contains('portrait');
     wrapEl.classList.toggle('portrait', usePortrait);
+    if (usePortrait && !wasPortrait) collapseAbilities(true, false);
+    else if (!usePortrait && wasPortrait) collapseAbilities(false, false);
     wrapEl.style.transform = 'none';
     const rect = wrapEl.getBoundingClientRect();
     if (rect.width === 0 || rect.height === 0) return;
     const pad = 16;
     const scale = Math.min((vw - pad) / rect.width, (vh - pad) / rect.height, 1.8);
     wrapEl.style.transform = `scale(${scale})`;
+    // 절대 위치 능력창의 bottom anchor 갱신 (panel layout이 안정된 후)
+    positionAbilitiesAnchor();
+  }
+
+  // 능력 목록 접기/펴기 — 능력창은 오버레이이므로 wrap 크기/스케일은 안 건드림.
+  // 단순히 .expanded 클래스만 토글 → transform: translateY transition으로 슬라이드 업/다운.
+  function collapseAbilities(collapsed, _animate = true) {
+    abilitiesCollapsed = collapsed;
+    abilitiesEl.classList.toggle('expanded', !collapsed);
+    toggleBtn.textContent = collapsed ? '▲ 능력 확인' : '▼ 능력 닫기';
+  }
+  toggleBtn.onclick = () => collapseAbilities(!abilitiesCollapsed);
+
+  // 능력창 anchor를 토글 버튼 바로 위에 맞춤 (panel 내부 좌표 사용 — transform 영향 없음)
+  function positionAbilitiesAnchor() {
+    if (!wrapEl.classList.contains('portrait')) return;
+    const panelEl = document.getElementById('panel');
+    if (!panelEl || !toggleBtn.offsetParent) return;
+    const offset = panelEl.offsetHeight - toggleBtn.offsetTop + 4;
+    panelEl.style.setProperty('--abilities-anchor', offset + 'px');
   }
   window.addEventListener('resize', fitScale);
   window.addEventListener('orientationchange', () => setTimeout(fitScale, 100));
@@ -3008,17 +3542,25 @@
     toast(`🔓 도감 해금: ${ABILITY_DEFS[id].name}`);
   }
 
-  // ===== 화면 전환 (메뉴 / 도감 / 게임) =====
+  // ===== 화면 전환 (메뉴 / 도감 / 기록 / 게임) =====
   let currentScreen = 'menu';
   const menuEl = document.getElementById('menu');
   const codexEl = document.getElementById('codex');
+  const recordsEl = document.getElementById('records');
+  const recordDetailEl = document.getElementById('recordDetail');
   const gameEl = document.getElementById('wrap');
   function showScreen(name) {
     currentScreen = name;
     menuEl.classList.toggle('show', name === 'menu');
     codexEl.classList.toggle('show', name === 'codex');
+    recordsEl.classList.toggle('show', name === 'records');
+    recordDetailEl.classList.toggle('show', name === 'recordDetail');
     gameEl.style.display = name === 'game' ? 'flex' : 'none';
-    if (name === 'game') fitScale();
+    if (name === 'game') {
+      const usePortrait = window.innerHeight > window.innerWidth * 1.05;
+      collapseAbilities(usePortrait, false);
+      fitScale();
+    }
   }
 
   document.getElementById('startBtn').onclick = () => {
@@ -3032,6 +3574,12 @@
     showScreen('codex');
   };
   document.getElementById('codexBack').onclick = () => showScreen('menu');
+  document.getElementById('recordsBtn').onclick = () => {
+    buildRecords();
+    showScreen('records');
+  };
+  document.getElementById('recordsBack').onclick = () => showScreen('menu');
+  document.getElementById('recordDetailBack').onclick = () => showScreen('records');
 
   // ===== 도감 콘텐츠 생성 =====
   let codexTab = 'basic';
@@ -3102,9 +3650,93 @@
     }
   }
 
+  // ===== 기록 화면 콘텐츠 =====
+  let selectedRecord = null;
+  function buildRecords() {
+    const list = document.getElementById('records-list');
+    list.innerHTML = '';
+    const records = loadRecords();
+    if (records.length === 0) {
+      list.innerHTML = '<div class="record-empty">아직 기록이 없습니다.<br/>게임을 플레이해서 첫 기록을 남겨보세요!</div>';
+      return;
+    }
+    records.forEach((rec, i) => {
+      const card = document.createElement('div');
+      card.className = 'record-card' + (rec.win ? ' win' : '');
+      const d = new Date(rec.date);
+      const dateStr = `${String(d.getFullYear()).slice(2)}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+      const roundLabel = rec.win ? '🏆 100라운드 클리어' : `도달 R${rec.round}`;
+      card.innerHTML = `
+        <div class="rank">${i + 1}</div>
+        <div class="info">
+          <div class="score">${rec.score.toLocaleString()} 점</div>
+          <div class="meta">${roundLabel} · ${dateStr}</div>
+        </div>
+        <div class="arrow">→</div>
+      `;
+      card.onclick = () => {
+        selectedRecord = rec;
+        buildRecordDetail();
+        showScreen('recordDetail');
+      };
+      list.appendChild(card);
+    });
+  }
+  function buildRecordDetail() {
+    const content = document.getElementById('record-detail-content');
+    content.innerHTML = '';
+    const rec = selectedRecord;
+    if (!rec) return;
+    const d = new Date(rec.date);
+    const fullDate = `${d.getFullYear()}년 ${d.getMonth()+1}월 ${d.getDate()}일 ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+    const header = document.createElement('div');
+    header.id = 'record-detail-header';
+    if (rec.win) header.className = 'win';
+    header.innerHTML = `
+      <div class="big-score">${rec.score.toLocaleString()} 점</div>
+      <div class="sub">${rec.win ? '🏆 100라운드 클리어' : `도달 라운드: ${rec.round}`}</div>
+      <div class="when">${fullDate}</div>
+    `;
+    content.appendChild(header);
+    const title = document.createElement('h3');
+    title.style.cssText = 'margin: 0 0 12px; font-size: 14px; color: #9aa3b3; letter-spacing: 2px;';
+    title.textContent = `사용한 능력 (${(rec.abilities || []).length})`;
+    content.appendChild(title);
+    const abList = document.createElement('div');
+    abList.id = 'record-detail-abilities';
+    if (!rec.abilities || rec.abilities.length === 0) {
+      abList.innerHTML = '<div class="record-empty">사용한 능력 없음</div>';
+    } else {
+      for (const a of rec.abilities) {
+        const def = ABILITY_DEFS[a.id];
+        if (!def) continue;
+        const card = document.createElement('div');
+        card.className = 'codex-card';
+        card.style.borderLeftColor = def.color;
+        let recipeInfo = '';
+        if (def.isCombo) {
+          const recipe = COMBO_RECIPES.find(r => r.combo === a.id);
+          if (recipe) {
+            const p1 = ABILITY_DEFS[recipe.parts[0]];
+            const p2 = ABILITY_DEFS[recipe.parts[1]];
+            recipeInfo = `<div class="recipe">재료: <span style="color:${p1.color}">${p1.name}</span> + <span style="color:${p2.color}">${p2.name}</span></div>`;
+          }
+        }
+        card.innerHTML = `
+          <div class="name" style="color:${def.color}">${def.name} <span style="color:#9bb3ff">Lv${a.level}</span></div>
+          <div class="desc">${def.desc(a.level)}</div>
+          ${recipeInfo}
+        `;
+        abList.appendChild(card);
+      }
+    }
+    content.appendChild(abList);
+  }
+
   // ===== 시작 =====
   // 게임은 startBtn 클릭 시 reset() 호출됨. 여기서는 메뉴만 표시.
-  reset();   // state 초기 구조만 만들어둠 (loop이 안전하게 동작하도록)
+  reset();              // state 초기 구조만 만들어둠 (loop이 안전하게 동작하도록)
+  initBackground();     // 우주 배경 초기화 (별/행성/성운)
   (function loop(){
     if (currentScreen === 'game') {
       const steps = paused || state.gameOver ? 1 : gameSpeed;
