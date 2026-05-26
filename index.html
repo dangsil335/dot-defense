@@ -2608,9 +2608,9 @@
     },
     vampiric: {
       name: '흡혈', isPassive: true, baseCost: 65, color: '#cc6699',
-      desc: lv => `처치 시 추가 골드 +${lv*40}%`,
+      desc: lv => `처치 시 추가 골드 +${lv*15}%`,
       init() {},
-      tick(ab) { if (state.metaMods) state.metaMods.bonusGoldMul = ab.level * 0.4; },
+      tick(ab) { if (state.metaMods) state.metaMods.bonusGoldMul = ab.level * 0.15; },
     },
     fortune: {
       name: '행운', isPassive: true, baseCost: 60, color: '#ffcc66',
@@ -3831,7 +3831,7 @@
             damageEnemy(e, dmg);
             if (wasHp > 0 && e.hp <= 0) {
               // 약탈 보너스 (Vampiric 효과 강화)
-              state.gold += Math.ceil(e.goldDrop * 0.5);
+              state.gold += Math.ceil(e.goldDrop * 0.35);
             }
             spawnParticles(ex, ey, '#cc6699', 4);
           }
@@ -5120,25 +5120,26 @@
   // 100라운드: 5라운드분 시간(150초) + 보스 3마리 + 잡몹 다수 (최종전).
   const MAX_ROUND = 100;
   function enemyHpFor(n) {
-    // R1~25 지수 성장, R26+ 선형(완만화) — R100도 도전 가능하게
+    // R1~25 지수 성장, R26+ 선형(완만화) — R100을 4트리플 빌드로 클리어 가능하게
     if (n <= 25) return Math.ceil(3 * Math.pow(1.35, n - 1));
     const base = Math.ceil(3 * Math.pow(1.35, 24));
-    return Math.ceil(base * (1 + (n - 25) * 0.18));
+    return Math.ceil(base * (1 + (n - 25) * 0.13));  // ↓ 0.18 → 0.13 (28% 완화)
   }
   function roundConfig(n) {
     const hp = enemyHpFor(n);
     const isFinal = n === MAX_ROUND;
     const isBoss  = n > 0 && n % 5 === 0 && !isFinal;
     return {
-      duration:      (isFinal ? 150 : 30) * FPS,
-      spawnCount:    isFinal ? 50 : (isBoss ? 10 : 20),
-      spawnInterval: isFinal ? 3 * FPS : (isBoss ? 2 * FPS : 1 * FPS),
+      duration:      (isFinal ? 180 : 30) * FPS,         // 최종 3분
+      spawnCount:    isFinal ? 30 : (isBoss ? 10 : 20),  // 최종 30마리 (40→30)
+      spawnInterval: isFinal ? 5 * FPS : (isBoss ? 2 * FPS : 1 * FPS),
       enemyHp:       hp,
       enemySpeed:    0.008 + (n - 1) * 0.0005,
-      enemyGold:     Math.max(1, Math.ceil(hp / 3)),
+      // 골드: sqrt(hp) 기반
+      enemyGold:     Math.max(1, Math.ceil(Math.sqrt(hp) * 0.10)),
       isBoss, isFinal,
-      bossHp:        Math.ceil(hp * (isFinal ? 22 : 12)),
-      bossGold:      Math.ceil(hp * (isFinal ? 10 : 4)),
+      bossHp:        Math.ceil(hp * (isFinal ? 13 : 10)),  // 최종 보스 ×18→×13 (대폭 완화)
+      bossGold:      Math.ceil(Math.sqrt(hp) * (isFinal ? 15 : 6)),
     };
   }
 
@@ -5261,7 +5262,7 @@
   // 강화소 항목 정의 (확장: 11종, 더 높은 max 레벨)
   const META_UPGRADES = [
     { id: 'startGold',   name: '시작 골드',         desc: 'lv당 +25 골드',          maxLv: 15, cost: lv => 15 * (lv + 1),  apply: lv => 25 * lv },
-    { id: 'goldGain',    name: '골드 획득량',       desc: 'lv당 +10%',             maxLv: 8,  cost: lv => 60 * (lv + 1),  apply: lv => 0.10 * lv },
+    { id: 'goldGain',    name: '골드 획득량',       desc: 'lv당 +5%',              maxLv: 8,  cost: lv => 60 * (lv + 1),  apply: lv => 0.05 * lv },
     { id: 'freeRolls',   name: '시작 레벨업',       desc: 'lv당 무료 레벨업 +1',     maxLv: 5,  cost: lv => 250 * (lv + 1), apply: lv => lv },
     { id: 'enhance',     name: '강화 비용 절감',    desc: 'lv당 -7%',              maxLv: 6,  cost: lv => 100 * (lv + 1), apply: lv => 0.07 * lv },
     { id: 'extraSlot',   name: '액티브 슬롯 +1',    desc: 'lv당 +1칸 (max 8칸)',    maxLv: 2,  cost: lv => 1200 * (lv + 1), apply: lv => lv },
@@ -5271,7 +5272,7 @@
     { id: 'startScore',  name: '시작 점수',         desc: 'lv당 +500 시작 점수',    maxLv: 5,  cost: lv => 30 * (lv + 1),  apply: lv => 500 * lv },
     { id: 'levelUpFast', name: '빠른 성장',         desc: 'lv당 레벨업 처치 -1',    maxLv: 5,  cost: lv => 80 * (lv + 1),  apply: lv => lv },
     { id: 'dmgBoost',    name: '데미지 부스트',     desc: 'lv당 +3% 모든 데미지',   maxLv: 5,  cost: lv => 150 * (lv + 1), apply: lv => 0.03 * lv },
-    { id: 'bossGold',    name: '보스 골드 보너스',  desc: 'lv당 +25% 보스 골드',    maxLv: 4,  cost: lv => 100 * (lv + 1), apply: lv => 0.25 * lv },
+    { id: 'bossGold',    name: '보스 골드 보너스',  desc: 'lv당 +15% 보스 골드',    maxLv: 4,  cost: lv => 100 * (lv + 1), apply: lv => 0.15 * lv },
     // 카드 리롤 — 영구 1회 강화. 카드 선택할 때마다 3장 다시 뽑기 1번 가능.
     { id: 'reroll',      name: '카드 리롤',         desc: '카드 선택 시 3장 다시 뽑기 1회', maxLv: 1, cost: lv => 800, apply: lv => lv },
   ];
@@ -7195,11 +7196,13 @@
     bar.style.width = (pct*100) + '%';
     bar.parentElement.classList.toggle('danger', pct > 0.75);
     bar.parentElement.classList.toggle('warn',   pct > 0.5 && pct <= 0.75);
-    // 랜덤 버튼 상태
+    // 랜덤 버튼 상태 — 액티브/패시브 슬롯 둘 다 가득 차야 비활성
     const owned = new Set(state.tower.abilities.map(a=>a.id));
-    const poolLeft = ALL_ABILITY_IDS.filter(id => !owned.has(id)).length;
+    const poolLeft = BASIC_ABILITY_IDS.filter(id => !owned.has(id)).length;  // 조합은 풀에서 제외
     const acqCost = randomAcquireCost();
-    elRandom.disabled = state.gold < acqCost || state.tower.abilities.length >= activeMaxSlots() || poolLeft === 0;
+    const aFull = activeCount() >= maxActiveSlots();
+    const pFull = passiveCount() >= maxPassiveSlots();
+    elRandom.disabled = state.gold < acqCost || (aFull && pFull) || poolLeft === 0;
     elRandom.textContent = acqCost === 0
       ? `🎲 랜덤 능력 획득 (무료)`
       : `🎲 랜덤 능력 획득 (${acqCost}G)`;
