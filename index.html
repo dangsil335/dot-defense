@@ -5743,23 +5743,46 @@
   function generateLevelUpChoices() {
     const choices = [];
 
-    // 1) 조합 카드 — 두 재료 모두 max 도달 시 1장 보장 (트리플 우선)
-    const availableCombos = findAvailableCombos().slice();
-    availableCombos.sort((a, b) => (b.tier || 2) - (a.tier || 2));
-    if (availableCombos.length > 0) {
-      const r = availableCombos[0];
-      choices.push({
-        action: 'combo',
-        id: r.combo,
-        parts: r.parts,
-        tier: r.tier || 2,
-      });
+    // 액티브 능력이 하나도 없으면 첫 카드는 무조건 액티브 3장 보장 (몬스터 처치 불가 방지)
+    const forceActiveOnly = activeCount() === 0;
+
+    // 1) 조합 카드 — 두 재료 모두 max 도달 시 1장 보장 (트리플 우선) — 단, forceActiveOnly 시 스킵
+    if (!forceActiveOnly) {
+      const availableCombos = findAvailableCombos().slice();
+      availableCombos.sort((a, b) => (b.tier || 2) - (a.tier || 2));
+      if (availableCombos.length > 0) {
+        const r = availableCombos[0];
+        choices.push({
+          action: 'combo',
+          id: r.combo,
+          parts: r.parts,
+          tier: r.tier || 2,
+        });
+      }
     }
 
     const owned = new Set(state.tower.abilities.map(a => a.id));
     const allowed = getUnlockedAbilityIds();
     const unownedActive  = BASIC_ABILITY_IDS.filter(id => !owned.has(id) && allowed.has(id) && !ABILITY_DEFS[id].isPassive);
     const unownedPassive = BASIC_ABILITY_IDS.filter(id => !owned.has(id) && allowed.has(id) &&  ABILITY_DEFS[id].isPassive);
+
+    // 첫 카드 — 액티브만 3장 강제
+    if (forceActiveOnly) {
+      const activePool = unownedActive.slice();
+      // 무작위로 3장 선택
+      while (choices.length < 3 && activePool.length > 0) {
+        const idx = Math.floor(Math.random() * activePool.length);
+        const id = activePool.splice(idx, 1)[0];
+        choices.push({ action: 'new', id, newLevel: 1 });
+      }
+      // 액티브 풀이 3개 미만이면 보너스 카드로 채움 (정말 극단적 케이스만)
+      while (choices.length < 3) {
+        const scoreMul = (state.metaMods && state.metaMods.scoreMul) || 1;
+        const amount = Math.floor(800 * state.round * scoreMul * (0.85 + Math.random() * 0.4));
+        choices.push({ action: 'bonusScore', amount });
+      }
+      return choices;
+    }
     // 강화 대상은 max 미달 능력만
     const ownedAbilities = state.tower.abilities.filter(a => !isAtMax(a));
     while (choices.length < 3) {
