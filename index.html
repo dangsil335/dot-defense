@@ -117,6 +117,33 @@
   #stats { line-height: 1.6; }
   #stats .row { display: flex; justify-content: space-between; }
   #stats .label { color: #6b7283; }
+
+  /* === 핵심 스탯 위계 강조 — ROUND / GOLD === */
+  #stats .row.primary {
+    font-size: 17px;
+    font-weight: bold;
+    padding: 6px 10px;
+    margin: 3px 0;
+    background: rgba(20, 24, 34, 0.7);
+    border-left: 3px solid;
+    align-items: baseline;
+  }
+  #stats .row.primary .label {
+    font-size: 11px;
+    font-weight: normal;
+    letter-spacing: 1.5px;
+  }
+  #stats .row.round { border-left-color: #7ad7ff; }
+  #stats .row.round span:last-child {
+    color: #7ad7ff;
+    text-shadow: 0 0 8px rgba(122,215,255,0.45);
+  }
+  #stats .row.gold { border-left-color: #ffd479; }
+  #stats .row.gold span:last-child {
+    color: #ffd479;
+    text-shadow: 0 0 8px rgba(255,212,121,0.45);
+  }
+  #wrap.portrait #stats .row.primary { font-size: 19px; padding: 8px 12px; }
   .bar { background: #1a1f2b; height: 8px; border: 1px solid #2a2f3a; position: relative; overflow: hidden; }
   .bar > i { display:block; height:100%; background:#52e07a; transition: width .15s; }
   .bar.danger > i { background: #ff5b6e; }
@@ -140,6 +167,27 @@
   .ability-name { display: flex; flex-direction: column; }
   .ability-name b { color: #e8eaf0; }
   .ability-name small { color: #6b7283; }
+
+  /* === 강화 버튼 — 살 수 있는지 한눈에 인지 === */
+  .ability-row.affordable {
+    border-color: #5a4a20;
+    box-shadow: inset 0 0 0 1px rgba(255,212,121,0.15);
+  }
+  .ability-row.affordable button[data-act="up"] {
+    border-color: #ffd479;
+    background: #2a2418;
+    color: #ffd479;
+  }
+  .ability-row.affordable button[data-act="up"]:hover { background: #3a311e; }
+  .ability-row button[data-act="up"] {
+    color: #9aa3b3;
+  }
+  .ability-row.maxed { border-left: 3px solid #52e07a; }
+  /* 랜덤 능력 획득 버튼 — 살 수 있을 때 강조 */
+  #randomBtn:not(:disabled) {
+    border-color: #ffd479;
+    color: #ffd479;
+  }
   .toast {
     position:absolute; left:50%; top:20px; transform:translateX(-50%);
     background: rgba(20,24,34,0.95); color:#fff; padding:8px 14px;
@@ -578,10 +626,10 @@
   <canvas id="game" width="640" height="640"></canvas>
   <div id="panel">
     <div id="stats">
-      <div class="row"><span class="label">ROUND</span><span id="s-round">1</span></div>
+      <div class="row primary round"><span class="label">ROUND</span><span id="s-round">1</span></div>
       <div class="row"><span class="label">TIME</span><span id="s-time">20.0s</span></div>
       <div class="bar warn"><i id="s-timebar" style="width:100%"></i></div>
-      <div class="row"><span class="label">GOLD</span><span id="s-gold">0</span></div>
+      <div class="row primary gold"><span class="label">GOLD</span><span id="s-gold">0</span></div>
       <div class="row"><span class="label">SCORE</span><span id="s-score">0</span></div>
       <div class="row"><span class="label">ENEMIES</span><span id="s-enemies">0 / 80</span></div>
       <div class="bar"><i id="s-enemybar" style="width:0%"></i></div>
@@ -5808,13 +5856,18 @@
         comboHint = hints.join('');
       }
       const max = isAtMax(a);
+      const cost = max ? 0 : enhanceCost(a);
+      const canAfford = !max && state.gold >= cost;
       const lvLabel = max
-        ? `<span style="color:#ffd479">MAX</span>`
+        ? `<span style="color:#52e07a">MAX</span>`
         : `<span style="color:#9bb3ff">Lv${a.level}/${maxLvFor(a.id)}</span>`;
+      const costColor = canAfford ? '#ffd479' : '#5a5f6a';
       const upBtn = max
-        ? `<button disabled style="opacity:0.4">MAX</button>`
-        : `<button data-act="up" data-i="${origIdx[i]}">강화<br/><span style="color:#ffd479">${enhanceCost(a)}G</span></button>`;
+        ? `<button disabled style="opacity:0.4; color:#52e07a; border-color:#2a4a30">MAX</button>`
+        : `<button data-act="up" data-i="${origIdx[i]}"${canAfford ? '' : ' disabled style="opacity:0.55"'}>강화<br/><span style="color:${costColor}">${cost}G</span></button>`;
       row.className = 'ability-row';
+      if (max) row.classList.add('maxed');
+      else if (canAfford) row.classList.add('affordable');
       row.innerHTML = `
         <div class="ability-name">
           <b style="color:${nameColor}">${def.name} ${lvLabel}</b>
