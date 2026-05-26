@@ -170,11 +170,11 @@
   }
   .screen.show { display: flex; }
   #menu h1 {
-    font-size: 56px;
-    letter-spacing: 10px;
+    font-size: clamp(26px, 7vmin, 56px);
+    letter-spacing: clamp(3px, 1.2vmin, 10px);
     color: #7ad7ff;
     text-shadow: 0 0 30px rgba(122, 215, 255, 0.45);
-    margin: 0 0 12px;
+    margin: 0 0 clamp(4px, 1.5vmin, 12px);
   }
   /* 개발용: 데이터 초기화 버튼 (메뉴 우측 상단) */
   .reset-data-btn {
@@ -193,15 +193,15 @@
   .reset-data-btn:hover { background: #3a1820; color: #ffaabb; }
   #menu .subtitle {
     color: #6b7283;
-    margin-bottom: 50px;
-    letter-spacing: 4px;
-    font-size: 13px;
+    margin-bottom: clamp(12px, 5vmin, 50px);
+    letter-spacing: clamp(2px, 0.6vmin, 4px);
+    font-size: clamp(10px, 1.6vmin, 13px);
   }
   .menu-btn {
-    width: 260px;
-    padding: 18px;
-    margin: 6px;
-    font-size: 18px;
+    width: clamp(180px, 50vmin, 260px);
+    padding: clamp(8px, 2vmin, 18px);
+    margin: clamp(3px, 0.8vmin, 6px);
+    font-size: clamp(12px, 2.2vmin, 18px);
     font-family: inherit;
     background: #1f2735;
     color: #e8eaf0;
@@ -212,22 +212,6 @@
   }
   .menu-btn:hover { background: #2a3550; border-color: #5870a0; }
   .menu-btn:active { transform: scale(0.97); }
-
-  /* === 작은 창 대응 — 메뉴 화면 자동 축소 (기본 스타일 뒤에 와야 우선순위 확보) === */
-  @media (max-height: 720px) {
-    #menu h1 { font-size: 42px; letter-spacing: 6px; margin-bottom: 6px; }
-    #menu .subtitle { margin-bottom: 22px; font-size: 12px; }
-    .menu-btn { padding: 12px; font-size: 15px; margin: 4px; width: 240px; }
-  }
-  @media (max-height: 540px) {
-    #menu h1 { font-size: 30px; letter-spacing: 4px; }
-    #menu .subtitle { margin-bottom: 12px; }
-    .menu-btn { padding: 8px 10px; font-size: 13px; margin: 3px; width: 220px; }
-  }
-  @media (max-width: 360px) {
-    #menu h1 { font-size: 36px; letter-spacing: 4px; }
-    .menu-btn { width: calc(100vw - 40px); max-width: 280px; }
-  }
 
   #codex {
     padding: 24px;
