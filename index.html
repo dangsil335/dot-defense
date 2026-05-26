@@ -3854,6 +3854,7 @@
       playerLevel: 1,
       killsToNextLevel: 8,
       levelUpChoices: null, // 레벨업 선택 카드들 (활성 시 모달)
+      rerollAvailable: false, // 이번 카드 모달에서 리롤 가능 여부 (강화소 구매 시 매 카드마다 1회)
       round: 1,
       roundFrame: 0,        // 현재 라운드 경과 프레임
       spawnPlan: [],        // 이번 라운드에 남은 스폰 시점
@@ -3949,18 +3950,20 @@
 
   // 강화소 항목 정의 (확장: 11종, 더 높은 max 레벨)
   const META_UPGRADES = [
-    { id: 'startGold',   name: '시작 골드',         desc: 'lv당 +25 골드',          maxLv: 15, cost: lv => 8 * (lv + 1),  apply: lv => 25 * lv },
-    { id: 'goldGain',    name: '골드 획득량',       desc: 'lv당 +10%',             maxLv: 8,  cost: lv => 25 * (lv + 1), apply: lv => 0.10 * lv },
-    { id: 'freeRolls',   name: '시작 레벨업',       desc: 'lv당 무료 레벨업 +1',     maxLv: 5,  cost: lv => 80 * (lv + 1), apply: lv => lv },
-    { id: 'enhance',     name: '강화 비용 절감',    desc: 'lv당 -7%',              maxLv: 6,  cost: lv => 40 * (lv + 1), apply: lv => 0.07 * lv },
-    { id: 'extraSlot',   name: '액티브 슬롯 +1',    desc: 'lv당 +1칸 (max 8칸)',    maxLv: 2,  cost: lv => 300 * (lv + 1), apply: lv => lv },
-    { id: 'bossDmg',     name: '보스 추가 데미지',  desc: 'lv당 +15%',             maxLv: 6,  cost: lv => 50 * (lv + 1), apply: lv => 0.15 * lv },
-    { id: 'killScore',   name: '처치 점수 보너스',  desc: 'lv당 +20%',             maxLv: 8,  cost: lv => 20 * (lv + 1), apply: lv => 0.20 * lv },
+    { id: 'startGold',   name: '시작 골드',         desc: 'lv당 +25 골드',          maxLv: 15, cost: lv => 15 * (lv + 1),  apply: lv => 25 * lv },
+    { id: 'goldGain',    name: '골드 획득량',       desc: 'lv당 +10%',             maxLv: 8,  cost: lv => 60 * (lv + 1),  apply: lv => 0.10 * lv },
+    { id: 'freeRolls',   name: '시작 레벨업',       desc: 'lv당 무료 레벨업 +1',     maxLv: 5,  cost: lv => 250 * (lv + 1), apply: lv => lv },
+    { id: 'enhance',     name: '강화 비용 절감',    desc: 'lv당 -7%',              maxLv: 6,  cost: lv => 100 * (lv + 1), apply: lv => 0.07 * lv },
+    { id: 'extraSlot',   name: '액티브 슬롯 +1',    desc: 'lv당 +1칸 (max 8칸)',    maxLv: 2,  cost: lv => 1200 * (lv + 1), apply: lv => lv },
+    { id: 'bossDmg',     name: '보스 추가 데미지',  desc: 'lv당 +15%',             maxLv: 6,  cost: lv => 120 * (lv + 1), apply: lv => 0.15 * lv },
+    { id: 'killScore',   name: '처치 점수 보너스',  desc: 'lv당 +20%',             maxLv: 8,  cost: lv => 50 * (lv + 1),  apply: lv => 0.20 * lv },
     // 신규 강화 4종
-    { id: 'startScore',  name: '시작 점수',         desc: 'lv당 +500 시작 점수',    maxLv: 5,  cost: lv => 15 * (lv + 1), apply: lv => 500 * lv },
-    { id: 'levelUpFast', name: '빠른 성장',         desc: 'lv당 레벨업 처치 -1',    maxLv: 5,  cost: lv => 35 * (lv + 1), apply: lv => lv },
-    { id: 'dmgBoost',    name: '데미지 부스트',     desc: 'lv당 +3% 모든 데미지',   maxLv: 5,  cost: lv => 60 * (lv + 1), apply: lv => 0.03 * lv },
-    { id: 'bossGold',    name: '보스 골드 보너스',  desc: 'lv당 +25% 보스 골드',    maxLv: 4,  cost: lv => 45 * (lv + 1), apply: lv => 0.25 * lv },
+    { id: 'startScore',  name: '시작 점수',         desc: 'lv당 +500 시작 점수',    maxLv: 5,  cost: lv => 30 * (lv + 1),  apply: lv => 500 * lv },
+    { id: 'levelUpFast', name: '빠른 성장',         desc: 'lv당 레벨업 처치 -1',    maxLv: 5,  cost: lv => 80 * (lv + 1),  apply: lv => lv },
+    { id: 'dmgBoost',    name: '데미지 부스트',     desc: 'lv당 +3% 모든 데미지',   maxLv: 5,  cost: lv => 150 * (lv + 1), apply: lv => 0.03 * lv },
+    { id: 'bossGold',    name: '보스 골드 보너스',  desc: 'lv당 +25% 보스 골드',    maxLv: 4,  cost: lv => 100 * (lv + 1), apply: lv => 0.25 * lv },
+    // 카드 리롤 — 영구 1회 강화. 카드 선택할 때마다 3장 다시 뽑기 1번 가능.
+    { id: 'reroll',      name: '카드 리롤',         desc: '카드 선택 시 3장 다시 뽑기 1회', maxLv: 1, cost: lv => 800, apply: lv => lv },
   ];
   function getMetaMods() {
     const v = id => {
@@ -4489,7 +4492,17 @@
     const choices = generateLevelUpChoices();
     // 항상 3장 (능력 카드 부족 시 보너스 카드로 채움)
     state.levelUpChoices = choices;
+    state.rerollAvailable = metaLv('reroll') > 0;  // 강화소에서 구매 시 카드마다 1회 리롤
     SFX.levelup();
+  }
+  function rerollCards() {
+    if (!state.levelUpChoices) return;
+    if (!state.rerollAvailable) return;
+    const choices = generateLevelUpChoices();
+    if (choices.length === 0) return;
+    state.levelUpChoices = choices;
+    state.rerollAvailable = false;
+    SFX.click();
   }
   function applyLevelUpChoice(idx) {
     if (!state.levelUpChoices) return;
@@ -4498,6 +4511,7 @@
         state.levelUpChoices = null;
         state.cardCost = 0;
         state.cardCancelable = false;
+        state.rerollAvailable = false;
         SFX.click();
       }
       return;
@@ -4563,6 +4577,7 @@
     state.levelUpChoices = null;
     state.cardCost = 0;
     state.cardCancelable = false;
+    state.rerollAvailable = false;
     SFX.click();
     renderPanel();
   }
@@ -4606,6 +4621,7 @@
     state.levelUpChoices = choices;
     state.cardCost = cost;   // 카드 선택 시 차감
     state.cardCancelable = true;
+    state.rerollAvailable = metaLv('reroll') > 0;
     SFX.click();
   }
 
@@ -5397,9 +5413,41 @@
         ctx.fillText(`🔁 반복 업적: +${state.repeatStardust} ★`, CX, lineY);
         lineY += 16;
       }
-      ctx.fillStyle = '#fff'; ctx.font='14px Consolas, monospace';
-      ctx.fillText('R = 다시 시작 · 🏠 메뉴 버튼', CX, lineY + 8);
+      // 다시하기 / 메인메뉴 버튼 (캔버스 클릭 + R / ESC 단축키도 유지)
+      const btnW = 160, btnH = 44, btnGap = 16;
+      const totalBtnW = btnW * 2 + btnGap;
+      const btnYg = Math.min(lineY + 24, H - btnH - 24);
+      const btnX1 = CX - totalBtnW / 2;
+      const btnX2 = btnX1 + btnW + btnGap;
+      // 다시하기 (강조)
+      ctx.fillStyle = '#2a2418';
+      ctx.fillRect(btnX1, btnYg, btnW, btnH);
+      ctx.strokeStyle = '#ffd479';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(btnX1, btnYg, btnW, btnH);
+      ctx.fillStyle = '#ffd479';
+      ctx.font = 'bold 15px Consolas, monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText('↻ 다시 하기', btnX1 + btnW / 2, btnYg + 27);
+      // 메인메뉴
+      ctx.fillStyle = '#1a1f2b';
+      ctx.fillRect(btnX2, btnYg, btnW, btnH);
+      ctx.strokeStyle = '#5870a0';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(btnX2, btnYg, btnW, btnH);
+      ctx.fillStyle = '#cfd6e3';
+      ctx.font = '15px Consolas, monospace';
+      ctx.fillText('🏠 메인 메뉴', btnX2 + btnW / 2, btnYg + 27);
+      state._retryBtn = { x: btnX1, y: btnYg, w: btnW, h: btnH };
+      state._menuBtn  = { x: btnX2, y: btnYg, w: btnW, h: btnH };
+      // 단축키 안내 (작게)
+      ctx.fillStyle = '#5a6068';
+      ctx.font = '10px Consolas, monospace';
+      ctx.fillText('R = 다시하기  ·  ESC = 메인 메뉴', CX, btnYg + btnH + 16);
       ctx.textAlign='start';
+    } else {
+      state._retryBtn = null;
+      state._menuBtn = null;
     }
   }
   function render() {
@@ -5749,20 +5797,49 @@
       ctx.fillText(`[${i + 1}]`, x + cardW/2, y + cardH - 12);
     }
 
-    // 취소 버튼
-    if (state.cardCancelable) {
-      const bx = CX - 60, by = cardY + cardH + 18, bw = 120, bh = 38;
-      ctx.fillStyle = '#1a1f2b';
-      ctx.fillRect(bx, by, bw, bh);
-      ctx.strokeStyle = '#3a4256';
-      ctx.lineWidth = 1;
-      ctx.strokeRect(bx, by, bw, bh);
-      ctx.fillStyle = '#c8cdd8';
-      ctx.font = '13px Consolas, monospace';
-      ctx.fillText('취소 [ESC]', CX, by + 24);
-      state._cancelBtn = { x: bx, y: by, w: bw, h: bh };
-    } else state._cancelBtn = null;
+    // 하단 버튼 — 리롤 / 취소 (있을 때만)
+    const showReroll = state.rerollAvailable;
+    const showCancel = state.cardCancelable;
+    const btnY = cardY + cardH + 18;
+    const bh = 38;
+    state._rerollBtn = null;
+    state._cancelBtn = null;
+    if (showReroll && showCancel) {
+      // 두 버튼 나란히
+      const bw = 130;
+      const gap2 = 14;
+      const totalBW = bw * 2 + gap2;
+      const bx1 = CX - totalBW / 2;
+      const bx2 = bx1 + bw + gap2;
+      drawModalBtn(bx1, btnY, bw, bh, '🎲 리롤', '#1f2a35', '#7ad7ff');
+      drawModalBtn(bx2, btnY, bw, bh, '취소 [ESC]', '#1a1f2b', '#3a4256');
+      state._rerollBtn = { x: bx1, y: btnY, w: bw, h: bh };
+      state._cancelBtn = { x: bx2, y: btnY, w: bw, h: bh };
+    } else if (showReroll) {
+      const bw = 150;
+      const bx = CX - bw / 2;
+      drawModalBtn(bx, btnY, bw, bh, '🎲 리롤 (남은 1회)', '#1f2a35', '#7ad7ff');
+      state._rerollBtn = { x: bx, y: btnY, w: bw, h: bh };
+    } else if (showCancel) {
+      const bw = 120;
+      const bx = CX - bw / 2;
+      drawModalBtn(bx, btnY, bw, bh, '취소 [ESC]', '#1a1f2b', '#3a4256');
+      state._cancelBtn = { x: bx, y: btnY, w: bw, h: bh };
+    }
     ctx.textAlign = 'start';
+  }
+
+  // 모달 버튼 한 개를 그리는 헬퍼
+  function drawModalBtn(x, y, w, h, label, bg, border) {
+    ctx.fillStyle = bg;
+    ctx.fillRect(x, y, w, h);
+    ctx.strokeStyle = border;
+    ctx.lineWidth = 1.5;
+    ctx.strokeRect(x, y, w, h);
+    ctx.fillStyle = '#e8eaf0';
+    ctx.font = '13px Consolas, monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText(label, x + w / 2, y + 24);
   }
 
   // ===== 패널 UI =====
@@ -5934,10 +6011,16 @@
 
   // ===== 입력 =====
   window.addEventListener('keydown', e => {
+    if (state.gameOver) {
+      if (e.code === 'KeyR') { reset(); renderPanel(); document.getElementById('pauseBtn').textContent = '⏸ 일시정지'; }
+      if (e.code === 'Escape') { document.getElementById('menuBtn').click(); }
+      return;
+    }
     if (state.levelUpChoices) {
       if (e.code === 'Digit1') applyLevelUpChoice(0);
       if (e.code === 'Digit2') applyLevelUpChoice(1);
       if (e.code === 'Digit3') applyLevelUpChoice(2);
+      if (e.code === 'KeyR' && state.rerollAvailable) rerollCards();
       if (e.code === 'Escape' && state.cardCancelable) applyLevelUpChoice(-1);
       return;
     }
@@ -5949,10 +6032,32 @@
   });
   // 캔버스 클릭으로 카드 선택 (모바일 터치 포함)
   canvas.addEventListener('click', (ev) => {
-    if (!state.levelUpChoices) return;
     const rect = canvas.getBoundingClientRect();
     const x = (ev.clientX - rect.left) * (W / rect.width);
     const y = (ev.clientY - rect.top) * (H / rect.height);
+    // 게임오버 화면 — 다시 하기 / 메인 메뉴 버튼
+    if (state.gameOver) {
+      if (state._retryBtn) {
+        const b = state._retryBtn;
+        if (x >= b.x && x <= b.x + b.w && y >= b.y && y <= b.y + b.h) {
+          reset();
+          renderPanel();
+          document.getElementById('pauseBtn').textContent = '⏸ 일시정지';
+          SFX.click();
+          return;
+        }
+      }
+      if (state._menuBtn) {
+        const b = state._menuBtn;
+        if (x >= b.x && x <= b.x + b.w && y >= b.y && y <= b.y + b.h) {
+          // 메인 메뉴로 (#menuBtn 패널 버튼과 동일한 동작)
+          document.getElementById('menuBtn').click();
+          return;
+        }
+      }
+      return;
+    }
+    if (!state.levelUpChoices) return;
     const cardW = 175, cardH = 240, gap = 12;
     const totalW = cardW * 3 + gap * 2;
     const startX = (W - totalW) / 2;
@@ -5961,6 +6066,14 @@
       const x0 = startX + i * (cardW + gap);
       if (x >= x0 && x <= x0 + cardW && y >= cardY && y <= cardY + cardH) {
         applyLevelUpChoice(i);
+        return;
+      }
+    }
+    // 리롤 버튼
+    if (state._rerollBtn) {
+      const b = state._rerollBtn;
+      if (x >= b.x && x <= b.x + b.w && y >= b.y && y <= b.y + b.h) {
+        rerollCards();
         return;
       }
     }
