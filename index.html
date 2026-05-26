@@ -41,8 +41,8 @@
     gap: 12px;
   }
   /* 능력 행 높이를 고정해서 빈 슬롯/채워진 슬롯 관계없이 패널 크기가 일정 (몰입 유지) */
-  .ability-row { min-height: 50px; box-sizing: border-box; }
-  #wrap.portrait .ability-row { padding: 10px 12px; min-height: 82px; }
+  .ability-row { box-sizing: border-box; }   /* 높이 제약 제거 — 설명 길이에 맞춰 자동 확장 */
+  #wrap.portrait .ability-row { padding: 10px 12px; }
   #wrap.portrait .ability-row button { padding: 12px 14px; font-size: 14px; min-height: 44px; }
 
   /* 능력 카테고리 탭 */
@@ -135,17 +135,19 @@
     align-items: baseline;
   }
   #stats .row.primary .label {
-    font-size: 18px;
+    font-size: 14px;
     font-weight: normal;
+    color: #9aa3b3;
     letter-spacing: 0;
-    line-height: 1;
+    line-height: 1.2;
   }
   #stats .row .label {
-    font-size: 16px;
+    font-size: 13px;
+    color: #6b7283;
   }
   #stats .row span:last-child { font-weight: bold; }
-  #wrap.portrait #stats .row .label { font-size: 18px; }
-  #wrap.portrait #stats .row.primary .label { font-size: 22px; }
+  #wrap.portrait #stats .row .label { font-size: 15px; }
+  #wrap.portrait #stats .row.primary .label { font-size: 16px; }
   #wrap.portrait #stats .row { font-size: 16px; }
   #wrap.portrait #stats .row.primary { font-size: 22px; padding: 10px 12px; }
   #stats .row.round { border-left-color: #7ad7ff; }
@@ -179,9 +181,54 @@
     padding: 6px; background: #1a1f2b; border: 1px solid #242a38;
   }
   .ability-row.empty { color: #4a5163; text-align:center; padding: 8px; }
-  .ability-name { display: flex; flex-direction: column; }
-  .ability-name b { color: #e8eaf0; }
-  .ability-name small { color: #6b7283; }
+  .ability-name {
+    display: flex; flex-direction: column;
+    min-width: 0;            /* grid 자식이 자유롭게 줄어들 수 있게 (긴 텍스트 wrap 가능하게) */
+    overflow: hidden;        /* 컬럼 자체는 부풀지 않게 */
+  }
+  .ability-name b { color: #e8eaf0; word-break: keep-all; overflow-wrap: anywhere; }
+  .ability-name small {
+    color: #6b7283;
+    display: block;          /* 인라인 → 블록으로 (다음 줄 wrap 잘 되게) */
+    white-space: normal;     /* 줄바꿈 허용 */
+    word-break: keep-all;    /* 한글 단어 단위 줄바꿈 */
+    overflow-wrap: anywhere; /* 영문/숫자 너무 길면 어디서나 break */
+    line-height: 1.4;
+    margin-top: 2px;
+  }
+  /* === 능력 아이콘 (img 또는 fallback) === */
+  .ability-img-icon, .ability-img-fallback {
+    border-radius: 3px;
+    flex-shrink: 0;
+    vertical-align: middle;
+  }
+  .ability-row .row-header {
+    display: flex; align-items: center; gap: 6px;
+    margin-bottom: 2px;
+  }
+  .codex-card .card-header {
+    display: flex; align-items: center; gap: 8px;
+    margin-bottom: 4px;
+  }
+
+  /* === 능력 태그 칩 (광역/슬로우/관통 등) === */
+  .ability-tag-row {
+    display: flex; flex-wrap: wrap; gap: 3px;
+    margin-top: 3px; margin-bottom: 2px;
+  }
+  .ability-tag {
+    display: inline-block;
+    font-size: 10px;
+    padding: 1px 5px;
+    border: 1px solid currentColor;
+    border-radius: 3px;
+    background: rgba(255, 255, 255, 0.04);
+    line-height: 1.2;
+    white-space: nowrap;
+  }
+  #wrap.portrait .ability-tag { font-size: 12px; padding: 2px 6px; }
+  .codex-card .ability-tag-row { margin-top: 5px; margin-bottom: 5px; }
+  .codex-card .ability-tag { font-size: 11px; }
 
   /* === 강화 버튼 — 살 수 있는지 한눈에 인지 === */
   .ability-row.affordable {
@@ -653,14 +700,14 @@
   <canvas id="game" width="640" height="640"></canvas>
   <div id="panel">
     <div id="stats">
-      <div class="row primary round"><span class="label">🎢</span><span id="s-round">1</span></div>
-      <div class="row"><span class="label">⏱</span><span id="s-time">20.0s</span></div>
+      <div class="row primary round"><span class="label">라운드</span><span id="s-round">1</span></div>
+      <div class="row"><span class="label">시간</span><span id="s-time">20.0s</span></div>
       <div class="bar warn"><i id="s-timebar" style="width:100%"></i></div>
-      <div class="row primary gold"><span class="label">💰</span><span id="s-gold">0</span></div>
-      <div class="row"><span class="label">⭐</span><span id="s-score">0</span></div>
-      <div class="row"><span class="label">👹</span><span id="s-enemies">0 / 80</span></div>
+      <div class="row primary gold"><span class="label">골드</span><span id="s-gold">0</span></div>
+      <div class="row"><span class="label">점수</span><span id="s-score">0</span></div>
+      <div class="row"><span class="label">적</span><span id="s-enemies">0 / 80</span></div>
       <div class="bar"><i id="s-enemybar" style="width:0%"></i></div>
-      <div class="row"><span class="label">📈</span><span id="s-plevel">Lv1 (0/8)</span></div>
+      <div class="row"><span class="label">레벨</span><span id="s-plevel">Lv1 (0/8)</span></div>
     </div>
     <hr/>
     <button id="randomBtn">🎲 랜덤 능력 획득 (50G)</button>
@@ -5073,6 +5120,235 @@
   const ALL_ABILITY_IDS = Object.keys(ABILITY_DEFS);
   const BASIC_ABILITY_IDS = ALL_ABILITY_IDS.filter(id => !ABILITY_DEFS[id].isCombo);
 
+  // ===== 능력 태그 시스템 — 다중 라벨 (한 능력이 여러 태그를 가질 수 있음) =====
+  const TAG_COLORS = {
+    '광역':       '#ff9966',
+    '다중공격':   '#7ad7ff',
+    '관통':       '#88ffaa',
+    '유도':       '#52e07a',
+    '슬로우':     '#88ddff',
+    '정지':       '#ffe080',
+    '폭발':       '#ff7050',
+    '연쇄':       '#88e0ff',
+    '회전':       '#88ffe0',
+    '빔':         '#ff66bb',
+    '흡인':       '#a060d0',
+    '단일':       '#ffaaaa',
+    '단발':       '#cfd6e3',
+    '최강적':     '#cc6666',
+    '자율':       '#88aaff',
+    '낙하':       '#ffe070',
+    '즉사':       '#9966ff',
+    '버프':       '#a0d8ff',
+    '유틸':       '#ffd479',
+    '영역':       '#aa88dd',
+    '보호막제거': '#ffaaff',
+  };
+  const ABILITY_TAGS = {
+    // 기본 액티브
+    shot:          ['단발', '유도'],
+    multi:         ['다중공격', '유도'],
+    nova:          ['광역'],
+    laser:         ['관통', '빔'],
+    chain:         ['연쇄'],
+    orbital:       ['회전', '영역'],
+    scatter:       ['다중공격', '광역'],
+    mortar:        ['광역', '폭발'],
+    thunder:       ['다중공격', '낙하'],
+    turret:        ['자율', '다중공격'],
+    boomerang:     ['관통'],
+    tornado:       ['영역', '광역'],
+    beam:          ['회전', '빔', '광역'],
+    sniper:        ['최강적', '단발'],
+    frost:         ['광역', '슬로우'],
+    missile:       ['다중공격', '유도', '폭발'],
+    fire:          ['영역', '광역'],
+    iceLance:      ['관통', '슬로우'],
+    mine:          ['영역', '폭발'],
+    drone:         ['자율', '유도'],
+    meteor:        ['광역', '폭발', '낙하'],
+    blackhole:     ['흡인', '영역'],
+    sword:         ['회전', '광역'],
+    starfall:      ['다중공격', '낙하'],
+    timeStop:      ['광역', '정지'],
+    clone:         ['자율'],
+    magnet:        ['흡인', '폭발'],
+    railgun:       ['관통', '빔'],
+    fury:          ['버프'],
+    reaper:        ['즉사', '버프'],
+    plasmaArc:     ['다중공격', '연쇄'],
+    gravityWell:   ['영역', '슬로우'],
+    piercer:       ['관통'],
+    echoBlast:     ['광역', '다중공격'],
+    rocketSwarm:   ['다중공격', '폭발'],
+    homingBlade:   ['단일'],
+    stunBomb:      ['최강적', '정지'],
+    purgeWave:     ['광역', '보호막제거'],
+    // 패시브
+    precision:     ['버프'],
+    haste:         ['버프', '유틸'],
+    frenzy:        ['버프'],
+    vampiric:      ['유틸'],
+    fortune:       ['유틸'],
+    mastery:       ['버프'],
+    scholar:       ['유틸'],
+    ironwill:      ['버프', '최강적'],
+    executioner:   ['버프'],
+    resilience:    ['버프'],
+    // 조합
+    shotgunBurst:    ['다중공격', '폭발', '광역'],
+    precisionBurst:  ['다중공격', '유도'],
+    chainStorm:      ['연쇄', '낙하'],
+    frostNova:       ['광역', '슬로우'],
+    twinBeam:        ['회전', '빔', '광역'],
+    stormOrbit:      ['회전', '영역', '슬로우'],
+    steelBoomerang:  ['관통', '최강적'],
+    missileTurret:   ['자율', '폭발', '다중공격'],
+    frostfireSpear:  ['관통', '슬로우'],
+    kamikazeDrone:   ['자율', '폭발'],
+    cosmicCollapse:  ['흡인', '광역', '폭발'],
+    swordRain:       ['회전', '낙하', '광역'],
+    precisionShot:   ['단발'],
+    rapidBarrage:    ['다중공격'],
+    frenzyWave:      ['광역'],
+    lootBomb:        ['광역', '유틸'],
+    luckyChain:      ['연쇄', '유틸'],
+    masteryOrbit:    ['회전', '영역'],
+    scholarSnipe:    ['최강적', '단발'],
+    resolveBoomerang:['최강적'],
+    headshot:        ['단발'],
+    pelletGun:       ['다중공격', '광역'],
+    plasmaBeam:      ['빔', '광역', '회전'],
+    voidField:       ['영역', '슬로우'],
+    piercingChain:   ['관통', '연쇄'],
+    echoStorm:       ['광역', '다중공격'],
+    rocketBarrage:   ['다중공격', '폭발'],
+    bladeStorm:      ['회전', '단일'],
+    magneticStun:    ['흡인', '정지'],
+    purgeShot:       ['빔', '보호막제거'],
+    grandReaper:     ['즉사', '광역'],
+    pyreShield:      ['영역', '광역'],
+    // 트리플
+    ultraGatling:    ['다중공격', '광역'],
+    absoluteThunder: ['연쇄', '낙하', '슬로우'],
+    elementalStorm:  ['광역', '슬로우'],
+    fusionCannon:    ['다중공격', '유도', '폭발'],
+    galaxyOrbit:     ['회전', '영역'],
+    titanMissile:    ['폭발', '광역'],
+    plasmaCataclysm: ['빔', '낙하'],
+    voidNova:        ['영역', '슬로우', '폭발'],
+    siegeBeam:       ['빔', '관통'],
+  };
+  function getAbilityTags(id) { return ABILITY_TAGS[id] || []; }
+  function tagChipHtml(tag) {
+    const c = TAG_COLORS[tag] || '#888';
+    return `<span class="ability-tag" style="color:${c}; border-color:${c}">${tag}</span>`;
+  }
+
+  // ===== 능력 아이콘 시스템 =====
+  // 능력 ID ↔ 번호 매핑 (1번부터 순서대로)
+  const ABILITY_ICON_ORDER = [
+    'shot', 'multi', 'nova', 'laser', 'chain',
+    'orbital', 'scatter', 'mortar', 'thunder', 'turret',
+    'boomerang', 'tornado', 'beam', 'sniper', 'frost',
+    'missile', 'fire', 'iceLance', 'mine', 'drone',
+    'meteor', 'blackhole', 'sword', 'starfall', 'timeStop',
+    'clone', 'magnet', 'railgun', 'fury', 'reaper',
+    'plasmaArc', 'gravityWell', 'piercer', 'echoBlast', 'rocketSwarm',
+    'homingBlade', 'stunBomb', 'purgeWave',
+    'precision', 'haste', 'frenzy', 'vampiric', 'fortune',
+    'mastery', 'scholar', 'ironwill', 'executioner', 'resilience',
+    'shotgunBurst', 'precisionBurst', 'chainStorm', 'frostNova', 'twinBeam',
+    'stormOrbit', 'steelBoomerang', 'missileTurret', 'frostfireSpear', 'kamikazeDrone',
+    'cosmicCollapse', 'swordRain', 'precisionShot', 'rapidBarrage', 'frenzyWave',
+    'lootBomb', 'luckyChain', 'masteryOrbit', 'scholarSnipe', 'resolveBoomerang',
+    'headshot', 'pelletGun', 'plasmaBeam', 'voidField', 'piercingChain',
+    'echoStorm', 'rocketBarrage', 'bladeStorm', 'magneticStun', 'purgeShot',
+    'grandReaper', 'pyreShield',
+    'ultraGatling', 'absoluteThunder', 'elementalStorm', 'fusionCannon', 'galaxyOrbit',
+    'titanMissile', 'plasmaCataclysm', 'voidNova', 'siegeBeam',
+  ];
+  const ABILITY_ICON_NUMBER = {};
+  ABILITY_ICON_ORDER.forEach((id, i) => { ABILITY_ICON_NUMBER[id] = i + 1; });
+  function getIconNumber(id) { return ABILITY_ICON_NUMBER[id] || null; }
+  function getIconPath(id) {
+    const n = getIconNumber(id);
+    return n ? `./icons/abilities/${n}.png` : null;
+  }
+
+  // 이미지 캐시 + 사전 로드
+  const abilityIconImages = {};   // id → Image | 'missing'
+  function loadAbilityIcons() {
+    for (const id of ABILITY_ICON_ORDER) {
+      const path = getIconPath(id);
+      if (!path) continue;
+      const img = new Image();
+      img.onload = () => { /* 로드 성공 */ };
+      img.onerror = () => { abilityIconImages[id] = 'missing'; };
+      img.src = path;
+      abilityIconImages[id] = img;
+    }
+  }
+  loadAbilityIcons();
+
+  // 캔버스용 아이콘 그리기 (이미지 있으면 그림, 없으면 fallback)
+  function drawAbilityIcon(id, x, y, size) {
+    const img = abilityIconImages[id];
+    if (img && img !== 'missing' && img.complete && img.naturalWidth > 0) {
+      ctx.drawImage(img, x, y, size, size);
+    } else {
+      drawIconPlaceholder(id, x, y, size);
+    }
+  }
+  function drawIconPlaceholder(id, x, y, size) {
+    const def = ABILITY_DEFS[id];
+    if (!def) {
+      ctx.fillStyle = '#2a2f3a';
+      ctx.fillRect(x, y, size, size);
+      return;
+    }
+    // 티어별 배경
+    let bg = '#1a1f2b', borderC = def.color || '#5870a0';
+    if (def.isTriple) bg = '#2a0c1c';
+    else if (def.isCombo) bg = '#1a1428';
+    else if (def.isPassive) bg = '#10182a';
+    // 배경
+    ctx.fillStyle = bg;
+    ctx.fillRect(x, y, size, size);
+    // 테두리
+    ctx.strokeStyle = borderC;
+    ctx.lineWidth = Math.max(1, size / 24);
+    ctx.strokeRect(x + 1, y + 1, size - 2, size - 2);
+    // 첫 글자 (1~2자)
+    ctx.fillStyle = borderC;
+    ctx.font = `bold ${Math.floor(size * 0.42)}px Jua, sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    const label = (def.name || '?').substring(0, 2);
+    ctx.fillText(label, x + size / 2, y + size / 2);
+    ctx.textBaseline = 'alphabetic';
+    ctx.textAlign = 'start';
+  }
+
+  // HTML 용 아이콘 (img 태그 + onerror fallback to placeholder div)
+  function iconHtml(id, size = 28) {
+    const num = getIconNumber(id);
+    const def = ABILITY_DEFS[id];
+    if (!num || !def) return '';
+    const path = `./icons/abilities/${num}.png`;
+    // tier에 따라 fallback 배경
+    let fallbackBg = '#1a1f2b';
+    if (def.isTriple) fallbackBg = '#2a0c1c';
+    else if (def.isCombo) fallbackBg = '#1a1428';
+    else if (def.isPassive) fallbackBg = '#10182a';
+    const color = def.color || '#5870a0';
+    const label = (def.name || '?').substring(0, 2);
+    // onerror: img 숨기고 placeholder div 표시
+    const phStyle = `width:${size}px;height:${size}px;background:${fallbackBg};border:1px solid ${color};color:${color};display:flex;align-items:center;justify-content:center;font-size:${Math.floor(size*0.42)}px;font-weight:bold;border-radius:3px;flex-shrink:0;`;
+    const imgStyle = `width:${size}px;height:${size}px;flex-shrink:0;image-rendering:auto;`;
+    return `<img class="ability-img-icon" src="${path}" style="${imgStyle}" onerror="this.outerHTML='<span class=\\'ability-img-fallback\\' style=\\'${phStyle.replace(/'/g, "\\'")}\\'>${label}</span>'"/>`;
+  }
+
   // ===== 조합 레시피 =====
   // 두 기본 능력을 동시에 보유하면 자동으로 조합 능력으로 합쳐짐.
   const COMBO_RECIPES = [
@@ -7029,11 +7305,12 @@
     ctx.font = '13px Jua, sans-serif';
     ctx.fillText(isRandom ? `선택 시 ${state.cardCost}G 차감` : '3장 중 하나를 선택하세요', CX, 92);
 
-    const cardW = 175, cardH = 240, gap = 12;
+    const cardW = 175, cardH = 290, gap = 12;   // 아이콘 공간 위해 cardH ↑
     const totalW = cardW * 3 + gap * 2;
     const startX = (W - totalW) / 2;
     const cardY = (H - cardH) / 2 - 10;
     const ownedIds = new Set(state.tower.abilities.map(a => a.id));
+    const ICON_SIZE = 72;   // 카드 위 큰 아이콘 크기
 
     for (let i = 0; i < state.levelUpChoices.length; i++) {
       const c = state.levelUpChoices[i];
@@ -7070,25 +7347,64 @@
       ctx.fillStyle = p.border;
       ctx.fillRect(x, y, cardW, 3);
 
-      // 티어 라벨 (폰트 확대)
+      // 티어 라벨 (보너스는 위, 능력은 아이콘 아래 — 충분한 간격으로 안 겹침)
       ctx.fillStyle = p.accent;
       ctx.font = 'bold 13px Jua, sans-serif';
       ctx.textAlign = 'center';
-      ctx.fillText(p.label, x + cardW/2, y + 24);
+      const tierY = isBonus ? y + 24 : y + 100;   // 88 → 100 (아이콘 y+12~84 와 안 겹침)
+      ctx.fillText(p.label, x + cardW/2, tierY);
 
-      // 능력 종류 태그
+      // ⭐ 큰 아이콘 — 카드 위쪽 (보너스 카드는 X)
+      if (!isBonus && c.id) {
+        const iconX = x + (cardW - ICON_SIZE) / 2;
+        const iconY = y + 12;
+        drawAbilityIcon(c.id, iconX, iconY, ICON_SIZE);
+      }
+
+      // 능력 종류 태그 (아이콘 아래)
+      const kindY = isBonus ? y + 42 : y + 116;   // 102 → 116
       if (isBonus) {
         ctx.fillStyle = '#7a8090';
         ctx.font = '11px Jua, sans-serif';
-        ctx.fillText('보너스', x + cardW/2, y + 42);
+        ctx.fillText('보너스', x + cardW/2, kindY);
       } else if (def) {
         ctx.fillStyle = '#7a8090';
         ctx.font = '11px Jua, sans-serif';
         const kindTag = def.isPassive ? '⚙ 패시브' : (def.isCombo ? '✨ 조합' : '⚡ 액티브');
-        ctx.fillText(kindTag, x + cardW/2, y + 42);
+        ctx.fillText(kindTag, x + cardW/2, kindY);
       }
 
-      // 이름 (티어 색)
+      // 능력 태그 (광역/슬로우/관통 등) — 보너스 카드 X, 능력 카드만
+      if (!isBonus && c.id) {
+        const tags = getAbilityTags(c.id);
+        if (tags.length > 0) {
+          ctx.font = 'bold 10px Jua, sans-serif';
+          // 전체 너비 측정 + 가운데 정렬
+          const segs = [];
+          for (let ti = 0; ti < tags.length; ti++) {
+            segs.push({ text: tags[ti], color: TAG_COLORS[tags[ti]] || '#888' });
+            if (ti < tags.length - 1) segs.push({ text: ' · ', color: '#555' });
+          }
+          let totalW = 0;
+          for (const s of segs) totalW += ctx.measureText(s.text).width;
+          // 너비 초과 시 폰트 축소
+          if (totalW > cardW - 16) {
+            ctx.font = 'bold 9px Jua, sans-serif';
+            totalW = 0;
+            for (const s of segs) totalW += ctx.measureText(s.text).width;
+          }
+          ctx.textAlign = 'left';
+          let curX = x + cardW/2 - totalW/2;
+          for (const s of segs) {
+            ctx.fillStyle = s.color;
+            ctx.fillText(s.text, curX, y + 132);   // 118 → 132 (tier/kind 아래로 밀림)
+            curX += ctx.measureText(s.text).width;
+          }
+          ctx.textAlign = 'center';
+        }
+      }
+
+      // 이름 (티어 색) — 보너스는 카드 윗부분 그대로, 능력은 아이콘 아래
       ctx.fillStyle = p.name;
       ctx.font = 'bold 20px Jua, sans-serif';
       if (isBonus) {
@@ -7109,32 +7425,32 @@
           : '영구 통화 (메뉴 강화소)';
         ctx.fillText(helpTxt, x + cardW/2, y + cardH - 60);
       } else {
-        ctx.fillText(def.name, x + cardW/2, y + 68);
+        ctx.fillText(def.name, x + cardW/2, y + 152);   // 138 → 152
       }
 
-      // 레벨 표시 / 조합 재료 — 폰트 확대
-      let nextLineY = y + 94;
+      // 레벨 표시 / 조합 재료 — 텍스트들 +14 더 시프트 (NEW 라벨과 안 겹침)
+      let nextLineY = y + 176;
       if (isBonus) {
         nextLineY = y + cardH;
       } else if (c.action === 'level') {
         ctx.fillStyle = p.accent;
         ctx.font = '13px Jua, sans-serif';
-        ctx.fillText(`Lv${c.level} → Lv${c.newLevel}`, x + cardW/2, y + 88);
-        nextLineY = y + 108;
+        ctx.fillText(`Lv${c.level} → Lv${c.newLevel}`, x + cardW/2, y + 170);
+        nextLineY = y + 190;
       } else if (c.action === 'combo' && c.parts) {
         const p1 = ABILITY_DEFS[c.parts[0]];
         const p2 = ABILITY_DEFS[c.parts[1]];
         if (p1 && p2) {
           ctx.fillStyle = p.accent;
           ctx.font = '12px Jua, sans-serif';
-          ctx.fillText('재료 ↓', x + cardW/2, y + 88);
+          ctx.fillText('재료 ↓', x + cardW/2, y + 170);
           ctx.fillStyle = '#c8cdd8';
           ctx.font = 'bold 12px Jua, sans-serif';
-          ctx.fillText(`${p1.name} + ${p2.name}`, x + cardW/2, y + 104);
+          ctx.fillText(`${p1.name} + ${p2.name}`, x + cardW/2, y + 186);
           ctx.fillStyle = p.accent;
           ctx.font = '11px Jua, sans-serif';
-          ctx.fillText('(MAX 재료 소진)', x + cardW/2, y + 118);
-          nextLineY = y + 136;
+          ctx.fillText('(MAX 재료 소진)', x + cardW/2, y + 200);
+          nextLineY = y + 218;
         }
       }
 
@@ -7355,9 +7671,18 @@
       row.className = 'ability-row';
       if (max) row.classList.add('maxed');
       else if (canAfford) row.classList.add('affordable');
+      const tags = getAbilityTags(a.id);
+      const tagsHtml = tags.length > 0
+        ? `<div class="ability-tag-row">${tags.map(tagChipHtml).join('')}</div>`
+        : '';
+      const iconSize = wrapEl && wrapEl.classList.contains('portrait') ? 36 : 28;
       row.innerHTML = `
         <div class="ability-name">
-          <b style="color:${nameColor}">${def.name} ${lvLabel}</b>
+          <div class="row-header">
+            ${iconHtml(a.id, iconSize)}
+            <b style="color:${nameColor}">${def.name} ${lvLabel}</b>
+          </div>
+          ${tagsHtml}
           <small>${def.desc(a.level)}</small>
           ${comboHint}
         </div>
@@ -7466,7 +7791,7 @@
       return;
     }
     if (!state.levelUpChoices) return;
-    const cardW = 175, cardH = 240, gap = 12;
+    const cardW = 175, cardH = 290, gap = 12;   // drawLevelUpModal과 일치
     const totalW = cardW * 3 + gap * 2;
     const startX = (W - totalW) / 2;
     const cardY = (H - cardH) / 2 - 10;
@@ -7963,8 +8288,16 @@
         }).filter(Boolean).join('');
         extra = `<div class="recipe">${lines}</div>`;
       }
+      const codexTags = getAbilityTags(id);
+      const codexTagsHtml = codexTags.length > 0
+        ? `<div class="ability-tag-row">${codexTags.map(tagChipHtml).join('')}</div>`
+        : '';
       card.innerHTML = `
-        <div class="name" style="color:${def.color}">${def.name}</div>
+        <div class="card-header">
+          ${iconHtml(id, 40)}
+          <div class="name" style="color:${def.color}">${def.name}</div>
+        </div>
+        ${codexTagsHtml}
         <div class="desc">${def.desc(1)}</div>
         ${extra}
       `;
