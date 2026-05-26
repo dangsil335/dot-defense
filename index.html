@@ -560,6 +560,7 @@
   <h1>DOT DEFENSE</h1>
   <div class="subtitle">픽셀 디펜스 · 능력 조합 빌더</div>
   <button id="startBtn" class="menu-btn">▶ 스타트</button>
+  <button id="newGameBtn" class="menu-btn" style="display:none">🔄 새 게임</button>
   <button id="characterBtn" class="menu-btn">👤 캐릭터 선택</button>
   <button id="shopBtn" class="menu-btn">⭐ 강화소</button>
   <button id="codexBtn" class="menu-btn">📖 도감</button>
@@ -7336,8 +7337,11 @@
     document.getElementById('pauseBtn').textContent = '⏸ 일시정지';
   };
   document.getElementById('menuBtn').onclick = () => {
-    paused = false;
-    document.getElementById('pauseBtn').textContent = '⏸ 일시정지';
+    // 게임 상태 유지 + 자동 일시정지 (다시 들어왔을 때 이어하기)
+    if (state && !state.gameOver) {
+      paused = true;
+      document.getElementById('pauseBtn').textContent = '▶ 재개';
+    }
     showScreen('menu');
   };
 
@@ -7608,12 +7612,39 @@
       collapseAbilities(usePortrait, false);
       fitScale();
     }
+    if (name === 'menu') {
+      // 진행 중 게임이 있으면 "이어하기" 표시 + 새 게임 버튼 노출
+      const inProgress = state && !state.gameOver && state.tower && state.tower.abilities;
+      const startBtn = document.getElementById('startBtn');
+      const newGameBtn = document.getElementById('newGameBtn');
+      if (inProgress) {
+        startBtn.textContent = '▶ 이어하기';
+        newGameBtn.style.display = '';
+      } else {
+        startBtn.textContent = '▶ 스타트';
+        newGameBtn.style.display = 'none';
+      }
+    }
   }
 
   document.getElementById('startBtn').onclick = () => {
-    reset();
+    // 진행 중 게임 있으면 이어하기 (상태/일시정지 유지), 없으면 새 게임
+    const inProgress = state && !state.gameOver && state.tower && state.tower.abilities;
+    if (!inProgress) {
+      reset();
+      paused = false;
+      document.getElementById('pauseBtn').textContent = '⏸ 일시정지';
+    }
+    // 이어하기: paused 상태 그대로, 사용자가 ▶ 재개 누르거나 Space로 풀 수 있음
     renderPanel();
+    showScreen('game');
+  };
+  document.getElementById('newGameBtn').onclick = () => {
+    // 명시적 새 게임 — 항상 리셋
+    reset();
+    paused = false;
     document.getElementById('pauseBtn').textContent = '⏸ 일시정지';
+    renderPanel();
     showScreen('game');
   };
   document.getElementById('codexBtn').onclick = () => {
