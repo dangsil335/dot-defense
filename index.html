@@ -7593,6 +7593,30 @@
     elRandom.textContent = acqCost === 0
       ? `🎲 랜덤 능력 획득 (무료)`
       : `🎲 랜덤 능력 획득 (${acqCost}G)`;
+    // 능력 강화 버튼 어포더블 상태 매 프레임 갱신 (골드 변경에 즉시 반응)
+    refreshAbilityAffordability();
+  }
+
+  // 강화 버튼 활성/비활성 + 색상을 현재 골드 기준으로 즉시 갱신 (DOM 재생성 없이)
+  function refreshAbilityAffordability() {
+    if (!elAb) return;
+    const buttons = elAb.querySelectorAll('button[data-act="up"]');
+    buttons.forEach(btn => {
+      const idx = +btn.dataset.i;
+      const a = state.tower.abilities[idx];
+      if (!a) return;
+      if (isAtMax(a)) return;  // MAX 상태는 별도 처리 (어차피 disabled)
+      const cost = enhanceCost(a);
+      const canAfford = state.gold >= cost;
+      btn.disabled = !canAfford;
+      btn.style.opacity = canAfford ? '' : '0.55';
+      // 행 어포더블 클래스
+      const row = btn.closest('.ability-row');
+      if (row) row.classList.toggle('affordable', canAfford);
+      // 비용 텍스트 색상
+      const costSpan = btn.querySelector('span');
+      if (costSpan) costSpan.style.color = canAfford ? '#ffd479' : '#5a5f6a';
+    });
   }
 
   let currentAbTab = 'active';
@@ -8377,8 +8401,16 @@
             recipeInfo = `<div class="recipe">재료: <span style="color:${p1.color}">${p1.name}</span> + <span style="color:${p2.color}">${p2.name}</span></div>`;
           }
         }
+        const recTags = getAbilityTags(a.id);
+        const recTagsHtml = recTags.length > 0
+          ? `<div class="ability-tag-row">${recTags.map(tagChipHtml).join('')}</div>`
+          : '';
         card.innerHTML = `
-          <div class="name" style="color:${def.color}">${def.name} <span style="color:#9bb3ff">Lv${a.level}</span></div>
+          <div class="card-header">
+            ${iconHtml(a.id, 40)}
+            <div class="name" style="color:${def.color}">${def.name} <span style="color:#9bb3ff">Lv${a.level}</span></div>
+          </div>
+          ${recTagsHtml}
           <div class="desc">${def.desc(a.level)}</div>
           ${recipeInfo}
         `;
