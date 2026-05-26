@@ -10,12 +10,17 @@
 <link rel="manifest" href="./manifest.json" />
 <link rel="apple-touch-icon" href="./icons/icon-192.png" />
 <link rel="icon" href="./icons/icon-192.png" />
+<!-- 둥글둥글한 한글 폰트 (Jua = 주아체, Black Han Sans = 굵은 제목용) -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Black+Han+Sans&display=swap" rel="stylesheet">
 <title>Dot Defense</title>
 <style>
   html, body {
     margin: 0; padding: 0; height: 100%;
     background: #0b0d12; color: #e8eaf0;
-    font-family: ui-monospace, Consolas, "Courier New", monospace;
+    /* 둥글둥글한 캐주얼 게임 폰트 — Jua가 핵심, 시스템 폰트로 fallback */
+    font-family: 'Jua', 'Pretendard', 'Apple SD Gothic Neo', 'Malgun Gothic', system-ui, sans-serif;
     display: flex; align-items: center; justify-content: center;
     overflow: hidden;
     touch-action: none;
@@ -238,8 +243,9 @@
   }
   .screen.show { display: flex; }
   #menu h1 {
-    font-size: clamp(26px, 7vmin, 56px);
-    letter-spacing: clamp(3px, 1.2vmin, 10px);
+    font-family: 'Black Han Sans', 'Jua', sans-serif;
+    font-size: clamp(34px, 9vmin, 68px);  /* 둥근 굵은 폰트는 살짝 크게 */
+    letter-spacing: clamp(2px, 0.8vmin, 6px);
     color: #7ad7ff;
     text-shadow: 0 0 30px rgba(122, 215, 255, 0.45);
     margin: 0 0 clamp(4px, 1.5vmin, 12px);
@@ -6720,7 +6726,7 @@
     ctx.fillStyle = '#1a0a10'; ctx.fillRect(x - 2, y - 2, w + 4, h + 4);
     ctx.fillStyle = '#ee2244'; ctx.fillRect(x, y, w * (boss.hp / boss.maxHp), h);
     ctx.fillStyle = '#fff'; ctx.textAlign = 'center';
-    ctx.font = 'bold 11px Consolas, monospace';
+    ctx.font = 'bold 11px Jua, sans-serif';
     ctx.fillText(`BOSS  ${boss.hp} / ${boss.maxHp}`, W/2, y + 10);
     ctx.textAlign = 'start';
   }
@@ -6768,46 +6774,46 @@
   function drawOverlay() {
     if (paused && !state.gameOver) {
       ctx.fillStyle = 'rgba(0,0,0,0.5)'; ctx.fillRect(0,0,W,H);
-      ctx.fillStyle = '#fff'; ctx.textAlign='center'; ctx.font='28px Consolas, monospace';
+      ctx.fillStyle = '#fff'; ctx.textAlign='center'; ctx.font='28px Jua, sans-serif';
       ctx.fillText('PAUSED', CX, CY - 10);
-      ctx.font='14px Consolas, monospace'; ctx.fillText('Space 로 재개', CX, CY + 20);
+      ctx.font='14px Jua, sans-serif'; ctx.fillText('Space 로 재개', CX, CY + 20);
       ctx.textAlign='start';
     }
     if (state.gameOver) {
       ctx.fillStyle = 'rgba(0,0,0,0.75)'; ctx.fillRect(0,0,W,H);
       if (state.gameWin) {
-        ctx.fillStyle = '#ffe070'; ctx.textAlign='center'; ctx.font='36px Consolas, monospace';
+        ctx.fillStyle = '#ffe070'; ctx.textAlign='center'; ctx.font='36px Jua, sans-serif';
         ctx.fillText('VICTORY', CX, CY - 40);
       } else {
-        ctx.fillStyle = '#ff8a98'; ctx.textAlign='center'; ctx.font='36px Consolas, monospace';
+        ctx.fillStyle = '#ff8a98'; ctx.textAlign='center'; ctx.font='36px Jua, sans-serif';
         ctx.fillText('GAME OVER', CX, CY - 40);
       }
       if (state.gameOverReason) {
         ctx.fillStyle = state.gameWin ? '#fff080' : '#ffaaaa';
-        ctx.font='14px Consolas, monospace';
+        ctx.font='14px Jua, sans-serif';
         ctx.fillText(state.gameOverReason, CX, CY - 12);
       }
-      ctx.fillStyle = '#fff'; ctx.font='16px Consolas, monospace';
+      ctx.fillStyle = '#fff'; ctx.font='16px Jua, sans-serif';
       const lastRound = state.gameWin ? MAX_ROUND : state.round;
       ctx.fillText(`도달 라운드: ${lastRound}   점수: ${state.score.toLocaleString()}`, CX, CY + 14);
       let lineY = CY + 38;
       if (state.stardustEarned) {
-        ctx.fillStyle = '#ffd479'; ctx.font='14px Consolas, monospace';
+        ctx.fillStyle = '#ffd479'; ctx.font='14px Jua, sans-serif';
         ctx.fillText(`+${state.stardustEarned} ★ 스타더스트 획득`, CX, lineY);
         lineY += 18;
       }
       if (state.achievementsEarned && state.achievementsEarned.length > 0) {
-        ctx.fillStyle = '#52e07a'; ctx.font='12px Consolas, monospace';
+        ctx.fillStyle = '#52e07a'; ctx.font='12px Jua, sans-serif';
         ctx.fillText(`🏅 신규 업적 ${state.achievementsEarned.length}개 (+${state.achievementStardust} ★)`, CX, lineY);
         lineY += 16;
         for (const ach of state.achievementsEarned.slice(0, 3)) {
-          ctx.fillStyle = '#aaffaa'; ctx.font='10px Consolas, monospace';
+          ctx.fillStyle = '#aaffaa'; ctx.font='10px Jua, sans-serif';
           ctx.fillText(`· ${ach.name}: ${ach.desc}`, CX, lineY);
           lineY += 13;
         }
       }
       if (state.repeatStardust > 0) {
-        ctx.fillStyle = '#88ccff'; ctx.font='12px Consolas, monospace';
+        ctx.fillStyle = '#88ccff'; ctx.font='12px Jua, sans-serif';
         ctx.fillText(`🔁 반복 업적: +${state.repeatStardust} ★`, CX, lineY);
         lineY += 16;
       }
@@ -6824,7 +6830,7 @@
       ctx.lineWidth = 2;
       ctx.strokeRect(btnX1, btnYg, btnW, btnH);
       ctx.fillStyle = '#ffd479';
-      ctx.font = 'bold 15px Consolas, monospace';
+      ctx.font = 'bold 15px Jua, sans-serif';
       ctx.textAlign = 'center';
       ctx.fillText('↻ 다시 하기', btnX1 + btnW / 2, btnYg + 27);
       // 메인메뉴
@@ -6834,13 +6840,13 @@
       ctx.lineWidth = 2;
       ctx.strokeRect(btnX2, btnYg, btnW, btnH);
       ctx.fillStyle = '#cfd6e3';
-      ctx.font = '15px Consolas, monospace';
+      ctx.font = '15px Jua, sans-serif';
       ctx.fillText('🏠 메인 메뉴', btnX2 + btnW / 2, btnYg + 27);
       state._retryBtn = { x: btnX1, y: btnYg, w: btnW, h: btnH };
       state._menuBtn  = { x: btnX2, y: btnYg, w: btnW, h: btnH };
       // 단축키 안내 (작게)
       ctx.fillStyle = '#5a6068';
-      ctx.font = '10px Consolas, monospace';
+      ctx.font = '10px Jua, sans-serif';
       ctx.fillText('R = 다시하기  ·  ESC = 메인 메뉴', CX, btnYg + btnH + 16);
       ctx.textAlign='start';
     } else {
@@ -6881,7 +6887,7 @@
     for (const d of state.damageNumbers) {
       const a = Math.min(1, d.life / 30);
       ctx.globalAlpha = a;
-      ctx.font = `bold ${d.size}px Consolas, monospace`;
+      ctx.font = `bold ${d.size}px Jua, sans-serif`;
       ctx.fillStyle = '#000';
       ctx.fillText(d.text, d.x + 1, d.y + 1);
       ctx.fillStyle = d.color;
@@ -6903,11 +6909,11 @@
     ctx.scale(scale, scale);
     ctx.globalAlpha = alpha;
     ctx.fillStyle = '#ffe070';
-    ctx.font = 'bold 30px Consolas, monospace';
+    ctx.font = 'bold 30px Jua, sans-serif';
     ctx.textAlign = 'center';
     ctx.fillText(`R${w.round} CLEAR!`, 0, 0);
     ctx.fillStyle = '#fff';
-    ctx.font = '14px Consolas, monospace';
+    ctx.font = '14px Jua, sans-serif';
     ctx.fillText(`+${w.bonus.toLocaleString()} (${w.timeSaved.toFixed(1)}s 단축)`, 0, 22);
     ctx.restore();
     ctx.globalAlpha = 1;
@@ -6944,16 +6950,16 @@
     ctx.strokeRect(-cw/2, -ch/2, cw, ch);
     // 위 라벨
     ctx.fillStyle = '#ffd479';
-    ctx.font = 'bold 12px Consolas, monospace';
+    ctx.font = 'bold 12px Jua, sans-serif';
     ctx.textAlign = 'center';
     ctx.fillText('✨ 조합 완성 ✨', 0, -ch/2 + 18);
     // 이름
     ctx.fillStyle = def.color;
-    ctx.font = 'bold 24px Consolas, monospace';
+    ctx.font = 'bold 24px Jua, sans-serif';
     ctx.fillText(def.name, 0, 8);
     // 설명
     ctx.fillStyle = '#c8cdd8';
-    ctx.font = '11px Consolas, monospace';
+    ctx.font = '11px Jua, sans-serif';
     ctx.fillText(def.desc(cr.level || 1), 0, ch/2 - 14);
     ctx.restore();
     ctx.globalAlpha = 1;
@@ -7016,11 +7022,11 @@
     // 제목 (모바일 가독성 위해 폰트 ↑)
     const isRandom = state.cardCost > 0;
     ctx.fillStyle = isRandom ? '#ffd479' : '#ffe070';
-    ctx.font = 'bold 26px Consolas, monospace';
+    ctx.font = 'bold 26px Jua, sans-serif';
     ctx.textAlign = 'center';
     ctx.fillText(isRandom ? '🎲 카드 선택' : `LEVEL ${state.playerLevel} UP!`, CX, 70);
     ctx.fillStyle = '#9aa3b3';
-    ctx.font = '13px Consolas, monospace';
+    ctx.font = '13px Jua, sans-serif';
     ctx.fillText(isRandom ? `선택 시 ${state.cardCost}G 차감` : '3장 중 하나를 선택하세요', CX, 92);
 
     const cardW = 175, cardH = 240, gap = 12;
@@ -7066,38 +7072,38 @@
 
       // 티어 라벨 (폰트 확대)
       ctx.fillStyle = p.accent;
-      ctx.font = 'bold 13px Consolas, monospace';
+      ctx.font = 'bold 13px Jua, sans-serif';
       ctx.textAlign = 'center';
       ctx.fillText(p.label, x + cardW/2, y + 24);
 
       // 능력 종류 태그
       if (isBonus) {
         ctx.fillStyle = '#7a8090';
-        ctx.font = '11px Consolas, monospace';
+        ctx.font = '11px Jua, sans-serif';
         ctx.fillText('보너스', x + cardW/2, y + 42);
       } else if (def) {
         ctx.fillStyle = '#7a8090';
-        ctx.font = '11px Consolas, monospace';
+        ctx.font = '11px Jua, sans-serif';
         const kindTag = def.isPassive ? '⚙ 패시브' : (def.isCombo ? '✨ 조합' : '⚡ 액티브');
         ctx.fillText(kindTag, x + cardW/2, y + 42);
       }
 
       // 이름 (티어 색)
       ctx.fillStyle = p.name;
-      ctx.font = 'bold 20px Consolas, monospace';
+      ctx.font = 'bold 20px Jua, sans-serif';
       if (isBonus) {
         const isScore = c.action === 'bonusScore';
         const amountText = isScore
           ? `+${c.amount.toLocaleString()}`
           : `+${c.amount} ★`;
         ctx.fillStyle = p.name;
-        ctx.font = 'bold 26px Consolas, monospace';
+        ctx.font = 'bold 26px Jua, sans-serif';
         ctx.fillText(amountText, x + cardW/2, y + 82);
         ctx.fillStyle = p.accent;
-        ctx.font = '13px Consolas, monospace';
+        ctx.font = '13px Jua, sans-serif';
         ctx.fillText(isScore ? '점수' : '스타더스트', x + cardW/2, y + 104);
         ctx.fillStyle = '#9aa3b3';
-        ctx.font = '11px Consolas, monospace';
+        ctx.font = '11px Jua, sans-serif';
         const helpTxt = isScore
           ? '현재 게임 점수 즉시 추가'
           : '영구 통화 (메뉴 강화소)';
@@ -7112,7 +7118,7 @@
         nextLineY = y + cardH;
       } else if (c.action === 'level') {
         ctx.fillStyle = p.accent;
-        ctx.font = '13px Consolas, monospace';
+        ctx.font = '13px Jua, sans-serif';
         ctx.fillText(`Lv${c.level} → Lv${c.newLevel}`, x + cardW/2, y + 88);
         nextLineY = y + 108;
       } else if (c.action === 'combo' && c.parts) {
@@ -7120,13 +7126,13 @@
         const p2 = ABILITY_DEFS[c.parts[1]];
         if (p1 && p2) {
           ctx.fillStyle = p.accent;
-          ctx.font = '12px Consolas, monospace';
+          ctx.font = '12px Jua, sans-serif';
           ctx.fillText('재료 ↓', x + cardW/2, y + 88);
           ctx.fillStyle = '#c8cdd8';
-          ctx.font = 'bold 12px Consolas, monospace';
+          ctx.font = 'bold 12px Jua, sans-serif';
           ctx.fillText(`${p1.name} + ${p2.name}`, x + cardW/2, y + 104);
           ctx.fillStyle = p.accent;
-          ctx.font = '11px Consolas, monospace';
+          ctx.font = '11px Jua, sans-serif';
           ctx.fillText('(MAX 재료 소진)', x + cardW/2, y + 118);
           nextLineY = y + 136;
         }
@@ -7136,7 +7142,7 @@
       let lineY = nextLineY;
       if (!isBonus && def) {
         ctx.fillStyle = '#c8cdd8';
-        ctx.font = '12px Consolas, monospace';
+        ctx.font = '12px Jua, sans-serif';
         const desc = def.desc(c.newLevel || c.level || 1);
         const words = desc.split(' ');
         let line = '';
@@ -7174,7 +7180,7 @@
           ctx.fillStyle = has
             ? (isTrip ? '#ffd060' : '#c084ff')
             : '#5a6068';
-          ctx.font = (has ? 'bold ' : '') + '11px Consolas, monospace';
+          ctx.font = (has ? 'bold ' : '') + '11px Jua, sans-serif';
           const tag = isTrip ? '🔥' : (cdef.isCombo && pdef.isPassive ? '⚙' : '+');
           const hint = `${tag} ${pdef.name} → ${cdef.name}`;
           let txt = hint;
@@ -7188,7 +7194,7 @@
 
       // 하단 번호 키 (폰트 확대)
       ctx.fillStyle = p.accent;
-      ctx.font = 'bold 15px Consolas, monospace';
+      ctx.font = 'bold 15px Jua, sans-serif';
       ctx.fillText(`[${i + 1}]`, x + cardW/2, y + cardH - 12);
     }
 
@@ -7232,7 +7238,7 @@
     ctx.lineWidth = 1.5;
     ctx.strokeRect(x, y, w, h);
     ctx.fillStyle = '#e8eaf0';
-    ctx.font = '13px Consolas, monospace';
+    ctx.font = '13px Jua, sans-serif';
     ctx.textAlign = 'center';
     ctx.fillText(label, x + w / 2, y + 24);
   }
