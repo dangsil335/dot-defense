@@ -4,7 +4,7 @@
   "description": "픽셀 도트 디펜스 — 14가지 능력과 8가지 조합, 5라운드마다 보스",
   "start_url": "./index.html",
   "scope": "./",
-  "display": "fullscreen",
+  "display": "standalone",
   "orientation": "any",
   "background_color": "#0b0d12",
   "theme_color": "#0b0d12",
