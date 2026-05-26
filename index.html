@@ -196,6 +196,13 @@
   }
   .toast.show { opacity: 1; }
   #abilities { display:flex; flex-direction:column; gap:4px; }
+  /* 가로 모드: abilities가 남은 공간을 차지하면서 내부 스크롤 → 배속/컨트롤 영역 안 가림 */
+  #wrap:not(.portrait) #abilities {
+    flex: 1 1 0;
+    min-height: 0;
+    overflow-y: auto;
+    padding-right: 2px;
+  }
   .footer { margin-top:auto; color:#4a5163; font-size:11px; text-align:center; }
   .speed-row { display:flex; gap:4px; margin-top:6px; }
   .speed-btn { flex:1; padding:6px 0; font-size:11px; }
