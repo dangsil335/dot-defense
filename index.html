@@ -312,6 +312,21 @@
     touch-action: manipulation;
   }
   .reset-data-btn:hover { background: #3a1820; color: #ffaabb; }
+  /* 캐시 초기화 (업데이트) 버튼 (메뉴 좌측 상단) — 저장 데이터는 유지 */
+  .update-cache-btn {
+    position: absolute;
+    top: 16px;
+    left: 16px;
+    padding: 8px 12px;
+    background: #102028;
+    color: #7ad7ff;
+    border: 1px solid #2a5878;
+    font-family: inherit;
+    font-size: 11px;
+    cursor: pointer;
+    touch-action: manipulation;
+  }
+  .update-cache-btn:hover { background: #143040; color: #aaeaff; }
   #menu .subtitle {
     color: #6b7283;
     margin-bottom: clamp(12px, 5vmin, 50px);
@@ -622,6 +637,7 @@
 <body>
 <!-- ===== 메뉴 화면 ===== -->
 <div id="menu" class="screen show">
+  <button id="updateCacheBtn" class="update-cache-btn" title="캐시만 지우고 최신 버전으로 업데이트 (저장 데이터는 유지)">🔄 최신으로 업데이트</button>
   <button id="resetDataBtn" class="reset-data-btn" title="개발용: 모든 저장 데이터 초기화">🗑 데이터 초기화</button>
   <h1>DOT DEFENSE</h1>
   <div class="subtitle">픽셀 디펜스 · 능력 조합 빌더</div>
@@ -8092,6 +8108,35 @@
     if (!ok) return;
     try { localStorage.clear(); } catch {}
     location.reload();
+  };
+
+  // 캐시 초기화 (업데이트) — 저장 데이터 유지하고 캐시만 비움
+  // iOS PWA 의 디스크 HTTP 캐시까지 우회하기 위해 cache-busting URL 사용
+  document.getElementById('updateCacheBtn').onclick = async () => {
+    const btn = document.getElementById('updateCacheBtn');
+    btn.disabled = true;
+    btn.textContent = '🔄 업데이트 중...';
+    try {
+      // 1) 서비스워커 해제 (모든 SW 등록 제거)
+      if ('serviceWorker' in navigator) {
+        const regs = await navigator.serviceWorker.getRegistrations();
+        await Promise.all(regs.map(r => r.unregister()));
+      }
+      // 2) Cache Storage 비우기 (서비스워커 캐시)
+      if ('caches' in window) {
+        const names = await caches.keys();
+        await Promise.all(names.map(n => caches.delete(n)));
+      }
+      // ※ localStorage 는 건드리지 않음 (저장 데이터 유지)
+      // 3) cache-busting URL 로 강제 새로고침 — iOS PWA HTTP 캐시까지 우회
+      const ts = Date.now();
+      const target = location.pathname + '?_update=' + ts;
+      location.replace(target);
+    } catch (e) {
+      alert('업데이트 실패: ' + e.message + '\n수동으로 PWA 재시작 또는 강력 새로고침 시도');
+      btn.disabled = false;
+      btn.textContent = '🔄 최신으로 업데이트';
+    }
   };
 
   function buildAchievements() {
