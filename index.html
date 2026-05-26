@@ -6149,7 +6149,20 @@
         choices.push({ action: 'new', id, newLevel: 1 });
       } else if (canLv) {
         const p = lvPool[Math.floor(Math.random() * lvPool.length)];
-        choices.push({ action: 'level', id: p.id, level: p.level, newLevel: p.level + 1 });
+        // 럭키 카드 확률 roll (강화 카드만)
+        const maxLv = maxLvFor(p.id);
+        const remainingLv = maxLv - p.level;   // 올릴 수 있는 최대 레벨
+        let lucky = 0;
+        if (remainingLv >= 3 && Math.random() < 0.03) lucky = 2;       // SUPER LUCKY (+3) 3%
+        else if (remainingLv >= 2 && Math.random() < 0.12) lucky = 1;  // LUCKY (+2) 12%
+        const bonusLevels = lucky;  // 추가 레벨 (0/1/2 = +1/+2/+3 총)
+        choices.push({
+          action: 'level',
+          id: p.id,
+          level: p.level,
+          newLevel: p.level + 1 + bonusLevels,
+          lucky,   // 0: normal, 1: LUCKY, 2: SUPER LUCKY
+        });
       } else break;
     }
     // 남은 자리는 보너스 카드 (점수 / 스타더스트)
@@ -6216,7 +6229,21 @@
       unlockAbility(c.id);
     } else if (c.action === 'level') {
       const a = state.tower.abilities.find(x => x.id === c.id);
-      if (a && !isAtMax(a)) a.level++;
+      if (a) {
+        const increment = 1 + (c.lucky || 0);
+        a.level = Math.min(a.level + increment, maxLvFor(a.id));
+        // 럭키 효과 표시
+        if (c.lucky === 1) {
+          toast(`🍀 LUCKY! ${ABILITY_DEFS[a.id].name} +2 레벨!`);
+          state.comboFlash = 24;
+          state.comboFlashColor = '#88ff88';
+        } else if (c.lucky === 2) {
+          toast(`💫 SUPER LUCKY! ${ABILITY_DEFS[a.id].name} +3 레벨!`);
+          state.comboFlash = 40;
+          state.comboFlashColor = '#ffd0ff';
+          shake(16, 14);
+        }
+      }
     } else if (c.action === 'bonusScore') {
       state.score += c.amount;
       state.damageNumbers.push({
@@ -6316,6 +6343,7 @@
 
   function actEnhance(idx) {
     if (state.gameOver) return;
+    if (state.levelUpChoices) return toast('카드 선택 후 가능');  // 카드 모달 중 강화 차단 (꼼수 방지)
     const a = state.tower.abilities[idx];
     if (!a) return;
     if (isAtMax(a)) return toast('이미 MAX — 조합 카드 대기');
@@ -6329,6 +6357,7 @@
 
   function actDelete(idx) {
     if (state.gameOver) return;
+    if (state.levelUpChoices) return toast('카드 선택 후 가능');  // 카드 모달 중 삭제 차단
     const a = state.tower.abilities[idx];
     if (!a) return;
     // 강화에 들인 골드의 40% 환불 (랜덤 획득 비용은 환불 없음)
@@ -7298,9 +7327,27 @@
       accent: '#ffd479', glow: 'rgba(255, 212, 121, 0.30)',
       label: '⭐ 스타더스트',
     },
+    lucky: {
+      // LUCKY +2 — 행운의 녹색/금색
+      bg1: '#1e3018', bg2: '#0f1808',
+      border: '#88ff88', name: '#ccffcc',
+      accent: '#aaff88', glow: 'rgba(136, 255, 136, 0.45)',
+      label: '🍀 LUCKY +2',
+    },
+    superLucky: {
+      // SUPER LUCKY +3 — 무지개 핫핑크/금색 화려함
+      bg1: '#3a1840', bg2: '#1a0820',
+      border: '#ff80ff', name: '#ffe0ff',
+      accent: '#ffd0ff', glow: 'rgba(255, 128, 255, 0.55)',
+      label: '💫 SUPER LUCKY +3',
+    },
   };
   function getCardTier(c) {
-    if (c.action === 'level') return 'upgrade';
+    if (c.action === 'level') {
+      if (c.lucky === 2) return 'superLucky';
+      if (c.lucky === 1) return 'lucky';
+      return 'upgrade';
+    }
     if (c.action === 'combo') return c.tier === 3 ? 'triple' : 'combo';
     if (c.action === 'bonusScore') return 'bonusScore';
     if (c.action === 'bonusStardust') return 'bonusStardust';
@@ -7348,6 +7395,43 @@
         ctx.fillStyle = `rgba(255, 208, 96, ${0.15 + pulse * 0.15})`;
         ctx.fillRect(x - 12, y - 12, cardW + 24, cardH + 24);
       }
+      // 🍀 LUCKY — 녹색 펄스 + 클로버 스파클
+      if (tier === 'lucky') {
+        const pulse = 0.5 + 0.5 * Math.sin(state.t * 0.18);
+        ctx.fillStyle = `rgba(136, 255, 136, ${0.20 + pulse * 0.20})`;
+        ctx.fillRect(x - 14, y - 14, cardW + 28, cardH + 28);
+        // 스파클 점들
+        for (let k = 0; k < 6; k++) {
+          const sa = state.t * 0.08 + k * (Math.PI * 2 / 6);
+          const sr = 8 + Math.sin(state.t * 0.15 + k) * 4;
+          const sx = x + cardW/2 + Math.cos(sa) * (cardW/2 + 16);
+          const sy = y + cardH/2 + Math.sin(sa) * (cardH/2 + 16);
+          ctx.fillStyle = `rgba(170, 255, 136, ${0.4 + Math.sin(state.t * 0.2 + k) * 0.3})`;
+          ctx.fillRect(sx - sr/4, sy - sr/4, sr/2, sr/2);
+        }
+      }
+      // 💫 SUPER LUCKY — 무지개 펄스 + 큰 스파클 + 회전 광채
+      if (tier === 'superLucky') {
+        const pulse = 0.5 + 0.5 * Math.sin(state.t * 0.22);
+        // 무지개 외곽 (3겹)
+        const hueOffset = (state.t * 3) % 360;
+        for (let g = 0; g < 3; g++) {
+          const hue = (hueOffset + g * 120) % 360;
+          ctx.fillStyle = `hsla(${hue}, 90%, 65%, ${(0.10 + pulse * 0.12) * (1 - g * 0.2)})`;
+          ctx.fillRect(x - 18 - g * 4, y - 18 - g * 4, cardW + 36 + g * 8, cardH + 36 + g * 8);
+        }
+        // 회전 광채 스파클
+        for (let k = 0; k < 10; k++) {
+          const sa = state.t * 0.12 + k * (Math.PI * 2 / 10);
+          const sr = 6 + Math.sin(state.t * 0.18 + k) * 4;
+          const rad = cardW/2 + 22 + Math.sin(state.t * 0.1 + k * 0.7) * 6;
+          const sx = x + cardW/2 + Math.cos(sa) * rad;
+          const sy = y + cardH/2 + Math.sin(sa) * rad;
+          const hue = (hueOffset + k * 36) % 360;
+          ctx.fillStyle = `hsla(${hue}, 100%, 75%, 0.85)`;
+          ctx.fillRect(sx - sr/2, sy - sr/2, sr, sr);
+        }
+      }
       // 카드 배경 (그라데이션)
       const grad = ctx.createLinearGradient(x, y, x, y + cardH);
       grad.addColorStop(0, p.bg1);
@@ -7367,8 +7451,22 @@
       ctx.fillStyle = p.accent;
       ctx.font = 'bold 13px Jua, sans-serif';
       ctx.textAlign = 'center';
-      const tierY = isBonus ? y + 24 : y + 100;   // 88 → 100 (아이콘 y+12~84 와 안 겹침)
+      const tierY = isBonus ? y + 24 : y + 100;
+      // LUCKY/SUPER LUCKY 는 폰트도 큼지막하게 + 그림자 효과
+      if (tier === 'lucky') {
+        ctx.font = 'bold 16px Jua, sans-serif';
+        ctx.shadowColor = '#88ff88';
+        ctx.shadowBlur = 12;
+      } else if (tier === 'superLucky') {
+        ctx.font = 'bold 18px Jua, sans-serif';
+        ctx.shadowColor = '#ff80ff';
+        ctx.shadowBlur = 18;
+        // 무지개 색상 사이클
+        const hue = (state.t * 4) % 360;
+        ctx.fillStyle = `hsl(${hue}, 100%, 75%)`;
+      }
       ctx.fillText(p.label, x + cardW/2, tierY);
+      ctx.shadowBlur = 0;
 
       // ⭐ 큰 아이콘 — 카드 위쪽 (보너스 카드는 X)
       if (!isBonus && c.id) {
@@ -7449,8 +7547,10 @@
       if (isBonus) {
         nextLineY = y + cardH;
       } else if (c.action === 'level') {
+        // 럭키 카드는 큰 폰트로 강조
+        const isLucky = c.lucky && c.lucky > 0;
         ctx.fillStyle = p.accent;
-        ctx.font = '13px Jua, sans-serif';
+        ctx.font = isLucky ? 'bold 15px Jua, sans-serif' : '13px Jua, sans-serif';
         ctx.fillText(`Lv${c.level} → Lv${c.newLevel}`, x + cardW/2, y + 170);
         nextLineY = y + 190;
       } else if (c.action === 'combo' && c.parts) {
@@ -7614,25 +7714,37 @@
   }
 
   // 강화 버튼 활성/비활성 + 색상을 현재 골드 기준으로 즉시 갱신 (DOM 재생성 없이)
+  // 카드 모달 떠있을 때는 모든 강화/삭제 버튼 비활성 (꼼수 방지)
   function refreshAbilityAffordability() {
     if (!elAb) return;
-    const buttons = elAb.querySelectorAll('button[data-act="up"]');
-    buttons.forEach(btn => {
+    const modalOpen = !!state.levelUpChoices;
+    // 강화 버튼
+    const upButtons = elAb.querySelectorAll('button[data-act="up"]');
+    upButtons.forEach(btn => {
       const idx = +btn.dataset.i;
       const a = state.tower.abilities[idx];
       if (!a) return;
-      if (isAtMax(a)) return;  // MAX 상태는 별도 처리 (어차피 disabled)
+      if (isAtMax(a)) return;
       const cost = enhanceCost(a);
       const canAfford = state.gold >= cost;
-      btn.disabled = !canAfford;
-      btn.style.opacity = canAfford ? '' : '0.55';
-      // 행 어포더블 클래스
+      const enabled = canAfford && !modalOpen;
+      btn.disabled = !enabled;
+      btn.style.opacity = enabled ? '' : '0.55';
       const row = btn.closest('.ability-row');
-      if (row) row.classList.toggle('affordable', canAfford);
-      // 비용 텍스트 색상
+      if (row) row.classList.toggle('affordable', enabled);
       const costSpan = btn.querySelector('span');
-      if (costSpan) costSpan.style.color = canAfford ? '#ffd479' : '#5a5f6a';
+      if (costSpan) costSpan.style.color = enabled ? '#ffd479' : '#5a5f6a';
     });
+    // 삭제 버튼도 모달 중엔 비활성
+    const rmButtons = elAb.querySelectorAll('button[data-act="rm"]');
+    rmButtons.forEach(btn => {
+      btn.disabled = modalOpen;
+      btn.style.opacity = modalOpen ? '0.4' : '';
+    });
+    // 랜덤 능력 획득 버튼도 모달 중 비활성 (액션 함수 안에 이미 체크 있지만 UI도 일관)
+    if (modalOpen && elRandom && !elRandom.disabled) {
+      elRandom.disabled = true;
+    }
   }
 
   let currentAbTab = 'active';
