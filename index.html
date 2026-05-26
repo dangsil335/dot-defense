@@ -40,6 +40,19 @@
   #wrap.portrait .ability-row { padding: 10px 12px; min-height: 82px; }
   #wrap.portrait .ability-row button { padding: 12px 14px; font-size: 14px; min-height: 44px; }
 
+  /* 능력 카테고리 탭 */
+  .ab-tabs { display: flex; gap: 4px; }
+  .ab-tab {
+    flex: 1; padding: 8px 6px;
+    background: #1a1f2b; color: #9aa3b3;
+    border: 1px solid #2a2f3a;
+    font-family: inherit; font-size: 11px;
+    cursor: pointer; touch-action: manipulation;
+  }
+  .ab-tab.active { background: #3d5380; color: #fff; border-color: #5870a0; }
+  .ab-tab span { color: #ffd479; font-weight: bold; margin-left: 4px; }
+  #wrap.portrait .ab-tab { font-size: 13px; padding: 12px 8px; min-height: 44px; }
+
   /* === 능력 목록 접기/펴기 === */
   /* 세로 모드: 능력창은 절대 위치 오버레이 — 아래에서 슬라이드 업, 게임 화면 위로 덮음.
      게임 크기는 변하지 않음. 가로 모드는 기존대로 인라인 표시. */
@@ -159,6 +172,21 @@
     text-shadow: 0 0 30px rgba(122, 215, 255, 0.45);
     margin: 0 0 12px;
   }
+  /* 개발용: 데이터 초기화 버튼 (메뉴 우측 상단) */
+  .reset-data-btn {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    padding: 8px 12px;
+    background: #2a1018;
+    color: #c08090;
+    border: 1px solid #5a3038;
+    font-family: inherit;
+    font-size: 11px;
+    cursor: pointer;
+    touch-action: manipulation;
+  }
+  .reset-data-btn:hover { background: #3a1820; color: #ffaabb; }
   #menu .subtitle {
     color: #6b7283;
     margin-bottom: 50px;
@@ -296,16 +324,217 @@
     grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
     gap: 10px;
   }
+
+  /* ===== 강화소 ===== */
+  #shop { padding: 24px; align-items: stretch; }
+  #shop-list {
+    max-width: 720px; width: 100%; margin: 0 auto;
+    overflow-y: auto; flex: 1;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 8px;
+    padding-bottom: 24px;
+  }
+  .shop-card {
+    background: #141822;
+    border: 1px solid #2a2f3a;
+    border-left: 4px solid #7ad7ff;
+    padding: 14px;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 12px;
+    align-items: center;
+  }
+  .shop-card.maxed { border-left-color: #52e07a; opacity: 0.7; }
+  .shop-card .name { font-weight: bold; font-size: 14px; margin-bottom: 4px; }
+  .shop-card .desc { font-size: 12px; color: #c8cdd8; }
+  .shop-card .lv {
+    color: #9bb3ff; font-size: 11px; margin-top: 4px;
+  }
+  .shop-buy {
+    background: #1f2735; color: #ffd479;
+    border: 1px solid #ffd479; padding: 10px 16px;
+    font-family: inherit; font-size: 13px; cursor: pointer;
+    touch-action: manipulation; min-width: 90px;
+  }
+  .shop-buy:hover:not(:disabled) { background: #2a3550; }
+  .shop-buy:disabled { opacity: 0.4; cursor: not-allowed; border-color: #3a4256; color: #6b7283; }
+  .shop-buy.maxed { color: #52e07a; border-color: #52e07a; }
+  .stardust-bar {
+    text-align: center;
+    margin: 0 auto 16px;
+    max-width: 720px; width: 100%;
+    padding: 10px;
+    background: #141822;
+    border: 1px solid #2a2f3a;
+    color: #ffd479;
+    font-size: 16px;
+  }
+
+  /* ===== 캐릭터 선택 화면 ===== */
+  #characterScreen { padding: 24px; align-items: stretch; }
+  #character-list {
+    max-width: 720px; width: 100%; margin: 0 auto;
+    overflow-y: auto; flex: 1;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 10px;
+    padding-bottom: 24px;
+  }
+  .char-card {
+    background: #141822;
+    border: 2px solid #2a2f3a;
+    border-left: 4px solid #7ad7ff;
+    padding: 14px;
+    cursor: pointer;
+    transition: background .12s, border-color .12s;
+  }
+  .char-card:hover:not(.locked) { background: #1a1f2b; }
+  .char-card.selected { border-color: #ffd479; background: #1a2030; }
+  .char-card.locked { opacity: 0.5; cursor: not-allowed; }
+  .char-card .char-name { font-size: 16px; font-weight: bold; margin-bottom: 4px; }
+  .char-card .char-desc { font-size: 12px; color: #c8cdd8; line-height: 1.5; }
+  .char-card .char-lock { font-size: 11px; color: #ff8a98; margin-top: 6px; }
+  .char-card .char-selected-tag { font-size: 11px; color: #ffd479; margin-top: 6px; font-weight: bold; }
+  .char-card .char-start { font-size: 11px; color: #9aa3b3; margin-top: 6px; }
+
+  /* ===== 업적 화면 ===== */
+  #achievementsScreen { padding: 24px; align-items: stretch; }
+  #achievements-list {
+    max-width: 720px; width: 100%; margin: 0 auto;
+    overflow-y: auto; flex: 1;
+    padding-bottom: 24px;
+  }
+  .achievement-summary {
+    text-align: center;
+    margin: 0 auto 14px;
+    max-width: 720px; width: 100%;
+    padding: 10px;
+    background: #141822;
+    border: 1px solid #2a2f3a;
+    color: #c8cdd8;
+    font-size: 14px;
+  }
+  .achievement-summary b { color: #ffd479; }
+  .achievement-card {
+    display: flex; gap: 14px;
+    align-items: center;
+    background: #141822;
+    border: 1px solid #2a2f3a;
+    border-left: 4px solid #4a5163;
+    padding: 14px;
+    margin-bottom: 6px;
+  }
+  .achievement-card.unlocked {
+    border-left-color: #ffd479;
+    background: #1a2030;
+  }
+  .achievement-card .ach-icon {
+    font-size: 22px;
+    width: 36px;
+    text-align: center;
+    color: #4a5163;
+  }
+  .achievement-card.unlocked .ach-icon { color: #ffd479; }
+  .achievement-card .ach-info { flex: 1; min-width: 0; }
+  .achievement-card .ach-name {
+    font-weight: bold;
+    font-size: 14px;
+    margin-bottom: 4px;
+    color: #9aa3b3;
+  }
+  .achievement-card.unlocked .ach-name { color: #ffd479; }
+  .achievement-card .ach-desc {
+    color: #c8cdd8;
+    font-size: 12px;
+    margin-bottom: 6px;
+  }
+  .achievement-card .ach-rewards {
+    display: flex; gap: 6px;
+    flex-wrap: wrap;
+  }
+  .achievement-card .ach-reward {
+    padding: 3px 8px;
+    font-size: 11px;
+    border-radius: 2px;
+  }
+  .achievement-card .ach-reward.stardust {
+    background: #2a2410; color: #ffd479;
+    border: 1px solid #5a4a18;
+  }
+  .achievement-card .ach-reward.character {
+    background: #122030; color: #88c8ff;
+    border: 1px solid #2a4878;
+  }
+  .achievement-card .ach-reward.ability {
+    background: #102818; color: #88dda8;
+    border: 1px solid #2a5a3a;
+  }
+  .achievement-card .ach-reward.count {
+    background: #182030; color: #9bb3ff;
+    border: 1px solid #2a4878;
+  }
+  .achievement-card.repeat {
+    border-left-color: #88c8ff;
+  }
+  .achievement-card.repeat.unlocked {
+    background: #102030;
+    border-left-color: #88c8ff;
+  }
+  .achievement-card.repeat .ach-icon { color: #88c8ff; }
+  .achievement-card.repeat .ach-name { color: #88c8ff; }
+  .ach-section-header {
+    color: #9aa3b3;
+    font-size: 12px;
+    letter-spacing: 3px;
+    padding: 14px 4px 6px;
+    margin-top: 8px;
+    border-bottom: 1px solid #2a2f3a;
+  }
+  .ach-section-header:first-child { margin-top: 0; }
 </style>
 </head>
 <body>
 <!-- ===== 메뉴 화면 ===== -->
 <div id="menu" class="screen show">
+  <button id="resetDataBtn" class="reset-data-btn" title="개발용: 모든 저장 데이터 초기화">🗑 데이터 초기화</button>
   <h1>DOT DEFENSE</h1>
   <div class="subtitle">픽셀 디펜스 · 능력 조합 빌더</div>
   <button id="startBtn" class="menu-btn">▶ 스타트</button>
+  <button id="characterBtn" class="menu-btn">👤 캐릭터 선택</button>
+  <button id="shopBtn" class="menu-btn">⭐ 강화소</button>
   <button id="codexBtn" class="menu-btn">📖 도감</button>
+  <button id="achievementsBtn" class="menu-btn">🏅 업적</button>
   <button id="recordsBtn" class="menu-btn">🏆 기록</button>
+</div>
+
+<!-- ===== 업적 화면 ===== -->
+<div id="achievementsScreen" class="screen">
+  <div class="codex-header">
+    <h2>업적</h2>
+    <button id="achievementsBack" class="codex-back">← 메뉴로</button>
+  </div>
+  <div class="achievement-summary" id="achievement-summary">달성 0/0</div>
+  <div id="achievements-list"></div>
+</div>
+
+<!-- ===== 캐릭터 선택 화면 ===== -->
+<div id="characterScreen" class="screen">
+  <div class="codex-header">
+    <h2>캐릭터 선택</h2>
+    <button id="characterBack" class="codex-back">← 메뉴로</button>
+  </div>
+  <div id="character-list"></div>
+</div>
+
+<!-- ===== 강화소 화면 ===== -->
+<div id="shop" class="screen">
+  <div class="codex-header">
+    <h2>강화소</h2>
+    <button id="shopBack" class="codex-back">← 메뉴로</button>
+  </div>
+  <div class="stardust-bar">스타더스트: <span id="stardust-count">0</span> ★</div>
+  <div id="shop-list"></div>
 </div>
 
 <!-- ===== 기록 화면 ===== -->
@@ -333,8 +562,10 @@
     <button id="codexBack" class="codex-back">← 메뉴로</button>
   </div>
   <div class="codex-tabs">
-    <button class="codex-tab active" data-tab="basic">기본 능력</button>
-    <button class="codex-tab" data-tab="combo">조합 능력</button>
+    <button class="codex-tab active" data-tab="basic">액티브</button>
+    <button class="codex-tab" data-tab="passive">패시브</button>
+    <button class="codex-tab" data-tab="combo">조합</button>
+    <button class="codex-tab" data-tab="triple">히든</button>
   </div>
   <div id="codex-list"></div>
 </div>
@@ -350,9 +581,14 @@
       <div class="row"><span class="label">SCORE</span><span id="s-score">0</span></div>
       <div class="row"><span class="label">ENEMIES</span><span id="s-enemies">0 / 80</span></div>
       <div class="bar"><i id="s-enemybar" style="width:0%"></i></div>
+      <div class="row"><span class="label">LEVEL</span><span id="s-plevel">Lv1 (0/8 kills)</span></div>
     </div>
     <hr/>
     <button id="randomBtn">🎲 랜덤 능력 획득 (50G)</button>
+    <div class="ab-tabs">
+      <button class="ab-tab active" data-abtab="active">액티브 <span id="ab-active-count">0/6</span></button>
+      <button class="ab-tab" data-abtab="passive">패시브 <span id="ab-passive-count">0/6</span></button>
+    </div>
     <div id="abilities"></div>
     <button id="abilityToggle" class="ability-toggle">▲ 능력 확인</button>
     <div class="footer">
@@ -384,7 +620,17 @@
   const ARENA_R = 290;
   const CORE_R  = 22;
   const MAX_ALIVE = 80;         // 이 수치 넘으면 게임오버
-  const MAX_SLOTS = 6;          // 능력 슬롯
+  const MAX_SLOTS = 6;          // 액티브/패시브 각각 6칸씩
+  function maxActiveSlots() {
+    const metaBonus = (META.upgrades && META.upgrades.extraSlot) || 0;
+    const charMod = (typeof state !== 'undefined' && state && state.metaMods) ? (state.metaMods.slotMod || 0) : 0;
+    return MAX_SLOTS + metaBonus + charMod;
+  }
+  function maxPassiveSlots() { return MAX_SLOTS; }
+  function activeCount() { return state.tower.abilities.filter(a => !ABILITY_DEFS[a.id].isPassive).length; }
+  function passiveCount() { return state.tower.abilities.filter(a => ABILITY_DEFS[a.id].isPassive).length; }
+  // 역호환
+  function activeMaxSlots() { return maxActiveSlots(); }
   const FPS = 60;
 
   // ===== 능력 정의 (각 능력은 독립적인 공격) =====
@@ -1550,6 +1796,363 @@
       },
     },
 
+    timeStop: {
+      name: '시간정지', baseCost: 90, color: '#dde0ff',
+      desc: lv => `매 주기 모든 적 ${(0.7+lv*0.15).toFixed(1)}s 정지`,
+      // 일정 주기로 모든 적의 움직임을 정지시킴 (slowFrames 강제 부여)
+      init(ab) { ab.cooldown = 240; ab.fxLife = 0; },
+      tick(ab) {
+        if (ab.fxLife > 0) ab.fxLife--;
+        if (--ab.cooldown > 0) return;
+        const dur = Math.floor((0.7 + ab.level * 0.15) * 60);
+        for (const e of state.enemies) {
+          if (e.hp <= 0) continue;
+          // 시간정지 = 매우 강한 슬로우 (사실상 정지)
+          e.slowFrames = Math.max(e.slowFrames || 0, dur);
+          e.timeStopped = state.t + dur;  // 정지 마커 (drawEnemies가 다른 색)
+        }
+        ab.fxLife = 30;
+        ab.cooldown = Math.max(160, 360 - ab.level * 18);
+        shake(8, 8);
+      },
+      draw(ab) {
+        if (ab.fxLife <= 0) return;
+        const a = ab.fxLife / 30;
+        ctx.globalAlpha = a * 0.4;
+        ctx.fillStyle = '#dde0ff';
+        ctx.fillRect(0, 0, W, H);
+        ctx.globalAlpha = 1;
+      },
+    },
+
+    clone: {
+      name: '분신', baseCost: 80, color: '#ffaaff',
+      desc: lv => `${1+Math.floor(lv/2)}개 분신 타워 · ${(4+lv).toFixed(0)}s 지속`,
+      // 임시 분신 타워가 옆에 생겨서 같이 사격
+      init(ab) { ab.clones = []; ab.spawnCD = 60; },
+      tick(ab) {
+        for (const c of ab.clones) {
+          c.life--;
+          c.fireCD--;
+          if (c.fireCD <= 0) {
+            // 가장 가까운 적
+            let t = null, best = Infinity;
+            for (const e of state.enemies) {
+              if (e.hp <= 0) continue;
+              const [ex, ey] = enemyXY(e);
+              const d2 = (c.x-ex)*(c.x-ex) + (c.y-ey)*(c.y-ey);
+              if (d2 < best) { best = d2; t = e; }
+            }
+            if (t) {
+              const [tx, ty] = enemyXY(t);
+              const ang = Math.atan2(ty - c.y, tx - c.x);
+              state.bullets.push({
+                x: c.x, y: c.y,
+                vx: Math.cos(ang) * 7, vy: Math.sin(ang) * 7,
+                dmg: 2 + ab.level, life: 80, color: '#ffaaff',
+                target: t, leader: null, offsetAngle: 0,
+              });
+              c.fireCD = 22;
+            }
+          }
+        }
+        ab.clones = ab.clones.filter(c => c.life > 0);
+        if (--ab.spawnCD > 0) return;
+        const want = 1 + Math.floor(ab.level / 2);
+        if (ab.clones.length < want) {
+          const dur = Math.floor((4 + ab.level) * 60);
+          const a = Math.random() * Math.PI * 2;
+          ab.clones.push({
+            x: CX + Math.cos(a) * 50, y: CY + Math.sin(a) * 50,
+            life: dur, fireCD: 0,
+          });
+          ab.spawnCD = 240;
+        } else ab.spawnCD = 60;
+      },
+      draw(ab) {
+        for (const c of ab.clones) {
+          const alpha = Math.min(1, c.life / 30) * 0.85;
+          ctx.globalAlpha = alpha;
+          // 타워 미니 버전
+          ctx.fillStyle = 'rgba(255, 170, 255, 0.20)';
+          ctx.beginPath(); ctx.arc(c.x, c.y, 16, 0, Math.PI*2); ctx.fill();
+          ctx.fillStyle = '#5a2a5a'; ctx.fillRect(c.x - 8, c.y - 8, 16, 16);
+          ctx.fillStyle = '#ffaaff'; ctx.fillRect(c.x - 6, c.y - 6, 12, 12);
+          ctx.fillStyle = '#ffeeff'; ctx.fillRect(c.x - 2, c.y - 2, 4, 4);
+          ctx.globalAlpha = 1;
+        }
+      },
+    },
+
+    magnet: {
+      name: '자석', baseCost: 70, color: '#ffaa44',
+      desc: lv => `${(3+lv*0.5).toFixed(1)}s 마다 한 곳으로 집결 + 폭발 · DMG ${5+lv*3}`,
+      // 일정 주기로 무작위 위치에 자장 생성 → 적 끌어모음 → 폭발
+      init(ab) { ab.cooldown = 180; ab.events = []; },
+      tick(ab) {
+        const dmg = 5 + ab.level * 3;
+        const pullR = 140 + ab.level * 12;
+        for (const ev of ab.events) {
+          ev.t++;
+          // 단계 1: 끌어당김 (0~60 프레임)
+          if (ev.t <= 60) {
+            for (const e of state.enemies) {
+              if (e.hp <= 0) continue;
+              const [ex, ey] = enemyXY(e);
+              const dx = ev.x - ex, dy = ev.y - ey;
+              const d = Math.hypot(dx, dy);
+              if (d < pullR && d > 5) {
+                const sp = (1 - d / pullR) * 3.5;
+                const newEx = ex + (dx/d) * sp;
+                const newEy = ey + (dy/d) * sp;
+                e.angle = Math.atan2(newEy - CY, newEx - CX);
+                e.radius = Math.hypot(newEx - CX, newEy - CY);
+                e.targetRadius = e.radius;
+              }
+            }
+          }
+          // 단계 2: 폭발 (60 프레임에 1회)
+          if (ev.t === 60) {
+            for (const e of state.enemies) {
+              if (e.hp <= 0) continue;
+              const [ex, ey] = enemyXY(e);
+              if ((ev.x-ex)*(ev.x-ex) + (ev.y-ey)*(ev.y-ey) < (pullR * 0.6) * (pullR * 0.6)) {
+                damageEnemy(e, dmg);
+                spawnParticles(ex, ey, '#ffaa44', 4);
+              }
+            }
+            shake(10, 8);
+          }
+        }
+        ab.events = ab.events.filter(e => e.t < 80);
+        if (--ab.cooldown > 0) return;
+        const a = Math.random() * Math.PI * 2;
+        const r = 60 + Math.random() * (ARENA_R - 100);
+        ab.events.push({ x: CX + Math.cos(a) * r, y: CY + Math.sin(a) * r, t: 0 });
+        ab.cooldown = Math.max(110, Math.floor((3 + ab.level * 0.5) * 60));
+      },
+      draw(ab) {
+        const pullR = 140 + ab.level * 12;
+        for (const ev of ab.events) {
+          if (ev.t < 60) {
+            const prog = ev.t / 60;
+            ctx.strokeStyle = `rgba(255, 170, 68, ${0.2 + prog * 0.3})`;
+            ctx.lineWidth = 2;
+            ctx.beginPath(); ctx.arc(ev.x, ev.y, pullR * (1 - prog * 0.3), 0, Math.PI*2); ctx.stroke();
+            // 회전 입자
+            for (let k = 0; k < 6; k++) {
+              const pa = state.t * 0.18 + k * (Math.PI * 2 / 6);
+              const pr = 10 + prog * 18;
+              ctx.fillStyle = '#ffaa44';
+              ctx.fillRect(ev.x + Math.cos(pa) * pr - 1, ev.y + Math.sin(pa) * pr - 1, 2, 2);
+            }
+            // 중심 코어
+            ctx.fillStyle = '#ffcc66';
+            ctx.fillRect(ev.x - 3, ev.y - 3, 6, 6);
+          } else {
+            // 폭발 잔향
+            const t = (ev.t - 60) / 20;
+            ctx.globalAlpha = 1 - t;
+            ctx.fillStyle = '#ffaa44';
+            ctx.beginPath(); ctx.arc(ev.x, ev.y, pullR * 0.6 * t, 0, Math.PI*2); ctx.fill();
+            ctx.globalAlpha = 1;
+          }
+        }
+      },
+    },
+
+    railgun: {
+      name: '레일건', baseCost: 95, color: '#88eeff',
+      desc: lv => `차징 거대 빔 · DMG ${15+lv*8} · 직선 관통`,
+      // 차징 시간 동안 시각 표시 → 발사 시 가장 적 많은 라인으로 거대 빔
+      init(ab) { ab.cooldown = 90; ab.chargeFrames = 0; ab.fireFx = 0; ab.fireAng = 0; ab.fireDuration = 14; },
+      tick(ab) {
+        if (ab.fireFx > 0) ab.fireFx--;
+        if (ab.chargeFrames > 0) {
+          ab.chargeFrames--;
+          if (ab.chargeFrames === 0) {
+            // 발사 — 가장 가까운 적 방향
+            const target = findNearestEnemy(ARENA_R + 100);
+            if (target) {
+              const [tx, ty] = enemyXY(target);
+              const ang = Math.atan2(ty - CY, tx - CX);
+              const len = ARENA_R + 20;
+              const ex = CX + Math.cos(ang) * len, ey = CY + Math.sin(ang) * len;
+              const dmg = 15 + ab.level * 8;
+              for (const e of state.enemies) {
+                if (e.hp <= 0) continue;
+                const [px, py] = enemyXY(e);
+                if (distPointSegmentSq(px, py, CX, CY, ex, ey) < 256) {  // 두꺼운 빔 (16px)
+                  damageEnemy(e, dmg);
+                  spawnParticles(px, py, '#88eeff', 6);
+                }
+              }
+              ab.fireAng = ang;
+              ab.fireFx = ab.fireDuration;
+              shake(18, 12);
+            }
+            ab.cooldown = Math.max(100, 180 - ab.level * 6);
+          }
+        }
+        if (ab.chargeFrames > 0) return;
+        if (--ab.cooldown > 0) return;
+        // 차징 시작
+        ab.chargeFrames = 60;
+      },
+      draw(ab) {
+        // 차징 시각 (회전 입자가 타워로 모임)
+        if (ab.chargeFrames > 0) {
+          const prog = 1 - ab.chargeFrames / 60;
+          for (let k = 0; k < 8; k++) {
+            const pa = state.t * 0.15 + k * (Math.PI * 2 / 8);
+            const pr = 60 * (1 - prog) + 30;
+            ctx.fillStyle = `rgba(136, 238, 255, ${0.4 + prog * 0.5})`;
+            ctx.fillRect(CX + Math.cos(pa) * pr - 1, CY + Math.sin(pa) * pr - 1, 3, 3);
+          }
+          // 차징 게이지 원
+          ctx.strokeStyle = '#88eeff';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.arc(CX, CY, 28, -Math.PI/2, -Math.PI/2 + prog * Math.PI * 2);
+          ctx.stroke();
+        }
+        // 발사 빔
+        if (ab.fireFx > 0) {
+          const a = ab.fireFx / ab.fireDuration;
+          const len = ARENA_R + 20;
+          const ex = CX + Math.cos(ab.fireAng) * len;
+          const ey = CY + Math.sin(ab.fireAng) * len;
+          ctx.globalAlpha = a * 0.3;
+          ctx.strokeStyle = '#88eeff'; ctx.lineWidth = 28;
+          ctx.beginPath(); ctx.moveTo(CX, CY); ctx.lineTo(ex, ey); ctx.stroke();
+          ctx.globalAlpha = a * 0.9;
+          ctx.lineWidth = 14;
+          ctx.stroke();
+          ctx.globalAlpha = a;
+          ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 4;
+          ctx.stroke();
+          ctx.globalAlpha = 1;
+        }
+      },
+    },
+
+    fury: {
+      name: '분노', baseCost: 60, color: '#ff4466',
+      desc: lv => `활성 적 5마리당 데미지 +${lv*5}% (모든 능력 영향)`,
+      // 패시브 — 적 수에 비례 데미지 증가. damageEnemy에서 알아서 적용됨.
+      init(ab) {},
+      tick(ab) {
+        // 매 프레임 metaMods의 dmgMul에 보너스 적용 (영구는 아님, 매 프레임 갱신)
+        if (!state.metaMods) return;
+        const enemyCount = state.enemies.length;
+        const bonus = Math.floor(enemyCount / 5) * (ab.level * 0.05);
+        state.metaMods.furyBonus = bonus;
+      },
+      draw(ab) {
+        // 타워 주변 빨간 오라 (적 많을수록 진해짐)
+        if (!state.metaMods || !state.metaMods.furyBonus) return;
+        const intensity = Math.min(1, state.metaMods.furyBonus * 4);
+        if (intensity < 0.1) return;
+        ctx.fillStyle = `rgba(255, 68, 102, ${intensity * 0.25})`;
+        ctx.beginPath(); ctx.arc(CX, CY, 40, 0, Math.PI*2); ctx.fill();
+      },
+    },
+
+    reaper: {
+      name: '수확자', baseCost: 100, color: '#9966ff',
+      desc: lv => `HP ${5+lv*2}% 이하 적 즉사 · 처치 시 추가 보상`,
+      // 패시브 — 매 프레임 HP가 임계점 이하인 적 사망 처리
+      init(ab) { ab.cooldown = 0; },
+      tick(ab) {
+        if (--ab.cooldown > 0) return;
+        const threshold = (5 + ab.level * 2) / 100;
+        for (const e of state.enemies) {
+          if (e.hp <= 0 || e.isBoss) continue;  // 보스는 즉사 면역
+          if (e.hp / e.maxHp <= threshold) {
+            const [ex, ey] = enemyXY(e);
+            // 즉사 표시
+            state.damageNumbers.push({
+              x: ex, y: ey - e.size - 4, vy: -1,
+              text: 'EXECUTE', color: '#9966ff', life: 30, size: 12,
+            });
+            spawnParticles(ex, ey, '#9966ff', 10);
+            damageEnemy(e, e.hp * 2);  // 확실히 죽임
+          }
+        }
+        ab.cooldown = 6;  // 6프레임마다 검사 (전 적 매프레임은 무거움)
+      },
+    },
+
+    // ========== 패시브 능력 — 시각 효과 없음, state.metaMods 통해 전체 게임플레이에 영향 ==========
+    precision: {
+      name: '정확', isPassive: true, baseCost: 60, color: '#a0d8ff',
+      desc: lv => `모든 데미지 +${lv*5}%`,
+      init() {},
+      tick(ab) { if (state.metaMods) state.metaMods.precisionBonus = ab.level * 0.05; },
+    },
+    haste: {
+      name: '신속', isPassive: true, baseCost: 65, color: '#80ffd0',
+      desc: lv => `액티브 능력 쿨다운 -${lv*4}%`,
+      init() {},
+      tick(ab) {
+        // 다른 액티브 능력의 쿨다운을 추가로 감소
+        const mul = ab.level * 0.04;
+        for (const a of state.tower.abilities) {
+          if (a === ab) continue;
+          const d = ABILITY_DEFS[a.id];
+          if (d.isPassive) continue;
+          if (a.cooldown !== undefined && a.cooldown > 0) a.cooldown -= mul;
+        }
+      },
+    },
+    frenzy: {
+      name: '광폭', isPassive: true, baseCost: 70, color: '#ff7777',
+      desc: lv => `처치 시 3초간 데미지 +${lv*6}%`,
+      init(ab) { ab.frames = 0; },
+      tick(ab) {
+        if (state.frenzyTrigger) { ab.frames = 180; state.frenzyTrigger = false; }
+        if (ab.frames > 0) {
+          ab.frames--;
+          if (state.metaMods) state.metaMods.frenzyBonus = ab.level * 0.06;
+        } else {
+          if (state.metaMods) state.metaMods.frenzyBonus = 0;
+        }
+      },
+    },
+    vampiric: {
+      name: '흡혈', isPassive: true, baseCost: 65, color: '#cc6699',
+      desc: lv => `처치 시 추가 골드 +${lv*40}%`,
+      init() {},
+      tick(ab) { if (state.metaMods) state.metaMods.bonusGoldMul = ab.level * 0.4; },
+    },
+    fortune: {
+      name: '행운', isPassive: true, baseCost: 60, color: '#ffcc66',
+      desc: lv => `처치 시 ${lv*5}% 확률 보너스 점수 (×5)`,
+      init() {},
+      tick(ab) { if (state.metaMods) state.metaMods.fortuneChance = ab.level * 0.05; },
+    },
+    mastery: {
+      name: '숙련', isPassive: true, baseCost: 75, color: '#88aaff',
+      desc: lv => `보유 액티브 수 × ${lv*3}% 데미지`,
+      init() {},
+      tick(ab) {
+        const n = state.tower.abilities.filter(a => !ABILITY_DEFS[a.id].isPassive).length;
+        if (state.metaMods) state.metaMods.masteryBonus = n * ab.level * 0.03;
+      },
+    },
+    scholar: {
+      name: '연구', isPassive: true, baseCost: 60, color: '#bb99cc',
+      desc: lv => `강화 비용 -${lv*8}%`,
+      init() {},
+      tick(ab) { if (state.metaMods) state.metaMods.scholarMul = 1 - ab.level * 0.08; },
+    },
+    ironwill: {
+      name: '강철의지', isPassive: true, baseCost: 70, color: '#aaaaaa',
+      desc: lv => `보스 추가 데미지 +${lv*15}%`,
+      init() {},
+      tick(ab) { if (state.metaMods) state.metaMods.ironwillBonus = ab.level * 0.15; },
+    },
+
     // ========== 조합 능력 (랜덤 풀에는 없음 — 두 기본 능력이 만나면 자동 합쳐짐) ==========
     shotgunBurst: {
       name: '기관산탄총', isCombo: true, baseCost: 140, color: '#ff8866',
@@ -2296,6 +2899,687 @@
       },
     },
 
+    // ========== 트리플 조합 (히든) — 조합 능력 + 기본 능력이 만나면 형성 ==========
+    ultraGatling: {
+      name: '초연사총', isCombo: true, isTriple: true, baseCost: 200, color: '#ddeeff',
+      desc: lv => `360도 ${10+lv*2}발 유도 미니건 · DMG ${4+lv*2}`,
+      // 정밀연사 + 산탄 = 모든 방향으로 유도 미니건 사출
+      init(ab) { ab.cooldown = 6; },
+      tick(ab) {
+        if (--ab.cooldown > 0) return;
+        const n = 10 + ab.level * 2;
+        const off = state.t * 0.03;
+        let nearest = findNearestEnemy(ARENA_R + 50);
+        for (let i = 0; i < n; i++) {
+          const ang = (Math.PI * 2 / n) * i + off;
+          const b = fireBullet(ang, 4 + ab.level * 2, '#ddeeff', nearest);
+          b.size = 3; b.glow = true;
+        }
+        ab.cooldown = Math.max(20, 40 - ab.level * 2);
+      },
+    },
+    absoluteThunder: {
+      name: '절대빙뢰', isCombo: true, isTriple: true, baseCost: 220, color: '#ccddff',
+      desc: lv => `${3+lv}곳 낙뢰 + ${4+lv}회 연쇄 · DMG ${10+lv*5} · 슬로우`,
+      // 연쇄낙뢰 + 빙결 = 낙뢰 후 광역 슬로우
+      init(ab) { ab.cooldown = 60; ab.bolts = []; ab.chains = []; },
+      tick(ab) {
+        for (const b of ab.bolts) b.life--;
+        ab.bolts = ab.bolts.filter(b => b.life > 0);
+        for (const c of ab.chains) c.life--;
+        ab.chains = ab.chains.filter(c => c.life > 0);
+        if (--ab.cooldown > 0) return;
+        const strikes = 3 + ab.level;
+        const chainCount = 4 + ab.level;
+        const dmg = 10 + ab.level * 5;
+        const slowDur = 120 + ab.level * 20;
+        const pool = state.enemies.filter(e => e.hp > 0);
+        for (let i = 0; i < strikes && pool.length > 0; i++) {
+          const idx = Math.floor(Math.random() * pool.length);
+          const target = pool.splice(idx, 1)[0];
+          const [tx, ty] = enemyXY(target);
+          damageEnemy(target, dmg);
+          target.slowFrames = Math.max(target.slowFrames || 0, slowDur);
+          spawnParticles(tx, ty, '#ccddff', 10);
+          ab.bolts.push({ x: tx, y: ty, life: 14 });
+          const hit = new Set([target]);
+          let current = target;
+          const points = [[tx, ty]];
+          for (let j = 0; j < chainCount; j++) {
+            let next = null, best = 220 * 220;
+            const [cx, cy] = enemyXY(current);
+            for (const e of state.enemies) {
+              if (hit.has(e) || e.hp <= 0) continue;
+              const [ex, ey] = enemyXY(e);
+              const d2 = (ex-cx)*(ex-cx) + (ey-cy)*(ey-cy);
+              if (d2 < best) { best = d2; next = e; }
+            }
+            if (!next) break;
+            const [nx, ny] = enemyXY(next);
+            damageEnemy(next, dmg);
+            next.slowFrames = Math.max(next.slowFrames || 0, slowDur);
+            hit.add(next); current = next;
+            points.push([nx, ny]);
+            spawnParticles(nx, ny, '#ccddff', 5);
+          }
+          if (points.length > 1) ab.chains.push({ points, life: 14 });
+        }
+        ab.cooldown = Math.max(30, 70 - ab.level * 4);
+      },
+      draw(ab) {
+        for (const b of ab.bolts) {
+          ctx.globalAlpha = b.life / 14;
+          ctx.fillStyle = '#ccddff'; ctx.fillRect(b.x - 4, 0, 8, b.y);
+          ctx.fillStyle = '#ffffff'; ctx.fillRect(b.x - 2, 0, 4, b.y);
+        }
+        for (const c of ab.chains) {
+          ctx.globalAlpha = c.life / 14;
+          ctx.strokeStyle = '#aaccff'; ctx.lineWidth = 5;
+          ctx.beginPath();
+          ctx.moveTo(c.points[0][0], c.points[0][1]);
+          for (let i = 1; i < c.points.length; i++) ctx.lineTo(c.points[i][0], c.points[i][1]);
+          ctx.stroke();
+          ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 2;
+          ctx.stroke();
+        }
+        ctx.globalAlpha = 1;
+      },
+    },
+    elementalStorm: {
+      name: '원소폭풍', isCombo: true, isTriple: true, baseCost: 230, color: '#ffaaee',
+      desc: lv => `빙결+화염 충격파 교차 · DMG ${8+lv*4} · 슬로우+화상`,
+      // 빙결파동 + 불꽃 = 두 종류의 충격파가 번갈아 발사
+      init(ab) { ab.cooldown = 50; ab.waves = []; ab.burns = new Map(); ab.toggle = 0; },
+      tick(ab) {
+        const dmg = 8 + ab.level * 4;
+        const slowDur = 120;
+        const burnDur = 80;
+        for (const [e, info] of ab.burns) {
+          if (e.hp <= 0) { ab.burns.delete(e); continue; }
+          info.life--; info.tick--;
+          if (info.tick <= 0) {
+            damageEnemy(e, 2 + ab.level);
+            const [ex, ey] = enemyXY(e);
+            spawnParticles(ex, ey, '#ff7733', 1);
+            info.tick = 12;
+          }
+          if (info.life <= 0) ab.burns.delete(e);
+        }
+        for (const w of ab.waves) {
+          w.prevR = w.r; w.r += 6;
+          for (const e of state.enemies) {
+            if (w.hit.has(e) || e.hp <= 0) continue;
+            const [ex, ey] = enemyXY(e);
+            const d = Math.hypot(ex - CX, ey - CY);
+            if (d >= w.prevR - 10 && d <= w.r + 10) {
+              damageEnemy(e, dmg);
+              if (w.type === 'frost') e.slowFrames = Math.max(e.slowFrames || 0, slowDur);
+              else ab.burns.set(e, { life: burnDur, tick: 12 });
+              spawnParticles(ex, ey, w.type === 'frost' ? '#aaccff' : '#ff7733', 3);
+              w.hit.add(e);
+            }
+          }
+        }
+        ab.waves = ab.waves.filter(w => w.r < ARENA_R + 30);
+        if (--ab.cooldown > 0) return;
+        ab.waves.push({ r: CORE_R, prevR: CORE_R, hit: new Set(), type: ab.toggle === 0 ? 'frost' : 'fire' });
+        ab.toggle = 1 - ab.toggle;
+        ab.cooldown = Math.max(30, 60 - ab.level * 3);
+      },
+      draw(ab) {
+        for (const w of ab.waves) {
+          const a = Math.max(0, 1 - w.r / (ARENA_R + 30));
+          ctx.globalAlpha = a;
+          ctx.strokeStyle = w.type === 'frost' ? '#aaccff' : '#ff7733';
+          ctx.lineWidth = 5;
+          ctx.beginPath(); ctx.arc(CX, CY, w.r, 0, Math.PI*2); ctx.stroke();
+        }
+        ctx.globalAlpha = 1;
+      },
+    },
+    fusionCannon: {
+      name: '융합포', isCombo: true, isTriple: true, baseCost: 240, color: '#ff9966',
+      desc: lv => `폭발탄 + 유도 미사일 · DMG ${10+lv*5} · 광역 ${60+lv*10}`,
+      // 기관산탄총 + 미사일 = 유도 폭발탄 다발
+      init(ab) { ab.cooldown = 20; ab.explosions = []; },
+      tick(ab) {
+        for (const e of ab.explosions) e.life--;
+        ab.explosions = ab.explosions.filter(e => e.life > 0);
+        if (--ab.cooldown > 0) return;
+        const target = findNearestEnemy(ARENA_R + 100);
+        if (!target) return;
+        const [tx, ty] = enemyXY(target);
+        const base = Math.atan2(ty - CY, tx - CX);
+        const n = 5 + ab.level;
+        const spread = Math.PI * 0.4;
+        const exR = 60 + ab.level * 10;
+        for (let i = 0; i < n; i++) {
+          const off = n === 1 ? 0 : (-spread/2 + spread * (i/(n-1)));
+          state.bullets.push({
+            x: CX, y: CY,
+            vx: Math.cos(base + off) * 6, vy: Math.sin(base + off) * 6,
+            dmg: 10 + ab.level * 5, life: 100, color: '#ff9966',
+            target: target, leader: null, offsetAngle: 0,
+            explodeRadius: exR, explodeAb: ab,
+            size: 4, glow: true,
+          });
+        }
+        ab.cooldown = Math.max(25, 45 - ab.level * 2);
+      },
+      draw(ab) {
+        for (const e of ab.explosions) {
+          const t = 1 - e.life / 12;
+          ctx.globalAlpha = e.life / 12;
+          ctx.fillStyle = '#ff9966';
+          ctx.beginPath(); ctx.arc(e.x, e.y, e.r * t, 0, Math.PI*2); ctx.fill();
+          ctx.globalAlpha = (e.life / 12) * 0.7;
+          ctx.fillStyle = '#ffffff';
+          ctx.beginPath(); ctx.arc(e.x, e.y, e.r * t * 0.5, 0, Math.PI*2); ctx.fill();
+        }
+        ctx.globalAlpha = 1;
+      },
+    },
+    galaxyOrbit: {
+      name: '은하궤도', isCombo: true, isTriple: true, baseCost: 230, color: '#88ffff',
+      desc: lv => `${3+lv}개 거대 회전체 + 폭풍 필드 · DMG ${5+lv*4}`,
+      // 폭풍궤도 + 회전검 = 큰 검들이 폭풍 필드와 함께 회전
+      init(ab) { ab.angle = 0; ab.hits = new Map(); ab.radius = 150; ab.targetRadius = 150; },
+      tick(ab) {
+        ab.angle += 0.05 + ab.level * 0.007;
+        const target = findNearestEnemy(ARENA_R + 100);
+        if (target) {
+          const [tx, ty] = enemyXY(target);
+          ab.targetRadius = Math.hypot(tx - CX, ty - CY);
+        }
+        ab.radius += (ab.targetRadius - ab.radius) * 0.05;
+        ab.radius = Math.max(60, Math.min(ARENA_R - 10, ab.radius));
+        for (const [e, cd] of ab.hits) {
+          if (cd <= 1 || e.hp <= 0) ab.hits.delete(e);
+          else ab.hits.set(e, cd - 1);
+        }
+        const count = 3 + ab.level;
+        const dmg = 5 + ab.level * 4;
+        const swordLen = 180;
+        for (let i = 0; i < count; i++) {
+          const a = ab.angle + (Math.PI * 2 / count) * i;
+          const x1 = CX + Math.cos(a) * (ab.radius - swordLen/2);
+          const y1 = CY + Math.sin(a) * (ab.radius - swordLen/2);
+          const x2 = CX + Math.cos(a) * (ab.radius + swordLen/2);
+          const y2 = CY + Math.sin(a) * (ab.radius + swordLen/2);
+          for (const e of state.enemies) {
+            if (ab.hits.has(e) || e.hp <= 0) continue;
+            const [ex, ey] = enemyXY(e);
+            if (distPointSegmentSq(ex, ey, x1, y1, x2, y2) < (e.size + 14) * (e.size + 14)) {
+              damageEnemy(e, dmg);
+              e.slowFrames = Math.max(e.slowFrames || 0, 60);
+              ab.hits.set(e, 18);
+              spawnParticles(ex, ey, '#88ffff', 4);
+            }
+          }
+        }
+      },
+      draw(ab) {
+        ctx.strokeStyle = 'rgba(136, 255, 255, 0.10)';
+        ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.arc(CX, CY, ab.radius, 0, Math.PI*2); ctx.stroke();
+        const count = 3 + ab.level;
+        const swordLen = 180;
+        for (let i = 0; i < count; i++) {
+          const a = ab.angle + (Math.PI * 2 / count) * i;
+          const x1 = CX + Math.cos(a) * (ab.radius - swordLen/2);
+          const y1 = CY + Math.sin(a) * (ab.radius - swordLen/2);
+          const x2 = CX + Math.cos(a) * (ab.radius + swordLen/2);
+          const y2 = CY + Math.sin(a) * (ab.radius + swordLen/2);
+          // 검날
+          ctx.strokeStyle = '#666'; ctx.lineWidth = 12;
+          ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+          ctx.strokeStyle = '#88ffff'; ctx.lineWidth = 7;
+          ctx.stroke();
+          ctx.strokeStyle = '#ddffff'; ctx.lineWidth = 3;
+          ctx.stroke();
+          // 폭풍 필드 (중심에 작은 원)
+          const cx = CX + Math.cos(a) * ab.radius;
+          const cy = CY + Math.sin(a) * ab.radius;
+          ctx.fillStyle = 'rgba(136, 255, 255, 0.15)';
+          ctx.beginPath(); ctx.arc(cx, cy, 30, 0, Math.PI*2); ctx.fill();
+        }
+      },
+    },
+    titanMissile: {
+      name: '거대미사일', isCombo: true, isTriple: true, baseCost: 250, color: '#ffcc44',
+      desc: lv => `초중량 폭격 부메랑 · DMG ${40+lv*20} · 광역`,
+      // 강철부메랑 + 미사일 = 어마어마한 폭발 부메랑
+      init(ab) { ab.cooldown = 90; ab.boomerangs = []; ab.explosions = []; },
+      tick(ab) {
+        const dmg = 40 + ab.level * 20;
+        const exR = 80 + ab.level * 12;
+        for (const e of ab.explosions) e.life--;
+        ab.explosions = ab.explosions.filter(e => e.life > 0);
+        for (const b of ab.boomerangs) {
+          b.life--; b.rotation += 0.4;
+          if (b.phase === 'out') {
+            b.t++;
+            if (b.t >= b.outDuration) { b.phase = 'in'; b.hit = new Set(); }
+          } else {
+            const dx = CX - b.x, dy = CY - b.y;
+            const d = Math.hypot(dx, dy);
+            if (d < 20) { b.life = 0; continue; }
+            b.vx = (dx/d) * 5; b.vy = (dy/d) * 5;
+          }
+          b.x += b.vx; b.y += b.vy;
+          for (const e of state.enemies) {
+            if (b.hit.has(e) || e.hp <= 0) continue;
+            const [ex, ey] = enemyXY(e);
+            const r = e.size + 16;
+            if ((b.x-ex)*(b.x-ex) + (b.y-ey)*(b.y-ey) < r*r) {
+              // 광역 폭발
+              for (const e2 of state.enemies) {
+                if (e2.hp <= 0) continue;
+                const [ex2, ey2] = enemyXY(e2);
+                if ((ex-ex2)*(ex-ex2) + (ey-ey2)*(ey-ey2) < exR * exR) {
+                  damageEnemy(e2, dmg);
+                  spawnParticles(ex2, ey2, '#ffcc44', 5);
+                }
+              }
+              ab.explosions.push({ x: ex, y: ey, r: exR, life: 16 });
+              b.hit.add(e);
+              shake(8, 6);
+            }
+          }
+        }
+        ab.boomerangs = ab.boomerangs.filter(b => b.life > 0);
+        if (--ab.cooldown > 0) return;
+        let target = null, best = -1;
+        for (const e of state.enemies) {
+          if (e.hp > best) { best = e.hp; target = e; }
+        }
+        if (!target) return;
+        const [tx, ty] = enemyXY(target);
+        const ang = Math.atan2(ty - CY, tx - CX);
+        ab.boomerangs.push({
+          x: CX, y: CY,
+          vx: Math.cos(ang) * 5, vy: Math.sin(ang) * 5,
+          t: 0, outDuration: 50, phase: 'out',
+          rotation: 0, life: 250, hit: new Set(),
+        });
+        ab.cooldown = Math.max(70, 130 - ab.level * 3);
+      },
+      draw(ab) {
+        for (const b of ab.boomerangs) {
+          ctx.save();
+          ctx.translate(b.x, b.y); ctx.rotate(b.rotation);
+          ctx.globalAlpha = 0.5;
+          ctx.fillStyle = '#ffcc44';
+          ctx.fillRect(-22, -5, 44, 10); ctx.fillRect(-5, -22, 10, 44);
+          ctx.globalAlpha = 1;
+          ctx.fillStyle = '#665533';
+          ctx.fillRect(-18, -6, 36, 12); ctx.fillRect(-6, -18, 12, 36);
+          ctx.fillStyle = '#ffcc44';
+          ctx.fillRect(-15, -4, 30, 8); ctx.fillRect(-4, -15, 8, 30);
+          ctx.fillStyle = '#fff080';
+          ctx.fillRect(-4, -4, 8, 8);
+          ctx.restore();
+        }
+        for (const e of ab.explosions) {
+          const t = 1 - e.life / 16;
+          ctx.globalAlpha = e.life / 16;
+          ctx.fillStyle = '#ffcc44';
+          ctx.beginPath(); ctx.arc(e.x, e.y, e.r * t, 0, Math.PI*2); ctx.fill();
+          ctx.globalAlpha = (e.life / 16) * 0.7;
+          ctx.fillStyle = '#ffffff';
+          ctx.beginPath(); ctx.arc(e.x, e.y, e.r * t * 0.5, 0, Math.PI*2); ctx.fill();
+        }
+        ctx.globalAlpha = 1;
+      },
+    },
+
+    // ========== 패시브 + 액티브 조합 ==========
+    precisionShot: {
+      name: '정밀사격', isCombo: true, baseCost: 110, color: '#a0d8ff',
+      desc: lv => `크리티컬 단발 · DMG ${3+lv*2} · 50% ×2`,
+      init(ab) { ab.cooldown = 0; },
+      tick(ab) {
+        if (--ab.cooldown > 0) return;
+        const target = findNearestEnemy(ARENA_R + 50);
+        if (!target) return;
+        const [tx, ty] = enemyXY(target);
+        const ang = Math.atan2(ty - CY, tx - CX);
+        const crit = Math.random() < 0.5;
+        const dmg = (3 + ab.level * 2) * (crit ? 2 : 1);
+        const b = fireBullet(ang, dmg, crit ? '#ffe070' : '#a0d8ff', target);
+        if (crit) { b.size = 4; b.glow = true; }
+        ab.cooldown = 18;
+      },
+    },
+    rapidBarrage: {
+      name: '폭격연사', isCombo: true, baseCost: 110, color: '#80ffd0',
+      desc: lv => `${3+lv}발 초고속 부채꼴 · DMG 1`,
+      init(ab) { ab.cooldown = 0; },
+      tick(ab) {
+        if (--ab.cooldown > 0) return;
+        const target = findNearestEnemy(ARENA_R + 50);
+        if (!target) return;
+        const [tx, ty] = enemyXY(target);
+        const base = Math.atan2(ty - CY, tx - CX);
+        const n = 3 + ab.level;
+        const spread = Math.min(Math.PI * 0.4, n * 0.18);
+        for (let i = 0; i < n; i++) {
+          const off = n === 1 ? 0 : (-spread/2 + spread * (i/(n-1)));
+          fireBullet(base + off, 1, '#80ffd0', null);
+        }
+        ab.cooldown = Math.max(8, 18 - ab.level);
+      },
+    },
+    frenzyWave: {
+      name: '광기파동', isCombo: true, baseCost: 120, color: '#ff7777',
+      desc: lv => `처치 누적 파동 · DMG ${3+lv*2} · 광폭 가속`,
+      init(ab) { ab.cooldown = 80; ab.waves = []; ab.killBuf = 0; },
+      tick(ab) {
+        const dmg = 3 + ab.level * 2;
+        for (const w of ab.waves) {
+          w.prevR = w.r; w.r += 6;
+          for (const e of state.enemies) {
+            if (w.hit.has(e) || e.hp <= 0) continue;
+            const [ex, ey] = enemyXY(e);
+            const d = Math.hypot(ex - CX, ey - CY);
+            if (d >= w.prevR - 10 && d <= w.r + 10) {
+              damageEnemy(e, dmg);
+              spawnParticles(ex, ey, '#ff7777', 3);
+              w.hit.add(e);
+            }
+          }
+        }
+        ab.waves = ab.waves.filter(w => w.r < ARENA_R + 30);
+        if (state.frenzyTrigger) ab.killBuf++;
+        if (--ab.cooldown > 0) return;
+        ab.waves.push({ r: CORE_R, prevR: CORE_R, hit: new Set() });
+        // 최근 처치 누적 → 쿨다운 단축
+        const cdMul = Math.max(0.3, 1 - ab.killBuf * 0.05);
+        ab.killBuf = Math.max(0, ab.killBuf - 1);
+        ab.cooldown = Math.floor(Math.max(50, 110 - ab.level * 5) * cdMul);
+      },
+      draw(ab) {
+        for (const w of ab.waves) {
+          const a = Math.max(0, 1 - w.r / (ARENA_R + 30));
+          ctx.globalAlpha = a; ctx.strokeStyle = '#ff7777'; ctx.lineWidth = 4;
+          ctx.beginPath(); ctx.arc(CX, CY, w.r, 0, Math.PI*2); ctx.stroke();
+        }
+        ctx.globalAlpha = 1;
+      },
+    },
+    lootBomb: {
+      name: '약탈폭격', isCombo: true, baseCost: 130, color: '#cc6699',
+      desc: lv => `광역 폭격 · DMG ${5+lv*3} · 처치 시 추가 골드`,
+      init(ab) { ab.cooldown = 90; ab.fx = []; },
+      tick(ab) {
+        for (const e of ab.fx) e.life--;
+        ab.fx = ab.fx.filter(e => e.life > 0);
+        if (--ab.cooldown > 0) return;
+        let target = null, best = -1;
+        for (const e of state.enemies) { if (e.hp > best) { best = e.hp; target = e; } }
+        if (!target) return;
+        const [tx, ty] = enemyXY(target);
+        const radius = 55 + ab.level * 8;
+        const dmg = 5 + ab.level * 3;
+        for (const e of state.enemies) {
+          if (e.hp <= 0) continue;
+          const [ex, ey] = enemyXY(e);
+          if ((ex-tx)*(ex-tx) + (ey-ty)*(ey-ty) < radius*radius) {
+            const wasHp = e.hp;
+            damageEnemy(e, dmg);
+            if (wasHp > 0 && e.hp <= 0) {
+              // 약탈 보너스 (Vampiric 효과 강화)
+              state.gold += Math.ceil(e.goldDrop * 0.5);
+            }
+            spawnParticles(ex, ey, '#cc6699', 4);
+          }
+        }
+        ab.fx.push({ x: tx, y: ty, r: radius, life: 16 });
+        ab.cooldown = Math.max(55, 100 - ab.level * 5);
+      },
+      draw(ab) {
+        for (const e of ab.fx) {
+          const t = 1 - e.life / 16;
+          ctx.globalAlpha = e.life / 16;
+          ctx.strokeStyle = '#cc6699'; ctx.lineWidth = 4;
+          ctx.beginPath(); ctx.arc(e.x, e.y, e.r * t, 0, Math.PI*2); ctx.stroke();
+          ctx.globalAlpha = (e.life/16) * 0.7;
+          ctx.fillStyle = '#ffcc66';
+          ctx.fillRect(e.x - 3, e.y - 3, 6, 6);
+        }
+        ctx.globalAlpha = 1;
+      },
+    },
+    luckyChain: {
+      name: '행운연쇄', isCombo: true, baseCost: 120, color: '#ffcc66',
+      desc: lv => `${2+lv}회 연쇄 · DMG ${2+lv*2} · 처치 시 점수×3`,
+      init(ab) { ab.cooldown = 60; ab.chains = []; },
+      tick(ab) {
+        for (const c of ab.chains) c.life--;
+        ab.chains = ab.chains.filter(c => c.life > 0);
+        if (--ab.cooldown > 0) return;
+        const first = findNearestEnemy(ARENA_R + 50);
+        if (!first) return;
+        const dmg = 2 + ab.level * 2;
+        const chains = 2 + ab.level;
+        const hit = new Set();
+        let current = first;
+        const points = [[CX, CY]];
+        for (let i = 0; i < chains; i++) {
+          if (!current) break;
+          const [cx, cy] = enemyXY(current);
+          points.push([cx, cy]);
+          const wasHp = current.hp;
+          damageEnemy(current, dmg);
+          if (wasHp > 0 && current.hp <= 0) {
+            // 행운 보너스 점수 (kill score x3)
+            state.score += Math.ceil(20 * state.round * ((state.metaMods && state.metaMods.scoreMul) || 1));
+          }
+          spawnParticles(cx, cy, '#ffcc66', 3);
+          hit.add(current);
+          let next = null, best = 160 * 160;
+          for (const e of state.enemies) {
+            if (hit.has(e) || e.hp <= 0) continue;
+            const [ex, ey] = enemyXY(e);
+            const d2 = (ex-cx)*(ex-cx) + (ey-cy)*(ey-cy);
+            if (d2 < best) { best = d2; next = e; }
+          }
+          current = next;
+        }
+        ab.chains.push({ points, life: 12 });
+        ab.cooldown = Math.max(40, 70 - ab.level * 4);
+      },
+      draw(ab) {
+        for (const c of ab.chains) {
+          ctx.globalAlpha = c.life / 12;
+          ctx.strokeStyle = '#ffcc66'; ctx.lineWidth = 3;
+          ctx.beginPath();
+          ctx.moveTo(c.points[0][0], c.points[0][1]);
+          for (let i = 1; i < c.points.length; i++) ctx.lineTo(c.points[i][0], c.points[i][1]);
+          ctx.stroke();
+        }
+        ctx.globalAlpha = 1;
+      },
+    },
+    masteryOrbit: {
+      name: '통달궤도', isCombo: true, baseCost: 130, color: '#88aaff',
+      desc: lv => `위성 수 = 액티브 보유 수 · DMG ${2+lv*2}`,
+      init(ab) { ab.angle = 0; ab.hits = new Map(); ab.radius = 160; ab.targetRadius = 160; },
+      tick(ab) {
+        ab.angle += 0.04 + ab.level * 0.005;
+        const target = findNearestEnemy(ARENA_R + 100);
+        if (target) {
+          const [tx, ty] = enemyXY(target);
+          ab.targetRadius = Math.hypot(tx - CX, ty - CY);
+        }
+        ab.radius += (ab.targetRadius - ab.radius) * 0.05;
+        ab.radius = Math.max(50, Math.min(ARENA_R - 10, ab.radius));
+        for (const [e, cd] of ab.hits) {
+          if (cd <= 1 || e.hp <= 0) ab.hits.delete(e);
+          else ab.hits.set(e, cd - 1);
+        }
+        const activeCount = Math.max(1, state.tower.abilities.filter(a => !ABILITY_DEFS[a.id].isPassive).length);
+        const count = activeCount;
+        const dmg = 2 + ab.level * 2;
+        for (let i = 0; i < count; i++) {
+          const a = ab.angle + (Math.PI * 2 / count) * i;
+          const ox = CX + Math.cos(a) * ab.radius;
+          const oy = CY + Math.sin(a) * ab.radius;
+          for (const e of state.enemies) {
+            if (ab.hits.has(e) || e.hp <= 0) continue;
+            const [ex, ey] = enemyXY(e);
+            const rr = e.size + 7;
+            if ((ox-ex)*(ox-ex) + (oy-ey)*(oy-ey) < rr*rr) {
+              damageEnemy(e, dmg);
+              ab.hits.set(e, 25);
+              spawnParticles(ex, ey, '#88aaff', 3);
+            }
+          }
+        }
+        ab.count = count;
+      },
+      draw(ab) {
+        const count = ab.count || 1;
+        ctx.strokeStyle = 'rgba(136, 170, 255, 0.10)'; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.arc(CX, CY, ab.radius, 0, Math.PI*2); ctx.stroke();
+        for (let i = 0; i < count; i++) {
+          const a = ab.angle + (Math.PI * 2 / count) * i;
+          const ox = CX + Math.cos(a) * ab.radius;
+          const oy = CY + Math.sin(a) * ab.radius;
+          ctx.fillStyle = '#1d2230'; ctx.fillRect(ox - 4, oy - 4, 8, 8);
+          ctx.fillStyle = '#88aaff'; ctx.fillRect(ox - 3, oy - 3, 6, 6);
+          ctx.fillStyle = '#ddeeff'; ctx.fillRect(ox - 1, oy - 1, 2, 2);
+        }
+      },
+    },
+    scholarSnipe: {
+      name: '학자저격', isCombo: true, baseCost: 130, color: '#bb99cc',
+      desc: lv => `최강 적 저격 · DMG ${8+lv*5} · 처치 시 쿨다운 -10%`,
+      init(ab) { ab.cooldown = 50; },
+      tick(ab) {
+        if (--ab.cooldown > 0) return;
+        let target = null, best = -1;
+        for (const e of state.enemies) { if (e.hp > best) { best = e.hp; target = e; } }
+        if (!target) return;
+        const [tx, ty] = enemyXY(target);
+        const ang = Math.atan2(ty - CY, tx - CX);
+        const dmg = 8 + ab.level * 5;
+        const wasHp = target.hp;
+        // 즉발 사격 (초고속 탄)
+        state.bullets.push({
+          x: CX, y: CY,
+          vx: Math.cos(ang) * 16, vy: Math.sin(ang) * 16,
+          dmg, life: 60, color: '#bb99cc',
+          target, leader: null, offsetAngle: 0, size: 3, glow: true,
+        });
+        ab.cooldown = Math.max(30, 70 - ab.level * 3);
+        // 학자 효과: 처치 가능성 시 다른 액티브 쿨 감소
+        if (wasHp <= dmg * 1.2) {
+          for (const a of state.tower.abilities) {
+            if (a === ab || ABILITY_DEFS[a.id].isPassive) continue;
+            if (a.cooldown !== undefined && a.cooldown > 0) a.cooldown *= 0.9;
+          }
+        }
+      },
+    },
+    resolveBoomerang: {
+      name: '결의부메랑', isCombo: true, baseCost: 140, color: '#aaaaaa',
+      desc: lv => `보스 우선 추적 · DMG ${5+lv*4} · 보스 추가 데미지 +50%`,
+      init(ab) { ab.cooldown = 70; ab.boomerangs = []; },
+      tick(ab) {
+        const dmg = 5 + ab.level * 4;
+        for (const b of ab.boomerangs) {
+          b.life--; b.rotation += 0.4;
+          if (b.phase === 'out') {
+            b.t++;
+            if (b.t >= b.outDuration) { b.phase = 'in'; b.hit = new Set(); }
+          } else {
+            const dx = CX - b.x, dy = CY - b.y;
+            const d = Math.hypot(dx, dy);
+            if (d < 20) { b.life = 0; continue; }
+            b.vx = (dx/d) * 6; b.vy = (dy/d) * 6;
+          }
+          b.x += b.vx; b.y += b.vy;
+          for (const e of state.enemies) {
+            if (b.hit.has(e) || e.hp <= 0) continue;
+            const [ex, ey] = enemyXY(e);
+            const r = e.size + 10;
+            if ((b.x-ex)*(b.x-ex) + (b.y-ey)*(b.y-ey) < r*r) {
+              damageEnemy(e, dmg * (e.isBoss ? 1.5 : 1));
+              b.hit.add(e);
+              spawnParticles(ex, ey, '#aaaaaa', 4);
+            }
+          }
+        }
+        ab.boomerangs = ab.boomerangs.filter(b => b.life > 0);
+        if (--ab.cooldown > 0) return;
+        // 보스 우선, 없으면 최강 적
+        let target = state.enemies.find(e => e.isBoss && e.hp > 0);
+        if (!target) {
+          let best = -1;
+          for (const e of state.enemies) { if (e.hp > best) { best = e.hp; target = e; } }
+        }
+        if (!target) return;
+        const [tx, ty] = enemyXY(target);
+        const ang = Math.atan2(ty - CY, tx - CX);
+        ab.boomerangs.push({
+          x: CX, y: CY,
+          vx: Math.cos(ang) * 6, vy: Math.sin(ang) * 6,
+          t: 0, outDuration: 40, phase: 'out',
+          rotation: 0, life: 220, hit: new Set(),
+        });
+        ab.cooldown = Math.max(50, 100 - ab.level * 4);
+      },
+      draw(ab) {
+        for (const b of ab.boomerangs) {
+          ctx.save();
+          ctx.translate(b.x, b.y); ctx.rotate(b.rotation);
+          ctx.fillStyle = '#666'; ctx.fillRect(-9, -3, 18, 6); ctx.fillRect(-3, -9, 6, 18);
+          ctx.fillStyle = '#aaaaaa'; ctx.fillRect(-7, -2, 14, 4); ctx.fillRect(-2, -7, 4, 14);
+          ctx.fillStyle = '#ffffff'; ctx.fillRect(-2, -2, 4, 4);
+          ctx.restore();
+        }
+      },
+    },
+
+    // ========== 대체 조합 (자유도) — 다른 파트너 조합 ==========
+    headshot: {
+      name: '헤드샷', isCombo: true, baseCost: 110, color: '#ffd0d0',
+      desc: lv => `단발 거의 즉발 · DMG ${10+lv*6}`,
+      init(ab) { ab.cooldown = 45; },
+      tick(ab) {
+        if (--ab.cooldown > 0) return;
+        const target = findNearestEnemy(ARENA_R + 50);
+        if (!target) return;
+        const [tx, ty] = enemyXY(target);
+        const ang = Math.atan2(ty - CY, tx - CX);
+        state.bullets.push({
+          x: CX, y: CY,
+          vx: Math.cos(ang) * 18, vy: Math.sin(ang) * 18,
+          dmg: 10 + ab.level * 6, life: 50, color: '#ffd0d0',
+          target, leader: null, offsetAngle: 0, size: 3, glow: true,
+        });
+        ab.cooldown = Math.max(30, 60 - ab.level * 3);
+      },
+    },
+    pelletGun: {
+      name: '펠릿건', isCombo: true, baseCost: 120, color: '#ffaa88',
+      desc: lv => `${10+lv*3}발 빠른 산탄 · DMG ${1+Math.floor(lv/2)}`,
+      init(ab) { ab.cooldown = 20; },
+      tick(ab) {
+        if (--ab.cooldown > 0) return;
+        const target = findNearestEnemy(ARENA_R + 50);
+        const base = target ? Math.atan2(enemyXY(target)[1] - CY, enemyXY(target)[0] - CX) : Math.random() * Math.PI * 2;
+        const n = 10 + ab.level * 3;
+        const spread = Math.PI * 0.6;
+        for (let i = 0; i < n; i++) {
+          const off = n === 1 ? 0 : (-spread/2 + spread * (i/(n-1)));
+          fireBullet(base + off, 1 + Math.floor(ab.level / 2), '#ffaa88', null);
+        }
+        ab.cooldown = Math.max(20, 40 - ab.level);
+      },
+    },
+
     swordRain: {
       name: '천검우', isCombo: true, baseCost: 170, color: '#eeeecc',
       desc: lv => `거대 회전검 + ${4+lv*2}개 검 낙하 · DMG ${5+lv*3}`,
@@ -2407,6 +3691,23 @@
   // ===== 조합 레시피 =====
   // 두 기본 능력을 동시에 보유하면 자동으로 조합 능력으로 합쳐짐.
   const COMBO_RECIPES = [
+    // ===== 트리플 (히든) — 콤보 + 기본 =====
+    { parts: ['precisionBurst', 'scatter'],  combo: 'ultraGatling',    tier: 3 },
+    { parts: ['chainStorm',     'frost'],    combo: 'absoluteThunder', tier: 3 },
+    { parts: ['frostNova',      'fire'],     combo: 'elementalStorm',  tier: 3 },
+    { parts: ['shotgunBurst',   'missile'],  combo: 'fusionCannon',    tier: 3 },
+    { parts: ['stormOrbit',     'sword'],    combo: 'galaxyOrbit',     tier: 3 },
+    { parts: ['steelBoomerang', 'missile'],  combo: 'titanMissile',    tier: 3 },
+    // ===== 액티브 + 패시브 조합 (서로 다른 카테고리) =====
+    { parts: ['shot',      'precision'], combo: 'precisionShot' },
+    { parts: ['multi',     'haste'],     combo: 'rapidBarrage' },
+    { parts: ['nova',      'frenzy'],    combo: 'frenzyWave' },
+    { parts: ['mortar',    'vampiric'],  combo: 'lootBomb' },
+    { parts: ['chain',     'fortune'],   combo: 'luckyChain' },
+    { parts: ['orbital',   'mastery'],   combo: 'masteryOrbit' },
+    { parts: ['sniper',    'scholar'],   combo: 'scholarSnipe' },
+    { parts: ['boomerang', 'ironwill'],  combo: 'resolveBoomerang' },
+    // ===== 액티브 2-콤보 (기본) =====
     { parts: ['scatter',   'mortar'],    combo: 'shotgunBurst' },
     { parts: ['shot',      'multi'],     combo: 'precisionBurst' },
     { parts: ['chain',     'thunder'],   combo: 'chainStorm' },
@@ -2419,41 +3720,30 @@
     { parts: ['mine',      'drone'],     combo: 'kamikazeDrone' },
     { parts: ['meteor',    'blackhole'], combo: 'cosmicCollapse' },
     { parts: ['sword',     'starfall'],  combo: 'swordRain' },
+    // ===== 대체 조합 (자유도) — 정상 조합이 없을 때 활성화 =====
+    { parts: ['shot',      'sniper'],    combo: 'headshot' },
+    { parts: ['multi',     'scatter'],   combo: 'pelletGun' },
   ];
-  // 어떤 기본 능력 → 어떤 조합의 부품인지 미리 인덱싱 (UI 힌트용)
-  const COMBO_PARTNER = {};
+  // 다중 파트너 인덱스 — 한 능력이 여러 조합에 참여 가능
+  const COMBO_PARTNERS = {};
   for (const r of COMBO_RECIPES) {
-    COMBO_PARTNER[r.parts[0]] = { partner: r.parts[1], combo: r.combo };
-    COMBO_PARTNER[r.parts[1]] = { partner: r.parts[0], combo: r.combo };
+    for (let i = 0; i < r.parts.length; i++) {
+      const me = r.parts[i];
+      const other = r.parts[1 - i];
+      if (!COMBO_PARTNERS[me]) COMBO_PARTNERS[me] = [];
+      COMBO_PARTNERS[me].push({ partner: other, combo: r.combo, tier: r.tier || 2 });
+    }
+  }
+  // 기존 단일 파트너 인덱스 (역호환) — 첫 번째 항목 사용
+  const COMBO_PARTNER = {};
+  for (const id in COMBO_PARTNERS) {
+    COMBO_PARTNER[id] = COMBO_PARTNERS[id][0];
   }
 
-  function checkCombos() {
-    for (const recipe of COMBO_RECIPES) {
-      const i1 = state.tower.abilities.findIndex(a => a.id === recipe.parts[0]);
-      const i2 = state.tower.abilities.findIndex(a => a.id === recipe.parts[1]);
-      if (i1 === -1 || i2 === -1) continue;
-      const a1 = state.tower.abilities[i1];
-      const a2 = state.tower.abilities[i2];
-      const newLevel = Math.max(a1.level, a2.level);
-      // 큰 인덱스부터 제거 (위치 보존)
-      state.tower.abilities.splice(Math.max(i1, i2), 1);
-      state.tower.abilities.splice(Math.min(i1, i2), 1);
-      const newAb = { id: recipe.combo, level: newLevel };
-      ABILITY_DEFS[recipe.combo].init(newAb);
-      state.tower.abilities.push(newAb);
-      // 화면 플래시 + 토스트
-      state.comboFlash = 30;
-      state.comboFlashColor = ABILITY_DEFS[recipe.combo].color || '#ffaa55';
-      // 폭죽 같은 파티클을 타워 주변에 뿌림
-      for (let k = 0; k < 30; k++) {
-        spawnParticles(CX, CY, state.comboFlashColor, 1);
-      }
-      toast(`✨ ${ABILITY_DEFS[recipe.combo].name} 조합 완성!`);
-      unlockAbility(recipe.combo);  // 도감 해금
-      return true;
-    }
-    return false;
-  }
+  // 조합 자동 형성은 제거됨 (뱀파이어 서바이버즈 스타일)
+  // 이제 조합은 두 재료가 모두 max 도달 시 다음 카드 모달에 '조합' 옵션으로 등장하며,
+  // 플레이어가 그 카드를 선택할 때만 형성됨. (applyLevelUpChoice의 'combo' 액션 참고)
+  function checkCombos() { return false; }
 
   // ===== 라운드 설정 =====
   // 일반: 30초간 1초에 1마리씩 (총 20마리). 다 잡으면 즉시 다음 라운드 + 보너스 점수.
@@ -2494,8 +3784,17 @@
       enemies: [],
       bullets: [],
       particles: [],
+      damageNumbers: [],   // 데미지 숫자 부유 효과
       comboFlash: 0,
       comboFlashColor: '#ffaa55',
+      comboReveal: null,   // 콤보 형성 시 큰 카드
+      shakeFrames: 0,      // 화면 흔들림 잔여 프레임
+      shakeStrength: 0,
+      kills: 0,            // 현재 레벨 진행도 처치 수
+      totalKills: 0,       // 게임 전체 누적 처치 (업적용)
+      playerLevel: 1,
+      killsToNextLevel: 8,
+      levelUpChoices: null, // 레벨업 선택 카드들 (활성 시 모달)
       round: 1,
       roundFrame: 0,        // 현재 라운드 경과 프레임
       spawnPlan: [],        // 이번 라운드에 남은 스폰 시점
@@ -2506,8 +3805,51 @@
       gameWin: false,
       t: 0,
     };
+    // 메타 강화 + 캐릭터 패시브 적용 (캐릭터는 골드/점수에는 영향 없음)
+    const mods = getMetaMods();
+    const char = CHARACTERS[selectedCharacter] || CHARACTERS.standard;
+    const cp = char.passive;
+    state.gold = mods.startGold;
+    state.metaMods = {
+      goldMul:    mods.goldMul,
+      scoreMul:   mods.scoreMul,
+      enhanceMul: mods.enhanceMul * (cp.enhanceMul || 1),
+      bossDmgMul: mods.bossDmgMul * (cp.bossDmgMul || 1),
+      dmgMul:     cp.dmgMul || 1,
+      dmgBoost:   mods.dmgBoost || 0,
+      bossGoldMul: mods.bossGoldMul || 0,
+      slowMul:    cp.slowMul || 1,
+      levelUpMul: cp.levelUpMul || 1,
+      levelUpFast: mods.levelUpFast || 0,
+      slotMod:    cp.slotMod || 0,
+      freeRolls:  mods.freeRolls,
+    };
+    // 메타 강화: 시작 점수
+    if (mods.startScore) state.score = mods.startScore;
+    state.character = selectedCharacter;
+    // 캐릭터 시작 능력 부여
+    for (const id of char.startAbilities) {
+      const ab = { id, level: 1 };
+      ABILITY_DEFS[id].init(ab);
+      state.tower.abilities.push(ab);
+      unlockAbility(id);
+    }
+    checkCombos();
     planRound();
     paused = false;
+    // 시작 무료 레벨업 (메타 보너스)
+    for (let i = 0; i < state.metaMods.freeRolls; i++) {
+      const choices = generateLevelUpChoices();
+      if (choices.length === 0) break;
+      const c = choices[0];
+      if (c.action === 'new') {
+        const ab = { id: c.id, level: 1 };
+        ABILITY_DEFS[c.id].init(ab);
+        state.tower.abilities.push(ab);
+        unlockAbility(c.id);
+        checkCombos();
+      }
+    }
   }
 
   // 라운드 진행 — 100라운드 이상이면 승리
@@ -2524,8 +3866,290 @@
     state.gameOver = true;
     state.gameOverReason = reason;
     state.gameWin = !!win;
+    shake(20, 15);
+    if (win) SFX.victory(); else SFX.gameOver();
+    state.totalTime = state.t;  // 게임 시간 (프레임)
+    earnStardust();
+    recordCharUsage();        // 캐릭터 사용 라운드 기록
+    checkAchievements();
     saveRecord();
     renderPanel();
+  }
+
+  // ===== 메타 프로그레션 (스타더스트 영구 통화) =====
+  const META_KEY = 'dot-defense-meta';
+  let META = (function() {
+    try { return JSON.parse(localStorage.getItem(META_KEY) || '{}'); }
+    catch { return {}; }
+  })();
+  function saveMeta() {
+    try { localStorage.setItem(META_KEY, JSON.stringify(META)); } catch {}
+  }
+  function metaLv(id) { return (META.upgrades && META.upgrades[id]) || 0; }
+  function metaDust() { return META.stardust || 0; }
+
+  // 강화소 항목 정의 (확장: 11종, 더 높은 max 레벨)
+  const META_UPGRADES = [
+    { id: 'startGold',   name: '시작 골드',         desc: 'lv당 +25 골드',          maxLv: 15, cost: lv => 8 * (lv + 1),  apply: lv => 25 * lv },
+    { id: 'goldGain',    name: '골드 획득량',       desc: 'lv당 +10%',             maxLv: 8,  cost: lv => 25 * (lv + 1), apply: lv => 0.10 * lv },
+    { id: 'freeRolls',   name: '시작 레벨업',       desc: 'lv당 무료 레벨업 +1',     maxLv: 5,  cost: lv => 80 * (lv + 1), apply: lv => lv },
+    { id: 'enhance',     name: '강화 비용 절감',    desc: 'lv당 -7%',              maxLv: 6,  cost: lv => 40 * (lv + 1), apply: lv => 0.07 * lv },
+    { id: 'extraSlot',   name: '액티브 슬롯 +1',    desc: 'lv당 +1칸 (max 8칸)',    maxLv: 2,  cost: lv => 300 * (lv + 1), apply: lv => lv },
+    { id: 'bossDmg',     name: '보스 추가 데미지',  desc: 'lv당 +15%',             maxLv: 6,  cost: lv => 50 * (lv + 1), apply: lv => 0.15 * lv },
+    { id: 'killScore',   name: '처치 점수 보너스',  desc: 'lv당 +20%',             maxLv: 8,  cost: lv => 20 * (lv + 1), apply: lv => 0.20 * lv },
+    // 신규 강화 4종
+    { id: 'startScore',  name: '시작 점수',         desc: 'lv당 +500 시작 점수',    maxLv: 5,  cost: lv => 15 * (lv + 1), apply: lv => 500 * lv },
+    { id: 'levelUpFast', name: '빠른 성장',         desc: 'lv당 레벨업 처치 -1',    maxLv: 5,  cost: lv => 35 * (lv + 1), apply: lv => lv },
+    { id: 'dmgBoost',    name: '데미지 부스트',     desc: 'lv당 +3% 모든 데미지',   maxLv: 5,  cost: lv => 60 * (lv + 1), apply: lv => 0.03 * lv },
+    { id: 'bossGold',    name: '보스 골드 보너스',  desc: 'lv당 +25% 보스 골드',    maxLv: 4,  cost: lv => 45 * (lv + 1), apply: lv => 0.25 * lv },
+  ];
+  function getMetaMods() {
+    const v = id => {
+      const up = META_UPGRADES.find(u => u.id === id);
+      return up && up.apply ? up.apply(metaLv(id)) : 0;
+    };
+    return {
+      startGold:   v('startGold'),
+      goldMul:     1 + v('goldGain'),
+      freeRolls:   metaLv('freeRolls'),
+      enhanceMul:  1 - v('enhance'),
+      extraSlot:   metaLv('extraSlot'),
+      bossDmgMul:  1 + v('bossDmg'),
+      scoreMul:    1 + v('killScore'),
+      startScore:  v('startScore'),
+      levelUpFast: v('levelUpFast'),
+      dmgBoost:    v('dmgBoost'),
+      bossGoldMul: v('bossGold'),
+    };
+  }
+  function buyUpgrade(id) {
+    const up = META_UPGRADES.find(u => u.id === id);
+    if (!up) return false;
+    const cur = metaLv(id);
+    if (cur >= up.maxLv) return false;
+    const cost = up.cost(cur);
+    if ((META.stardust || 0) < cost) return false;
+    META.stardust -= cost;
+    META.upgrades = META.upgrades || {};
+    META.upgrades[id] = cur + 1;
+    saveMeta();
+    SFX.combo();
+    return true;
+  }
+  function earnStardust() {
+    const earned = Math.floor(state.score / 800) + state.round * 3 + (state.gameWin ? 300 : 0);
+    META.stardust = (META.stardust || 0) + earned;
+    saveMeta();
+    state.stardustEarned = earned;
+  }
+
+  // ===== 캐릭터 시스템 — 골드/점수에는 영향 없음, 게임플레이 효과 위주 =====
+  // 각 캐릭터: 시작 능력 / 데미지 멀티 / 슬롯 / 레벨업 속도 / 특수효과
+  const CHARACTERS = {
+    standard: {
+      name: '표준', color: '#7ad7ff',
+      desc: '균형 잡힌 시작. 처음 능력은 레벨업으로 획득.',
+      startAbilities: [],
+      passive: { dmgMul: 1, bossDmgMul: 1, slotMod: 0, levelUpMul: 1, slowMul: 1 },
+      unlockBy: null,  // 기본 해금
+    },
+    sniper: {
+      name: '저격수', color: '#aaffaa',
+      desc: '저격 능력으로 시작. 보스 데미지 +25%.',
+      startAbilities: ['sniper'],
+      passive: { dmgMul: 1, bossDmgMul: 1.25, slotMod: 0, levelUpMul: 1, slowMul: 1 },
+      unlockBy: 'round25',
+    },
+    engineer: {
+      name: '공학자', color: '#88aaff',
+      desc: '터렛+산탄으로 시작. 모든 데미지 +10%.',
+      startAbilities: ['turret', 'scatter'],
+      passive: { dmgMul: 1.10, bossDmgMul: 1, slotMod: 0, levelUpMul: 1, slowMul: 1 },
+      unlockBy: 'combo3',
+    },
+    mage: {
+      name: '마법사', color: '#cc88ff',
+      desc: '노바+빙결로 시작. 슬로우 효과 +50%.',
+      startAbilities: ['nova', 'frost'],
+      passive: { dmgMul: 1, bossDmgMul: 1, slotMod: 0, levelUpMul: 1, slowMul: 1.5 },
+      unlockBy: 'round50',
+    },
+    berserker: {
+      name: '광전사', color: '#ff5b6e',
+      desc: '데미지 +20%. 슬롯 -1 (5칸). 보스 데미지 +30%.',
+      startAbilities: [],
+      passive: { dmgMul: 1.20, bossDmgMul: 1.30, slotMod: -1, levelUpMul: 1, slowMul: 1 },
+      unlockBy: 'round100',
+    },
+    chronos: {
+      name: '시간왕', color: '#ffe070',
+      desc: '레벨업 처치 필요 -30% (빠른 성장).',
+      startAbilities: [],
+      passive: { dmgMul: 1, bossDmgMul: 1, slotMod: 0, levelUpMul: 0.7, slowMul: 1 },
+      unlockBy: 'triple1',
+    },
+    researcher: {
+      name: '연구자', color: '#bb99cc',
+      desc: '연구 패시브 시작. 강화 비용 -15%.',
+      startAbilities: ['scholar'],
+      passive: { dmgMul: 1, bossDmgMul: 1, slotMod: 0, levelUpMul: 1, slowMul: 1, enhanceMul: 0.85 },
+      unlockBy: 'score100k',
+    },
+    agent: {
+      name: '요원', color: '#88aaff',
+      desc: '액티브 슬롯 +1 (7칸). 데미지 -5%.',
+      startAbilities: [],
+      passive: { dmgMul: 0.95, bossDmgMul: 1, slotMod: 1, levelUpMul: 1, slowMul: 1 },
+      unlockBy: 'kills2k',
+    },
+    mixer: {
+      name: '혼합주의자', color: '#ff88dd',
+      desc: '데미지 +5%, 보스 데미지 +20%. 조합 마니아.',
+      startAbilities: [],
+      passive: { dmgMul: 1.05, bossDmgMul: 1.20, slotMod: 0, levelUpMul: 1, slowMul: 1 },
+      unlockBy: 'triple3',
+    },
+  };
+  function isCharUnlocked(id) {
+    const c = CHARACTERS[id];
+    if (!c.unlockBy) return true;
+    const have = getUnlockedAchievements();
+    return have.has(c.unlockBy);
+  }
+  let selectedCharacter = META.selectedCharacter || 'standard';
+
+  // ===== 업적 시스템 (15+) — 일부는 캐릭터/능력을 해금 =====
+  // unlocks: { char: 'id' } or { ability: 'id' }
+  const ACHIEVEMENTS = [
+    // 진행 — 캐릭터 해금
+    { id: 'first',     name: '첫 발걸음', desc: '첫 게임 종료', reward: 20, check: () => true },
+    { id: 'round10',   name: '베테랑',    desc: 'R10 도달', reward: 50,  check: s => s.round >= 10,
+      unlocks: { ability: 'magnet' } },
+    { id: 'round25',   name: '엘리트',    desc: 'R25 도달', reward: 100, check: s => s.round >= 25,
+      unlocks: { char: 'sniper', ability: 'railgun' } },
+    { id: 'round50',   name: '레전드',    desc: 'R50 도달', reward: 250, check: s => s.round >= 50,
+      unlocks: { char: 'mage' } },
+    { id: 'round100',  name: '완전정복',  desc: 'R100 클리어', reward: 500, check: s => !!s.gameWin,
+      unlocks: { char: 'berserker', ability: 'timeStop' } },
+    // 빌드
+    { id: 'combo3',    name: '조합광',    desc: '한 게임 조합 3개', reward: 60,  check: s => s.tower.abilities.filter(a => ABILITY_DEFS[a.id].isCombo && !ABILITY_DEFS[a.id].isTriple).length >= 3,
+      unlocks: { char: 'engineer', ability: 'clone' } },
+    { id: 'triple1',   name: '트라이앵글',desc: '트리플 조합 1개 형성', reward: 200, check: s => s.tower.abilities.some(a => ABILITY_DEFS[a.id].isTriple),
+      unlocks: { char: 'chronos' } },
+    { id: 'triple3',   name: '히든마스터',desc: '한 게임에 트리플 조합 3개', reward: 500, check: s => s.tower.abilities.filter(a => ABILITY_DEFS[a.id].isTriple).length >= 3,
+      unlocks: { char: 'mixer', ability: 'iceLance' } },
+    { id: 'maxAbility',name: '풀세트',    desc: '슬롯 모두 채움', reward: 40,  check: s => s.tower.abilities.length >= activeMaxSlots(),
+      unlocks: { ability: 'starfall' } },
+    { id: 'lvHigh',    name: '만렙등반',  desc: '능력 한 개를 Lv10+ (max)', reward: 150, check: s => s.tower.abilities.some(a => a.level >= 8),
+      unlocks: { ability: 'reaper' } },
+    // 점수/킬
+    { id: 'score100k', name: '점수기록',  desc: '점수 100k 돌파', reward: 100, check: s => s.score >= 100000,
+      unlocks: { char: 'researcher', ability: 'tornado' } },
+    { id: 'score500k', name: '만점왕',    desc: '점수 500k 돌파', reward: 300, check: s => s.score >= 500000,
+      unlocks: { ability: 'fury' } },
+    { id: 'kills500',  name: '살육자',    desc: '한 게임 500처치', reward: 80,  check: s => (s.totalKills || 0) >= 500,
+      unlocks: { ability: 'drone' } },
+    { id: 'kills2k',   name: '학살자',    desc: '한 게임 2000처치', reward: 200, check: s => (s.totalKills || 0) >= 2000,
+      unlocks: { char: 'agent' } },
+    // 보스
+    { id: 'boss5',     name: '보스킬러',  desc: '한 게임 보스 5마리 처치', reward: 150, check: s => (s.bossKills || 0) >= 5,
+      unlocks: { ability: 'thunder' } },
+    // 도감
+    { id: 'codexHalf', name: '도감 절반', desc: '기본 능력 10개 해금', reward: 100, check: () => BASIC_ABILITY_IDS.filter(id => unlockedAbilities.has(id)).length >= 10,
+      unlocks: { ability: 'sword' } },
+    { id: 'codexFull', name: '도감 마스터',desc: '기본 능력 모두 해금', reward: 400, check: () => BASIC_ABILITY_IDS.every(id => unlockedAbilities.has(id)),
+      unlocks: { ability: 'boomerang' } },
+    // 캐릭터 사용
+    { id: 'allChars',  name: '모든 영웅',  desc: '모든 캐릭터로 R5 도달',
+      reward: 300, check: () => {
+        const used = META.charactersUsed || {};
+        return Object.keys(CHARACTERS).every(id => (used[id] || 0) >= 5);
+      } },
+    // 특수
+    { id: 'speedrun',  name: '스피드런',  desc: 'R10을 5분 이내', reward: 150, check: s => s.round >= 10 && s.totalTime < 60 * 60 * 5,
+      unlocks: { ability: 'blackhole' } },
+    { id: 'lowSlot',   name: '한방능력자',desc: '능력 1개로만 R8 도달', reward: 200, check: s => s.round >= 8 && s.tower.abilities.length <= 1 },
+  ];
+
+  // ===== 반복 업적 — 게임 종료마다 조건 충족 시 매번 보상 =====
+  const REPEAT_ACHIEVEMENTS = [
+    { id: 'rGame',     name: '꾸준한 도전',     desc: '게임 종료 시 +5★ 누적',           reward: 5,   check: () => true },
+    { id: 'rR10',      name: '베테랑 (반복)',   desc: 'R10 도달마다 +15★',              reward: 15,  check: s => s.round >= 10 },
+    { id: 'rR25',      name: '엘리트 (반복)',   desc: 'R25 도달마다 +40★',              reward: 40,  check: s => s.round >= 25 },
+    { id: 'rR50',      name: '레전드 (반복)',   desc: 'R50 도달마다 +100★',             reward: 100, check: s => s.round >= 50 },
+    { id: 'rWin',      name: '승리 (반복)',     desc: 'R100 클리어마다 +300★',          reward: 300, check: s => !!s.gameWin },
+    { id: 'rKills500', name: '학살 (반복)',     desc: '한 게임 500처치마다 +20★',        reward: 20,  check: s => (s.totalKills || 0) >= 500 },
+    { id: 'rKills2k',  name: '대학살 (반복)',   desc: '한 게임 2000처치마다 +80★',       reward: 80,  check: s => (s.totalKills || 0) >= 2000 },
+    { id: 'rTriple',   name: '히든 사냥 (반복)', desc: '게임에 트리플 조합 형성마다 +50★', reward: 50,  check: s => s.tower.abilities.some(a => ABILITY_DEFS[a.id].isTriple) },
+    { id: 'rBoss5',    name: '보스 사냥 (반복)', desc: '보스 5마리 처치마다 +40★',        reward: 40,  check: s => (s.bossKills || 0) >= 5 },
+  ];
+  function getUnlockedAchievements() {
+    return new Set(META.achievements || []);
+  }
+  function checkAchievements() {
+    const have = getUnlockedAchievements();
+    let earned = 0, newOnes = [];
+    // 단발 업적 — 한 번만 획득
+    for (const ach of ACHIEVEMENTS) {
+      if (have.has(ach.id)) continue;
+      if (ach.check(state)) {
+        have.add(ach.id);
+        earned += ach.reward;
+        newOnes.push(ach);
+      }
+    }
+    // 반복 업적 — 매 게임마다 조건 충족 시 보상
+    let repeatEarned = 0;
+    const repeatHits = [];
+    META.repeatCounts = META.repeatCounts || {};
+    for (const ach of REPEAT_ACHIEVEMENTS) {
+      if (ach.check(state)) {
+        META.repeatCounts[ach.id] = (META.repeatCounts[ach.id] || 0) + 1;
+        repeatEarned += ach.reward;
+        repeatHits.push(ach);
+      }
+    }
+    if (newOnes.length > 0 || repeatEarned > 0) {
+      META.achievements = [...have];
+      META.stardust = (META.stardust || 0) + earned + repeatEarned;
+      saveMeta();
+      state.achievementsEarned = newOnes;
+      state.achievementStardust = earned;
+      state.repeatStardust = repeatEarned;
+      state.repeatHits = repeatHits;
+    }
+  }
+  // 업적으로 해금된 능력 ID 집합 (랜덤 풀 + 레벨업 풀에 포함될지 결정)
+  function getUnlockedAbilityIds() {
+    const set = new Set();
+    // 기본적으로 해금된 능력 (특수 능력 외)
+    const lockedByAchievement = new Set();
+    for (const ach of ACHIEVEMENTS) {
+      if (ach.unlocks && ach.unlocks.ability) {
+        lockedByAchievement.add(ach.unlocks.ability);
+      }
+    }
+    const have = getUnlockedAchievements();
+    for (const id of BASIC_ABILITY_IDS) {
+      if (!lockedByAchievement.has(id)) { set.add(id); continue; }
+      // 잠긴 능력은 그 업적 보유 시에만 해금
+      for (const ach of ACHIEVEMENTS) {
+        if (ach.unlocks && ach.unlocks.ability === id && have.has(ach.id)) {
+          set.add(id); break;
+        }
+      }
+    }
+    return set;
+  }
+  // 캐릭터 사용 기록 (allChars 업적용)
+  function recordCharUsage() {
+    META.charactersUsed = META.charactersUsed || {};
+    const id = state.character || 'standard';
+    const round = state.round || 1;
+    if ((META.charactersUsed[id] || 0) < round) {
+      META.charactersUsed[id] = round;
+      saveMeta();
+    }
   }
 
   // ===== 점수 기록 (상위 10) — localStorage 영구 저장 =====
@@ -2607,13 +4231,281 @@
   }
   function damageEnemy(e, dmg) {
     if (e.hp <= 0) return;
-    e.hp -= dmg;
-    if (e.hp <= 0) {
-      state.gold += e.goldDrop;
-      state.score += 10 * state.round;
-      const [ex, ey] = enemyXY(e);
-      spawnParticles(ex, ey, '#ff5b6e', 8);
+    // 모든 데미지 멀티 (캐릭터 + 모든 패시브 + 메타 효과)
+    if (state.metaMods) {
+      const mm = state.metaMods;
+      let mul = (mm.dmgMul || 1)
+        * (1 + (mm.dmgBoost || 0))            // 메타: 데미지 부스트
+        * (1 + (mm.furyBonus || 0))           // 액티브 패시브: 분노
+        * (1 + (mm.precisionBonus || 0))      // 패시브: 정확
+        * (1 + (mm.frenzyBonus || 0))         // 패시브: 광폭
+        * (1 + (mm.masteryBonus || 0));       // 패시브: 숙련
+      if (e.isBoss) {
+        mul *= (mm.bossDmgMul || 1) * (1 + (mm.ironwillBonus || 0));
+      }
+      dmg = dmg * mul;
     }
+    // 보호막 적/보스: 처음 N회 데미지는 무효 (보호막 카운트만 줄임)
+    if ((e.behavior === 'shielded' || (e.isBoss && e.shieldHp > 0)) && e.shieldHp > 0) {
+      e.shieldHp--;
+      const [ex, ey] = enemyXY(e);
+      spawnParticles(ex, ey, '#88ccff', 2);
+      state.damageNumbers.push({
+        x: ex, y: ey - e.size - 4, vy: -0.6,
+        text: 'BLOCK', color: '#88ccff', life: 25, size: 10,
+      });
+      return;
+    }
+    e.lastDamageAt = state.t;
+    e.hp -= dmg;
+    const [ex, ey] = enemyXY(e);
+    // 데미지 숫자 — 평소엔 흰색, 큰 데미지(크리티컬)만 골드로 강조
+    const big = dmg >= 30;
+    state.damageNumbers.push({
+      x: ex + (Math.random() - 0.5) * 6,
+      y: ey - e.size - 4,
+      vy: -0.7,
+      text: String(Math.round(dmg)),
+      color: big ? '#ffd479' : '#dde2ec',
+      life: 26,
+      size: big ? 13 : 10,
+    });
+    if (e.hp <= 0) {
+      const mm = state.metaMods || { goldMul: 1, scoreMul: 1 };
+      // 골드 — 흡혈 패시브 + 보스 골드 보너스 (메타)
+      const bossGold = e.isBoss ? (1 + (mm.bossGoldMul || 0)) : 1;
+      state.gold += Math.ceil(e.goldDrop * mm.goldMul * (1 + (mm.bonusGoldMul || 0)) * bossGold);
+      // 점수 + 행운 보너스 (확률)
+      state.score += Math.ceil(10 * state.round * mm.scoreMul);
+      if (mm.fortuneChance && Math.random() < mm.fortuneChance) {
+        const fortuneBonus = Math.ceil(40 * state.round * mm.scoreMul);
+        state.score += fortuneBonus;
+        const [ex2, ey2] = enemyXY(e);
+        state.damageNumbers.push({
+          x: ex2, y: ey2 - e.size - 12, vy: -1.2,
+          text: '+' + fortuneBonus, color: '#ffcc66', life: 35, size: 12,
+        });
+      }
+      // 광폭 트리거
+      state.frenzyTrigger = true;
+      state.kills++;
+      state.totalKills = (state.totalKills || 0) + 1;
+      if (e.isBoss) state.bossKills = (state.bossKills || 0) + 1;
+      spawnParticles(ex, ey, '#ff5b6e', e.isBoss ? 20 : 8);
+      SFX.kill();
+      if (e.isBoss) {
+        shake(18, 12);
+        SFX.explode();
+      } else {
+        shake(4, 4);
+      }
+      // 분열형: 죽을 때 작은 2마리로 갈라짐 (자식은 분열 X)
+      if (e.behavior === 'splitter' && !e.isChild) {
+        const cfg = roundConfig(state.round);
+        for (let k = 0; k < 2; k++) {
+          const newA = e.angle + (k === 0 ? -0.15 : 0.15);
+          spawnEnemy({
+            angle: newA, radius: e.radius,
+            hp: Math.max(1, Math.ceil(e.maxHp * 0.4)),
+            behavior: null, size: 5, type: e.type,
+          });
+          // 자식 표시
+          const last = state.enemies[state.enemies.length - 1];
+          if (last) { last.isChild = true; last.goldDrop = Math.max(1, Math.ceil(e.goldDrop * 0.5)); }
+        }
+      }
+      // 레벨업 트리거 (모달 띄움)
+      if (state.kills >= state.killsToNextLevel && !state.levelUpChoices) {
+        triggerLevelUp();
+      }
+    }
+  }
+  // 화면 흔들림 트리거
+  function shake(strength, frames) {
+    if (state.shakeStrength < strength) state.shakeStrength = strength;
+    if (state.shakeFrames < frames) state.shakeFrames = frames;
+  }
+
+  // ===== 능력 Max 레벨 시스템 =====
+  // 뱀파이어 서바이버즈 스타일: 재료 둘 다 max 도달 시 다음 카드에서 조합 옵션 등장
+  function maxLvFor(id) {
+    const def = ABILITY_DEFS[id];
+    if (!def) return 8;
+    if (def.isTriple) return 4;
+    if (def.isCombo) return 5;
+    return 8;  // 기본 액티브/패시브
+  }
+  function isAtMax(a) { return a.level >= maxLvFor(a.id); }
+
+  // 두 재료가 모두 max 도달한 조합 레시피들을 반환
+  function findAvailableCombos() {
+    const ownedAbs = state.tower.abilities;
+    const ownedIds = new Set(ownedAbs.map(a => a.id));
+    const available = [];
+    for (const r of COMBO_RECIPES) {
+      if (!ownedIds.has(r.parts[0]) || !ownedIds.has(r.parts[1])) continue;
+      if (ownedIds.has(r.combo)) continue;  // 이미 보유 시 제외
+      const a1 = ownedAbs.find(a => a.id === r.parts[0]);
+      const a2 = ownedAbs.find(a => a.id === r.parts[1]);
+      if (!isAtMax(a1) || !isAtMax(a2)) continue;
+      available.push(r);
+    }
+    return available;
+  }
+
+  // ===== 레벨업 시스템 =====
+  function generateLevelUpChoices() {
+    const choices = [];
+
+    // 1) 조합 카드 — 두 재료 모두 max 도달 시 1장 보장 (트리플 우선)
+    const availableCombos = findAvailableCombos().slice();
+    availableCombos.sort((a, b) => (b.tier || 2) - (a.tier || 2));
+    if (availableCombos.length > 0) {
+      const r = availableCombos[0];
+      choices.push({
+        action: 'combo',
+        id: r.combo,
+        parts: r.parts,
+        tier: r.tier || 2,
+      });
+    }
+
+    const owned = new Set(state.tower.abilities.map(a => a.id));
+    const allowed = getUnlockedAbilityIds();
+    const unownedActive  = BASIC_ABILITY_IDS.filter(id => !owned.has(id) && allowed.has(id) && !ABILITY_DEFS[id].isPassive);
+    const unownedPassive = BASIC_ABILITY_IDS.filter(id => !owned.has(id) && allowed.has(id) &&  ABILITY_DEFS[id].isPassive);
+    // 강화 대상은 max 미달 능력만
+    const ownedAbilities = state.tower.abilities.filter(a => !isAtMax(a));
+    while (choices.length < 3) {
+      const newActiveCount = choices.filter(c => c.action === 'new' && !ABILITY_DEFS[c.id].isPassive).length;
+      const newPassiveCount = choices.filter(c => c.action === 'new' && ABILITY_DEFS[c.id].isPassive).length;
+      const aSlotsFree = activeCount() + newActiveCount < maxActiveSlots();
+      const pSlotsFree = passiveCount() + newPassiveCount < maxPassiveSlots();
+      const newActivePool = unownedActive.filter(id => !choices.some(c => c.action === 'new' && c.id === id));
+      const newPassivePool = unownedPassive.filter(id => !choices.some(c => c.action === 'new' && c.id === id));
+      const lvPool = ownedAbilities.filter(a => !choices.some(c => c.action === 'level' && c.id === a.id));
+      const canNewA = aSlotsFree && newActivePool.length > 0;
+      const canNewP = pSlotsFree && newPassivePool.length > 0;
+      const canLv = lvPool.length > 0;
+      if (!canNewA && !canNewP && !canLv) break;
+      // 초반엔 new 위주, 후반엔 level. 액티브 60% / 패시브 30% / 강화 사이.
+      const roll = Math.random();
+      const earlyGame = state.playerLevel < 4;
+      let pick = null;
+      if ((canNewA || canNewP) && (!canLv || roll < (earlyGame ? 0.75 : 0.45))) {
+        // 신규 — 액티브가 더 자주 (적이 있는 경우만)
+        const preferActive = canNewA && (!canNewP || Math.random() < 0.6);
+        const pool = preferActive ? newActivePool : newPassivePool;
+        const fallback = preferActive ? newPassivePool : newActivePool;
+        const finalPool = pool.length > 0 ? pool : fallback;
+        if (finalPool.length === 0) break;
+        const id = finalPool[Math.floor(Math.random() * finalPool.length)];
+        choices.push({ action: 'new', id, newLevel: 1 });
+      } else if (canLv) {
+        const p = lvPool[Math.floor(Math.random() * lvPool.length)];
+        choices.push({ action: 'level', id: p.id, level: p.level, newLevel: p.level + 1 });
+      } else break;
+    }
+    // 남은 자리는 보너스 카드 (점수 / 스타더스트)
+    while (choices.length < 3) {
+      const scoreMul = (state.metaMods && state.metaMods.scoreMul) || 1;
+      if (Math.random() < 0.6) {
+        // 점수 보너스 (라운드에 비례)
+        const amount = Math.floor(800 * state.round * scoreMul * (0.85 + Math.random() * 0.4));
+        choices.push({ action: 'bonusScore', amount });
+      } else {
+        // 스타더스트 (영구 통화 소량)
+        const amount = 3 + Math.floor(Math.random() * 8);
+        choices.push({ action: 'bonusStardust', amount });
+      }
+    }
+    return choices;
+  }
+  function triggerLevelUp() {
+    state.playerLevel++;
+    state.kills = 0;
+    const mul = (state.metaMods && state.metaMods.levelUpMul) || 1;
+    const fast = (state.metaMods && state.metaMods.levelUpFast) || 0;
+    state.killsToNextLevel = Math.max(3, Math.floor((8 + state.playerLevel * 4) * mul - fast));
+    const choices = generateLevelUpChoices();
+    // 항상 3장 (능력 카드 부족 시 보너스 카드로 채움)
+    state.levelUpChoices = choices;
+    SFX.levelup();
+  }
+  function applyLevelUpChoice(idx) {
+    if (!state.levelUpChoices) return;
+    if (idx === -1) {  // 취소 (랜덤 모달인 경우만 허용)
+      if (state.cardCancelable) {
+        state.levelUpChoices = null;
+        state.cardCost = 0;
+        state.cardCancelable = false;
+        SFX.click();
+      }
+      return;
+    }
+    const c = state.levelUpChoices[idx];
+    if (!c) return;
+    // 카드가 랜덤 획득 모달에서 온 경우 — 비용이 0이어도 acquireCount 증가
+    // (다음 번부터 비용이 늘어남: 0 → 25 → 60 → ...)
+    if (state.cardCancelable) {
+      if (state.cardCost > 0) state.gold -= state.cardCost;
+      state.tower.acquireCount += 1;
+    }
+    if (c.action === 'new') {
+      const ab = { id: c.id, level: 1 };
+      ABILITY_DEFS[c.id].init(ab);
+      state.tower.abilities.push(ab);
+      unlockAbility(c.id);
+    } else if (c.action === 'level') {
+      const a = state.tower.abilities.find(x => x.id === c.id);
+      if (a && !isAtMax(a)) a.level++;
+    } else if (c.action === 'bonusScore') {
+      state.score += c.amount;
+      state.damageNumbers.push({
+        x: CX, y: CY - 80, vy: -1.5,
+        text: `+${c.amount.toLocaleString()}`,
+        color: '#bcf0d2', life: 50, size: 16,
+      });
+      toast(`🎁 점수 +${c.amount.toLocaleString()}`);
+    } else if (c.action === 'bonusStardust') {
+      META.stardust = (META.stardust || 0) + c.amount;
+      saveMeta();
+      state.damageNumbers.push({
+        x: CX, y: CY - 80, vy: -1.5,
+        text: `+${c.amount}★`,
+        color: '#ffe890', life: 50, size: 16,
+      });
+      toast(`⭐ 스타더스트 +${c.amount}`);
+    } else if (c.action === 'combo') {
+      // 조합 카드: 재료 2개 소진 → 새 조합 능력 생성
+      const recipe = COMBO_RECIPES.find(r => r.combo === c.id);
+      if (recipe) {
+        const i1 = state.tower.abilities.findIndex(a => a.id === recipe.parts[0]);
+        const i2 = state.tower.abilities.findIndex(a => a.id === recipe.parts[1]);
+        if (i1 !== -1 && i2 !== -1) {
+          state.tower.abilities.splice(Math.max(i1, i2), 1);
+          state.tower.abilities.splice(Math.min(i1, i2), 1);
+          const newAb = { id: c.id, level: 1 };
+          ABILITY_DEFS[c.id].init(newAb);
+          state.tower.abilities.push(newAb);
+          // 화려한 형성 연출
+          const isTriple = c.tier === 3;
+          state.comboFlash = isTriple ? 50 : 30;
+          state.comboFlashColor = ABILITY_DEFS[c.id].color || '#ffaa55';
+          state.comboReveal = { id: c.id, level: 1, life: isTriple ? 90 : 60 };
+          for (let k = 0; k < (isTriple ? 80 : 40); k++) spawnParticles(CX, CY, state.comboFlashColor, 1);
+          shake(isTriple ? 20 : 12, isTriple ? 30 : 20);
+          SFX.combo();
+          toast(isTriple ? `🔥 트리플 조합! ${ABILITY_DEFS[c.id].name}` : `✨ ${ABILITY_DEFS[c.id].name} 조합 완성!`);
+          unlockAbility(c.id);
+        }
+      }
+    }
+    state.levelUpChoices = null;
+    state.cardCost = 0;
+    state.cardCancelable = false;
+    SFX.click();
+    renderPanel();
   }
   function distPointSegmentSq(px, py, ax, ay, bx, by) {
     const dx = bx - ax, dy = by - ay;
@@ -2627,7 +4519,8 @@
 
   function enhanceCost(ability) {
     const def = ABILITY_DEFS[ability.id];
-    return Math.ceil(def.baseCost * (ability.level + 1) * 0.7);
+    const mm = state.metaMods || { enhanceMul: 1 };
+    return Math.ceil(def.baseCost * (ability.level + 1) * 0.7 * mm.enhanceMul * (mm.scholarMul || 1));
   }
 
   // 랜덤 능력 획득 비용: 0, 25, 60, 110, 180, 270, ...
@@ -2641,34 +4534,32 @@
   // ===== 액션 =====
   function actRandomAcquire() {
     if (state.gameOver) return;
+    if (state.levelUpChoices) return;  // 이미 카드 모달 활성
     const cost = randomAcquireCost();
     if (state.gold < cost) return toast('골드 부족');
-    if (state.tower.abilities.length >= MAX_SLOTS) return toast('슬롯 가득 (삭제 후 가능)');
-    const owned = new Set(state.tower.abilities.map(a => a.id));
-    // 조합 능력은 풀에서 제외 (오직 합성으로만 획득)
-    const pool = BASIC_ABILITY_IDS.filter(id => !owned.has(id));
-    if (pool.length === 0) return toast('새 능력 없음');
-    const pick = pool[Math.floor(Math.random() * pool.length)];
-    const ab = { id: pick, level: 1 };
-    ABILITY_DEFS[pick].init(ab);
-    state.tower.abilities.push(ab);
-    state.gold -= cost;
-    state.tower.acquireCount += 1;
-    toast(cost === 0 ? `획득: ${ABILITY_DEFS[pick].name} (무료!)` : `획득: ${ABILITY_DEFS[pick].name}`);
-    unlockAbility(pick);  // 도감 해금
-    checkCombos();  // 조합 가능 즉시 합성
-    renderPanel();
+    const aSlotsFree = activeCount() < maxActiveSlots();
+    const pSlotsFree = passiveCount() < maxPassiveSlots();
+    if (!aSlotsFree && !pSlotsFree) return toast('슬롯 가득 (삭제 후 가능)');
+    // 3장 카드 생성 (레벨업과 동일한 풀)
+    const choices = generateLevelUpChoices();
+    if (choices.length === 0) return toast('새 능력 없음');
+    // 카드 모달 표시 + 비용 정보 부착
+    state.levelUpChoices = choices;
+    state.cardCost = cost;   // 카드 선택 시 차감
+    state.cardCancelable = true;
+    SFX.click();
   }
 
   function actEnhance(idx) {
     if (state.gameOver) return;
     const a = state.tower.abilities[idx];
     if (!a) return;
+    if (isAtMax(a)) return toast('이미 MAX — 조합 카드 대기');
     const cost = enhanceCost(a);
     if (state.gold < cost) return toast('골드 부족');
     state.gold -= cost;
     a.level += 1;
-    toast(`${ABILITY_DEFS[a.id].name} Lv${a.level}`);
+    toast(`${ABILITY_DEFS[a.id].name} Lv${a.level}${isAtMax(a) ? ' MAX!' : ''}`);
     renderPanel();
   }
 
@@ -2699,55 +4590,123 @@
   // seed 기반 결정적 난수 (개체별 디테일 변형용)
   function srand(s) { const x = Math.sin(s) * 10000; return x - Math.floor(x); }
 
-  function spawnEnemy() {
+  // 특수 행동: 라운드별로 일부 적이 특수 행동을 가짐
+  // splitter (분열) / regen (재생) / shielded (보호막) / charger (돌격) — R3+ 부터 무작위로 섞임
+  function pickEnemyBehavior(round) {
+    if (round < 3) return null;
+    const r = Math.random();
+    const chance = Math.min(0.5, 0.10 + round * 0.015);  // R3:14%, R10:25%, R30:50%
+    if (r > chance) return null;
+    const pool = ['splitter', 'regen', 'shielded', 'charger'];
+    return pool[Math.floor(Math.random() * pool.length)];
+  }
+  function spawnEnemy(opts = {}) {
     const cfg = roundConfig(state.round);
-    const a = Math.random() * Math.PI * 2;
-    const r = ENEMY_MIN_R + Math.random() * (ENEMY_MAX_R - ENEMY_MIN_R);
+    const a = opts.angle !== undefined ? opts.angle : Math.random() * Math.PI * 2;
+    const r = opts.radius !== undefined ? opts.radius : ENEMY_MIN_R + Math.random() * (ENEMY_MAX_R - ENEMY_MIN_R);
     const dir = Math.random() < 0.5 ? 1 : -1;
+    const behavior = opts.behavior !== undefined ? opts.behavior : pickEnemyBehavior(state.round);
+    let hp = opts.hp !== undefined ? opts.hp : cfg.enemyHp;
+    let size = 7;
+    if (behavior === 'shielded') hp = Math.ceil(hp * 1.6);  // 더 단단
+    if (behavior === 'charger') size = 6;
+    if (opts.size) size = opts.size;
     state.enemies.push({
-      angle: a,
-      radius: r,
+      angle: a, radius: r,
       targetRadius: ENEMY_MIN_R + Math.random() * (ENEMY_MAX_R - ENEMY_MIN_R),
       radiusChangeAt: Math.floor(60 + Math.random()*120),
-      angularSpeed: cfg.enemySpeed * dir * (0.5 + Math.random()*0.8),
-      hp: cfg.enemyHp,
-      maxHp: cfg.enemyHp,
-      size: 7,
+      angularSpeed: cfg.enemySpeed * dir * (behavior === 'charger' ? 2.0 : (0.5 + Math.random()*0.8)),
+      hp, maxHp: hp, size,
       goldDrop: cfg.enemyGold,
       slowFrames: 0,
       isBoss: false,
-      type: getEnemyType(state.round),
+      type: opts.type || getEnemyType(state.round),
       seed: Math.random() * 1000,
       rotation: Math.random() * Math.PI * 2,
       rotSpeed: (Math.random() - 0.5) * 0.04,
+      behavior,
+      shieldHp: behavior === 'shielded' ? 5 : 0,  // 첫 X회 데미지 면역
+      regenTimer: 0,
+      lastDamageAt: 0,
     });
+  }
+  // 보스 패턴: 라운드별로 다른 능력 — 소환사/광폭화/실드 중 하나
+  function pickBossPattern(round) {
+    if (round < 10) return 'basic';      // R5: 평범
+    if (round < 20) return 'summoner';   // R10-15: 잡몹 소환
+    if (round < 30) return 'enrage';     // R20-25: HP낮으면 가속+공격력
+    return ['summoner', 'enrage', 'shield'][Math.floor(Math.random() * 3)];  // R30+: 랜덤
   }
   function spawnBoss() {
     const cfg = roundConfig(state.round);
     const a = Math.random() * Math.PI * 2;
     const r = ENEMY_MAX_R - 30;
     state.enemies.push({
-      angle: a,
-      radius: r,
+      angle: a, radius: r,
       targetRadius: 100 + Math.random() * 150,
       radiusChangeAt: 240,
       angularSpeed: cfg.enemySpeed * (Math.random() < 0.5 ? 1 : -1) * 0.4,
-      hp: cfg.bossHp,
-      maxHp: cfg.bossHp,
-      size: 18,
-      goldDrop: cfg.bossGold,
-      slowFrames: 0,
-      isBoss: true,
-      type: 'boss',
-      seed: Math.random() * 1000,
-      rotation: 0,
-      rotSpeed: 0.012,
+      hp: cfg.bossHp, maxHp: cfg.bossHp,
+      size: 18, goldDrop: cfg.bossGold,
+      slowFrames: 0, isBoss: true,
+      type: 'boss', seed: Math.random() * 1000,
+      rotation: 0, rotSpeed: 0.012,
+      pattern: pickBossPattern(state.round),
+      patternCD: 180,    // 보스 능력 쿨다운
+      enraged: false,
+      shieldHp: 0,
+      lastDamageAt: 0,
     });
+  }
+  // 보스 능력 업데이트
+  function updateBossPatterns() {
+    for (const e of state.enemies) {
+      if (!e.isBoss) continue;
+      if (e.patternCD > 0) e.patternCD--;
+
+      // 광폭화: HP 30% 이하면 가속 + 공격력 (영구)
+      if (e.pattern === 'enrage' && !e.enraged && e.hp < e.maxHp * 0.3) {
+        e.enraged = true;
+        e.angularSpeed *= 2;
+        e.rotSpeed *= 2;
+        e.size = Math.ceil(e.size * 1.15);
+        shake(15, 20);
+        SFX.bossSpawn();
+        toast('⚠️ 보스 광폭화!');
+      }
+      // 소환사: 주기적으로 잡몹 2-3마리 소환
+      if (e.pattern === 'summoner' && e.patternCD <= 0) {
+        const [bx, by] = enemyXY(e);
+        const n = 2 + Math.floor(Math.random() * 2);
+        for (let k = 0; k < n; k++) {
+          const aa = Math.random() * Math.PI * 2;
+          spawnEnemy({
+            angle: aa, radius: e.radius,
+            behavior: null, size: 6,
+          });
+          // 시각: 소환 위치 표시
+          const last = state.enemies[state.enemies.length - 1];
+          if (last) { last.angle = e.angle + (k - n/2) * 0.2; last.radius = e.radius - 20; }
+        }
+        spawnParticles(bx, by, '#cc66ff', 12);
+        SFX.combo();
+        e.patternCD = 360;  // 6초마다
+      }
+      // 실드: HP 50% 이하 시 일시 보호막
+      if (e.pattern === 'shield' && !e.shieldUsed && e.hp < e.maxHp * 0.5) {
+        e.shieldUsed = true;
+        e.shieldHp = 20;
+        const [bx, by] = enemyXY(e);
+        spawnParticles(bx, by, '#88ccff', 16);
+        toast('🛡 보스 실드 발동!');
+        SFX.bossSpawn();
+      }
+    }
   }
 
   // ===== 업데이트 =====
   function update() {
-    if (paused || state.gameOver) return;
+    if (paused || state.gameOver || state.levelUpChoices) return;
     state.t++;
 
     // 라운드 진행
@@ -2766,6 +4725,8 @@
         break;
       } else {
         spawnBoss();
+        shake(15, 12);
+        SFX.bossSpawn();
       }
     }
     if (state.gameOver) return;
@@ -2778,6 +4739,11 @@
       const timeSaved = (cfg.duration - state.roundFrame) / FPS;
       const bonus = Math.floor(timeSaved * 10 * state.round);
       state.score += bonus;
+      SFX.waveClear();
+      // 화면 가운데 큰 텍스트로 클리어 표시
+      state.waveClearText = {
+        round: state.round, bonus, timeSaved, life: 70,
+      };
       toast(`R${state.round} 클리어! +${bonus} (${timeSaved.toFixed(1)}s 단축)`);
       advanceRound();
     }
@@ -2791,8 +4757,7 @@
       endGame(`적이 ${MAX_ALIVE}마리를 넘김`, false);
     }
 
-    // 적 이동: 각속도로 회전 + 목표 반경을 향해 천천히 이동
-    // 슬로우 효과 적용 (slowFrames > 0 일 때 속도 0.35배)
+    // 적 이동 + 특수 행동 처리
     for (const e of state.enemies) {
       const slowMul = e.slowFrames > 0 ? 0.35 : 1;
       if (e.slowFrames > 0) e.slowFrames--;
@@ -2804,7 +4769,17 @@
         e.targetRadius = ENEMY_MIN_R + Math.random() * (ENEMY_MAX_R - ENEMY_MIN_R);
         e.radiusChangeAt = 90 + Math.floor(Math.random()*150);
       }
+      // 재생형: 2초 동안 데미지 안 받으면 매 frame +0.5% maxHp 회복
+      if (e.behavior === 'regen' && (state.t - e.lastDamageAt) > 120 && e.hp < e.maxHp) {
+        e.hp = Math.min(e.maxHp, e.hp + e.maxHp * 0.005);
+        if (Math.random() < 0.1) {
+          const [ex, ey] = enemyXY(e);
+          spawnParticles(ex, ey, '#88ff88', 1);
+        }
+      }
     }
+    // 보스 능력 패턴 처리
+    updateBossPatterns();
 
     // 능력 tick (각 능력이 독립적으로 작동)
     for (const ab of state.tower.abilities) {
@@ -2870,6 +4845,26 @@
     state.enemies   = state.enemies.filter(e => e.hp > 0);
     for (const p of state.particles) { p.x+=p.vx; p.y+=p.vy; p.vx*=0.92; p.vy*=0.92; p.life--; }
     state.particles = state.particles.filter(p => p.life > 0);
+    // 데미지 숫자 부유
+    for (const d of state.damageNumbers) { d.y += d.vy; d.vy *= 0.95; d.life--; }
+    state.damageNumbers = state.damageNumbers.filter(d => d.life > 0);
+    // 콤보 카드 라이프
+    if (state.comboReveal) {
+      state.comboReveal.life--;
+      if (state.comboReveal.life <= 0) state.comboReveal = null;
+    }
+    // 웨이브 클리어 텍스트
+    if (state.waveClearText) {
+      state.waveClearText.life--;
+      if (state.waveClearText.life <= 0) state.waveClearText = null;
+    }
+    // 화면 흔들림 잔여 감소
+    if (state.shakeFrames > 0) {
+      state.shakeFrames--;
+      state.shakeStrength *= 0.88;
+    } else {
+      state.shakeStrength = 0;
+    }
     if (state.comboFlash > 0) state.comboFlash--;
     updateBackground();
 
@@ -2879,10 +4874,12 @@
   // ===== 유틸 =====
   function enemyXY(e){ return [CX + Math.cos(e.angle)*e.radius, CY + Math.sin(e.angle)*e.radius]; }
   function spawnParticles(x, y, color, n=6){
+    // 파티클 수 줄이고 수명 짧게 — 시각적 노이즈 감소
+    n = Math.max(1, Math.floor(n * 0.6));
     for (let i=0; i<n; i++){
       const a = Math.random()*Math.PI*2;
-      const s = 0.6 + Math.random()*1.6;
-      state.particles.push({ x, y, vx: Math.cos(a)*s, vy: Math.sin(a)*s, life: 18 + Math.random()*10, color });
+      const s = 0.5 + Math.random()*1.3;
+      state.particles.push({ x, y, vx: Math.cos(a)*s, vy: Math.sin(a)*s, life: 12 + Math.random()*8, color });
     }
   }
 
@@ -3020,21 +5017,60 @@
     ctx.beginPath(); ctx.arc(CX, CY, ARENA_R, 0, Math.PI*2); ctx.stroke();
   }
   function drawTower() {
-    const pulse = 1 + Math.sin(state.t * 0.08) * 0.15;
-    ctx.fillStyle = 'rgba(120, 180, 255, 0.10)';
-    ctx.beginPath(); ctx.arc(CX, CY, CORE_R + 10*pulse, 0, Math.PI*2); ctx.fill();
-    ctx.fillStyle = '#2a3550'; ctx.fillRect(CX-16, CY-16, 32, 32);
-    ctx.fillStyle = '#3d5380'; ctx.fillRect(CX-12, CY-12, 24, 24);
-    ctx.fillStyle = '#7ad7ff'; ctx.fillRect(CX-4,  CY-4,   8,  8);
+    // 외곽 헥사 링 (천천히 회전)
+    const ringRot = state.t * 0.004;
+    ctx.strokeStyle = 'rgba(106, 196, 255, 0.22)';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    for (let i = 0; i < 6; i++) {
+      const a = ringRot + i * Math.PI / 3;
+      const px = CX + Math.cos(a) * 30;
+      const py = CY + Math.sin(a) * 30;
+      if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+    }
+    ctx.closePath();
+    ctx.stroke();
+    // 옅은 외곽 코어 글로우 (느린 펄스)
+    const pulse = 1 + Math.sin(state.t * 0.05) * 0.10;
+    ctx.fillStyle = 'rgba(106, 196, 255, 0.06)';
+    ctx.beginPath(); ctx.arc(CX, CY, 24 * pulse, 0, Math.PI*2); ctx.fill();
+    // 본체 사각 (어두운 베이스)
+    ctx.fillStyle = '#1a2030';
+    ctx.fillRect(CX - 12, CY - 12, 24, 24);
+    // 사각 외곽 라인
+    ctx.strokeStyle = 'rgba(106, 196, 255, 0.35)';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(CX - 12, CY - 12, 24, 24);
+    // 4 모서리 액센트
+    ctx.fillStyle = '#6ac4ff';
+    ctx.fillRect(CX - 12, CY - 12, 3, 3);
+    ctx.fillRect(CX + 9,  CY - 12, 3, 3);
+    ctx.fillRect(CX - 12, CY + 9,  3, 3);
+    ctx.fillRect(CX + 9,  CY + 9,  3, 3);
+    // 회전 다이아몬드 (중간 — 반대 방향)
+    const diaRot = -state.t * 0.014;
+    ctx.save();
+    ctx.translate(CX, CY);
+    ctx.rotate(diaRot);
+    ctx.strokeStyle = 'rgba(160, 220, 255, 0.55)';
+    ctx.lineWidth = 1.4;
+    ctx.strokeRect(-7, -7, 14, 14);
+    ctx.restore();
+    // 중앙 코어 (작고 밝음)
+    const corePulse = 0.85 + 0.15 * Math.sin(state.t * 0.09);
+    ctx.globalAlpha = corePulse;
+    ctx.fillStyle = '#e0f4ff';
+    ctx.fillRect(CX - 2, CY - 2, 4, 4);
+    ctx.globalAlpha = 1;
   }
-  // ====== 적 타입별 렌더러 ======
+  // ====== 적 타입별 렌더러 (무채색 톤 + 모양으로 구분, 노이즈 최소화) ======
   function drawAsteroidE(e, x, y, slow) {
     const s = e.size;
     ctx.save(); ctx.translate(x, y); ctx.rotate(e.rotation);
-    const base = slow ? '#7a9098' : '#9d7e5c';
-    const dark = slow ? '#4a5e64' : '#6b513a';
-    const lite = slow ? '#b0cad0' : '#c8a780';
-    // 8각형 본체 (소행성 느낌)
+    const base = slow ? '#5e7280' : '#6a5848';
+    const edge = slow ? '#384a58' : '#3a2e22';
+    const lite = slow ? '#90a4b0' : '#8a7660';
+    // 8각형 본체 — 외곽 라인으로 정의감 강화
     ctx.fillStyle = base;
     ctx.beginPath();
     ctx.moveTo(-s+2, -s); ctx.lineTo(s-2, -s);
@@ -3042,153 +5078,101 @@
     ctx.lineTo(s-2, s); ctx.lineTo(-s+2, s);
     ctx.lineTo(-s, s-2); ctx.lineTo(-s, -s+2);
     ctx.closePath(); ctx.fill();
-    // 하이라이트 (좌상)
+    ctx.strokeStyle = edge; ctx.lineWidth = 1; ctx.stroke();
+    // 단일 하이라이트
     ctx.fillStyle = lite;
-    ctx.fillRect(-s+2, -s+2, 2, 2);
-    // 크레이터 (seed 기반 3개 — 개체별 다른 패턴)
-    ctx.fillStyle = dark;
-    const w = s*2 - 4;
-    ctx.fillRect(-s+2 + Math.floor(srand(e.seed)   * w), -s+2 + Math.floor(srand(e.seed+1) * w), 2, 2);
-    ctx.fillRect(-s+2 + Math.floor(srand(e.seed+2) * w), -s+2 + Math.floor(srand(e.seed+3) * w), 1, 1);
-    ctx.fillRect(-s+2 + Math.floor(srand(e.seed+4) * w), -s+2 + Math.floor(srand(e.seed+5) * w), 2, 1);
+    ctx.fillRect(-s+2, -s+2, 1, 1);
     ctx.restore();
   }
 
   function drawIceE(e, x, y, slow) {
     const s = e.size;
-    ctx.save(); ctx.translate(x, y); ctx.rotate(e.rotation * 0.6);
-    const base = slow ? '#7eb0c8' : '#a0c8e0';
-    const dark = slow ? '#3a6a88' : '#5a8aa8';
-    const lite = slow ? '#dce8f4' : '#e8f4ff';
-    // 다이아몬드 모양 (얼음 결정)
+    ctx.save(); ctx.translate(x, y); ctx.rotate(e.rotation * 0.4);
+    const base = slow ? '#557588' : '#5a7488';
+    const edge = slow ? '#2a4a5e' : '#2a3e50';
+    // 다이아몬드 (얼음 결정)
     ctx.fillStyle = base;
     ctx.beginPath();
     ctx.moveTo(0, -s); ctx.lineTo(s, 0);
     ctx.lineTo(0, s); ctx.lineTo(-s, 0);
     ctx.closePath(); ctx.fill();
-    // 페이셋 라인
-    ctx.strokeStyle = dark; ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(0, -s); ctx.lineTo(0, s);
-    ctx.moveTo(-s, 0); ctx.lineTo(s, 0);
-    ctx.stroke();
-    // 상단 하이라이트
-    ctx.fillStyle = lite;
-    ctx.fillRect(-1, -s+2, 2, 2);
-    // 반짝이
-    const sx = Math.floor((srand(e.seed) - 0.5) * (s-2));
-    const sy = Math.floor((srand(e.seed+1) - 0.5) * (s-2));
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(sx, sy, 1, 1);
+    ctx.strokeStyle = edge; ctx.lineWidth = 1; ctx.stroke();
+    // 중심 작은 흰 점
+    ctx.fillStyle = '#cce0ee';
+    ctx.fillRect(-1, -1, 2, 2);
     ctx.restore();
   }
 
   function drawDroneE(e, x, y, slow) {
     const s = e.size;
     ctx.save(); ctx.translate(x, y);
-    // 약간의 호버 흔들림 (드론 느낌)
-    const wobble = Math.sin(state.t * 0.12 + e.seed) * 0.06;
+    const wobble = Math.sin(state.t * 0.12 + e.seed) * 0.04;
     ctx.rotate(wobble);
-    const base = slow ? '#5a8090' : '#7a8088';
-    const dark = slow ? '#2a4858' : '#3a3e44';
-    const lite = slow ? '#a8c8d8' : '#b8c0c8';
-    // 외곽 (어두운 테두리)
-    ctx.fillStyle = dark;
+    const base = slow ? '#4a6878' : '#555a64';
+    const edge = slow ? '#1f3a48' : '#2a2e36';
+    // 본체 + 외곽
+    ctx.fillStyle = edge;
     ctx.fillRect(-s, -s+1, s*2, s*2-2);
-    // 본체
     ctx.fillStyle = base;
     ctx.fillRect(-s+1, -s+2, s*2-2, s*2-4);
-    // 상단 하이라이트
-    ctx.fillStyle = lite;
-    ctx.fillRect(-s+1, -s+2, s*2-2, 1);
-    // 빨간 눈 (펄스)
+    // 빨간 눈 (펄스 — 드론의 정체성)
     const pulse = 0.5 + 0.5 * Math.sin(state.t * 0.22 + e.seed);
-    const eyeColor = slow ? `rgba(120, 180, 255, ${0.7 + pulse * 0.3})` : `rgba(255, 60, 60, ${0.7 + pulse * 0.3})`;
-    ctx.fillStyle = eyeColor;
-    ctx.fillRect(-2, -1, 4, 2);
-    // 안테나
-    ctx.fillStyle = dark;
-    ctx.fillRect(-1, -s-2, 2, 2);
-    ctx.fillStyle = slow ? '#80b0ff' : '#ff6060';
-    ctx.fillRect(-1, -s-3, 2, 1);
+    ctx.fillStyle = slow ? `rgba(120, 180, 255, ${0.6 + pulse * 0.4})` : `rgba(255, 80, 80, ${0.6 + pulse * 0.4})`;
+    ctx.fillRect(-1, -1, 2, 2);
     ctx.restore();
   }
 
   function drawPlasmaE(e, x, y, slow) {
     const s = e.size;
     ctx.save(); ctx.translate(x, y);
-    const pulse = 1 + Math.sin(state.t * 0.15 + e.seed) * 0.14;
-    const base = slow ? '#7080c0' : '#aa55cc';
-    const dark = slow ? '#3a4878' : '#6a2a88';
-    const lite = slow ? '#c0d0ff' : '#e0a0ff';
-    // 외곽 글로우
-    ctx.fillStyle = slow ? 'rgba(112, 128, 192, 0.35)' : 'rgba(170, 85, 204, 0.35)';
-    ctx.beginPath(); ctx.arc(0, 0, (s + 3) * pulse, 0, Math.PI*2); ctx.fill();
+    const pulse = 1 + Math.sin(state.t * 0.14 + e.seed) * 0.08;
+    const base = slow ? '#586278' : '#6a5078';
+    // 옅은 글로우
+    ctx.fillStyle = slow ? 'rgba(88, 98, 120, 0.25)' : 'rgba(106, 80, 120, 0.28)';
+    ctx.beginPath(); ctx.arc(0, 0, (s + 2) * pulse, 0, Math.PI*2); ctx.fill();
     // 본체 (원)
     ctx.fillStyle = base;
     ctx.beginPath(); ctx.arc(0, 0, s * pulse, 0, Math.PI*2); ctx.fill();
-    // 내부 어두운 패치 (seed 기반)
-    ctx.fillStyle = dark;
-    const px = Math.floor((srand(e.seed) - 0.5) * (s-2));
-    const py = Math.floor((srand(e.seed+1) - 0.5) * (s-2));
-    ctx.fillRect(px, py, 2, 2);
-    ctx.fillRect(-(px), -(py), 1, 1);
-    // 코어 (밝음)
-    ctx.fillStyle = lite;
+    // 코어 (흰점)
+    ctx.fillStyle = '#ffffff';
     ctx.fillRect(-1, -1, 2, 2);
     ctx.restore();
   }
 
   function drawCrystalE(e, x, y, slow) {
     const s = e.size;
-    ctx.save(); ctx.translate(x, y); ctx.rotate(e.rotation * 0.4);
-    const base = slow ? '#6090a0' : '#50d0a0';
-    const dark = slow ? '#2a5060' : '#2a8060';
-    const lite = slow ? '#c0e0e8' : '#a0f0d0';
-    // 6각형 (크리스탈 결정)
+    ctx.save(); ctx.translate(x, y); ctx.rotate(e.rotation * 0.3);
+    const base = slow ? '#4a7080' : '#3e7060';
+    const edge = slow ? '#244850' : '#1a3a30';
+    // 6각형
     ctx.fillStyle = base;
     ctx.beginPath();
     for (let k = 0; k < 6; k++) {
       const a = (Math.PI * 2 / 6) * k - Math.PI / 2;
       const px = Math.cos(a) * s;
       const py = Math.sin(a) * s;
-      if (k === 0) ctx.moveTo(px, py);
-      else ctx.lineTo(px, py);
+      if (k === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
     }
     ctx.closePath(); ctx.fill();
-    // 페이셋 (꼭지점→중심 라인)
-    ctx.strokeStyle = dark; ctx.lineWidth = 1;
-    ctx.beginPath();
-    for (let k = 0; k < 6; k++) {
-      const a = (Math.PI * 2 / 6) * k - Math.PI / 2;
-      ctx.moveTo(0, 0);
-      ctx.lineTo(Math.cos(a) * s, Math.sin(a) * s);
-    }
-    ctx.stroke();
-    // 코어
-    ctx.fillStyle = lite;
-    ctx.fillRect(-2, -2, 4, 4);
-    // 반짝이
-    const sang = srand(e.seed) * Math.PI * 2;
-    const sr = s * 0.55;
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(Math.cos(sang)*sr, Math.sin(sang)*sr, 1, 1);
+    ctx.strokeStyle = edge; ctx.lineWidth = 1; ctx.stroke();
+    // 중심 점
+    ctx.fillStyle = '#ddeae0';
+    ctx.fillRect(-1, -1, 2, 2);
     ctx.restore();
   }
 
   function drawBossE(e, x, y, slow) {
     const s = e.size;
     ctx.save(); ctx.translate(x, y); ctx.rotate(e.rotation);
-    // 외곽 펄스 오라
-    const pulse = 1 + Math.sin(state.t * 0.1) * 0.18;
-    ctx.fillStyle = slow ? 'rgba(136, 200, 255, 0.20)' : 'rgba(255, 60, 100, 0.22)';
-    ctx.beginPath(); ctx.arc(0, 0, s + 8*pulse, 0, Math.PI*2); ctx.fill();
-    // 색상
-    const base = slow ? '#3a5570' : '#7a1030';
-    const mid  = slow ? '#7aa8d0' : '#cc2244';
-    const lite = slow ? '#cee0ff' : '#ff8aa0';
-    const dark = slow ? '#1a2540' : '#3a0510';
-    // 본체 (8각 큰 형태)
+    // 외곽 펄스 오라 (덜 강하게)
+    const pulse = 1 + Math.sin(state.t * 0.09) * 0.12;
+    ctx.fillStyle = slow ? 'rgba(120, 180, 240, 0.18)' : 'rgba(220, 50, 80, 0.22)';
+    ctx.beginPath(); ctx.arc(0, 0, s + 6 * pulse, 0, Math.PI*2); ctx.fill();
+    // 색상 (덜 강한 채도)
+    const base = slow ? '#385878' : '#601a28';
+    const edge = slow ? '#1c2d44' : '#2a0a12';
+    const accent = slow ? '#c8dceb' : '#ff8090';
+    // 8각형 본체
     ctx.fillStyle = base;
     ctx.beginPath();
     ctx.moveTo(-s+4, -s); ctx.lineTo(s-4, -s);
@@ -3196,34 +5180,22 @@
     ctx.lineTo(s-4, s); ctx.lineTo(-s+4, s);
     ctx.lineTo(-s, s-4); ctx.lineTo(-s, -s+4);
     ctx.closePath(); ctx.fill();
-    // 내부 패널
-    ctx.fillStyle = mid;
-    ctx.fillRect(-s+4, -s+4, s*2-8, s*2-8);
-    // 모서리 다크 액센트
-    ctx.fillStyle = dark;
-    ctx.fillRect(-s+4, -s+4, 3, 3);
-    ctx.fillRect(s-7, -s+4, 3, 3);
-    ctx.fillRect(-s+4, s-7, 3, 3);
-    ctx.fillRect(s-7, s-7, 3, 3);
-    // 중앙 코어 (큰 사각)
-    ctx.fillStyle = lite;
-    ctx.fillRect(-6, -6, 12, 12);
-    ctx.fillStyle = dark;
-    ctx.fillRect(-4, -4, 8, 8);
-    ctx.fillStyle = lite;
+    ctx.strokeStyle = edge; ctx.lineWidth = 1.5; ctx.stroke();
+    // 중앙 다이아몬드 (단일 강력 액센트)
+    ctx.fillStyle = accent;
+    ctx.beginPath();
+    ctx.moveTo(0, -5); ctx.lineTo(5, 0);
+    ctx.lineTo(0, 5); ctx.lineTo(-5, 0);
+    ctx.closePath(); ctx.fill();
+    // 내부 작은 코어
+    ctx.fillStyle = edge;
     ctx.fillRect(-2, -2, 4, 4);
-    // 4방향 스파이크
+    // 4방향 짧은 스파이크 (세련된 미니멀)
     ctx.fillStyle = base;
-    ctx.fillRect(-2, -s-3, 4, 3);
-    ctx.fillRect(-2, s, 4, 3);
-    ctx.fillRect(-s-3, -2, 3, 4);
-    ctx.fillRect(s, -2, 3, 4);
-    // 스파이크 끝 (밝은 점)
-    ctx.fillStyle = mid;
-    ctx.fillRect(-1, -s-3, 2, 1);
-    ctx.fillRect(-1, s+2, 2, 1);
-    ctx.fillRect(-s-3, -1, 1, 2);
-    ctx.fillRect(s+2, -1, 1, 2);
+    ctx.fillRect(-1.5, -s-3, 3, 3);
+    ctx.fillRect(-1.5, s, 3, 3);
+    ctx.fillRect(-s-3, -1.5, 3, 3);
+    ctx.fillRect(s, -1.5, 3, 3);
     ctx.restore();
   }
 
@@ -3247,6 +5219,24 @@
         ctx.fillStyle = e.isBoss ? '#ff3355' : '#ff8a98';
         ctx.fillRect(x - e.size, y - e.size - 5, w * (e.hp/e.maxHp), 2);
       }
+      // 특수 행동 표시 (작은 아이콘)
+      if (e.behavior === 'shielded' && e.shieldHp > 0) {
+        ctx.strokeStyle = `rgba(136, 204, 255, ${0.4 + 0.3 * Math.sin(state.t * 0.15)})`;
+        ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.arc(x, y, e.size + 4, 0, Math.PI*2); ctx.stroke();
+      } else if (e.behavior === 'regen') {
+        ctx.fillStyle = '#88ff88';
+        ctx.fillRect(x - 5, y - e.size - 10, 10, 1);  // + 표시
+        ctx.fillRect(x - 1, y - e.size - 12, 2, 5);
+      } else if (e.behavior === 'splitter' && !e.isChild) {
+        ctx.fillStyle = '#ffaa66';
+        ctx.fillRect(x - 4, y - e.size - 10, 1, 3);
+        ctx.fillRect(x + 3, y - e.size - 10, 1, 3);
+        ctx.fillRect(x - 1, y - e.size - 10, 2, 3);
+      } else if (e.behavior === 'charger') {
+        ctx.fillStyle = '#ff6666';
+        ctx.fillRect(x - 3, y - e.size - 9, 6, 2);  // 빠름 표시
+      }
     }
   }
   function drawBossUI() {
@@ -3264,18 +5254,20 @@
   function drawBullets() {
     for (const b of state.bullets) {
       const s = b.size || 2;
+      const col = b.color || '#a0b8d8';
+      // 옅은 색 글로우 (능력 색을 미세하게만 — 시선 분산 방지)
       if (b.glow) {
-        ctx.globalAlpha = 0.35;
-        ctx.fillStyle = b.color || '#ffe28a';
+        ctx.globalAlpha = 0.30;
+        ctx.fillStyle = col;
         ctx.fillRect(b.x - s*2, b.y - s*2, s*4, s*4);
         ctx.globalAlpha = 1;
       }
-      ctx.fillStyle = b.color || '#ffe28a';
+      // 색 외곽 (작게)
+      ctx.fillStyle = col;
       ctx.fillRect(b.x - s, b.y - s, s*2, s*2);
-      if (s >= 3) {
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(b.x - 1, b.y - 1, 2, 2);
-      }
+      // 흰 코어 (모든 탄환에 — 통일감)
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(b.x - 1, b.y - 1, 2, 2);
     }
   }
   function drawAbilities() {
@@ -3286,7 +5278,7 @@
   }
   function drawParticles() {
     for (const p of state.particles) {
-      ctx.globalAlpha = Math.max(0, p.life / 28);
+      ctx.globalAlpha = Math.max(0, p.life / 20);
       ctx.fillStyle = p.color;
       ctx.fillRect(p.x-1, p.y-1, 2, 2);
     }
@@ -3296,7 +5288,7 @@
     if (state.comboFlash <= 0) return;
     const a = state.comboFlash / 30;
     ctx.fillStyle = state.comboFlashColor;
-    ctx.globalAlpha = a * 0.5;
+    ctx.globalAlpha = a * 0.28;  // 절반 이하로 — 화면 안 가림
     ctx.fillRect(0, 0, W, H);
     ctx.globalAlpha = 1;
   }
@@ -3325,22 +5317,393 @@
       ctx.fillStyle = '#fff'; ctx.font='16px Consolas, monospace';
       const lastRound = state.gameWin ? MAX_ROUND : state.round;
       ctx.fillText(`도달 라운드: ${lastRound}   점수: ${state.score.toLocaleString()}`, CX, CY + 14);
-      ctx.fillText('R 키로 다시 시작', CX, CY + 42);
+      let lineY = CY + 38;
+      if (state.stardustEarned) {
+        ctx.fillStyle = '#ffd479'; ctx.font='14px Consolas, monospace';
+        ctx.fillText(`+${state.stardustEarned} ★ 스타더스트 획득`, CX, lineY);
+        lineY += 18;
+      }
+      if (state.achievementsEarned && state.achievementsEarned.length > 0) {
+        ctx.fillStyle = '#52e07a'; ctx.font='12px Consolas, monospace';
+        ctx.fillText(`🏅 신규 업적 ${state.achievementsEarned.length}개 (+${state.achievementStardust} ★)`, CX, lineY);
+        lineY += 16;
+        for (const ach of state.achievementsEarned.slice(0, 3)) {
+          ctx.fillStyle = '#aaffaa'; ctx.font='10px Consolas, monospace';
+          ctx.fillText(`· ${ach.name}: ${ach.desc}`, CX, lineY);
+          lineY += 13;
+        }
+      }
+      if (state.repeatStardust > 0) {
+        ctx.fillStyle = '#88ccff'; ctx.font='12px Consolas, monospace';
+        ctx.fillText(`🔁 반복 업적: +${state.repeatStardust} ★`, CX, lineY);
+        lineY += 16;
+      }
+      ctx.fillStyle = '#fff'; ctx.font='14px Consolas, monospace';
+      ctx.fillText('R = 다시 시작 · 🏠 메뉴 버튼', CX, lineY + 8);
       ctx.textAlign='start';
     }
   }
   function render() {
     ctx.clearRect(0,0,W,H);
+    // 배경 — 흔들림 영향 없음 (별/행성/성운 안정)
     drawBackground();
+
+    // 게임 월드 — 흔들림 적용 (타워/적/탄환/파티클/데미지 숫자)
+    const sk = state.shakeStrength;
+    if (sk > 0.1) {
+      ctx.save();
+      ctx.translate((Math.random() - 0.5) * sk, (Math.random() - 0.5) * sk);
+    }
     drawArena();
     drawTower();
     drawEnemies();
     drawAbilities();
     drawBullets();
     drawParticles();
+    drawDamageNumbers();
+    if (sk > 0.1) ctx.restore();
+
+    // UI / 오버레이 — 안정 (콤보 플래시, 카드, 보스 HP, 게임오버)
     drawComboFlash();
+    drawComboReveal();
+    drawWaveClear();
     drawBossUI();
     drawOverlay();
+    drawLevelUpModal();
+  }
+  function drawDamageNumbers() {
+    ctx.textAlign = 'center';
+    for (const d of state.damageNumbers) {
+      const a = Math.min(1, d.life / 30);
+      ctx.globalAlpha = a;
+      ctx.font = `bold ${d.size}px Consolas, monospace`;
+      ctx.fillStyle = '#000';
+      ctx.fillText(d.text, d.x + 1, d.y + 1);
+      ctx.fillStyle = d.color;
+      ctx.fillText(d.text, d.x, d.y);
+    }
+    ctx.globalAlpha = 1;
+    ctx.textAlign = 'start';
+  }
+  function drawWaveClear() {
+    const w = state.waveClearText;
+    if (!w) return;
+    const total = 70;
+    const t = (total - w.life) / total;
+    let scale = 1, alpha = 1;
+    if (t < 0.2) { scale = t / 0.2; alpha = scale; }
+    else if (t > 0.7) { alpha = 1 - (t - 0.7) / 0.3; }
+    ctx.save();
+    ctx.translate(CX, CY - 80);
+    ctx.scale(scale, scale);
+    ctx.globalAlpha = alpha;
+    ctx.fillStyle = '#ffe070';
+    ctx.font = 'bold 30px Consolas, monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText(`R${w.round} CLEAR!`, 0, 0);
+    ctx.fillStyle = '#fff';
+    ctx.font = '14px Consolas, monospace';
+    ctx.fillText(`+${w.bonus.toLocaleString()} (${w.timeSaved.toFixed(1)}s 단축)`, 0, 22);
+    ctx.restore();
+    ctx.globalAlpha = 1;
+    ctx.textAlign = 'start';
+  }
+  function drawComboReveal() {
+    const cr = state.comboReveal;
+    if (!cr) return;
+    const def = ABILITY_DEFS[cr.id];
+    if (!def) return;
+    const total = 60;
+    const t = (total - cr.life) / total;
+    let scale, alpha;
+    if (t < 0.25) {           // pop in
+      scale = t / 0.25;
+      alpha = scale;
+    } else if (t < 0.75) {    // hold
+      scale = 1 + Math.sin((t - 0.25) * 6) * 0.04;
+      alpha = 1;
+    } else {                  // fade out
+      scale = 1;
+      alpha = 1 - (t - 0.75) / 0.25;
+    }
+    ctx.save();
+    ctx.translate(CX, CY);
+    ctx.scale(scale, scale);
+    ctx.globalAlpha = alpha;
+    // 카드
+    const cw = 260, ch = 100;
+    ctx.fillStyle = '#0b0d12';
+    ctx.fillRect(-cw/2, -ch/2, cw, ch);
+    ctx.strokeStyle = def.color;
+    ctx.lineWidth = 3;
+    ctx.strokeRect(-cw/2, -ch/2, cw, ch);
+    // 위 라벨
+    ctx.fillStyle = '#ffd479';
+    ctx.font = 'bold 12px Consolas, monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText('✨ 조합 완성 ✨', 0, -ch/2 + 18);
+    // 이름
+    ctx.fillStyle = def.color;
+    ctx.font = 'bold 24px Consolas, monospace';
+    ctx.fillText(def.name, 0, 8);
+    // 설명
+    ctx.fillStyle = '#c8cdd8';
+    ctx.font = '11px Consolas, monospace';
+    ctx.fillText(def.desc(cr.level || 1), 0, ch/2 - 14);
+    ctx.restore();
+    ctx.globalAlpha = 1;
+    ctx.textAlign = 'start';
+  }
+  // 카드 4티어 색상 팔레트 (능력별 색 X — 티어별 통합)
+  const CARD_TIERS = {
+    new: {
+      bg1: '#1c1e26', bg2: '#0a0c14',
+      border: '#e6e6ec', name: '#ffffff',
+      accent: '#c0c4cc', glow: null,
+      label: '⭐ NEW',
+    },
+    upgrade: {
+      bg1: '#1a3050', bg2: '#0a1424',
+      border: '#88c8ff', name: '#cce8ff',
+      accent: '#88c8ff', glow: 'rgba(136, 200, 255, 0.20)',
+      label: '▲ UPGRADE',
+    },
+    combo: {
+      bg1: '#3a1e58', bg2: '#180824',
+      border: '#c084ff', name: '#e0c0ff',
+      accent: '#c084ff', glow: 'rgba(192, 132, 255, 0.30)',
+      label: '✦ 조합!',
+    },
+    triple: {
+      // 세련된 와인 레드 (딥 크림슨)
+      bg1: '#48121c', bg2: '#1d0608',
+      border: '#e8364a', name: '#ff7a8c',
+      accent: '#e8364a', glow: 'rgba(232, 54, 74, 0.42)',
+      label: '🔥 히든 조합!',
+    },
+    bonusScore: {
+      // 점수 보너스 — 잎새 같은 차분한 청록
+      bg1: '#103024', bg2: '#06150f',
+      border: '#88dda8', name: '#bcf0d2',
+      accent: '#88dda8', glow: 'rgba(136, 221, 168, 0.25)',
+      label: '🎁 점수',
+    },
+    bonusStardust: {
+      // 스타더스트 — 부드러운 골드
+      bg1: '#2e2410', bg2: '#181104',
+      border: '#ffd479', name: '#ffe890',
+      accent: '#ffd479', glow: 'rgba(255, 212, 121, 0.30)',
+      label: '⭐ 스타더스트',
+    },
+  };
+  function getCardTier(c) {
+    if (c.action === 'level') return 'upgrade';
+    if (c.action === 'combo') return c.tier === 3 ? 'triple' : 'combo';
+    if (c.action === 'bonusScore') return 'bonusScore';
+    if (c.action === 'bonusStardust') return 'bonusStardust';
+    return 'new';
+  }
+
+  function drawLevelUpModal() {
+    if (!state.levelUpChoices) return;
+    ctx.fillStyle = 'rgba(0,0,0,0.80)';
+    ctx.fillRect(0, 0, W, H);
+    // 제목
+    const isRandom = state.cardCost > 0;
+    ctx.fillStyle = isRandom ? '#ffd479' : '#ffe070';
+    ctx.font = 'bold 22px Consolas, monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText(isRandom ? '🎲 카드 선택' : `LEVEL ${state.playerLevel} UP!`, CX, 70);
+    ctx.fillStyle = '#9aa3b3';
+    ctx.font = '11px Consolas, monospace';
+    ctx.fillText(isRandom ? `선택 시 ${state.cardCost}G 차감` : '3장 중 하나를 선택하세요', CX, 90);
+
+    const cardW = 175, cardH = 240, gap = 12;
+    const totalW = cardW * 3 + gap * 2;
+    const startX = (W - totalW) / 2;
+    const cardY = (H - cardH) / 2 - 10;
+    const ownedIds = new Set(state.tower.abilities.map(a => a.id));
+
+    for (let i = 0; i < state.levelUpChoices.length; i++) {
+      const c = state.levelUpChoices[i];
+      const def = ABILITY_DEFS[c.id];  // 보너스 카드는 def 없음
+      const tier = getCardTier(c);
+      const p = CARD_TIERS[tier];
+      const x = startX + i * (cardW + gap);
+      const y = cardY;
+      const isBonus = c.action === 'bonusScore' || c.action === 'bonusStardust';
+
+      // 외곽 글로우 (티어가 좋을수록 강함)
+      if (p.glow) {
+        ctx.fillStyle = p.glow;
+        ctx.fillRect(x - 8, y - 8, cardW + 16, cardH + 16);
+      }
+      // 살짝 펄스하는 트리플
+      if (tier === 'triple') {
+        const pulse = 0.5 + 0.5 * Math.sin(state.t * 0.12);
+        ctx.fillStyle = `rgba(255, 208, 96, ${0.15 + pulse * 0.15})`;
+        ctx.fillRect(x - 12, y - 12, cardW + 24, cardH + 24);
+      }
+      // 카드 배경 (그라데이션)
+      const grad = ctx.createLinearGradient(x, y, x, y + cardH);
+      grad.addColorStop(0, p.bg1);
+      grad.addColorStop(1, p.bg2);
+      ctx.fillStyle = grad;
+      ctx.fillRect(x, y, cardW, cardH);
+      // 본체 테두리
+      ctx.strokeStyle = p.border;
+      ctx.lineWidth = 3;
+      ctx.strokeRect(x, y, cardW, cardH);
+
+      // 상단 액센트 바
+      ctx.fillStyle = p.border;
+      ctx.fillRect(x, y, cardW, 3);
+
+      // 티어 라벨
+      ctx.fillStyle = p.accent;
+      ctx.font = 'bold 11px Consolas, monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText(p.label, x + cardW/2, y + 24);
+
+      // 능력 종류 태그 (보너스 카드는 다른 콘텐츠)
+      if (isBonus) {
+        ctx.fillStyle = '#7a8090';
+        ctx.font = '9px Consolas, monospace';
+        ctx.fillText('보너스', x + cardW/2, y + 40);
+      } else if (def) {
+        ctx.fillStyle = '#7a8090';
+        ctx.font = '9px Consolas, monospace';
+        const kindTag = def.isPassive ? '⚙ 패시브' : (def.isCombo ? '✨ 조합' : '⚡ 액티브');
+        ctx.fillText(kindTag, x + cardW/2, y + 40);
+      }
+
+      // 이름 (티어 색) — 보너스는 금액 표기
+      ctx.fillStyle = p.name;
+      ctx.font = 'bold 17px Consolas, monospace';
+      if (isBonus) {
+        // 보너스 카드는 큰 금액으로 (한 줄)
+        const isScore = c.action === 'bonusScore';
+        const amountText = isScore
+          ? `+${c.amount.toLocaleString()}`
+          : `+${c.amount} ★`;
+        ctx.fillStyle = p.name;
+        ctx.font = 'bold 22px Consolas, monospace';
+        ctx.fillText(amountText, x + cardW/2, y + 78);
+        ctx.fillStyle = p.accent;
+        ctx.font = '11px Consolas, monospace';
+        ctx.fillText(isScore ? '점수' : '스타더스트', x + cardW/2, y + 100);
+        // 설명
+        ctx.fillStyle = '#9aa3b3';
+        ctx.font = '9px Consolas, monospace';
+        const helpTxt = isScore
+          ? '현재 게임 점수 즉시 추가'
+          : '영구 통화 (메뉴 강화소)';
+        ctx.fillText(helpTxt, x + cardW/2, y + cardH - 60);
+      } else {
+        ctx.fillText(def.name, x + cardW/2, y + 64);
+      }
+
+      // 레벨 표시 / 조합 재료 — 보너스 카드는 건너뜀
+      let nextLineY = y + 88;
+      if (isBonus) {
+        nextLineY = y + cardH;  // 더 그릴 콘텐츠 없음 (skip 설명/조합 힌트)
+      } else if (c.action === 'level') {
+        ctx.fillStyle = p.accent;
+        ctx.font = '11px Consolas, monospace';
+        ctx.fillText(`Lv${c.level} → Lv${c.newLevel}`, x + cardW/2, y + 82);
+        nextLineY = y + 102;
+      } else if (c.action === 'combo' && c.parts) {
+        // 재료 (소진될 능력 2개)
+        const p1 = ABILITY_DEFS[c.parts[0]];
+        const p2 = ABILITY_DEFS[c.parts[1]];
+        if (p1 && p2) {
+          ctx.fillStyle = p.accent;
+          ctx.font = '10px Consolas, monospace';
+          ctx.fillText('재료 ↓', x + cardW/2, y + 82);
+          ctx.fillStyle = '#c8cdd8';
+          ctx.font = 'bold 10px Consolas, monospace';
+          ctx.fillText(`${p1.name} + ${p2.name}`, x + cardW/2, y + 96);
+          ctx.fillStyle = p.accent;
+          ctx.font = '9px Consolas, monospace';
+          ctx.fillText('(MAX 재료 소진)', x + cardW/2, y + 109);
+          nextLineY = y + 126;
+        }
+      }
+
+      // 설명 (자동 줄바꿈) — 보너스 카드는 별도 처리됨, 스킵
+      let lineY = nextLineY;
+      if (!isBonus && def) {
+        ctx.fillStyle = '#c8cdd8';
+        ctx.font = '10px Consolas, monospace';
+        const desc = def.desc(c.newLevel || c.level || 1);
+        const words = desc.split(' ');
+        let line = '';
+        for (const w of words) {
+          const testLine = line ? line + ' ' + w : w;
+          if (ctx.measureText(testLine).width > cardW - 18) {
+            ctx.fillText(line, x + cardW/2, lineY);
+            line = w;
+            lineY += 13;
+          } else line = testLine;
+        }
+        if (line) { ctx.fillText(line, x + cardW/2, lineY); lineY += 13; }
+      }
+
+      // 조합 힌트 — 보너스 카드는 표시 안 함
+      const partners = (!isBonus && c.id) ? (COMBO_PARTNERS[c.id] || []) : [];
+      if (partners.length > 0) {
+        // 구분선
+        ctx.strokeStyle = `rgba(255,255,255,0.08)`;
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(x + 14, lineY + 4);
+        ctx.lineTo(x + cardW - 14, lineY + 4);
+        ctx.stroke();
+        lineY += 16;
+        let shown = 0;
+        for (const pp of partners) {
+          if (shown >= 3) break;
+          const pdef = ABILITY_DEFS[pp.partner];
+          const cdef = ABILITY_DEFS[pp.combo];
+          if (!pdef || !cdef) continue;
+          const has = ownedIds.has(pp.partner);
+          const isTrip = pp.tier === 3;
+          // 보유 시 강조 색
+          ctx.fillStyle = has
+            ? (isTrip ? '#ffd060' : '#c084ff')
+            : '#5a6068';
+          ctx.font = (has ? 'bold ' : '') + '9px Consolas, monospace';
+          const tag = isTrip ? '🔥' : (cdef.isCombo && pdef.isPassive ? '⚙' : '+');
+          const hint = `${tag} ${pdef.name} → ${cdef.name}`;
+          let txt = hint;
+          while (ctx.measureText(txt).width > cardW - 14 && txt.length > 8) txt = txt.slice(0, -1);
+          if (txt !== hint) txt = txt.slice(0, -1) + '…';
+          ctx.fillText(txt, x + cardW/2, lineY);
+          lineY += 12;
+          shown++;
+        }
+      }
+
+      // 하단 번호 키
+      ctx.fillStyle = p.accent;
+      ctx.font = 'bold 13px Consolas, monospace';
+      ctx.fillText(`[${i + 1}]`, x + cardW/2, y + cardH - 12);
+    }
+
+    // 취소 버튼
+    if (state.cardCancelable) {
+      const bx = CX - 60, by = cardY + cardH + 18, bw = 120, bh = 38;
+      ctx.fillStyle = '#1a1f2b';
+      ctx.fillRect(bx, by, bw, bh);
+      ctx.strokeStyle = '#3a4256';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(bx, by, bw, bh);
+      ctx.fillStyle = '#c8cdd8';
+      ctx.font = '13px Consolas, monospace';
+      ctx.fillText('취소 [ESC]', CX, by + 24);
+      state._cancelBtn = { x: bx, y: by, w: bw, h: bh };
+    } else state._cancelBtn = null;
+    ctx.textAlign = 'start';
   }
 
   // ===== 패널 UI =====
@@ -3358,8 +5721,10 @@
     $('s-time').textContent   = remain.toFixed(1) + 's';
     $('s-timebar').style.width = (100 * (cfg.duration - state.roundFrame) / cfg.duration) + '%';
     $('s-gold').textContent   = state.gold;
-    $('s-score').textContent  = state.score;
+    $('s-score').textContent  = state.score.toLocaleString();
     $('s-enemies').textContent = `${state.enemies.length} / ${MAX_ALIVE}`;
+    const pl = $('s-plevel');
+    if (pl) pl.textContent = `Lv${state.playerLevel} (${state.kills}/${state.killsToNextLevel} kills)`;
     const pct = state.enemies.length / MAX_ALIVE;
     const bar = $('s-enemybar');
     bar.style.width = (pct*100) + '%';
@@ -3369,18 +5734,49 @@
     const owned = new Set(state.tower.abilities.map(a=>a.id));
     const poolLeft = ALL_ABILITY_IDS.filter(id => !owned.has(id)).length;
     const acqCost = randomAcquireCost();
-    elRandom.disabled = state.gold < acqCost || state.tower.abilities.length >= MAX_SLOTS || poolLeft === 0;
+    elRandom.disabled = state.gold < acqCost || state.tower.abilities.length >= activeMaxSlots() || poolLeft === 0;
     elRandom.textContent = acqCost === 0
       ? `🎲 랜덤 능력 획득 (무료)`
       : `🎲 랜덤 능력 획득 (${acqCost}G)`;
   }
 
+  let currentAbTab = 'active';
+  // 탭 클릭 핸들러
+  document.querySelectorAll('.ab-tab').forEach(btn => {
+    btn.onclick = () => {
+      currentAbTab = btn.dataset.abtab;
+      document.querySelectorAll('.ab-tab').forEach(b => b.classList.toggle('active', b === btn));
+      renderPanel();
+      SFX.click();
+    };
+  });
+
   function renderPanel() {
     renderStats();
     elAb.innerHTML = '';
-    const abilities = state.tower.abilities;
-    for (let i = 0; i < MAX_SLOTS; i++) {
-      const a = abilities[i];
+    // 카테고리에 맞는 능력만 필터링
+    const isPassiveTab = currentAbTab === 'passive';
+    const filtered = state.tower.abilities.filter(a =>
+      isPassiveTab ? ABILITY_DEFS[a.id].isPassive : !ABILITY_DEFS[a.id].isPassive
+    );
+    // 슬롯 카운트 갱신
+    const aMax = maxActiveSlots(), pMax = maxPassiveSlots();
+    const aCnt = activeCount(), pCnt = passiveCount();
+    const aEl = document.getElementById('ab-active-count');
+    const pEl = document.getElementById('ab-passive-count');
+    if (aEl) aEl.textContent = `${aCnt}/${aMax}`;
+    if (pEl) pEl.textContent = `${pCnt}/${pMax}`;
+
+    const slotMax = isPassiveTab ? pMax : aMax;
+    // 원본 인덱스 매핑 (삭제/강화 시 정확한 인덱스 필요)
+    const origIdx = state.tower.abilities.map((a, i) => i)
+      .filter(i => {
+        const d = ABILITY_DEFS[state.tower.abilities[i].id];
+        return isPassiveTab ? d.isPassive : !d.isPassive;
+      });
+
+    for (let i = 0; i < slotMax; i++) {
+      const a = filtered[i];
       const row = document.createElement('div');
       if (!a) {
         row.className = 'ability-row empty';
@@ -3389,29 +5785,40 @@
         continue;
       }
       const def = ABILITY_DEFS[a.id];
-      // 조합 힌트: 기본 능력이면 어떤 파트너와 만나면 어떤 조합이 되는지 표시.
-      // 조합 능력 자체는 이름을 자기 색으로 칠해서 시각적으로 구분.
+      // 조합 힌트 (다중 파트너 지원)
       let comboHint = '';
-      let nameColor = '#e8eaf0';
+      let nameColor = def.color;
       if (def.isCombo) {
-        nameColor = def.color;
-      } else if (COMBO_PARTNER[a.id]) {
-        const p = COMBO_PARTNER[a.id];
-        const owned = state.tower.abilities.some(x => x.id === p.partner);
-        const partnerName = ABILITY_DEFS[p.partner].name;
-        const comboName = ABILITY_DEFS[p.combo].name;
-        const color = owned ? '#52e07a' : '#6b7283';
-        comboHint = `<small style="color:${color}">+ ${partnerName} → ${comboName}</small>`;
+        // 조합 능력은 그냥 자기 색
+      } else if (COMBO_PARTNERS[a.id]) {
+        const ownedSet = new Set(state.tower.abilities.map(x => x.id));
+        const partners = COMBO_PARTNERS[a.id].slice(0, 2);  // 최대 2개 힌트
+        const hints = partners.map(p => {
+          const pdef = ABILITY_DEFS[p.partner];
+          const cdef = ABILITY_DEFS[p.combo];
+          if (!pdef || !cdef) return '';
+          const has = ownedSet.has(p.partner);
+          const c = has ? '#52e07a' : '#6b7283';
+          return `<small style="color:${c}">+ ${pdef.name} → ${cdef.name}</small>`;
+        }).filter(Boolean);
+        comboHint = hints.join('');
       }
+      const max = isAtMax(a);
+      const lvLabel = max
+        ? `<span style="color:#ffd479">MAX</span>`
+        : `<span style="color:#9bb3ff">Lv${a.level}/${maxLvFor(a.id)}</span>`;
+      const upBtn = max
+        ? `<button disabled style="opacity:0.4">MAX</button>`
+        : `<button data-act="up" data-i="${origIdx[i]}">강화<br/><span style="color:#ffd479">${enhanceCost(a)}G</span></button>`;
       row.className = 'ability-row';
       row.innerHTML = `
         <div class="ability-name">
-          <b style="color:${nameColor}">${def.name} <span style="color:#9bb3ff">Lv${a.level}</span></b>
+          <b style="color:${nameColor}">${def.name} ${lvLabel}</b>
           <small>${def.desc(a.level)}</small>
           ${comboHint}
         </div>
-        <button data-act="up" data-i="${i}">강화<br/><span style="color:#ffd479">${enhanceCost(a)}G</span></button>
-        <button data-act="rm" data-i="${i}" title="삭제">✕</button>
+        ${upBtn}
+        <button data-act="rm" data-i="${origIdx[i]}" title="삭제">✕</button>
       `;
       elAb.appendChild(row);
     }
@@ -3422,8 +5829,6 @@
         else actDelete(i);
       };
     });
-    // ability-row에 min-height 고정이 걸려 있어 빈 슬롯/채워진 슬롯 높이가 같음
-    // → 패널 자연 크기가 변하지 않아 매번 fitScale 안 해도 됨
   }
 
   let toastTimer = 0;
@@ -3465,11 +5870,43 @@
 
   // ===== 입력 =====
   window.addEventListener('keydown', e => {
+    if (state.levelUpChoices) {
+      if (e.code === 'Digit1') applyLevelUpChoice(0);
+      if (e.code === 'Digit2') applyLevelUpChoice(1);
+      if (e.code === 'Digit3') applyLevelUpChoice(2);
+      if (e.code === 'Escape' && state.cardCancelable) applyLevelUpChoice(-1);
+      return;
+    }
     if (e.code === 'Space') { togglePause(); }
     if (e.code === 'KeyR')  { reset(); renderPanel(); document.getElementById('pauseBtn').textContent = '⏸ 일시정지'; }
     if (e.code === 'Digit1') setSpeed(1);
     if (e.code === 'Digit2') setSpeed(2);
     if (e.code === 'Digit3') setSpeed(3);
+  });
+  // 캔버스 클릭으로 카드 선택 (모바일 터치 포함)
+  canvas.addEventListener('click', (ev) => {
+    if (!state.levelUpChoices) return;
+    const rect = canvas.getBoundingClientRect();
+    const x = (ev.clientX - rect.left) * (W / rect.width);
+    const y = (ev.clientY - rect.top) * (H / rect.height);
+    const cardW = 175, cardH = 240, gap = 12;
+    const totalW = cardW * 3 + gap * 2;
+    const startX = (W - totalW) / 2;
+    const cardY = (H - cardH) / 2 - 10;
+    for (let i = 0; i < state.levelUpChoices.length; i++) {
+      const x0 = startX + i * (cardW + gap);
+      if (x >= x0 && x <= x0 + cardW && y >= cardY && y <= cardY + cardH) {
+        applyLevelUpChoice(i);
+        return;
+      }
+    }
+    // 취소 버튼
+    if (state._cancelBtn) {
+      const b = state._cancelBtn;
+      if (x >= b.x && x <= b.x + b.w && y >= b.y && y <= b.y + b.h) {
+        applyLevelUpChoice(-1);  // 취소
+      }
+    }
   });
 
   // ===== 반응형: 창 크기에 맞춰 전체 UI 스케일 + 가로/세로 자동 전환 =====
@@ -3527,6 +5964,96 @@
     });
   }
 
+  // ===== 사운드 시스템 (Web Audio API — 파일 없이 합성) =====
+  let audioCtx = null;
+  let sfxEnabled = true;
+  function ensureAudio() {
+    if (audioCtx) return audioCtx;
+    try {
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    } catch { audioCtx = null; }
+    return audioCtx;
+  }
+  // 사용자 첫 입력 후 audio context 잠금 해제 (iOS Safari 등)
+  function unlockAudio() {
+    const ctx = ensureAudio();
+    if (ctx && ctx.state === 'suspended') ctx.resume();
+    window.removeEventListener('pointerdown', unlockAudio);
+    window.removeEventListener('keydown', unlockAudio);
+  }
+  window.addEventListener('pointerdown', unlockAudio, { once: false });
+  window.addEventListener('keydown', unlockAudio, { once: false });
+
+  function tone(opts) {
+    if (!sfxEnabled) return;
+    const ctx = ensureAudio();
+    if (!ctx) return;
+    const {
+      freq = 440, freqEnd = freq, dur = 0.1, type = 'square',
+      vol = 0.15, attack = 0.005, decay = 0.05,
+    } = opts;
+    const now = ctx.currentTime;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, now);
+    osc.frequency.exponentialRampToValueAtTime(Math.max(0.01, freqEnd), now + dur);
+    gain.gain.setValueAtTime(0, now);
+    gain.gain.linearRampToValueAtTime(vol, now + attack);
+    gain.gain.linearRampToValueAtTime(0.0001, now + dur);
+    osc.connect(gain).connect(ctx.destination);
+    osc.start(now);
+    osc.stop(now + dur + decay);
+  }
+  function noise(opts) {
+    if (!sfxEnabled) return;
+    const ctx = ensureAudio();
+    if (!ctx) return;
+    const { dur = 0.15, vol = 0.18, hpf = 200 } = opts || {};
+    const now = ctx.currentTime;
+    const bufSize = Math.floor(ctx.sampleRate * dur);
+    const buf = ctx.createBuffer(1, bufSize, ctx.sampleRate);
+    const data = buf.getChannelData(0);
+    for (let i = 0; i < bufSize; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / bufSize);
+    const src = ctx.createBufferSource();
+    src.buffer = buf;
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'highpass';
+    filter.frequency.value = hpf;
+    const gain = ctx.createGain();
+    gain.gain.value = vol;
+    src.connect(filter).connect(gain).connect(ctx.destination);
+    src.start(now);
+  }
+
+  // 게임 이벤트별 SFX
+  const SFX = {
+    shot:    () => tone({ freq: 520, freqEnd: 350, dur: 0.05, type: 'square', vol: 0.05 }),
+    hit:     () => tone({ freq: 220, freqEnd: 120, dur: 0.06, type: 'sawtooth', vol: 0.08 }),
+    kill:    () => tone({ freq: 440, freqEnd: 880, dur: 0.10, type: 'triangle', vol: 0.10 }),
+    explode: () => { noise({ dur: 0.20, vol: 0.20 }); tone({ freq: 80, freqEnd: 30, dur: 0.15, type: 'sawtooth', vol: 0.15 }); },
+    combo:   () => {
+      [523, 659, 784, 1047].forEach((f, i) => setTimeout(() => tone({ freq: f, freqEnd: f, dur: 0.15, type: 'square', vol: 0.10 }), i * 80));
+    },
+    levelup: () => {
+      [523, 784].forEach((f, i) => setTimeout(() => tone({ freq: f, freqEnd: f, dur: 0.12, type: 'triangle', vol: 0.12 }), i * 100));
+    },
+    bossSpawn: () => {
+      tone({ freq: 60, freqEnd: 200, dur: 0.5, type: 'sawtooth', vol: 0.25 });
+      setTimeout(() => noise({ dur: 0.3, vol: 0.15 }), 200);
+    },
+    waveClear: () => {
+      [659, 784, 988, 1319].forEach((f, i) => setTimeout(() => tone({ freq: f, freqEnd: f, dur: 0.12, type: 'square', vol: 0.10 }), i * 70));
+    },
+    gameOver: () => {
+      [440, 330, 247, 165].forEach((f, i) => setTimeout(() => tone({ freq: f, freqEnd: f * 0.8, dur: 0.20, type: 'sawtooth', vol: 0.15 }), i * 150));
+    },
+    victory: () => {
+      [523, 659, 784, 1047, 1319, 1568].forEach((f, i) => setTimeout(() => tone({ freq: f, freqEnd: f, dur: 0.18, type: 'triangle', vol: 0.14 }), i * 100));
+    },
+    click:   () => tone({ freq: 880, freqEnd: 660, dur: 0.04, type: 'square', vol: 0.05 }),
+  };
+
   // ===== 도감 해금 (영구 저장) =====
   // 플레이 중 획득한 기본 능력 + 형성된 조합 능력만 도감에서 볼 수 있음.
   const UNLOCKED_KEY = 'dot-defense-unlocked';
@@ -3553,6 +6080,9 @@
   const codexEl = document.getElementById('codex');
   const recordsEl = document.getElementById('records');
   const recordDetailEl = document.getElementById('recordDetail');
+  const shopEl = document.getElementById('shop');
+  const characterScreenEl = document.getElementById('characterScreen');
+  const achievementsScreenEl = document.getElementById('achievementsScreen');
   const gameEl = document.getElementById('wrap');
   function showScreen(name) {
     currentScreen = name;
@@ -3560,6 +6090,9 @@
     codexEl.classList.toggle('show', name === 'codex');
     recordsEl.classList.toggle('show', name === 'records');
     recordDetailEl.classList.toggle('show', name === 'recordDetail');
+    shopEl.classList.toggle('show', name === 'shop');
+    characterScreenEl.classList.toggle('show', name === 'character');
+    achievementsScreenEl.classList.toggle('show', name === 'achievements');
     gameEl.style.display = name === 'game' ? 'flex' : 'none';
     if (name === 'game') {
       const usePortrait = window.innerHeight > window.innerWidth * 1.05;
@@ -3585,6 +6118,166 @@
   };
   document.getElementById('recordsBack').onclick = () => showScreen('menu');
   document.getElementById('recordDetailBack').onclick = () => showScreen('records');
+  document.getElementById('shopBtn').onclick = () => { buildShop(); showScreen('shop'); };
+  document.getElementById('shopBack').onclick = () => showScreen('menu');
+  document.getElementById('characterBtn').onclick = () => { buildCharacterList(); showScreen('character'); };
+  document.getElementById('characterBack').onclick = () => showScreen('menu');
+  document.getElementById('achievementsBtn').onclick = () => { buildAchievements(); showScreen('achievements'); };
+  document.getElementById('achievementsBack').onclick = () => showScreen('menu');
+
+  // 개발용: 데이터 초기화 — localStorage 전체 비움
+  document.getElementById('resetDataBtn').onclick = () => {
+    const ok = confirm('⚠ 모든 저장 데이터를 삭제합니다.\n\n• 스타더스트, 강화소 진행\n• 도감 / 업적 / 기록\n• 캐릭터 선택, 반복 업적 카운트\n\n진행할까요?');
+    if (!ok) return;
+    try { localStorage.clear(); } catch {}
+    location.reload();
+  };
+
+  function buildAchievements() {
+    const list = document.getElementById('achievements-list');
+    list.innerHTML = '';
+    const have = getUnlockedAchievements();
+    const singleDust = ACHIEVEMENTS.reduce((acc, a) => acc + (have.has(a.id) ? a.reward : 0), 0);
+    const repeatCounts = META.repeatCounts || {};
+    const repeatDust = REPEAT_ACHIEVEMENTS.reduce((acc, a) => acc + (repeatCounts[a.id] || 0) * a.reward, 0);
+    // 요약
+    document.getElementById('achievement-summary').innerHTML =
+      `단발 <b>${have.size}/${ACHIEVEMENTS.length}</b> · 누적 획득 <b>${singleDust + repeatDust}★</b> (단발 ${singleDust} + 반복 ${repeatDust})`;
+
+    // ── 단발 업적 섹션 ──
+    const singleHeader = document.createElement('div');
+    singleHeader.className = 'ach-section-header';
+    singleHeader.textContent = '✦ 단발 업적 (한 번만)';
+    list.appendChild(singleHeader);
+    for (const ach of ACHIEVEMENTS) {
+      const isUL = have.has(ach.id);
+      const card = document.createElement('div');
+      card.className = 'achievement-card' + (isUL ? ' unlocked' : '');
+      const chips = [];
+      if (ach.reward) chips.push(`<span class="ach-reward stardust">+${ach.reward} ★</span>`);
+      if (ach.unlocks) {
+        if (ach.unlocks.character) {
+          const ch = CHARACTERS[ach.unlocks.character];
+          if (ch) chips.push(`<span class="ach-reward character">👤 ${ch.name}</span>`);
+        }
+        if (ach.unlocks.ability) {
+          const ab = ABILITY_DEFS[ach.unlocks.ability];
+          if (ab) chips.push(`<span class="ach-reward ability">⚡ ${ab.name}</span>`);
+        }
+      }
+      card.innerHTML = `
+        <div class="ach-icon">${isUL ? '✓' : '🔒'}</div>
+        <div class="ach-info">
+          <div class="ach-name">${ach.name}</div>
+          <div class="ach-desc">${ach.desc}</div>
+          <div class="ach-rewards">${chips.join('')}</div>
+        </div>
+      `;
+      list.appendChild(card);
+    }
+
+    // ── 반복 업적 섹션 ──
+    const repeatHeader = document.createElement('div');
+    repeatHeader.className = 'ach-section-header';
+    repeatHeader.textContent = '🔁 반복 업적 (매 게임마다 가능)';
+    list.appendChild(repeatHeader);
+    for (const ach of REPEAT_ACHIEVEMENTS) {
+      const count = repeatCounts[ach.id] || 0;
+      const earned = count * ach.reward;
+      const card = document.createElement('div');
+      card.className = 'achievement-card repeat' + (count > 0 ? ' unlocked' : '');
+      card.innerHTML = `
+        <div class="ach-icon">🔁</div>
+        <div class="ach-info">
+          <div class="ach-name">${ach.name}</div>
+          <div class="ach-desc">${ach.desc}</div>
+          <div class="ach-rewards">
+            <span class="ach-reward stardust">회당 +${ach.reward} ★</span>
+            <span class="ach-reward count">달성 ${count}회 (${earned}★)</span>
+          </div>
+        </div>
+      `;
+      list.appendChild(card);
+    }
+  }
+
+  function buildCharacterList() {
+    const list = document.getElementById('character-list');
+    list.innerHTML = '';
+    for (const id of Object.keys(CHARACTERS)) {
+      const char = CHARACTERS[id];
+      const unlocked = isCharUnlocked(id);
+      const selected = selectedCharacter === id;
+      const card = document.createElement('div');
+      card.className = 'char-card' + (unlocked ? '' : ' locked') + (selected ? ' selected' : '');
+      card.style.borderLeftColor = char.color;
+      // 잠긴 캐릭터는 어떤 업적으로 해금되는지 표시
+      let lockText = '';
+      if (!unlocked && char.unlockBy) {
+        const ach = ACHIEVEMENTS.find(a => a.id === char.unlockBy);
+        const achLabel = ach ? `${ach.name} (${ach.desc})` : char.unlockBy;
+        lockText = `<div class="char-lock">🔒 업적 잠김: ${achLabel}</div>`;
+      }
+      const selText = selected ? `<div class="char-selected-tag">✓ 선택됨</div>` : '';
+      // 잠긴 캐릭터도 시작 능력과 효과는 보여줘서 도전 동기 부여
+      const startAbs = (char.startAbilities || []).map(aid => {
+        const d = ABILITY_DEFS[aid];
+        return d ? `<span style="color:${d.color}">${d.name}</span>` : aid;
+      }).join(', ');
+      const startInfo = startAbs ? `<div class="char-start">시작 능력: ${startAbs}</div>` : '';
+      card.innerHTML = `
+        <div class="char-name" style="color:${char.color}">${char.name}</div>
+        <div class="char-desc">${char.desc}</div>
+        ${startInfo}
+        ${lockText}${selText}
+      `;
+      if (unlocked) {
+        card.onclick = () => {
+          selectedCharacter = id;
+          META.selectedCharacter = id;
+          saveMeta();
+          SFX.click();
+          buildCharacterList();
+        };
+      }
+      list.appendChild(card);
+    }
+  }
+
+  // 강화소 콘텐츠
+  function buildShop() {
+    document.getElementById('stardust-count').textContent = (META.stardust || 0).toLocaleString();
+    const list = document.getElementById('shop-list');
+    list.innerHTML = '';
+    for (const up of META_UPGRADES) {
+      const cur = metaLv(up.id);
+      const maxed = cur >= up.maxLv;
+      const cost = maxed ? null : up.cost(cur);
+      const card = document.createElement('div');
+      card.className = 'shop-card' + (maxed ? ' maxed' : '');
+      let effectText = '';
+      if (cur > 0 && up.apply) {
+        const v = up.apply(cur);
+        effectText = ' · 현재 효과: ' + (v >= 1 ? '+' + Math.round(v) : '+' + Math.round(v * 100) + '%');
+      }
+      card.innerHTML = `
+        <div>
+          <div class="name">${up.name}</div>
+          <div class="desc">${up.desc}</div>
+          <div class="lv">Lv ${cur} / ${up.maxLv}${effectText}</div>
+        </div>
+        <button class="shop-buy${maxed ? ' maxed' : ''}" data-id="${up.id}" ${maxed || (META.stardust || 0) < cost ? 'disabled' : ''}>
+          ${maxed ? 'MAX' : cost + ' ★'}
+        </button>
+      `;
+      list.appendChild(card);
+    }
+    list.querySelectorAll('.shop-buy').forEach(btn => {
+      btn.onclick = () => {
+        if (buyUpgrade(btn.dataset.id)) buildShop();
+      };
+    });
+  }
 
   // ===== 도감 콘텐츠 생성 =====
   let codexTab = 'basic';
@@ -3598,19 +6291,26 @@
   function buildCodex() {
     const list = document.getElementById('codex-list');
     list.innerHTML = '';
-    const showBasic = codexTab === 'basic';
-    // 탭 라벨에 해금 개수 갱신
-    const basicIds = ALL_ABILITY_IDS.filter(id => !ABILITY_DEFS[id].isCombo);
-    const comboIds = ALL_ABILITY_IDS.filter(id =>  ABILITY_DEFS[id].isCombo);
-    const basicUL = basicIds.filter(id => unlockedAbilities.has(id)).length;
-    const comboUL = comboIds.filter(id => unlockedAbilities.has(id)).length;
-    document.querySelector('.codex-tab[data-tab="basic"]').textContent = `기본 능력 ${basicUL}/${basicIds.length}`;
-    document.querySelector('.codex-tab[data-tab="combo"]').textContent = `조합 능력 ${comboUL}/${comboIds.length}`;
+    // 카테고리별 개수
+    const activeBasicIds = ALL_ABILITY_IDS.filter(id => !ABILITY_DEFS[id].isCombo && !ABILITY_DEFS[id].isPassive);
+    const passiveIds    = ALL_ABILITY_IDS.filter(id => !ABILITY_DEFS[id].isCombo &&  ABILITY_DEFS[id].isPassive);
+    const comboIds  = ALL_ABILITY_IDS.filter(id => ABILITY_DEFS[id].isCombo && !ABILITY_DEFS[id].isTriple);
+    const tripleIds = ALL_ABILITY_IDS.filter(id => ABILITY_DEFS[id].isTriple);
+    const aUL = activeBasicIds.filter(id => unlockedAbilities.has(id)).length;
+    const pUL = passiveIds.filter(id => unlockedAbilities.has(id)).length;
+    const cUL = comboIds.filter(id => unlockedAbilities.has(id)).length;
+    const tUL = tripleIds.filter(id => unlockedAbilities.has(id)).length;
+    document.querySelector('.codex-tab[data-tab="basic"]').textContent = `액티브 ${aUL}/${activeBasicIds.length}`;
+    document.querySelector('.codex-tab[data-tab="passive"]').textContent = `패시브 ${pUL}/${passiveIds.length}`;
+    document.querySelector('.codex-tab[data-tab="combo"]').textContent = `조합 ${cUL}/${comboIds.length}`;
+    document.querySelector('.codex-tab[data-tab="triple"]').textContent = `히든 ${tUL}/${tripleIds.length}`;
 
     for (const id of ALL_ABILITY_IDS) {
       const def = ABILITY_DEFS[id];
-      if (showBasic && def.isCombo) continue;
-      if (!showBasic && !def.isCombo) continue;
+      if (codexTab === 'basic'   && (def.isCombo || def.isPassive)) continue;
+      if (codexTab === 'passive' && (def.isCombo || !def.isPassive)) continue;
+      if (codexTab === 'combo'   && (!def.isCombo || def.isTriple)) continue;
+      if (codexTab === 'triple'  && !def.isTriple) continue;
       const card = document.createElement('div');
       card.className = 'codex-card';
       if (!unlockedAbilities.has(id)) {
@@ -3631,20 +6331,25 @@
         if (recipe) {
           const a = ABILITY_DEFS[recipe.parts[0]];
           const b = ABILITY_DEFS[recipe.parts[1]];
-          extra = `<div class="recipe">재료: <span style="color:${a.color}">${a.name}</span> + <span style="color:${b.color}">${b.name}</span></div>`;
+          const tierLabel = def.isTriple ? '🔥 트리플 재료: ' : '재료: ';
+          extra = `<div class="recipe">${tierLabel}<span style="color:${a.color}">${a.name}</span> + <span style="color:${b.color}">${b.name}</span><br/><small style="color:#7a8090">두 재료 MAX 도달 시 카드 등장</small></div>`;
         }
-      } else if (COMBO_PARTNER[id]) {
-        const p = COMBO_PARTNER[id];
-        const partner = ABILITY_DEFS[p.partner];
-        const combo = ABILITY_DEFS[p.combo];
-        // 파트너/조합도 해금되었을 때만 이름 노출, 아니면 흐림 처리
-        const partnerLabel = unlockedAbilities.has(p.partner)
-          ? `<span style="color:${partner.color}">${partner.name}</span>`
-          : `<span style="color:#4a5163">???</span>`;
-        const comboLabel = unlockedAbilities.has(p.combo)
-          ? `<span style="color:${combo.color}">${combo.name}</span>`
-          : `<span style="color:#4a5163">???</span>`;
-        extra = `<div class="recipe">+ ${partnerLabel} → ${comboLabel}</div>`;
+      } else if (COMBO_PARTNERS[id] && COMBO_PARTNERS[id].length > 0) {
+        // 다중 파트너 — 한 능력이 여러 조합 가능
+        const lines = COMBO_PARTNERS[id].map(p => {
+          const partner = ABILITY_DEFS[p.partner];
+          const combo = ABILITY_DEFS[p.combo];
+          if (!partner || !combo) return '';
+          const pName = unlockedAbilities.has(p.partner)
+            ? `<span style="color:${partner.color}">${partner.name}</span>`
+            : `<span style="color:#4a5163">???</span>`;
+          const cName = unlockedAbilities.has(p.combo)
+            ? `<span style="color:${combo.color}">${combo.name}</span>`
+            : `<span style="color:#4a5163">???</span>`;
+          const tag = p.tier === 3 ? '🔥' : '+';
+          return `<div>${tag} ${pName} → ${cName}</div>`;
+        }).filter(Boolean).join('');
+        extra = `<div class="recipe">${lines}</div>`;
       }
       card.innerHTML = `
         <div class="name" style="color:${def.color}">${def.name}</div>
