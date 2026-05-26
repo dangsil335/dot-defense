@@ -169,23 +169,6 @@
     -webkit-overflow-scrolling: touch;
   }
   .screen.show { display: flex; }
-
-  /* === 작은 창 대응 — 메뉴 화면 자동 축소 === */
-  @media (max-height: 720px) {
-    #menu h1 { font-size: 42px; letter-spacing: 6px; margin-bottom: 6px; }
-    #menu .subtitle { margin-bottom: 22px; font-size: 12px; }
-    .menu-btn { padding: 12px; font-size: 15px; margin: 4px; width: 240px; }
-  }
-  @media (max-height: 540px) {
-    #menu h1 { font-size: 30px; letter-spacing: 4px; }
-    #menu .subtitle { margin-bottom: 12px; }
-    .menu-btn { padding: 8px 10px; font-size: 13px; margin: 3px; width: 220px; }
-  }
-  @media (max-width: 360px) {
-    #menu h1 { font-size: 36px; letter-spacing: 4px; }
-    .menu-btn { width: calc(100vw - 40px); max-width: 280px; }
-    .codex-header h2, #shop-list, #character-list { font-size: 14px; }
-  }
   #menu h1 {
     font-size: 56px;
     letter-spacing: 10px;
@@ -229,6 +212,22 @@
   }
   .menu-btn:hover { background: #2a3550; border-color: #5870a0; }
   .menu-btn:active { transform: scale(0.97); }
+
+  /* === 작은 창 대응 — 메뉴 화면 자동 축소 (기본 스타일 뒤에 와야 우선순위 확보) === */
+  @media (max-height: 720px) {
+    #menu h1 { font-size: 42px; letter-spacing: 6px; margin-bottom: 6px; }
+    #menu .subtitle { margin-bottom: 22px; font-size: 12px; }
+    .menu-btn { padding: 12px; font-size: 15px; margin: 4px; width: 240px; }
+  }
+  @media (max-height: 540px) {
+    #menu h1 { font-size: 30px; letter-spacing: 4px; }
+    #menu .subtitle { margin-bottom: 12px; }
+    .menu-btn { padding: 8px 10px; font-size: 13px; margin: 3px; width: 220px; }
+  }
+  @media (max-width: 360px) {
+    #menu h1 { font-size: 36px; letter-spacing: 4px; }
+    .menu-btn { width: calc(100vw - 40px); max-width: 280px; }
+  }
 
   #codex {
     padding: 24px;
