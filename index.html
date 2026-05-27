@@ -11035,7 +11035,13 @@
   function enhanceCost(ability) {
     const def = ABILITY_DEFS[ability.id];
     const mm = state.metaMods || { enhanceMul: 1 };
-    return Math.ceil(def.baseCost * (ability.level + 1) * 0.7 * mm.enhanceMul * (mm.scholarMul || 1));
+    // 📚 scholar 패시브 실시간 계산 (tick이 아직 안 돈 직후에도 즉시 반영)
+    let scholarMul = 1;
+    if (state.tower && state.tower.abilities) {
+      const sa = state.tower.abilities.find(a => a.id === 'scholar');
+      if (sa) scholarMul = 1 - sa.level * 0.04;
+    }
+    return Math.ceil(def.baseCost * (ability.level + 1) * 0.7 * mm.enhanceMul * scholarMul);
   }
 
   // 랜덤 능력 획득 비용: 0, 25, 60, 110, 180, 270, ...
@@ -13832,7 +13838,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 113;
+  const APP_VERSION = 114;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
