@@ -982,6 +982,54 @@
   <button id="recordsBtn" class="menu-btn">🏆 기록</button>
 </div>
 
+<!-- ===== 🎮 치트 모달 (123123123 입력 시) ===== -->
+<div id="cheatModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:9999; align-items:center; justify-content:center; padding:20px;">
+  <div style="background:#1a1f2b; border:2px solid #ffd479; border-radius:12px; padding:24px; max-width:480px; width:100%; max-height:90vh; overflow:auto; box-shadow:0 0 40px rgba(255,212,121,0.4);">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+      <div style="font-size:22px; font-weight:bold; color:#ffd479;">🎮 치트 모드</div>
+      <button id="cheatClose" style="background:none; border:1px solid #5a5f6a; color:#fff; padding:4px 12px; border-radius:6px; cursor:pointer;">✕</button>
+    </div>
+    <div style="color:#9aa3b3; font-size:12px; margin-bottom:16px; line-height:1.5;">
+      💎 결정 = 가챠 재화 · ⭐ 스타더스트 = 강화소 재화
+    </div>
+
+    <!-- 빠른 버튼 -->
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:16px;">
+      <button class="cheat-btn" data-cmd="crystal 10">💎 +10 결정</button>
+      <button class="cheat-btn" data-cmd="crystal 100">💎 +100 결정</button>
+      <button class="cheat-btn" data-cmd="crystal 1000">💎 +1000 결정</button>
+      <button class="cheat-btn" data-cmd="stardust 10000">⭐ +10000 스타더스트</button>
+      <button class="cheat-btn" data-cmd="stardust 100000">⭐ +100000 스타더스트</button>
+      <button class="cheat-btn" data-cmd="unlock all" style="grid-column:1/-1;">🔓 모든 가챠 캐릭터 해금</button>
+    </div>
+
+    <!-- 커스텀 명령어 입력 -->
+    <div style="margin-top:12px;">
+      <div style="color:#9aa3b3; font-size:11px; margin-bottom:6px;">커스텀 명령어 (Enter):</div>
+      <div style="display:flex; gap:6px;">
+        <input id="cheatInput" type="text" placeholder="예: crystal 50" style="flex:1; background:#0f1219; border:1px solid #2a2f3a; color:#fff; padding:8px 10px; border-radius:6px; font-family:inherit; font-size:14px;" />
+        <button id="cheatSubmit" style="background:#ffd479; color:#000; border:none; padding:8px 16px; border-radius:6px; font-weight:bold; cursor:pointer;">적용</button>
+      </div>
+      <div style="color:#7a8090; font-size:10px; margin-top:6px; line-height:1.4;">
+        명령어: <code style="color:#ffd479">crystal N</code> · <code style="color:#ffd479">stardust N</code> · <code style="color:#ffd479">unlock all</code> · <code style="color:#ffd479">unlock sakura/luna/aria/misaki/marine/solar/gravitas</code>
+      </div>
+    </div>
+
+    <!-- 피드백 -->
+    <div id="cheatFeedback" style="margin-top:14px; padding:10px 12px; background:#0f1219; border-radius:6px; font-size:13px; color:#88ff88; min-height:20px; line-height:1.4;"></div>
+  </div>
+</div>
+
+<style>
+  .cheat-btn {
+    background:#0f1219; border:1px solid #2a2f3a; color:#fff;
+    padding:10px 12px; border-radius:6px; cursor:pointer;
+    font-family:inherit; font-size:13px; transition:background 0.15s;
+  }
+  .cheat-btn:hover { background:#2a2f3a; }
+  .cheat-btn:active { background:#ffd479; color:#000; }
+</style>
+
 <!-- ===== 업적 화면 ===== -->
 <div id="achievementsScreen" class="screen">
   <div class="codex-header">
@@ -10909,6 +10957,123 @@
       }
     }
   }
+
+  // ===== 🎮 치트 시스템 (메뉴에서 "123123123" 입력) =====
+  const CHEAT_CODE = '123123123';
+  let cheatBuffer = '';
+  let cheatBufferTimer = null;
+  function openCheatModal() {
+    const modal = document.getElementById('cheatModal');
+    modal.style.display = 'flex';
+    document.getElementById('cheatFeedback').textContent = '';
+    document.getElementById('cheatInput').value = '';
+    setTimeout(() => document.getElementById('cheatInput').focus(), 50);
+  }
+  function closeCheatModal() {
+    document.getElementById('cheatModal').style.display = 'none';
+  }
+  function cheatFeedback(msg, isError = false) {
+    const el = document.getElementById('cheatFeedback');
+    el.style.color = isError ? '#ff8888' : '#88ff88';
+    el.textContent = msg;
+  }
+  function executeCheat(rawCmd) {
+    const cmd = rawCmd.trim().toLowerCase();
+    if (!cmd) { cheatFeedback('명령어를 입력하세요', true); return; }
+    // crystal N / c N
+    let m = cmd.match(/^(?:crystal|c)\s+(\d+)$/);
+    if (m) {
+      const n = parseInt(m[1], 10);
+      addCrystals(n);
+      cheatFeedback(`💎 결정 +${n} (현재: ${META.crystals})`);
+      return;
+    }
+    // stardust N / s N
+    m = cmd.match(/^(?:stardust|s)\s+(\d+)$/);
+    if (m) {
+      const n = parseInt(m[1], 10);
+      META.stardust = (META.stardust || 0) + n;
+      saveMeta();
+      cheatFeedback(`⭐ 스타더스트 +${n} (현재: ${META.stardust})`);
+      return;
+    }
+    // unlock all — 모든 가챠 캐릭터 해금
+    if (cmd === 'unlock all') {
+      META.gachaUnlocked = META.gachaUnlocked || {};
+      const allIds = [...GACHA_POOL.R, ...GACHA_POOL.SR, ...GACHA_POOL.SSR];
+      let added = 0;
+      for (const id of allIds) {
+        if (!META.gachaUnlocked[id]) { META.gachaUnlocked[id] = 1; added++; }
+      }
+      saveMeta();
+      cheatFeedback(`🔓 가챠 캐릭터 ${added}명 새로 해금 (총 ${allIds.length}명)`);
+      return;
+    }
+    // unlock <charId> — 특정 캐릭터 해금
+    m = cmd.match(/^unlock\s+([a-z]+)$/);
+    if (m) {
+      const id = m[1];
+      const validIds = [...GACHA_POOL.R, ...GACHA_POOL.SR, ...GACHA_POOL.SSR];
+      if (!validIds.includes(id)) {
+        cheatFeedback(`❌ 알 수 없는 캐릭터: ${id}`, true);
+        return;
+      }
+      META.gachaUnlocked = META.gachaUnlocked || {};
+      META.gachaUnlocked[id] = Math.max(META.gachaUnlocked[id] || 0, 1);
+      saveMeta();
+      const c = CHARACTERS[id];
+      cheatFeedback(`🔓 ${c ? c.name : id} 해금됨`);
+      return;
+    }
+    cheatFeedback(`❌ 알 수 없는 명령어: ${cmd}`, true);
+  }
+  // 키 입력 감지 — 메뉴에서만
+  document.addEventListener('keydown', (e) => {
+    if (currentScreen !== 'menu') return;
+    // 치트 모달이 열려있으면 무시 (모달 input은 별도 핸들러)
+    if (document.getElementById('cheatModal').style.display === 'flex') return;
+    // 숫자 키만 버퍼에 추가
+    if (/^[0-9]$/.test(e.key)) {
+      cheatBuffer += e.key;
+      if (cheatBuffer.length > CHEAT_CODE.length) {
+        cheatBuffer = cheatBuffer.slice(-CHEAT_CODE.length);
+      }
+      // 타이머 리셋 — 3초간 입력 없으면 버퍼 초기화
+      if (cheatBufferTimer) clearTimeout(cheatBufferTimer);
+      cheatBufferTimer = setTimeout(() => { cheatBuffer = ''; }, 3000);
+      // 매칭 확인
+      if (cheatBuffer === CHEAT_CODE) {
+        cheatBuffer = '';
+        clearTimeout(cheatBufferTimer);
+        openCheatModal();
+      }
+    } else {
+      cheatBuffer = '';
+      if (cheatBufferTimer) { clearTimeout(cheatBufferTimer); cheatBufferTimer = null; }
+    }
+  });
+  // 모달 버튼/입력 핸들러
+  document.getElementById('cheatClose').onclick = closeCheatModal;
+  document.getElementById('cheatModal').onclick = (e) => {
+    // 배경 클릭 시 닫기 (내부 클릭은 무시)
+    if (e.target === document.getElementById('cheatModal')) closeCheatModal();
+  };
+  document.querySelectorAll('.cheat-btn').forEach(btn => {
+    btn.onclick = () => executeCheat(btn.dataset.cmd);
+  });
+  document.getElementById('cheatSubmit').onclick = () => {
+    executeCheat(document.getElementById('cheatInput').value);
+    document.getElementById('cheatInput').value = '';
+  };
+  document.getElementById('cheatInput').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      executeCheat(e.target.value);
+      e.target.value = '';
+    } else if (e.key === 'Escape') {
+      closeCheatModal();
+    }
+  });
 
   document.getElementById('startBtn').onclick = () => {
     // 진행 중 게임 있으면 이어하기 (상태/일시정지 유지), 없으면 새 게임
