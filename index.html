@@ -465,6 +465,307 @@
     gap: 10px;
   }
 
+  /* ===== 🎰 가챠 화면 ===== */
+  #gachaScreen {
+    padding: 16px;
+    align-items: stretch;
+    justify-content: flex-start;
+    gap: 10px;
+    max-width: 600px; width: 100%; margin: 0 auto;
+  }
+  /* 상단 바 — 작은 재화 표시 */
+  .gacha-top-bar {
+    display: flex; align-items: center; gap: 10px;
+    padding: 4px 0 8px;
+    border-bottom: 1px solid #2a2f3a;
+  }
+  .gacha-back-small {
+    padding: 6px 12px !important;
+    font-size: 14px !important;
+  }
+  .gacha-title {
+    flex: 1; text-align: center;
+    font-size: 18px; font-weight: bold; color: #e8eaf0;
+    letter-spacing: 2px;
+  }
+  .gacha-currencies {
+    display: flex; gap: 6px;
+  }
+  .gacha-cur-chip {
+    background: #141822; border: 1px solid #2a2f3a;
+    padding: 4px 8px; font-size: 12px;
+    border-radius: 4px;
+  }
+  /* 중앙 배너 */
+  .gacha-banner-wrap {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16/9;
+    max-height: 320px;
+    background: linear-gradient(135deg, #1a1f2e, #0c0e18);
+    border: 1px solid #2a2f3a;
+    border-radius: 8px;
+    overflow: hidden;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .gacha-banner-img {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  .gacha-banner-fallback {
+    flex-direction: column; align-items: center; justify-content: center;
+    color: #5a6275;
+    text-align: center; padding: 20px;
+  }
+  .gacha-banner-sparkles {
+    font-size: 48px;
+    animation: gacha-shimmer 2s ease-in-out infinite;
+  }
+  .gacha-banner-title {
+    font-size: 28px; font-weight: bold; color: #7ad7ff;
+    text-shadow: 0 0 18px rgba(122,215,255,0.45);
+    letter-spacing: 6px; margin: 8px 0 4px;
+  }
+  .gacha-banner-sub {
+    font-size: 14px; color: #9aa3b3; letter-spacing: 2px;
+  }
+  .gacha-banner-hint {
+    margin-top: 18px; font-size: 11px; color: #4a5163;
+  }
+  @keyframes gacha-shimmer {
+    0%, 100% { opacity: 0.6; transform: scale(1); }
+    50% { opacity: 1; transform: scale(1.1); }
+  }
+  /* 배너 위 오버레이 (컬렉션 + 확률) */
+  .gacha-banner-overlay {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    background: linear-gradient(transparent, rgba(0,0,0,0.7));
+    padding: 12px;
+    display: flex; justify-content: space-between; align-items: flex-end;
+    font-size: 11px;
+  }
+  .gacha-collection-mini { color: #ffd479; font-weight: bold; }
+  .gacha-rates-mini { color: #9aa3b3; }
+  /* 결과 표시 */
+  .gacha-result {
+    min-height: 30px;
+    text-align: center;
+    font-size: 13px;
+    padding: 4px;
+  }
+  /* 뽑기 버튼 */
+  .gacha-buttons {
+    display: flex; gap: 10px;
+    margin-top: 6px;
+  }
+  .gacha-pull-btn {
+    flex: 1;
+    padding: 14px 12px;
+    background: #1f2735; color: #e8eaf0;
+    border: 2px solid #3a4256;
+    font-family: inherit;
+    cursor: pointer;
+    transition: background .12s, border-color .12s, transform .08s;
+    touch-action: manipulation;
+    display: flex; flex-direction: column; align-items: center; gap: 4px;
+    border-radius: 6px;
+  }
+  .gacha-pull-btn:hover:not(:disabled) { background: #2a3550; border-color: #5870a0; transform: translateY(-1px); }
+  .gacha-pull-btn:active { transform: scale(0.97); }
+  .gacha-pull-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .gacha-pull-btn.primary {
+    border-color: #ffd479;
+    background: linear-gradient(135deg, #2a2418, #1a1810);
+    color: #ffd479;
+  }
+  .gacha-pull-btn.primary:hover:not(:disabled) { background: linear-gradient(135deg, #3a311e, #2a2418); }
+  .gacha-pull-label { font-size: 15px; font-weight: bold; }
+  .gacha-pull-cost { font-size: 13px; color: #9aa3b3; }
+  /* 컬렉션 (접기/펼치기) */
+  .gacha-collection-details {
+    margin-top: 6px;
+    background: #141822;
+    border: 1px solid #2a2f3a;
+    border-radius: 6px;
+    padding: 10px 14px;
+  }
+  .gacha-collection-details summary {
+    cursor: pointer;
+    font-size: 13px;
+    color: #9aa3b3;
+    user-select: none;
+  }
+  .gacha-collection-details summary:hover { color: #c8cdd8; }
+  .gacha-collection-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+    gap: 6px;
+    margin-top: 10px;
+  }
+  .gacha-refund-info {
+    margin-top: 10px; padding-top: 8px;
+    border-top: 1px solid #2a2f3a;
+    text-align: center; color: #6b7283; font-size: 10px;
+  }
+
+  /* ===== 가챠 결과 화면 ===== */
+  #gachaResultScreen {
+    padding: 24px;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+  }
+  .gacha-result-title {
+    font-size: 26px; font-weight: bold; color: #ffd479;
+    letter-spacing: 4px;
+    text-shadow: 0 0 20px rgba(255, 212, 121, 0.5);
+  }
+  .gacha-result-cards {
+    display: flex; flex-wrap: wrap; gap: 12px;
+    justify-content: center;
+    max-width: 100%;
+    overflow-y: auto;
+    padding: 8px;
+  }
+  .gacha-result-card {
+    --rarity-color: #7ad7ff;
+    position: relative;
+    width: 130px;
+    background: #0c0e18;
+    border: 2px solid var(--rarity-color);
+    border-radius: 6px;
+    overflow: hidden;
+    display: flex; flex-direction: column;
+    opacity: 0;
+    transform: translateY(20px) scale(0.8);
+    animation: gacha-card-in 0.4s ease-out forwards;
+  }
+  @keyframes gacha-card-in {
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  .gacha-result-card .card-rarity-tag {
+    text-align: center;
+    padding: 4px;
+    background: var(--rarity-color);
+    color: #0b0d12;
+    font-weight: bold;
+    font-size: 11px;
+    letter-spacing: 1px;
+  }
+  .gacha-result-card .card-portrait {
+    height: 130px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 56px;
+    background: radial-gradient(circle at center, color-mix(in srgb, var(--rarity-color) 25%, #0b0d12), #0b0d12);
+    position: relative;
+  }
+  .gacha-result-card .card-name {
+    text-align: center;
+    padding: 6px 4px 2px;
+    font-size: 13px; font-weight: bold;
+    color: var(--rarity-color);
+  }
+  .gacha-result-card .card-status {
+    text-align: center;
+    padding: 2px 4px 6px;
+    font-size: 10px;
+    color: #9aa3b3;
+    min-height: 16px;
+  }
+  .gacha-result-card .card-status.new {
+    color: #88ff88;
+    font-weight: bold;
+  }
+  /* 등급별 이펙트 */
+  /* R 등급 — 부드러운 청록 글로우 */
+  .gacha-result-card.rarity-r {
+    box-shadow: 0 0 12px rgba(122, 215, 255, 0.3);
+  }
+  /* SR 등급 — 보라 광채 + 빛 펄스 */
+  .gacha-result-card.rarity-sr {
+    box-shadow: 0 0 20px rgba(192, 132, 255, 0.6), inset 0 0 20px rgba(192, 132, 255, 0.15);
+    animation: gacha-card-in 0.4s ease-out forwards, gacha-sr-pulse 2s ease-in-out infinite 0.5s;
+  }
+  .gacha-result-card.rarity-sr::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: linear-gradient(135deg, transparent 30%, rgba(192, 132, 255, 0.18) 50%, transparent 70%);
+    background-size: 200% 200%;
+    animation: gacha-sr-shimmer 3s linear infinite;
+    pointer-events: none;
+  }
+  @keyframes gacha-sr-pulse {
+    0%, 100% { box-shadow: 0 0 20px rgba(192, 132, 255, 0.5), inset 0 0 20px rgba(192, 132, 255, 0.15); }
+    50%      { box-shadow: 0 0 30px rgba(192, 132, 255, 0.9), inset 0 0 25px rgba(192, 132, 255, 0.25); }
+  }
+  @keyframes gacha-sr-shimmer {
+    0% { background-position: -100% -100%; }
+    100% { background-position: 100% 100%; }
+  }
+  /* SSR 등급 — 무지개 빛기둥 + 강한 폭발 + 스파클 */
+  .gacha-result-card.rarity-ssr {
+    box-shadow: 0 0 28px rgba(255, 212, 121, 0.8), inset 0 0 28px rgba(255, 215, 0, 0.25);
+    animation: gacha-card-in 0.5s ease-out forwards, gacha-ssr-glow 1.5s ease-in-out infinite 0.5s;
+  }
+  .gacha-result-card.rarity-ssr::before {
+    content: '';
+    position: absolute; inset: -2px;
+    background: linear-gradient(135deg,
+      #ff66bb 0%, #ffd479 25%, #66ffcc 50%, #88aaff 75%, #ff66bb 100%);
+    background-size: 400% 400%;
+    animation: gacha-rainbow 4s linear infinite;
+    z-index: -1;
+    border-radius: 8px;
+    filter: blur(4px);
+  }
+  .gacha-result-card.rarity-ssr::after {
+    content: '✨';
+    position: absolute;
+    top: 6px; right: 6px;
+    font-size: 22px;
+    animation: gacha-ssr-spark 1.8s ease-in-out infinite;
+    pointer-events: none;
+  }
+  @keyframes gacha-ssr-glow {
+    0%, 100% { box-shadow: 0 0 28px rgba(255, 212, 121, 0.7), inset 0 0 28px rgba(255, 215, 0, 0.20); }
+    50%      { box-shadow: 0 0 45px rgba(255, 180, 200, 1), 0 0 60px rgba(255, 212, 121, 0.6), inset 0 0 35px rgba(255, 215, 0, 0.35); }
+  }
+  @keyframes gacha-rainbow {
+    0% { background-position: 0% 0%; }
+    100% { background-position: 200% 200%; }
+  }
+  @keyframes gacha-ssr-spark {
+    0%, 100% { transform: scale(1) rotate(0deg); opacity: 0.9; }
+    50%      { transform: scale(1.4) rotate(180deg); opacity: 1; }
+  }
+  /* 카드 등장 지연 — 순차 등장 */
+  .gacha-result-card:nth-child(1) { animation-delay: 0.0s, 0.5s; }
+  .gacha-result-card:nth-child(2) { animation-delay: 0.1s, 0.6s; }
+  .gacha-result-card:nth-child(3) { animation-delay: 0.2s, 0.7s; }
+  .gacha-result-card:nth-child(4) { animation-delay: 0.3s, 0.8s; }
+  .gacha-result-card:nth-child(5) { animation-delay: 0.4s, 0.9s; }
+  .gacha-result-card:nth-child(6) { animation-delay: 0.5s, 1.0s; }
+  .gacha-result-card:nth-child(7) { animation-delay: 0.6s, 1.1s; }
+  .gacha-result-card:nth-child(8) { animation-delay: 0.7s, 1.2s; }
+  .gacha-result-card:nth-child(9) { animation-delay: 0.8s, 1.3s; }
+  .gacha-result-card:nth-child(10) { animation-delay: 0.9s, 1.4s; }
+  /* 요약 + 액션 */
+  .gacha-result-summary {
+    text-align: center;
+    font-size: 14px;
+    color: #ffd479;
+    padding: 6px 12px;
+    background: #141822;
+    border: 1px solid #2a2f3a;
+    border-radius: 4px;
+    min-height: 24px;
+  }
+  .gacha-result-actions {
+    display: flex; gap: 12px;
+    margin-top: 8px;
+  }
+
   /* ===== 강화소 ===== */
   #shop { padding: 24px; align-items: stretch; }
   #shop-list {
@@ -674,6 +975,7 @@
   <button id="newGameBtn" class="menu-btn" style="display:none">🔄 새 게임</button>
   <button id="difficultyBtn" class="menu-btn" style="display:none">⚡ 난이도: 기본</button>
   <button id="characterBtn" class="menu-btn">👤 캐릭터 선택</button>
+  <button id="gachaBtn" class="menu-btn">🎰 가챠</button>
   <button id="shopBtn" class="menu-btn">⭐ 강화소</button>
   <button id="codexBtn" class="menu-btn">📖 도감</button>
   <button id="achievementsBtn" class="menu-btn">🏅 업적</button>
@@ -697,6 +999,61 @@
     <button id="characterBack" class="codex-back">← 메뉴로</button>
   </div>
   <div id="character-list"></div>
+</div>
+
+<!-- ===== 🎰 가챠 화면 ===== -->
+<div id="gachaScreen" class="screen">
+  <div class="gacha-top-bar">
+    <button id="gachaBack" class="codex-back gacha-back-small">←</button>
+    <div class="gacha-title">🎰 가챠</div>
+    <div class="gacha-currencies">
+      <span class="gacha-cur-chip"><span style="color:#88ccff">💎</span> <span id="crystal-count">0</span></span>
+      <span class="gacha-cur-chip"><span style="color:#ffd479">⭐</span> <span id="gacha-stardust">0</span></span>
+    </div>
+  </div>
+
+  <div class="gacha-banner-wrap">
+    <img id="gacha-banner-img" class="gacha-banner-img" src="./icons/gacha.png"
+         onerror="this.style.display='none'; document.getElementById('gacha-banner-fallback').style.display='flex';" />
+    <div id="gacha-banner-fallback" class="gacha-banner-fallback" style="display:none;">
+      <div class="gacha-banner-sparkles">✨</div>
+      <div class="gacha-banner-title">DOT DEFENSE</div>
+      <div class="gacha-banner-sub">캐릭터 픽업 가챠</div>
+      <div class="gacha-banner-hint">icons/gacha.png 이미지 추가하면 여기에 표시됨</div>
+    </div>
+    <div class="gacha-banner-overlay">
+      <div class="gacha-collection-mini">컬렉션 <span id="gacha-collected">0</span>/<span id="gacha-total">0</span></div>
+      <div class="gacha-rates-mini">🟦 R 94.3% · 🟪 SR 5% · 🟧 SSR 0.7%</div>
+    </div>
+  </div>
+
+  <div class="gacha-buttons">
+    <button id="gachaPull1" class="gacha-pull-btn">
+      <div class="gacha-pull-label">1회 뽑기</div>
+      <div class="gacha-pull-cost"><span style="color:#88ccff">💎</span> 1</div>
+    </button>
+    <button id="gachaPull10" class="gacha-pull-btn primary">
+      <div class="gacha-pull-label">10회 뽑기</div>
+      <div class="gacha-pull-cost"><span style="color:#88ccff">💎</span> 9</div>
+    </button>
+  </div>
+
+  <details class="gacha-collection-details">
+    <summary>📋 컬렉션 보기</summary>
+    <div id="gacha-collection" class="gacha-collection-grid"></div>
+    <div class="gacha-refund-info">중복 시 환불: R 150★ / SR 400★ / SSR 800★</div>
+  </details>
+</div>
+
+<!-- ===== 🎰 가챠 결과 화면 ===== -->
+<div id="gachaResultScreen" class="screen">
+  <div class="gacha-result-title">✨ 뽑기 결과</div>
+  <div id="gacha-result-cards" class="gacha-result-cards"></div>
+  <div id="gacha-result-summary" class="gacha-result-summary"></div>
+  <div class="gacha-result-actions">
+    <button id="gachaResultAgain" class="gacha-pull-btn primary">🎰 다시 뽑기</button>
+    <button id="gachaResultClose" class="gacha-pull-btn">계속</button>
+  </div>
 </div>
 
 <!-- ===== 난이도 선택 (승천) ===== -->
@@ -5187,6 +5544,1741 @@
         }
       },
     },
+
+    // ========== 🎰 가챠 캐릭터 고유 능력 — R 등급 (3종) ==========
+    // 1. 마린의 부유어뢰
+    torpedo: {
+      name: '부유어뢰', baseCost: 65, color: '#5599cc', isGachaUnique: true,
+      desc: lv => `${2+lv}발 유도 어뢰 · DMG ${4+lv*2} · 광역 ${28+lv*5}`,
+      init(ab) { ab.cooldown = 80; ab.torpedoes = []; ab.explosions = []; },
+      tick(ab) {
+        const dmg = 4 + ab.level * 2;
+        const exR = 28 + ab.level * 5;
+        for (const e of ab.explosions) e.life--;
+        ab.explosions = ab.explosions.filter(e => e.life > 0);
+        for (const t of ab.torpedoes) {
+          t.life--;
+          if (!t.target || t.target.hp <= 0) {
+            let best = Infinity, target = null;
+            for (const e of state.enemies) {
+              if (e.hp <= 0) continue;
+              const [ex, ey] = enemyXY(e);
+              const d2 = (t.x-ex)*(t.x-ex) + (t.y-ey)*(t.y-ey);
+              if (d2 < best) { best = d2; target = e; }
+            }
+            t.target = target;
+          }
+          if (t.target) {
+            const [tx, ty] = enemyXY(t.target);
+            const curAng = Math.atan2(t.vy, t.vx);
+            const wantAng = Math.atan2(ty - t.y, tx - t.x);
+            let diff = wantAng - curAng;
+            while (diff > Math.PI) diff -= Math.PI * 2;
+            while (diff < -Math.PI) diff += Math.PI * 2;
+            const c = Math.max(-0.10, Math.min(0.10, diff));
+            const a = curAng + c;
+            t.vx = Math.cos(a) * 4; t.vy = Math.sin(a) * 4;
+          }
+          t.x += t.vx; t.y += t.vy;
+          for (const e of state.enemies) {
+            if (e.hp <= 0) continue;
+            const [ex, ey] = enemyXY(e);
+            if ((t.x-ex)*(t.x-ex) + (t.y-ey)*(t.y-ey) < (e.size+5)*(e.size+5)) {
+              for (const e2 of state.enemies) {
+                if (e2.hp <= 0) continue;
+                const [ex2, ey2] = enemyXY(e2);
+                if ((t.x-ex2)*(t.x-ex2) + (t.y-ey2)*(t.y-ey2) < exR*exR) {
+                  damageEnemy(e2, dmg);
+                  spawnParticles(ex2, ey2, '#5599cc', 3);
+                }
+              }
+              ab.explosions.push({x: t.x, y: t.y, r: exR, life: 14});
+              t.life = 0;
+              break;
+            }
+          }
+          if ((t.x-CX)*(t.x-CX) + (t.y-CY)*(t.y-CY) > (ARENA_R+30)*(ARENA_R+30)) t.life = 0;
+        }
+        ab.torpedoes = ab.torpedoes.filter(t => t.life > 0);
+        if (--ab.cooldown > 0) return;
+        const n = 2 + ab.level;
+        for (let i = 0; i < n; i++) {
+          const ang = Math.random() * Math.PI * 2;
+          ab.torpedoes.push({
+            x: CX, y: CY,
+            vx: Math.cos(ang) * 2.2, vy: Math.sin(ang) * 2.2,
+            life: 180, target: null,
+          });
+        }
+        ab.cooldown = Math.max(60, 110 - ab.level * 4);
+      },
+      draw(ab) {
+        for (const t of ab.torpedoes) {
+          const ang = Math.atan2(t.vy, t.vx);
+          ctx.save();
+          ctx.translate(t.x, t.y); ctx.rotate(ang);
+          ctx.fillStyle = '#1d2230'; ctx.fillRect(-5, -3, 10, 6);
+          ctx.fillStyle = '#5599cc'; ctx.fillRect(-4, -2, 8, 4);
+          ctx.fillStyle = '#aaddff'; ctx.fillRect(-2, -1, 4, 2);
+          // 잔향 거품
+          ctx.globalAlpha = 0.5;
+          ctx.fillStyle = '#88ccff';
+          ctx.fillRect(-7, -1, 3, 2);
+          ctx.globalAlpha = 1;
+          ctx.restore();
+        }
+        for (const e of ab.explosions) {
+          const t = 1 - e.life / 14;
+          ctx.globalAlpha = e.life / 14;
+          ctx.fillStyle = '#5599cc';
+          ctx.beginPath(); ctx.arc(e.x, e.y, e.r * t, 0, Math.PI*2); ctx.fill();
+          ctx.globalAlpha = (e.life/14) * 0.6;
+          ctx.fillStyle = '#ddeeff';
+          ctx.beginPath(); ctx.arc(e.x, e.y, e.r * t * 0.5, 0, Math.PI*2); ctx.fill();
+        }
+        ctx.globalAlpha = 1;
+      },
+    },
+    // 2. 솔라의 태양흑점
+    sunspot: {
+      name: '태양흑점', baseCost: 65, color: '#ffaa44', isGachaUnique: true,
+      desc: lv => `타워 광역 폭발 · DMG ${2+lv*2} · 반경 ${90+lv*15}`,
+      init(ab) { ab.cooldown = 60; ab.fx = 0; },
+      tick(ab) {
+        if (ab.fx > 0) ab.fx--;
+        if (--ab.cooldown > 0) return;
+        const radius = 90 + ab.level * 15;
+        const dmg = 2 + ab.level * 2;
+        for (const e of state.enemies) {
+          if (e.hp <= 0) continue;
+          const [ex, ey] = enemyXY(e);
+          if ((ex-CX)*(ex-CX) + (ey-CY)*(ey-CY) < radius*radius) {
+            damageEnemy(e, dmg);
+            spawnParticles(ex, ey, '#ffaa44', 3);
+          }
+        }
+        ab.fx = 18;
+        ab.cooldown = Math.max(50, 100 - ab.level * 4);
+      },
+      draw(ab) {
+        if (ab.fx <= 0) return;
+        const radius = 90 + ab.level * 15;
+        const t = 1 - ab.fx / 18;
+        ctx.globalAlpha = ab.fx / 18;
+        // 다중 동심원 펄스
+        ctx.strokeStyle = '#ffaa44'; ctx.lineWidth = 4;
+        ctx.beginPath(); ctx.arc(CX, CY, radius * t, 0, Math.PI*2); ctx.stroke();
+        ctx.globalAlpha = (ab.fx / 18) * 0.7;
+        ctx.fillStyle = '#ffcc66';
+        ctx.beginPath(); ctx.arc(CX, CY, radius * t * 0.7, 0, Math.PI*2); ctx.fill();
+        ctx.globalAlpha = (ab.fx / 18) * 0.4;
+        ctx.fillStyle = '#ffe080';
+        ctx.beginPath(); ctx.arc(CX, CY, radius * t * 0.4, 0, Math.PI*2); ctx.fill();
+        ctx.globalAlpha = 1;
+      },
+    },
+    // 3. 그래비타스의 인력장
+    pullField: {
+      name: '인력장', baseCost: 70, color: '#a070d0', isGachaUnique: true,
+      desc: lv => `정지 인력장 · DMG ${1+lv}/주기 · 적 끌어모음`,
+      init(ab) { ab.x = CX; ab.y = CY; ab.tickT = 16; ab.life = 0; },
+      tick(ab) {
+        ab.life--;
+        if (ab.life <= 0) {
+          // 적 평균 위치로 재배치
+          const pool = state.enemies.filter(e => e.hp > 0);
+          if (pool.length > 0) {
+            let sx = 0, sy = 0;
+            for (const e of pool) { const [ex, ey] = enemyXY(e); sx += ex; sy += ey; }
+            ab.x = sx / pool.length; ab.y = sy / pool.length;
+          } else { ab.x = CX; ab.y = CY; }
+          ab.life = 200 + ab.level * 25;
+        }
+        const pullR = 140 + ab.level * 12;
+        const dmg = 1 + ab.level;
+        ab.tickT--;
+        for (const e of state.enemies) {
+          if (e.hp <= 0) continue;
+          const [ex, ey] = enemyXY(e);
+          const dx = ab.x - ex, dy = ab.y - ey;
+          const dist = Math.hypot(dx, dy);
+          if (dist < pullR && dist > 5) {
+            const ps = (1 - dist / pullR) * 1.8;
+            const newEx = ex + (dx/dist) * ps;
+            const newEy = ey + (dy/dist) * ps;
+            e.angle = Math.atan2(newEy - CY, newEx - CX);
+            e.radius = Math.hypot(newEx - CX, newEy - CY);
+            e.targetRadius = e.radius;
+          }
+        }
+        if (ab.tickT <= 0) {
+          ab.tickT = 16;
+          for (const e of state.enemies) {
+            if (e.hp <= 0) continue;
+            const [ex, ey] = enemyXY(e);
+            if ((ab.x-ex)*(ab.x-ex) + (ab.y-ey)*(ab.y-ey) < pullR*pullR * 0.6) {
+              damageEnemy(e, dmg);
+              spawnParticles(ex, ey, '#a070d0', 1);
+            }
+          }
+        }
+      },
+      draw(ab) {
+        const pullR = 140 + ab.level * 12;
+        ctx.strokeStyle = 'rgba(160, 112, 208, 0.22)'; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.arc(ab.x, ab.y, pullR, 0, Math.PI*2); ctx.stroke();
+        ctx.fillStyle = 'rgba(160, 112, 208, 0.08)';
+        ctx.beginPath(); ctx.arc(ab.x, ab.y, pullR * 0.6, 0, Math.PI*2); ctx.fill();
+        // 회전 입자
+        for (let k = 0; k < 6; k++) {
+          const pa = state.t * 0.10 + k * (Math.PI * 2 / 6);
+          const pr = 16 + Math.sin(state.t * 0.08 + k) * 4;
+          ctx.fillStyle = '#c090e0';
+          ctx.fillRect(ab.x + Math.cos(pa) * pr - 1, ab.y + Math.sin(pa) * pr - 1, 2, 2);
+        }
+      },
+    },
+
+    // ========== 🎰 가챠 R 조합 (3종) ==========
+    frozenTorpedo: {
+      name: '빙결어뢰', isCombo: true, baseCost: 150, color: '#88ccff',
+      desc: lv => `${4+lv}발 유도 어뢰 · DMG ${6+lv*4} · 슬로우 + 광역`,
+      init(ab) { ab.cooldown = 75; ab.torpedoes = []; ab.explosions = []; },
+      tick(ab) {
+        const dmg = 6 + ab.level * 4;
+        const exR = 40 + ab.level * 6;
+        const slowDur = 90 + ab.level * 12;
+        for (const e of ab.explosions) e.life--;
+        ab.explosions = ab.explosions.filter(e => e.life > 0);
+        for (const t of ab.torpedoes) {
+          t.life--;
+          if (!t.target || t.target.hp <= 0) {
+            let best = Infinity, tg = null;
+            for (const e of state.enemies) {
+              if (e.hp <= 0) continue;
+              const [ex, ey] = enemyXY(e);
+              const d2 = (t.x-ex)*(t.x-ex) + (t.y-ey)*(t.y-ey);
+              if (d2 < best) { best = d2; tg = e; }
+            }
+            t.target = tg;
+          }
+          if (t.target) {
+            const [tx, ty] = enemyXY(t.target);
+            const curAng = Math.atan2(t.vy, t.vx);
+            const wantAng = Math.atan2(ty - t.y, tx - t.x);
+            let diff = wantAng - curAng;
+            while (diff > Math.PI) diff -= Math.PI * 2;
+            while (diff < -Math.PI) diff += Math.PI * 2;
+            const c = Math.max(-0.13, Math.min(0.13, diff));
+            const a = curAng + c;
+            t.vx = Math.cos(a) * 4.5; t.vy = Math.sin(a) * 4.5;
+          }
+          t.x += t.vx; t.y += t.vy;
+          for (const e of state.enemies) {
+            if (e.hp <= 0) continue;
+            const [ex, ey] = enemyXY(e);
+            if ((t.x-ex)*(t.x-ex) + (t.y-ey)*(t.y-ey) < (e.size+5)*(e.size+5)) {
+              for (const e2 of state.enemies) {
+                if (e2.hp <= 0) continue;
+                const [ex2, ey2] = enemyXY(e2);
+                if ((t.x-ex2)*(t.x-ex2) + (t.y-ey2)*(t.y-ey2) < exR*exR) {
+                  damageEnemy(e2, dmg);
+                  e2.slowFrames = Math.max(e2.slowFrames || 0, slowDur);
+                  spawnParticles(ex2, ey2, '#88ccff', 4);
+                }
+              }
+              ab.explosions.push({x: t.x, y: t.y, r: exR, life: 16});
+              t.life = 0;
+              break;
+            }
+          }
+          if ((t.x-CX)*(t.x-CX) + (t.y-CY)*(t.y-CY) > (ARENA_R+30)*(ARENA_R+30)) t.life = 0;
+        }
+        ab.torpedoes = ab.torpedoes.filter(t => t.life > 0);
+        if (--ab.cooldown > 0) return;
+        const n = 4 + ab.level;
+        for (let i = 0; i < n; i++) {
+          const ang = Math.random() * Math.PI * 2;
+          ab.torpedoes.push({
+            x: CX, y: CY,
+            vx: Math.cos(ang) * 2.5, vy: Math.sin(ang) * 2.5,
+            life: 180, target: null,
+          });
+        }
+        ab.cooldown = Math.max(50, 95 - ab.level * 4);
+      },
+      draw(ab) {
+        for (const t of ab.torpedoes) {
+          const ang = Math.atan2(t.vy, t.vx);
+          ctx.save();
+          ctx.translate(t.x, t.y); ctx.rotate(ang);
+          ctx.fillStyle = '#1d2230'; ctx.fillRect(-6, -3, 12, 6);
+          ctx.fillStyle = '#88ccff'; ctx.fillRect(-5, -2, 10, 4);
+          ctx.fillStyle = '#ddeeff'; ctx.fillRect(-2, -1, 4, 2);
+          ctx.restore();
+        }
+        for (const e of ab.explosions) {
+          const t = 1 - e.life / 16;
+          ctx.globalAlpha = e.life / 16;
+          ctx.fillStyle = '#88ccff';
+          ctx.beginPath(); ctx.arc(e.x, e.y, e.r * t, 0, Math.PI*2); ctx.fill();
+          ctx.globalAlpha = (e.life/16) * 0.7;
+          ctx.fillStyle = '#ffffff';
+          ctx.beginPath(); ctx.arc(e.x, e.y, e.r * t * 0.5, 0, Math.PI*2); ctx.fill();
+        }
+        ctx.globalAlpha = 1;
+      },
+    },
+    solarStorm: {
+      name: '태양폭풍', isCombo: true, baseCost: 130, color: '#ff8844',
+      desc: lv => `광역 폭발 + ${1+lv}곳 낙뢰 · DMG ${5+lv*3}`,
+      init(ab) { ab.cooldown = 55; ab.fx = 0; ab.bolts = []; },
+      tick(ab) {
+        if (ab.fx > 0) ab.fx--;
+        for (const b of ab.bolts) b.life--;
+        ab.bolts = ab.bolts.filter(b => b.life > 0);
+        if (--ab.cooldown > 0) return;
+        const radius = 100 + ab.level * 15;
+        const dmg = 5 + ab.level * 3;
+        // 광역
+        for (const e of state.enemies) {
+          if (e.hp <= 0) continue;
+          const [ex, ey] = enemyXY(e);
+          if ((ex-CX)*(ex-CX) + (ey-CY)*(ey-CY) < radius*radius) {
+            damageEnemy(e, dmg);
+            spawnParticles(ex, ey, '#ff8844', 3);
+          }
+        }
+        // 낙뢰
+        const strikes = 1 + ab.level;
+        const pool = state.enemies.filter(e => e.hp > 0);
+        for (let i = 0; i < strikes && pool.length > 0; i++) {
+          const idx = Math.floor(Math.random() * pool.length);
+          const target = pool.splice(idx, 1)[0];
+          const [tx, ty] = enemyXY(target);
+          damageEnemy(target, dmg * 1.5);
+          ab.bolts.push({x: tx, y: ty, life: 12});
+          spawnParticles(tx, ty, '#ffe070', 6);
+        }
+        ab.fx = 16;
+        ab.cooldown = Math.max(40, 80 - ab.level * 3);
+      },
+      draw(ab) {
+        if (ab.fx > 0) {
+          const radius = 100 + ab.level * 15;
+          const t = 1 - ab.fx / 16;
+          ctx.globalAlpha = ab.fx / 16;
+          ctx.strokeStyle = '#ff8844'; ctx.lineWidth = 4;
+          ctx.beginPath(); ctx.arc(CX, CY, radius * t, 0, Math.PI*2); ctx.stroke();
+          ctx.globalAlpha = (ab.fx / 16) * 0.5;
+          ctx.fillStyle = '#ffcc66';
+          ctx.beginPath(); ctx.arc(CX, CY, radius * t * 0.5, 0, Math.PI*2); ctx.fill();
+          ctx.globalAlpha = 1;
+        }
+        for (const b of ab.bolts) {
+          ctx.globalAlpha = b.life / 12;
+          ctx.fillStyle = '#ffe070'; ctx.fillRect(b.x - 3, 0, 6, b.y);
+          ctx.fillStyle = '#fff8a0'; ctx.fillRect(b.x - 1, 0, 2, b.y);
+        }
+        ctx.globalAlpha = 1;
+      },
+    },
+    voidIceVortex: {
+      name: '공허빙수렴', isCombo: true, baseCost: 160, color: '#aa88ff',
+      desc: lv => `강력 인력장 · DMG ${4+lv*3}/주기 · 빙결 갱신`,
+      init(ab) { ab.x = CX; ab.y = CY; ab.tickT = 12; ab.life = 0; },
+      tick(ab) {
+        ab.life--;
+        if (ab.life <= 0) {
+          const pool = state.enemies.filter(e => e.hp > 0);
+          if (pool.length > 0) {
+            let sx = 0, sy = 0;
+            for (const e of pool) { const [ex, ey] = enemyXY(e); sx += ex; sy += ey; }
+            ab.x = sx / pool.length; ab.y = sy / pool.length;
+          } else { ab.x = CX; ab.y = CY; }
+          ab.life = 180 + ab.level * 22;
+        }
+        const pullR = 170 + ab.level * 15;
+        const dmg = 4 + ab.level * 3;
+        const slowDur = 80;
+        ab.tickT--;
+        for (const e of state.enemies) {
+          if (e.hp <= 0) continue;
+          const [ex, ey] = enemyXY(e);
+          const dx = ab.x - ex, dy = ab.y - ey;
+          const dist = Math.hypot(dx, dy);
+          if (dist < pullR && dist > 5) {
+            const ps = (1 - dist / pullR) * 3;
+            const newEx = ex + (dx/dist) * ps;
+            const newEy = ey + (dy/dist) * ps;
+            e.angle = Math.atan2(newEy - CY, newEx - CX);
+            e.radius = Math.hypot(newEx - CX, newEy - CY);
+            e.targetRadius = e.radius;
+            e.slowFrames = Math.max(e.slowFrames || 0, slowDur);
+          }
+        }
+        if (ab.tickT <= 0) {
+          ab.tickT = 12;
+          for (const e of state.enemies) {
+            if (e.hp <= 0) continue;
+            const [ex, ey] = enemyXY(e);
+            if ((ab.x-ex)*(ab.x-ex) + (ab.y-ey)*(ab.y-ey) < pullR*pullR * 0.6) {
+              damageEnemy(e, dmg);
+              spawnParticles(ex, ey, '#aa88ff', 2);
+            }
+          }
+        }
+      },
+      draw(ab) {
+        const pullR = 170 + ab.level * 15;
+        ctx.strokeStyle = 'rgba(170, 136, 255, 0.3)'; ctx.lineWidth = 3;
+        ctx.beginPath(); ctx.arc(ab.x, ab.y, pullR, 0, Math.PI*2); ctx.stroke();
+        ctx.fillStyle = 'rgba(170, 136, 255, 0.10)';
+        ctx.beginPath(); ctx.arc(ab.x, ab.y, pullR * 0.6, 0, Math.PI*2); ctx.fill();
+        for (let k = 0; k < 8; k++) {
+          const pa = state.t * 0.10 + k * (Math.PI * 2 / 8);
+          const pr = 20 + Math.sin(state.t * 0.08 + k) * 6;
+          ctx.fillStyle = '#bbaaff';
+          ctx.fillRect(ab.x + Math.cos(pa) * pr - 1, ab.y + Math.sin(pa) * pr - 1, 3, 3);
+        }
+        // 빙결 입자
+        for (let k = 0; k < 4; k++) {
+          const pa = -state.t * 0.06 + k * (Math.PI * 2 / 4);
+          ctx.fillStyle = '#ddccff';
+          ctx.fillRect(ab.x + Math.cos(pa) * pullR * 0.8 - 1, ab.y + Math.sin(pa) * pullR * 0.8 - 1, 2, 2);
+        }
+      },
+    },
+
+    // ========== 🎰 가챠 R 트리플 (3종) ==========
+    deepSeaBarrage: {
+      name: '심해폭격', isCombo: true, isTriple: true, baseCost: 240, color: '#3377cc',
+      desc: lv => `${8+lv*2}발 거대 어뢰 · DMG ${15+lv*8} · 강슬로우 + 거대 폭발`,
+      init(ab) { ab.cooldown = 100; ab.torpedoes = []; ab.explosions = []; },
+      tick(ab) {
+        const dmg = 15 + ab.level * 8;
+        const exR = 70 + ab.level * 10;
+        const slowDur = 160;
+        for (const e of ab.explosions) e.life--;
+        ab.explosions = ab.explosions.filter(e => e.life > 0);
+        for (const t of ab.torpedoes) {
+          t.life--;
+          if (!t.target || t.target.hp <= 0) {
+            let best = -1, tg = null;  // 최강 적
+            for (const e of state.enemies) {
+              if (e.hp > best) { best = e.hp; tg = e; }
+            }
+            t.target = tg;
+          }
+          if (t.target) {
+            const [tx, ty] = enemyXY(t.target);
+            const curAng = Math.atan2(t.vy, t.vx);
+            const wantAng = Math.atan2(ty - t.y, tx - t.x);
+            let diff = wantAng - curAng;
+            while (diff > Math.PI) diff -= Math.PI * 2;
+            while (diff < -Math.PI) diff += Math.PI * 2;
+            const c = Math.max(-0.16, Math.min(0.16, diff));
+            const a = curAng + c;
+            t.vx = Math.cos(a) * 5; t.vy = Math.sin(a) * 5;
+          }
+          t.x += t.vx; t.y += t.vy;
+          for (const e of state.enemies) {
+            if (e.hp <= 0) continue;
+            const [ex, ey] = enemyXY(e);
+            if ((t.x-ex)*(t.x-ex) + (t.y-ey)*(t.y-ey) < (e.size+6)*(e.size+6)) {
+              for (const e2 of state.enemies) {
+                if (e2.hp <= 0) continue;
+                const [ex2, ey2] = enemyXY(e2);
+                if ((t.x-ex2)*(t.x-ex2) + (t.y-ey2)*(t.y-ey2) < exR*exR) {
+                  damageEnemy(e2, dmg);
+                  e2.slowFrames = Math.max(e2.slowFrames || 0, slowDur);
+                  spawnParticles(ex2, ey2, '#3377cc', 6);
+                }
+              }
+              ab.explosions.push({x: t.x, y: t.y, r: exR, life: 20});
+              shake(8, 8);
+              t.life = 0;
+              break;
+            }
+          }
+          if ((t.x-CX)*(t.x-CX) + (t.y-CY)*(t.y-CY) > (ARENA_R+30)*(ARENA_R+30)) t.life = 0;
+        }
+        ab.torpedoes = ab.torpedoes.filter(t => t.life > 0);
+        if (--ab.cooldown > 0) return;
+        const n = 8 + ab.level * 2;
+        for (let i = 0; i < n; i++) {
+          const ang = Math.random() * Math.PI * 2;
+          ab.torpedoes.push({
+            x: CX, y: CY,
+            vx: Math.cos(ang) * 2.5, vy: Math.sin(ang) * 2.5,
+            life: 200, target: null,
+          });
+        }
+        ab.cooldown = Math.max(80, 140 - ab.level * 4);
+      },
+      draw(ab) {
+        for (const t of ab.torpedoes) {
+          const ang = Math.atan2(t.vy, t.vx);
+          ctx.save();
+          ctx.translate(t.x, t.y); ctx.rotate(ang);
+          ctx.fillStyle = '#1d2230'; ctx.fillRect(-7, -3, 14, 6);
+          ctx.fillStyle = '#3377cc'; ctx.fillRect(-6, -2, 12, 4);
+          ctx.fillStyle = '#88ccff'; ctx.fillRect(-3, -1, 6, 2);
+          ctx.restore();
+        }
+        for (const e of ab.explosions) {
+          const t = 1 - e.life / 20;
+          ctx.globalAlpha = e.life / 20;
+          ctx.fillStyle = '#3377cc';
+          ctx.beginPath(); ctx.arc(e.x, e.y, e.r * t, 0, Math.PI*2); ctx.fill();
+          ctx.globalAlpha = (e.life/20) * 0.7;
+          ctx.fillStyle = '#88ccff';
+          ctx.beginPath(); ctx.arc(e.x, e.y, e.r * t * 0.5, 0, Math.PI*2); ctx.fill();
+        }
+        ctx.globalAlpha = 1;
+      },
+    },
+    stellarCollapse: {
+      name: '항성붕괴', isCombo: true, isTriple: true, baseCost: 230, color: '#ff6633',
+      desc: lv => `초거대 광역 + ${3+lv}곳 운석 · DMG ${20+lv*10}`,
+      init(ab) { ab.cooldown = 130; ab.fx = 0; ab.meteors = []; ab.craters = []; },
+      tick(ab) {
+        if (ab.fx > 0) ab.fx--;
+        for (const c of ab.craters) c.life--;
+        ab.craters = ab.craters.filter(c => c.life > 0);
+        const dmg = 20 + ab.level * 10;
+        for (const m of ab.meteors) {
+          m.t++;
+          if (m.t >= m.fall) {
+            const mR = 70 + ab.level * 8;
+            for (const e of state.enemies) {
+              if (e.hp <= 0) continue;
+              const [ex, ey] = enemyXY(e);
+              if ((m.x-ex)*(m.x-ex) + (m.y-ey)*(m.y-ey) < mR*mR) {
+                damageEnemy(e, dmg);
+                spawnParticles(ex, ey, '#ff6633', 5);
+              }
+            }
+            ab.craters.push({x: m.x, y: m.y, r: mR, life: 22});
+            shake(14, 10);
+            m.done = true;
+          }
+        }
+        ab.meteors = ab.meteors.filter(m => !m.done);
+        if (--ab.cooldown > 0) return;
+        // 광역 폭발
+        const radius = 200 + ab.level * 20;
+        for (const e of state.enemies) {
+          if (e.hp <= 0) continue;
+          const [ex, ey] = enemyXY(e);
+          if ((ex-CX)*(ex-CX) + (ey-CY)*(ey-CY) < radius*radius) {
+            damageEnemy(e, dmg * 0.6);
+            spawnParticles(ex, ey, '#ffaa66', 3);
+          }
+        }
+        // 운석 낙하 예약
+        const strikes = 3 + ab.level;
+        for (let i = 0; i < strikes; i++) {
+          const a = Math.random() * Math.PI * 2;
+          const r = Math.random() * (ARENA_R - 30);
+          ab.meteors.push({x: CX + Math.cos(a)*r, y: CY + Math.sin(a)*r, t: -i * 8, fall: 40});
+        }
+        ab.fx = 20;
+        ab.cooldown = Math.max(100, 180 - ab.level * 5);
+      },
+      draw(ab) {
+        if (ab.fx > 0) {
+          const radius = 200 + ab.level * 20;
+          const t = 1 - ab.fx / 20;
+          ctx.globalAlpha = ab.fx / 20;
+          ctx.strokeStyle = '#ff6633'; ctx.lineWidth = 6;
+          ctx.beginPath(); ctx.arc(CX, CY, radius * t, 0, Math.PI*2); ctx.stroke();
+          ctx.globalAlpha = (ab.fx/20) * 0.4;
+          ctx.fillStyle = '#ffaa66';
+          ctx.beginPath(); ctx.arc(CX, CY, radius * t * 0.6, 0, Math.PI*2); ctx.fill();
+          ctx.globalAlpha = 1;
+        }
+        for (const m of ab.meteors) {
+          if (m.t < 0) continue;
+          const progress = m.t / m.fall;
+          const my = m.y - (1 - progress) * 250;
+          const ms = 14 + progress * 8;
+          ctx.fillStyle = `rgba(0,0,0,${0.3 + progress * 0.4})`;
+          ctx.beginPath(); ctx.arc(m.x, m.y, 16 + progress * 16, 0, Math.PI*2); ctx.fill();
+          ctx.fillStyle = '#1d2230'; ctx.fillRect(m.x - ms - 1, my - ms - 1, ms*2 + 2, ms*2 + 2);
+          ctx.fillStyle = '#ff6633'; ctx.fillRect(m.x - ms, my - ms, ms*2, ms*2);
+          ctx.fillStyle = '#ffaa66'; ctx.fillRect(m.x - ms/2, my - ms/2, ms, ms);
+          ctx.globalAlpha = 0.6;
+          ctx.fillStyle = '#ffaa66'; ctx.fillRect(m.x - 4, my - 36, 8, 30);
+          ctx.globalAlpha = 1;
+        }
+        for (const c of ab.craters) {
+          const t = 1 - c.life / 22;
+          ctx.globalAlpha = c.life / 22;
+          ctx.fillStyle = '#ff6633';
+          ctx.beginPath(); ctx.arc(c.x, c.y, c.r * t, 0, Math.PI*2); ctx.fill();
+          ctx.globalAlpha = (c.life/22) * 0.7;
+          ctx.fillStyle = '#ffe080';
+          ctx.beginPath(); ctx.arc(c.x, c.y, c.r * t * 0.5, 0, Math.PI*2); ctx.fill();
+        }
+        ctx.globalAlpha = 1;
+      },
+    },
+    // ========== 🎰 가챠 SR 캐릭터 고유 능력 (2종) ==========
+    // 사쿠라의 벚꽃검 — 부채꼴 광역 검술 (전방 회전)
+    sakuraSlash: {
+      name: '벚꽃검', baseCost: 80, color: '#ff88bb', isGachaUnique: true,
+      desc: lv => `[SR] 회전 부채꼴 베기 · DMG ${8+lv*5} · 범위 ${130+lv*15}`,
+      init(ab) { ab.cooldown = 50; ab.fx = 0; ab.ang = 0; ab.petals = []; },
+      tick(ab) {
+        if (ab.fx > 0) ab.fx--;
+        for (const p of ab.petals) { p.x += p.vx; p.y += p.vy; p.life--; p.rot += p.spin; }
+        ab.petals = ab.petals.filter(p => p.life > 0);
+        if (--ab.cooldown > 0) return;
+        const dmg = 8 + ab.level * 5;
+        const range = 130 + ab.level * 15;
+        const halfArc = Math.PI / 3; // 120도 부채꼴
+        const swingAng = ab.ang = (ab.ang + Math.PI * 0.42) % (Math.PI * 2);
+        for (const e of state.enemies) {
+          if (e.hp <= 0) continue;
+          const [ex, ey] = enemyXY(e);
+          const dx = ex - CX, dy = ey - CY;
+          const dist = Math.hypot(dx, dy);
+          if (dist > range) continue;
+          let eAng = Math.atan2(dy, dx);
+          let diff = eAng - swingAng;
+          while (diff > Math.PI) diff -= Math.PI * 2;
+          while (diff < -Math.PI) diff += Math.PI * 2;
+          if (Math.abs(diff) < halfArc) {
+            damageEnemy(e, dmg);
+            spawnParticles(ex, ey, '#ff88bb', 4);
+          }
+        }
+        // 꽃잎 분사
+        for (let i = 0; i < 8; i++) {
+          const a = swingAng - halfArc + (halfArc * 2) * (i / 7);
+          ab.petals.push({
+            x: CX, y: CY,
+            vx: Math.cos(a) * 3.5, vy: Math.sin(a) * 3.5,
+            life: 30, rot: a, spin: 0.15,
+          });
+        }
+        ab.fx = 14;
+        ab.cooldown = Math.max(28, 65 - ab.level * 3);
+      },
+      draw(ab) {
+        if (ab.fx > 0) {
+          const t = 1 - ab.fx / 14;
+          const range = 130 + ab.level * 15;
+          const halfArc = Math.PI / 3;
+          ctx.globalAlpha = ab.fx / 14 * 0.6;
+          ctx.fillStyle = '#ff88bb';
+          ctx.beginPath();
+          ctx.moveTo(CX, CY);
+          ctx.arc(CX, CY, range * (0.7 + t * 0.3), ab.ang - halfArc, ab.ang + halfArc);
+          ctx.closePath(); ctx.fill();
+          ctx.globalAlpha = 1;
+        }
+        for (const p of ab.petals) {
+          ctx.save();
+          ctx.translate(p.x, p.y); ctx.rotate(p.rot);
+          ctx.globalAlpha = Math.min(1, p.life / 20);
+          ctx.fillStyle = '#ffaadd';
+          ctx.fillRect(-2, -2, 4, 4);
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(-1, -1, 1, 1);
+          ctx.restore();
+        }
+        ctx.globalAlpha = 1;
+      },
+    },
+    // 루나의 월광탄 — 관통 유도 초승달
+    moonShot: {
+      name: '월광탄', baseCost: 80, color: '#aaccff', isGachaUnique: true,
+      desc: lv => `[SR] 관통 유도탄 · DMG ${9+lv*5} · ${3+lv}회 관통`,
+      init(ab) { ab.cooldown = 60; ab.bullets = []; ab.bursts = []; },
+      tick(ab) {
+        for (const b of ab.bursts) b.life--;
+        ab.bursts = ab.bursts.filter(b => b.life > 0);
+        const dmg = 9 + ab.level * 5;
+        const pierceMax = 3 + ab.level;
+        const burstR = 30 + ab.level * 3;
+        for (const b of ab.bullets) {
+          b.life--;
+          if (!b.target || b.target.hp <= 0) {
+            let best = Infinity, tg = null;
+            for (const e of state.enemies) {
+              if (e.hp <= 0 || (b.hit && b.hit.has(e))) continue;
+              const [ex, ey] = enemyXY(e);
+              const d2 = (b.x-ex)*(b.x-ex) + (b.y-ey)*(b.y-ey);
+              if (d2 < best) { best = d2; tg = e; }
+            }
+            b.target = tg;
+          }
+          if (b.target) {
+            const [tx, ty] = enemyXY(b.target);
+            const curAng = Math.atan2(b.vy, b.vx);
+            const wantAng = Math.atan2(ty - b.y, tx - b.x);
+            let diff = wantAng - curAng;
+            while (diff > Math.PI) diff -= Math.PI * 2;
+            while (diff < -Math.PI) diff += Math.PI * 2;
+            const c = Math.max(-0.14, Math.min(0.14, diff));
+            const a = curAng + c;
+            b.vx = Math.cos(a) * 5; b.vy = Math.sin(a) * 5;
+          }
+          b.x += b.vx; b.y += b.vy;
+          for (const e of state.enemies) {
+            if (e.hp <= 0 || b.hit.has(e)) continue;
+            const [ex, ey] = enemyXY(e);
+            if ((b.x-ex)*(b.x-ex) + (b.y-ey)*(b.y-ey) < (e.size+6)*(e.size+6)) {
+              damageEnemy(e, dmg);
+              spawnParticles(ex, ey, '#aaccff', 4);
+              ab.bursts.push({x: ex, y: ey, r: burstR, life: 12});
+              b.hit.add(e);
+              b.pierces++;
+              if (b.pierces >= pierceMax) b.life = 0;
+              break;
+            }
+          }
+          if ((b.x-CX)*(b.x-CX) + (b.y-CY)*(b.y-CY) > (ARENA_R+30)*(ARENA_R+30)) b.life = 0;
+        }
+        ab.bullets = ab.bullets.filter(b => b.life > 0);
+        if (--ab.cooldown > 0) return;
+        const ang = Math.random() * Math.PI * 2;
+        ab.bullets.push({
+          x: CX, y: CY,
+          vx: Math.cos(ang) * 3, vy: Math.sin(ang) * 3,
+          life: 240, target: null, hit: new Set(), pierces: 0,
+        });
+        ab.cooldown = Math.max(35, 70 - ab.level * 3);
+      },
+      draw(ab) {
+        for (const b of ab.bullets) {
+          const ang = Math.atan2(b.vy, b.vx);
+          ctx.save();
+          ctx.translate(b.x, b.y); ctx.rotate(ang);
+          // 초승달 모양
+          ctx.fillStyle = '#aaccff';
+          ctx.beginPath(); ctx.arc(0, 0, 6, 0, Math.PI * 2); ctx.fill();
+          ctx.fillStyle = '#1a1f2b';
+          ctx.beginPath(); ctx.arc(2, 0, 5, 0, Math.PI * 2); ctx.fill();
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(-1, -1, 2, 2);
+          ctx.restore();
+        }
+        for (const e of ab.bursts) {
+          const t = 1 - e.life / 12;
+          ctx.globalAlpha = e.life / 12;
+          ctx.strokeStyle = '#aaccff'; ctx.lineWidth = 2;
+          ctx.beginPath(); ctx.arc(e.x, e.y, e.r * t, 0, Math.PI*2); ctx.stroke();
+        }
+        ctx.globalAlpha = 1;
+      },
+    },
+
+    // ========== 🎰 가챠 SSR 캐릭터 고유 능력 (2종) ==========
+    // 아리아의 별의노래 — 광역 + 별 발사
+    starSong: {
+      name: '별의노래', baseCost: 95, color: '#ffe070', isGachaUnique: true,
+      desc: lv => `[SSR] 광역 펄스 + 별 ${6+lv} · DMG ${12+lv*8} / ${6+lv*4}`,
+      init(ab) { ab.cooldown = 70; ab.fx = 0; ab.stars = []; },
+      tick(ab) {
+        if (ab.fx > 0) ab.fx--;
+        const starDmg = 6 + ab.level * 4;
+        for (const s of ab.stars) {
+          s.x += s.vx; s.y += s.vy; s.rot += 0.2; s.life--;
+          for (const e of state.enemies) {
+            if (e.hp <= 0 || s.hit.has(e)) continue;
+            const [ex, ey] = enemyXY(e);
+            if ((s.x-ex)*(s.x-ex) + (s.y-ey)*(s.y-ey) < (e.size+7)*(e.size+7)) {
+              damageEnemy(e, starDmg);
+              s.hit.add(e);
+              spawnParticles(ex, ey, '#ffe070', 4);
+            }
+          }
+          if ((s.x-CX)*(s.x-CX) + (s.y-CY)*(s.y-CY) > (ARENA_R+30)*(ARENA_R+30)) s.life = 0;
+        }
+        ab.stars = ab.stars.filter(s => s.life > 0);
+        if (--ab.cooldown > 0) return;
+        const pulseR = 150 + ab.level * 15;
+        const pulseDmg = 12 + ab.level * 8;
+        // 광역 펄스
+        for (const e of state.enemies) {
+          if (e.hp <= 0) continue;
+          const [ex, ey] = enemyXY(e);
+          if ((ex-CX)*(ex-CX) + (ey-CY)*(ey-CY) < pulseR*pulseR) {
+            damageEnemy(e, pulseDmg);
+            spawnParticles(ex, ey, '#ffe070', 3);
+          }
+        }
+        // 별 발사
+        const n = 6 + ab.level;
+        for (let i = 0; i < n; i++) {
+          const a = (i / n) * Math.PI * 2;
+          ab.stars.push({
+            x: CX, y: CY,
+            vx: Math.cos(a) * 4, vy: Math.sin(a) * 4,
+            life: 90, rot: 0, hit: new Set(),
+          });
+        }
+        ab.fx = 18;
+        ab.cooldown = Math.max(50, 95 - ab.level * 4);
+      },
+      draw(ab) {
+        if (ab.fx > 0) {
+          const pulseR = 150 + ab.level * 15;
+          const t = 1 - ab.fx / 18;
+          ctx.globalAlpha = ab.fx / 18;
+          ctx.strokeStyle = '#ffe070'; ctx.lineWidth = 5;
+          ctx.beginPath(); ctx.arc(CX, CY, pulseR * t, 0, Math.PI*2); ctx.stroke();
+          ctx.globalAlpha = (ab.fx / 18) * 0.5;
+          ctx.fillStyle = '#fff5b0';
+          ctx.beginPath(); ctx.arc(CX, CY, pulseR * t * 0.6, 0, Math.PI*2); ctx.fill();
+          ctx.globalAlpha = 1;
+        }
+        for (const s of ab.stars) {
+          ctx.save();
+          ctx.translate(s.x, s.y); ctx.rotate(s.rot);
+          ctx.fillStyle = '#ffe070';
+          // 별 모양 (5각)
+          ctx.beginPath();
+          for (let k = 0; k < 5; k++) {
+            const a1 = -Math.PI/2 + k * (Math.PI*2/5);
+            const a2 = a1 + Math.PI/5;
+            ctx.lineTo(Math.cos(a1) * 6, Math.sin(a1) * 6);
+            ctx.lineTo(Math.cos(a2) * 3, Math.sin(a2) * 3);
+          }
+          ctx.closePath(); ctx.fill();
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(-1, -1, 2, 2);
+          ctx.restore();
+        }
+      },
+    },
+    // 미사키의 시공나비 — 궤도형 유도 나비
+    timeButterfly: {
+      name: '시공나비', baseCost: 95, color: '#cc88ff', isGachaUnique: true,
+      desc: lv => `[SSR] 유도 나비 ${3+lv}마리 · DMG ${10+lv*6} · 슬로우+정지`,
+      init(ab) { ab.butterflies = []; ab.spawnCD = 0; },
+      tick(ab) {
+        const dmg = 10 + ab.level * 6;
+        const slowDur = 80 + ab.level * 10;
+        const stopDur = 12 + ab.level * 2;
+        const targetCount = 3 + ab.level;
+        // 부족하면 생성
+        if (ab.butterflies.length < targetCount && --ab.spawnCD <= 0) {
+          const ang = Math.random() * Math.PI * 2;
+          ab.butterflies.push({
+            x: CX + Math.cos(ang) * 30,
+            y: CY + Math.sin(ang) * 30,
+            vx: 0, vy: 0, target: null,
+            phase: Math.random() * Math.PI * 2,
+            cd: 0,
+          });
+          ab.spawnCD = 30;
+        }
+        for (const b of ab.butterflies) {
+          if (b.cd > 0) b.cd--;
+          // 타겟 추적
+          if (!b.target || b.target.hp <= 0) {
+            let best = Infinity, tg = null;
+            for (const e of state.enemies) {
+              if (e.hp <= 0) continue;
+              const [ex, ey] = enemyXY(e);
+              const d2 = (b.x-ex)*(b.x-ex) + (b.y-ey)*(b.y-ey);
+              if (d2 < best) { best = d2; tg = e; }
+            }
+            b.target = tg;
+          }
+          b.phase += 0.15;
+          if (b.target) {
+            const [tx, ty] = enemyXY(b.target);
+            const dx = tx - b.x, dy = ty - b.y;
+            const dist = Math.hypot(dx, dy);
+            const speed = 3.5;
+            b.vx = (dx / dist) * speed + Math.cos(b.phase) * 0.5;
+            b.vy = (dy / dist) * speed + Math.sin(b.phase) * 0.5;
+          } else {
+            // 타워 주변 떠다님
+            const dx = CX - b.x, dy = CY - b.y;
+            const dist = Math.hypot(dx, dy) || 1;
+            b.vx = (dx / dist) * 1.5 + Math.cos(b.phase) * 1;
+            b.vy = (dy / dist) * 1.5 + Math.sin(b.phase) * 1;
+          }
+          b.x += b.vx; b.y += b.vy;
+          // 충돌
+          if (b.cd <= 0) {
+            for (const e of state.enemies) {
+              if (e.hp <= 0) continue;
+              const [ex, ey] = enemyXY(e);
+              if ((b.x-ex)*(b.x-ex) + (b.y-ey)*(b.y-ey) < (e.size+6)*(e.size+6)) {
+                damageEnemy(e, dmg);
+                e.slowFrames = Math.max(e.slowFrames || 0, slowDur);
+                if (!e.isBoss) e.timeStopped = state.t + stopDur;
+                spawnParticles(ex, ey, '#cc88ff', 4);
+                b.cd = 20;
+                break;
+              }
+            }
+          }
+        }
+      },
+      draw(ab) {
+        for (const b of ab.butterflies) {
+          const wing = Math.sin(b.phase * 4) * 0.5 + 1;
+          ctx.save();
+          ctx.translate(b.x, b.y);
+          ctx.fillStyle = '#cc88ff';
+          // 좌측 날개
+          ctx.fillRect(-5, -3, 4 * wing, 6);
+          ctx.fillRect(1, -3, 4 * wing, 6);
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(-1, -1, 2, 2);
+          // 잔향
+          ctx.globalAlpha = 0.3;
+          ctx.fillStyle = '#ddbbff';
+          ctx.fillRect(-2, -2, 4, 4);
+          ctx.globalAlpha = 1;
+          ctx.restore();
+        }
+      },
+    },
+
+    // ========== 🎰 가챠 SR 조합 (2종) ==========
+    // 벚꽃검 + 검(sword) = 벚꽃폭풍 (SR sakura)
+    sakuraStorm: {
+      name: '벚꽃폭풍', isCombo: true, baseCost: 180, color: '#ff66aa',
+      desc: lv => `[SR조합] 회전 ${3+Math.floor(lv/2)}검 · DMG ${15+lv*7} · 광역`,
+      init(ab) { ab.ang = 0; ab.tickT = 8; },
+      tick(ab) {
+        ab.ang += 0.06;
+        ab.tickT--;
+        const range = 150 + ab.level * 15;
+        const dmg = 15 + ab.level * 7;
+        const blades = 3 + Math.floor(ab.level / 2);
+        if (ab.tickT <= 0) {
+          ab.tickT = 10;
+          for (let k = 0; k < blades; k++) {
+            const bAng = ab.ang + k * (Math.PI * 2 / blades);
+            const halfArc = Math.PI / 5;
+            for (const e of state.enemies) {
+              if (e.hp <= 0) continue;
+              const [ex, ey] = enemyXY(e);
+              const dx = ex - CX, dy = ey - CY;
+              const dist = Math.hypot(dx, dy);
+              if (dist > range) continue;
+              let eAng = Math.atan2(dy, dx);
+              let diff = eAng - bAng;
+              while (diff > Math.PI) diff -= Math.PI * 2;
+              while (diff < -Math.PI) diff += Math.PI * 2;
+              if (Math.abs(diff) < halfArc) {
+                damageEnemy(e, dmg);
+                spawnParticles(ex, ey, '#ff66aa', 3);
+              }
+            }
+          }
+        }
+      },
+      draw(ab) {
+        const range = 150 + ab.level * 15;
+        const blades = 3 + Math.floor(ab.level / 2);
+        const halfArc = Math.PI / 5;
+        for (let k = 0; k < blades; k++) {
+          const bAng = ab.ang + k * (Math.PI * 2 / blades);
+          ctx.globalAlpha = 0.35;
+          ctx.fillStyle = '#ff66aa';
+          ctx.beginPath();
+          ctx.moveTo(CX, CY);
+          ctx.arc(CX, CY, range, bAng - halfArc, bAng + halfArc);
+          ctx.closePath(); ctx.fill();
+        }
+        ctx.globalAlpha = 1;
+        // 꽃잎 흔적
+        for (let k = 0; k < 12; k++) {
+          const pa = ab.ang * 2 + k * (Math.PI * 2 / 12);
+          const pr = 40 + Math.sin(state.t * 0.12 + k) * 10;
+          ctx.fillStyle = '#ffaadd';
+          ctx.fillRect(CX + Math.cos(pa) * pr - 1, CY + Math.sin(pa) * pr - 1, 2, 2);
+        }
+      },
+    },
+    // 월광탄 + 빙결(frost) = 월결화살 (SR luna)
+    moonFrostArrow: {
+      name: '월결화살', isCombo: true, baseCost: 180, color: '#88aaff',
+      desc: lv => `[SR조합] 빙결 관통탄 · DMG ${14+lv*7} · ${4+lv}회 관통 + 슬로우`,
+      init(ab) { ab.cooldown = 55; ab.bullets = []; ab.bursts = []; },
+      tick(ab) {
+        for (const b of ab.bursts) b.life--;
+        ab.bursts = ab.bursts.filter(b => b.life > 0);
+        const dmg = 14 + ab.level * 7;
+        const pierceMax = 4 + ab.level;
+        const burstR = 45 + ab.level * 5;
+        const slowDur = 100 + ab.level * 10;
+        for (const b of ab.bullets) {
+          b.life--;
+          if (!b.target || b.target.hp <= 0) {
+            let best = Infinity, tg = null;
+            for (const e of state.enemies) {
+              if (e.hp <= 0 || b.hit.has(e)) continue;
+              const [ex, ey] = enemyXY(e);
+              const d2 = (b.x-ex)*(b.x-ex) + (b.y-ey)*(b.y-ey);
+              if (d2 < best) { best = d2; tg = e; }
+            }
+            b.target = tg;
+          }
+          if (b.target) {
+            const [tx, ty] = enemyXY(b.target);
+            const curAng = Math.atan2(b.vy, b.vx);
+            const wantAng = Math.atan2(ty - b.y, tx - b.x);
+            let diff = wantAng - curAng;
+            while (diff > Math.PI) diff -= Math.PI * 2;
+            while (diff < -Math.PI) diff += Math.PI * 2;
+            const c = Math.max(-0.16, Math.min(0.16, diff));
+            const a = curAng + c;
+            b.vx = Math.cos(a) * 5.5; b.vy = Math.sin(a) * 5.5;
+          }
+          b.x += b.vx; b.y += b.vy;
+          for (const e of state.enemies) {
+            if (e.hp <= 0 || b.hit.has(e)) continue;
+            const [ex, ey] = enemyXY(e);
+            if ((b.x-ex)*(b.x-ex) + (b.y-ey)*(b.y-ey) < (e.size+7)*(e.size+7)) {
+              for (const e2 of state.enemies) {
+                if (e2.hp <= 0) continue;
+                const [ex2, ey2] = enemyXY(e2);
+                if ((b.x-ex2)*(b.x-ex2) + (b.y-ey2)*(b.y-ey2) < burstR*burstR) {
+                  damageEnemy(e2, dmg * 0.7);
+                  e2.slowFrames = Math.max(e2.slowFrames || 0, slowDur);
+                  spawnParticles(ex2, ey2, '#88aaff', 3);
+                }
+              }
+              damageEnemy(e, dmg * 0.3); // 직격 추가
+              ab.bursts.push({x: ex, y: ey, r: burstR, life: 14});
+              b.hit.add(e);
+              b.pierces++;
+              if (b.pierces >= pierceMax) b.life = 0;
+              break;
+            }
+          }
+          if ((b.x-CX)*(b.x-CX) + (b.y-CY)*(b.y-CY) > (ARENA_R+30)*(ARENA_R+30)) b.life = 0;
+        }
+        ab.bullets = ab.bullets.filter(b => b.life > 0);
+        if (--ab.cooldown > 0) return;
+        const shotN = 1 + Math.floor(ab.level / 3);
+        for (let k = 0; k < shotN; k++) {
+          const ang = Math.random() * Math.PI * 2;
+          ab.bullets.push({
+            x: CX, y: CY,
+            vx: Math.cos(ang) * 3.5, vy: Math.sin(ang) * 3.5,
+            life: 240, target: null, hit: new Set(), pierces: 0,
+          });
+        }
+        ab.cooldown = Math.max(35, 70 - ab.level * 3);
+      },
+      draw(ab) {
+        for (const b of ab.bullets) {
+          const ang = Math.atan2(b.vy, b.vx);
+          ctx.save();
+          ctx.translate(b.x, b.y); ctx.rotate(ang);
+          ctx.fillStyle = '#88aaff';
+          ctx.beginPath(); ctx.arc(0, 0, 7, 0, Math.PI * 2); ctx.fill();
+          ctx.fillStyle = '#1a1f2b';
+          ctx.beginPath(); ctx.arc(2, 0, 6, 0, Math.PI * 2); ctx.fill();
+          ctx.fillStyle = '#ddeeff';
+          ctx.fillRect(-2, -1, 4, 2);
+          ctx.restore();
+        }
+        for (const e of ab.bursts) {
+          const t = 1 - e.life / 14;
+          ctx.globalAlpha = e.life / 14;
+          ctx.fillStyle = '#88aaff';
+          ctx.beginPath(); ctx.arc(e.x, e.y, e.r * t, 0, Math.PI*2); ctx.fill();
+          ctx.globalAlpha = (e.life / 14) * 0.6;
+          ctx.fillStyle = '#ddeeff';
+          ctx.beginPath(); ctx.arc(e.x, e.y, e.r * t * 0.5, 0, Math.PI*2); ctx.fill();
+        }
+        ctx.globalAlpha = 1;
+      },
+    },
+
+    // ========== 🎰 가챠 SSR 조합 (2종) ==========
+    // 별의노래 + 노바(nova) = 우주합창 (SSR aria)
+    cosmicChorus: {
+      name: '우주합창', isCombo: true, baseCost: 220, color: '#ffcc66',
+      desc: lv => `[SSR조합] 광역+별 ${10+lv*2} · DMG ${20+lv*12} / ${10+lv*6}`,
+      init(ab) { ab.cooldown = 70; ab.fx = 0; ab.stars = []; ab.rings = []; },
+      tick(ab) {
+        if (ab.fx > 0) ab.fx--;
+        for (const r of ab.rings) r.life--;
+        ab.rings = ab.rings.filter(r => r.life > 0);
+        const starDmg = 10 + ab.level * 6;
+        for (const s of ab.stars) {
+          s.x += s.vx; s.y += s.vy; s.rot += 0.25; s.life--;
+          for (const e of state.enemies) {
+            if (e.hp <= 0 || s.hit.has(e)) continue;
+            const [ex, ey] = enemyXY(e);
+            if ((s.x-ex)*(s.x-ex) + (s.y-ey)*(s.y-ey) < (e.size+9)*(e.size+9)) {
+              damageEnemy(e, starDmg);
+              s.hit.add(e);
+              spawnParticles(ex, ey, '#ffcc66', 5);
+            }
+          }
+          if ((s.x-CX)*(s.x-CX) + (s.y-CY)*(s.y-CY) > (ARENA_R+30)*(ARENA_R+30)) s.life = 0;
+        }
+        ab.stars = ab.stars.filter(s => s.life > 0);
+        if (--ab.cooldown > 0) return;
+        const pulseR = 200 + ab.level * 20;
+        const pulseDmg = 20 + ab.level * 12;
+        for (const e of state.enemies) {
+          if (e.hp <= 0) continue;
+          const [ex, ey] = enemyXY(e);
+          if ((ex-CX)*(ex-CX) + (ey-CY)*(ey-CY) < pulseR*pulseR) {
+            damageEnemy(e, pulseDmg);
+            spawnParticles(ex, ey, '#ffcc66', 4);
+          }
+        }
+        ab.rings.push({r: pulseR, life: 22});
+        // 별 발사
+        const n = 10 + ab.level * 2;
+        for (let i = 0; i < n; i++) {
+          const a = (i / n) * Math.PI * 2;
+          ab.stars.push({
+            x: CX, y: CY,
+            vx: Math.cos(a) * 4.5, vy: Math.sin(a) * 4.5,
+            life: 110, rot: 0, hit: new Set(),
+          });
+        }
+        ab.fx = 22;
+        ab.cooldown = Math.max(55, 100 - ab.level * 4);
+      },
+      draw(ab) {
+        for (const r of ab.rings) {
+          const t = 1 - r.life / 22;
+          ctx.globalAlpha = r.life / 22;
+          ctx.strokeStyle = '#ffcc66'; ctx.lineWidth = 6;
+          ctx.beginPath(); ctx.arc(CX, CY, r.r * t, 0, Math.PI*2); ctx.stroke();
+          ctx.globalAlpha = (r.life / 22) * 0.4;
+          ctx.fillStyle = '#fff5b0';
+          ctx.beginPath(); ctx.arc(CX, CY, r.r * t * 0.6, 0, Math.PI*2); ctx.fill();
+        }
+        for (const s of ab.stars) {
+          ctx.save();
+          ctx.translate(s.x, s.y); ctx.rotate(s.rot);
+          ctx.fillStyle = '#ffcc66';
+          ctx.beginPath();
+          for (let k = 0; k < 5; k++) {
+            const a1 = -Math.PI/2 + k * (Math.PI*2/5);
+            const a2 = a1 + Math.PI/5;
+            ctx.lineTo(Math.cos(a1) * 8, Math.sin(a1) * 8);
+            ctx.lineTo(Math.cos(a2) * 4, Math.sin(a2) * 4);
+          }
+          ctx.closePath(); ctx.fill();
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(-1, -1, 2, 2);
+          ctx.restore();
+        }
+        ctx.globalAlpha = 1;
+      },
+    },
+    // 시공나비 + 시간정지(timeStop) = 시간감옥 (SSR misaki)
+    timePrison: {
+      name: '시간감옥', isCombo: true, baseCost: 220, color: '#bb88ff',
+      desc: lv => `[SSR조합] 강화 나비 ${4+lv}마리 · DMG ${16+lv*9} · 강정지`,
+      init(ab) { ab.butterflies = []; ab.spawnCD = 0; },
+      tick(ab) {
+        const dmg = 16 + ab.level * 9;
+        const slowDur = 120 + ab.level * 12;
+        const stopDur = 25 + ab.level * 4;
+        const targetCount = 4 + ab.level;
+        if (ab.butterflies.length < targetCount && --ab.spawnCD <= 0) {
+          const ang = Math.random() * Math.PI * 2;
+          ab.butterflies.push({
+            x: CX + Math.cos(ang) * 30,
+            y: CY + Math.sin(ang) * 30,
+            vx: 0, vy: 0, target: null,
+            phase: Math.random() * Math.PI * 2,
+            cd: 0,
+          });
+          ab.spawnCD = 25;
+        }
+        for (const b of ab.butterflies) {
+          if (b.cd > 0) b.cd--;
+          if (!b.target || b.target.hp <= 0) {
+            let best = -1, tg = null;
+            for (const e of state.enemies) {
+              if (e.hp <= 0) continue;
+              if (e.hp > best) { best = e.hp; tg = e; } // 최강 타겟 우선
+            }
+            b.target = tg;
+          }
+          b.phase += 0.18;
+          if (b.target) {
+            const [tx, ty] = enemyXY(b.target);
+            const dx = tx - b.x, dy = ty - b.y;
+            const dist = Math.hypot(dx, dy);
+            const speed = 4.5;
+            b.vx = (dx / dist) * speed + Math.cos(b.phase) * 0.6;
+            b.vy = (dy / dist) * speed + Math.sin(b.phase) * 0.6;
+          } else {
+            const dx = CX - b.x, dy = CY - b.y;
+            const dist = Math.hypot(dx, dy) || 1;
+            b.vx = (dx / dist) * 2 + Math.cos(b.phase) * 1;
+            b.vy = (dy / dist) * 2 + Math.sin(b.phase) * 1;
+          }
+          b.x += b.vx; b.y += b.vy;
+          if (b.cd <= 0) {
+            for (const e of state.enemies) {
+              if (e.hp <= 0) continue;
+              const [ex, ey] = enemyXY(e);
+              if ((b.x-ex)*(b.x-ex) + (b.y-ey)*(b.y-ey) < (e.size+7)*(e.size+7)) {
+                damageEnemy(e, dmg);
+                e.slowFrames = Math.max(e.slowFrames || 0, slowDur);
+                if (!e.isBoss) e.timeStopped = state.t + stopDur;
+                else e.slowFrames = Math.max(e.slowFrames || 0, slowDur * 1.5); // 보스에겐 추가 슬로우
+                spawnParticles(ex, ey, '#bb88ff', 5);
+                b.cd = 15;
+                break;
+              }
+            }
+          }
+        }
+      },
+      draw(ab) {
+        for (const b of ab.butterflies) {
+          const wing = Math.sin(b.phase * 4) * 0.5 + 1;
+          ctx.save();
+          ctx.translate(b.x, b.y);
+          // 외곽 빛
+          ctx.globalAlpha = 0.4;
+          ctx.fillStyle = '#bb88ff';
+          ctx.beginPath(); ctx.arc(0, 0, 8, 0, Math.PI*2); ctx.fill();
+          ctx.globalAlpha = 1;
+          ctx.fillStyle = '#bb88ff';
+          ctx.fillRect(-6, -4, 5 * wing, 8);
+          ctx.fillRect(1, -4, 5 * wing, 8);
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(-1, -1, 2, 2);
+          // 시간 입자
+          for (let k = 0; k < 3; k++) {
+            const pa = b.phase * 2 + k * (Math.PI * 2 / 3);
+            ctx.fillStyle = '#ddccff';
+            ctx.fillRect(Math.cos(pa) * 8 - 1, Math.sin(pa) * 8 - 1, 1, 1);
+          }
+          ctx.restore();
+        }
+      },
+    },
+
+    // ========== 🎰 가챠 SR 트리플 (2종) ==========
+    // 벚꽃폭풍 + 회오리(tornado) = 벚꽃지옥 (SR sakura)
+    sakuraInferno: {
+      name: '벚꽃지옥', isCombo: true, isTriple: true, baseCost: 280, color: '#ff3388',
+      desc: lv => `[SR트리플] 회전 ${5+Math.floor(lv/2)}검 폭풍 · DMG ${30+lv*15} · 광역`,
+      init(ab) { ab.ang = 0; ab.tickT = 6; ab.petals = []; },
+      tick(ab) {
+        ab.ang += 0.10;
+        ab.tickT--;
+        const range = 180 + ab.level * 18;
+        const dmg = 30 + ab.level * 15;
+        const blades = 5 + Math.floor(ab.level / 2);
+        for (const p of ab.petals) {
+          p.x += p.vx; p.y += p.vy; p.life--; p.rot += p.spin;
+        }
+        ab.petals = ab.petals.filter(p => p.life > 0);
+        if (ab.tickT <= 0) {
+          ab.tickT = 8;
+          for (let k = 0; k < blades; k++) {
+            const bAng = ab.ang + k * (Math.PI * 2 / blades);
+            const halfArc = Math.PI / 4;
+            for (const e of state.enemies) {
+              if (e.hp <= 0) continue;
+              const [ex, ey] = enemyXY(e);
+              const dx = ex - CX, dy = ey - CY;
+              const dist = Math.hypot(dx, dy);
+              if (dist > range) continue;
+              let eAng = Math.atan2(dy, dx);
+              let diff = eAng - bAng;
+              while (diff > Math.PI) diff -= Math.PI * 2;
+              while (diff < -Math.PI) diff += Math.PI * 2;
+              if (Math.abs(diff) < halfArc) {
+                damageEnemy(e, dmg);
+                spawnParticles(ex, ey, '#ff3388', 4);
+              }
+            }
+            // 꽃잎 폭풍
+            if (Math.random() < 0.3) {
+              ab.petals.push({
+                x: CX + Math.cos(bAng) * 40,
+                y: CY + Math.sin(bAng) * 40,
+                vx: Math.cos(bAng) * 4, vy: Math.sin(bAng) * 4,
+                life: 50, rot: bAng, spin: 0.2,
+              });
+            }
+          }
+          shake(3, 4);
+        }
+      },
+      draw(ab) {
+        const range = 180 + ab.level * 18;
+        const blades = 5 + Math.floor(ab.level / 2);
+        const halfArc = Math.PI / 4;
+        for (let k = 0; k < blades; k++) {
+          const bAng = ab.ang + k * (Math.PI * 2 / blades);
+          ctx.globalAlpha = 0.4;
+          ctx.fillStyle = '#ff3388';
+          ctx.beginPath();
+          ctx.moveTo(CX, CY);
+          ctx.arc(CX, CY, range, bAng - halfArc, bAng + halfArc);
+          ctx.closePath(); ctx.fill();
+          // 검광
+          ctx.globalAlpha = 0.7;
+          ctx.strokeStyle = '#ffaadd';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(CX + Math.cos(bAng) * 15, CY + Math.sin(bAng) * 15);
+          ctx.lineTo(CX + Math.cos(bAng) * range, CY + Math.sin(bAng) * range);
+          ctx.stroke();
+        }
+        ctx.globalAlpha = 1;
+        for (const p of ab.petals) {
+          ctx.save();
+          ctx.translate(p.x, p.y); ctx.rotate(p.rot);
+          ctx.globalAlpha = Math.min(1, p.life / 30);
+          ctx.fillStyle = '#ff66aa';
+          ctx.fillRect(-3, -3, 6, 6);
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(-1, -1, 2, 2);
+          ctx.restore();
+        }
+        ctx.globalAlpha = 1;
+      },
+    },
+    // 월결화살 + 미사일(missile) = 월광폭격 (SR luna)
+    moonBombardment: {
+      name: '월광폭격', isCombo: true, isTriple: true, baseCost: 290, color: '#6688ff',
+      desc: lv => `[SR트리플] 낙하 월광탄 ${5+lv} · DMG ${35+lv*17} · 광역+슬로우`,
+      init(ab) { ab.cooldown = 100; ab.shells = []; ab.craters = []; },
+      tick(ab) {
+        const dmg = 35 + ab.level * 17;
+        const exR = 80 + ab.level * 10;
+        const slowDur = 120;
+        for (const c of ab.craters) c.life--;
+        ab.craters = ab.craters.filter(c => c.life > 0);
+        for (const s of ab.shells) {
+          s.t++;
+          if (s.t >= s.fall) {
+            for (const e of state.enemies) {
+              if (e.hp <= 0) continue;
+              const [ex, ey] = enemyXY(e);
+              if ((s.x-ex)*(s.x-ex) + (s.y-ey)*(s.y-ey) < exR*exR) {
+                damageEnemy(e, dmg);
+                e.slowFrames = Math.max(e.slowFrames || 0, slowDur);
+                spawnParticles(ex, ey, '#6688ff', 6);
+              }
+            }
+            ab.craters.push({x: s.x, y: s.y, r: exR, life: 22});
+            shake(8, 8);
+            s.done = true;
+          }
+        }
+        ab.shells = ab.shells.filter(s => !s.done);
+        if (--ab.cooldown > 0) return;
+        const strikes = 5 + ab.level;
+        for (let i = 0; i < strikes; i++) {
+          const a = Math.random() * Math.PI * 2;
+          const r = Math.random() * (ARENA_R - 30);
+          ab.shells.push({x: CX + Math.cos(a)*r, y: CY + Math.sin(a)*r, t: -i * 6, fall: 35});
+        }
+        ab.cooldown = Math.max(75, 140 - ab.level * 5);
+      },
+      draw(ab) {
+        for (const s of ab.shells) {
+          if (s.t < 0) continue;
+          const progress = s.t / s.fall;
+          const my = s.y - (1 - progress) * 260;
+          ctx.fillStyle = `rgba(102,136,255,${0.3 + progress * 0.5})`;
+          ctx.beginPath(); ctx.arc(s.x, s.y, 14 + progress * 14, 0, Math.PI*2); ctx.fill();
+          ctx.fillStyle = '#6688ff';
+          ctx.beginPath(); ctx.arc(s.x, my, 8, 0, Math.PI * 2); ctx.fill();
+          ctx.fillStyle = '#1a1f2b';
+          ctx.beginPath(); ctx.arc(s.x + 2, my, 7, 0, Math.PI * 2); ctx.fill();
+          ctx.globalAlpha = 0.6;
+          ctx.fillStyle = '#aaccff';
+          ctx.fillRect(s.x - 3, my - 30, 6, 24);
+          ctx.globalAlpha = 1;
+        }
+        for (const c of ab.craters) {
+          const t = 1 - c.life / 22;
+          ctx.globalAlpha = c.life / 22;
+          ctx.fillStyle = '#6688ff';
+          ctx.beginPath(); ctx.arc(c.x, c.y, c.r * t, 0, Math.PI*2); ctx.fill();
+          ctx.globalAlpha = (c.life / 22) * 0.6;
+          ctx.fillStyle = '#ddeeff';
+          ctx.beginPath(); ctx.arc(c.x, c.y, c.r * t * 0.5, 0, Math.PI*2); ctx.fill();
+        }
+        ctx.globalAlpha = 1;
+      },
+    },
+
+    // ========== 🎰 가챠 SSR 트리플 (2종) ==========
+    // 우주합창 + 메테오(meteor) = 천체교향곡 (SSR aria)
+    celestialSymphony: {
+      name: '천체교향곡', isCombo: true, isTriple: true, baseCost: 320, color: '#ffaa00',
+      desc: lv => `[SSR트리플] 초광역 + 운석 ${4+lv} · DMG ${45+lv*22}`,
+      init(ab) { ab.cooldown = 130; ab.meteors = []; ab.craters = []; ab.fx = 0; ab.stars = []; },
+      tick(ab) {
+        if (ab.fx > 0) ab.fx--;
+        for (const c of ab.craters) c.life--;
+        ab.craters = ab.craters.filter(c => c.life > 0);
+        const dmg = 45 + ab.level * 22;
+        const starDmg = 20 + ab.level * 12;
+        for (const s of ab.stars) {
+          s.x += s.vx; s.y += s.vy; s.rot += 0.3; s.life--;
+          for (const e of state.enemies) {
+            if (e.hp <= 0 || s.hit.has(e)) continue;
+            const [ex, ey] = enemyXY(e);
+            if ((s.x-ex)*(s.x-ex) + (s.y-ey)*(s.y-ey) < (e.size+10)*(e.size+10)) {
+              damageEnemy(e, starDmg);
+              s.hit.add(e);
+              spawnParticles(ex, ey, '#ffaa00', 6);
+            }
+          }
+          if ((s.x-CX)*(s.x-CX) + (s.y-CY)*(s.y-CY) > (ARENA_R+30)*(ARENA_R+30)) s.life = 0;
+        }
+        ab.stars = ab.stars.filter(s => s.life > 0);
+        for (const m of ab.meteors) {
+          m.t++;
+          if (m.t >= m.fall) {
+            const mR = 90 + ab.level * 10;
+            for (const e of state.enemies) {
+              if (e.hp <= 0) continue;
+              const [ex, ey] = enemyXY(e);
+              if ((m.x-ex)*(m.x-ex) + (m.y-ey)*(m.y-ey) < mR*mR) {
+                damageEnemy(e, dmg);
+                spawnParticles(ex, ey, '#ffaa00', 7);
+              }
+            }
+            ab.craters.push({x: m.x, y: m.y, r: mR, life: 26});
+            shake(16, 12);
+            m.done = true;
+          }
+        }
+        ab.meteors = ab.meteors.filter(m => !m.done);
+        if (--ab.cooldown > 0) return;
+        // 초광역 펄스
+        const pulseR = 240 + ab.level * 22;
+        for (const e of state.enemies) {
+          if (e.hp <= 0) continue;
+          const [ex, ey] = enemyXY(e);
+          if ((ex-CX)*(ex-CX) + (ey-CY)*(ey-CY) < pulseR*pulseR) {
+            damageEnemy(e, dmg * 0.5);
+            spawnParticles(ex, ey, '#ffe070', 4);
+          }
+        }
+        // 별 폭사
+        const n = 14;
+        for (let i = 0; i < n; i++) {
+          const a = (i / n) * Math.PI * 2;
+          ab.stars.push({
+            x: CX, y: CY,
+            vx: Math.cos(a) * 5, vy: Math.sin(a) * 5,
+            life: 120, rot: 0, hit: new Set(),
+          });
+        }
+        // 운석 낙하
+        const strikes = 4 + ab.level;
+        for (let i = 0; i < strikes; i++) {
+          const a = Math.random() * Math.PI * 2;
+          const r = Math.random() * (ARENA_R - 30);
+          ab.meteors.push({x: CX + Math.cos(a)*r, y: CY + Math.sin(a)*r, t: -i * 7, fall: 42});
+        }
+        ab.fx = 24;
+        ab.cooldown = Math.max(105, 180 - ab.level * 5);
+      },
+      draw(ab) {
+        if (ab.fx > 0) {
+          const pulseR = 240 + ab.level * 22;
+          const t = 1 - ab.fx / 24;
+          ctx.globalAlpha = ab.fx / 24;
+          ctx.strokeStyle = '#ffaa00'; ctx.lineWidth = 7;
+          ctx.beginPath(); ctx.arc(CX, CY, pulseR * t, 0, Math.PI*2); ctx.stroke();
+          ctx.globalAlpha = (ab.fx / 24) * 0.4;
+          ctx.fillStyle = '#ffe070';
+          ctx.beginPath(); ctx.arc(CX, CY, pulseR * t * 0.6, 0, Math.PI*2); ctx.fill();
+          ctx.globalAlpha = 1;
+        }
+        for (const s of ab.stars) {
+          ctx.save();
+          ctx.translate(s.x, s.y); ctx.rotate(s.rot);
+          ctx.fillStyle = '#ffaa00';
+          ctx.beginPath();
+          for (let k = 0; k < 5; k++) {
+            const a1 = -Math.PI/2 + k * (Math.PI*2/5);
+            const a2 = a1 + Math.PI/5;
+            ctx.lineTo(Math.cos(a1) * 10, Math.sin(a1) * 10);
+            ctx.lineTo(Math.cos(a2) * 5, Math.sin(a2) * 5);
+          }
+          ctx.closePath(); ctx.fill();
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(-2, -2, 3, 3);
+          ctx.restore();
+        }
+        for (const m of ab.meteors) {
+          if (m.t < 0) continue;
+          const progress = m.t / m.fall;
+          const my = m.y - (1 - progress) * 280;
+          const ms = 16 + progress * 10;
+          ctx.fillStyle = `rgba(0,0,0,${0.3 + progress * 0.4})`;
+          ctx.beginPath(); ctx.arc(m.x, m.y, 18 + progress * 18, 0, Math.PI*2); ctx.fill();
+          ctx.fillStyle = '#1d1410'; ctx.fillRect(m.x - ms - 1, my - ms - 1, ms*2 + 2, ms*2 + 2);
+          ctx.fillStyle = '#ffaa00'; ctx.fillRect(m.x - ms, my - ms, ms*2, ms*2);
+          ctx.fillStyle = '#ffe070'; ctx.fillRect(m.x - ms/2, my - ms/2, ms, ms);
+          ctx.globalAlpha = 0.7;
+          ctx.fillStyle = '#ffe070'; ctx.fillRect(m.x - 5, my - 40, 10, 34);
+          ctx.globalAlpha = 1;
+        }
+        for (const c of ab.craters) {
+          const t = 1 - c.life / 26;
+          ctx.globalAlpha = c.life / 26;
+          ctx.fillStyle = '#ffaa00';
+          ctx.beginPath(); ctx.arc(c.x, c.y, c.r * t, 0, Math.PI*2); ctx.fill();
+          ctx.globalAlpha = (c.life / 26) * 0.6;
+          ctx.fillStyle = '#ffe070';
+          ctx.beginPath(); ctx.arc(c.x, c.y, c.r * t * 0.5, 0, Math.PI*2); ctx.fill();
+        }
+        ctx.globalAlpha = 1;
+      },
+    },
+    // 시간감옥 + 블랙홀(blackhole) = 영원의찰나 (SSR misaki) — 게임 최강
+    eternalMoment: {
+      name: '영원의찰나', isCombo: true, isTriple: true, baseCost: 340, color: '#9966ff',
+      desc: lv => `[SSR트리플] 흡인+나비${6+lv} · DMG ${50+lv*25} · 정지 ${0.8+lv*0.1}s`,
+      init(ab) {
+        ab.x = CX; ab.y = CY; ab.tickT = 8; ab.life = 0;
+        ab.butterflies = []; ab.spawnCD = 0; ab.stopT = 180;
+      },
+      tick(ab) {
+        ab.life--;
+        if (ab.life <= 0) {
+          const pool = state.enemies.filter(e => e.hp > 0);
+          if (pool.length > 0) {
+            let sx = 0, sy = 0;
+            for (const e of pool) { const [ex, ey] = enemyXY(e); sx += ex; sy += ey; }
+            ab.x = sx / pool.length; ab.y = sy / pool.length;
+          } else { ab.x = CX; ab.y = CY; }
+          ab.life = 200 + ab.level * 25;
+        }
+        const pullR = 220 + ab.level * 22;
+        const dmg = 50 + ab.level * 25;
+        const butterflyDmg = 18 + ab.level * 10;
+        const slowDur = 100;
+        const targetCount = 6 + ab.level;
+        // 흡인장 효과
+        ab.tickT--;
+        for (const e of state.enemies) {
+          if (e.hp <= 0) continue;
+          const [ex, ey] = enemyXY(e);
+          const dx = ab.x - ex, dy = ab.y - ey;
+          const dist = Math.hypot(dx, dy);
+          if (dist < pullR && dist > 5) {
+            const ps = (1 - dist / pullR) * 4.5;
+            const newEx = ex + (dx/dist) * ps;
+            const newEy = ey + (dy/dist) * ps;
+            e.angle = Math.atan2(newEy - CY, newEx - CX);
+            e.radius = Math.hypot(newEx - CX, newEy - CY);
+            e.targetRadius = e.radius;
+            e.slowFrames = Math.max(e.slowFrames || 0, slowDur);
+          }
+        }
+        if (ab.tickT <= 0) {
+          ab.tickT = 8;
+          for (const e of state.enemies) {
+            if (e.hp <= 0) continue;
+            const [ex, ey] = enemyXY(e);
+            if ((ab.x-ex)*(ab.x-ex) + (ab.y-ey)*(ab.y-ey) < pullR*pullR * 0.6) {
+              damageEnemy(e, dmg);
+              spawnParticles(ex, ey, '#9966ff', 3);
+            }
+          }
+        }
+        // 주기 정지
+        ab.stopT--;
+        if (ab.stopT <= 0) {
+          ab.stopT = Math.max(140, 220 - ab.level * 8);
+          const stopDur = Math.floor((0.8 + ab.level * 0.1) * 60);
+          for (const e of state.enemies) {
+            if (e.hp <= 0) continue;
+            const [ex, ey] = enemyXY(e);
+            if ((ab.x-ex)*(ab.x-ex) + (ab.y-ey)*(ab.y-ey) < pullR*pullR * 0.8) {
+              e.slowFrames = Math.max(e.slowFrames || 0, stopDur);
+              if (!e.isBoss) e.timeStopped = state.t + stopDur;
+              else e.slowFrames = Math.max(e.slowFrames || 0, stopDur * 1.5);
+              spawnParticles(ex, ey, '#ddccff', 4);
+            }
+          }
+        }
+        // 나비 유지
+        if (ab.butterflies.length < targetCount && --ab.spawnCD <= 0) {
+          const ang = Math.random() * Math.PI * 2;
+          ab.butterflies.push({
+            x: ab.x + Math.cos(ang) * 30,
+            y: ab.y + Math.sin(ang) * 30,
+            vx: 0, vy: 0, target: null,
+            phase: Math.random() * Math.PI * 2,
+            cd: 0,
+          });
+          ab.spawnCD = 20;
+        }
+        for (const b of ab.butterflies) {
+          if (b.cd > 0) b.cd--;
+          if (!b.target || b.target.hp <= 0) {
+            let best = -1, tg = null;
+            for (const e of state.enemies) {
+              if (e.hp <= 0) continue;
+              if (e.hp > best) { best = e.hp; tg = e; }
+            }
+            b.target = tg;
+          }
+          b.phase += 0.20;
+          if (b.target) {
+            const [tx, ty] = enemyXY(b.target);
+            const dx = tx - b.x, dy = ty - b.y;
+            const dist = Math.hypot(dx, dy);
+            const speed = 5;
+            b.vx = (dx / dist) * speed;
+            b.vy = (dy / dist) * speed;
+          } else {
+            const dx = ab.x - b.x, dy = ab.y - b.y;
+            const dist = Math.hypot(dx, dy) || 1;
+            b.vx = (dx / dist) * 2;
+            b.vy = (dy / dist) * 2;
+          }
+          b.x += b.vx; b.y += b.vy;
+          if (b.cd <= 0) {
+            for (const e of state.enemies) {
+              if (e.hp <= 0) continue;
+              const [ex, ey] = enemyXY(e);
+              if ((b.x-ex)*(b.x-ex) + (b.y-ey)*(b.y-ey) < (e.size+8)*(e.size+8)) {
+                damageEnemy(e, butterflyDmg);
+                e.slowFrames = Math.max(e.slowFrames || 0, slowDur * 1.5);
+                spawnParticles(ex, ey, '#bb88ff', 5);
+                b.cd = 12;
+                break;
+              }
+            }
+          }
+        }
+      },
+      draw(ab) {
+        const pullR = 220 + ab.level * 22;
+        // 흡인장
+        ctx.strokeStyle = 'rgba(153, 102, 255, 0.4)'; ctx.lineWidth = 5;
+        ctx.beginPath(); ctx.arc(ab.x, ab.y, pullR, 0, Math.PI*2); ctx.stroke();
+        ctx.fillStyle = 'rgba(153, 102, 255, 0.12)';
+        ctx.beginPath(); ctx.arc(ab.x, ab.y, pullR * 0.6, 0, Math.PI*2); ctx.fill();
+        ctx.fillStyle = '#000';
+        ctx.beginPath(); ctx.arc(ab.x, ab.y, 16, 0, Math.PI*2); ctx.fill();
+        // 회전 입자
+        for (let k = 0; k < 14; k++) {
+          const pa = state.t * 0.14 + k * (Math.PI * 2 / 14);
+          const pr = 24 + Math.sin(state.t * 0.10 + k) * 8;
+          ctx.fillStyle = '#bb99ff';
+          ctx.fillRect(ab.x + Math.cos(pa) * pr - 2, ab.y + Math.sin(pa) * pr - 2, 4, 4);
+        }
+        // 나비
+        for (const b of ab.butterflies) {
+          const wing = Math.sin(b.phase * 4) * 0.5 + 1;
+          ctx.save();
+          ctx.translate(b.x, b.y);
+          ctx.globalAlpha = 0.5;
+          ctx.fillStyle = '#bb88ff';
+          ctx.beginPath(); ctx.arc(0, 0, 10, 0, Math.PI*2); ctx.fill();
+          ctx.globalAlpha = 1;
+          ctx.fillStyle = '#bb88ff';
+          ctx.fillRect(-7, -5, 6 * wing, 10);
+          ctx.fillRect(1, -5, 6 * wing, 10);
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(-1, -2, 2, 4);
+          ctx.restore();
+        }
+      },
+    },
+
+    voidStop: {
+      name: '공허정지', isCombo: true, isTriple: true, baseCost: 250, color: '#9966ff',
+      desc: lv => `초강력 흡인장 + 주기 정지 · DMG ${8+lv*5}`,
+      init(ab) { ab.x = CX; ab.y = CY; ab.tickT = 10; ab.life = 0; ab.stopT = 240; },
+      tick(ab) {
+        ab.life--;
+        if (ab.life <= 0) {
+          const pool = state.enemies.filter(e => e.hp > 0);
+          if (pool.length > 0) {
+            let sx = 0, sy = 0;
+            for (const e of pool) { const [ex, ey] = enemyXY(e); sx += ex; sy += ey; }
+            ab.x = sx / pool.length; ab.y = sy / pool.length;
+          } else { ab.x = CX; ab.y = CY; }
+          ab.life = 160 + ab.level * 20;
+        }
+        const pullR = 220 + ab.level * 20;
+        const dmg = 8 + ab.level * 5;
+        ab.tickT--;
+        for (const e of state.enemies) {
+          if (e.hp <= 0) continue;
+          const [ex, ey] = enemyXY(e);
+          const dx = ab.x - ex, dy = ab.y - ey;
+          const dist = Math.hypot(dx, dy);
+          if (dist < pullR && dist > 5) {
+            const ps = (1 - dist / pullR) * 4;
+            const newEx = ex + (dx/dist) * ps;
+            const newEy = ey + (dy/dist) * ps;
+            e.angle = Math.atan2(newEy - CY, newEx - CX);
+            e.radius = Math.hypot(newEx - CX, newEy - CY);
+            e.targetRadius = e.radius;
+            e.slowFrames = Math.max(e.slowFrames || 0, 50);
+          }
+        }
+        if (ab.tickT <= 0) {
+          ab.tickT = 10;
+          for (const e of state.enemies) {
+            if (e.hp <= 0) continue;
+            const [ex, ey] = enemyXY(e);
+            if ((ab.x-ex)*(ab.x-ex) + (ab.y-ey)*(ab.y-ey) < pullR*pullR * 0.6) {
+              damageEnemy(e, dmg);
+              spawnParticles(ex, ey, '#9966ff', 2);
+            }
+          }
+        }
+        // 주기 정지 (보스 제외, 약한 적만)
+        ab.stopT--;
+        if (ab.stopT <= 0) {
+          ab.stopT = Math.max(180, 280 - ab.level * 10);
+          const stopDur = Math.floor((1.2 + ab.level * 0.15) * 60);
+          for (const e of state.enemies) {
+            if (e.hp <= 0 || e.isBoss) continue;
+            const [ex, ey] = enemyXY(e);
+            if ((ab.x-ex)*(ab.x-ex) + (ab.y-ey)*(ab.y-ey) < pullR*pullR * 0.75) {
+              e.slowFrames = Math.max(e.slowFrames || 0, stopDur);
+              e.timeStopped = state.t + stopDur;
+              spawnParticles(ex, ey, '#ddccff', 3);
+            }
+          }
+        }
+      },
+      draw(ab) {
+        const pullR = 220 + ab.level * 20;
+        ctx.strokeStyle = 'rgba(153, 102, 255, 0.32)'; ctx.lineWidth = 4;
+        ctx.beginPath(); ctx.arc(ab.x, ab.y, pullR, 0, Math.PI*2); ctx.stroke();
+        ctx.fillStyle = 'rgba(153, 102, 255, 0.10)';
+        ctx.beginPath(); ctx.arc(ab.x, ab.y, pullR * 0.6, 0, Math.PI*2); ctx.fill();
+        ctx.fillStyle = '#000';
+        ctx.beginPath(); ctx.arc(ab.x, ab.y, 14, 0, Math.PI*2); ctx.fill();
+        for (let k = 0; k < 12; k++) {
+          const pa = state.t * 0.12 + k * (Math.PI * 2 / 12);
+          const pr = 22 + Math.sin(state.t * 0.1 + k) * 6;
+          ctx.fillStyle = '#bb99ff';
+          ctx.fillRect(ab.x + Math.cos(pa) * pr - 2, ab.y + Math.sin(pa) * pr - 2, 3, 3);
+        }
+      },
+    },
   };
   const ALL_ABILITY_IDS = Object.keys(ABILITY_DEFS);
   const BASIC_ABILITY_IDS = ALL_ABILITY_IDS.filter(id => !ABILITY_DEFS[id].isCombo);
@@ -5309,6 +7401,35 @@
     plasmaCataclysm: ['빔', '낙하'],
     voidNova:        ['영역', '슬로우', '폭발'],
     siegeBeam:       ['빔', '관통'],
+    // 가챠 R 고유
+    torpedo:         ['유도', '폭발', '다중공격'],
+    sunspot:         ['광역'],
+    pullField:       ['영역', '흡인'],
+    // 가챠 R 조합
+    frozenTorpedo:   ['유도', '폭발', '슬로우'],
+    solarStorm:      ['광역', '낙하'],
+    voidIceVortex:   ['영역', '흡인', '슬로우'],
+    // 가챠 R 트리플
+    deepSeaBarrage:  ['유도', '폭발', '슬로우'],
+    stellarCollapse: ['광역', '낙하', '폭발'],
+    voidStop:        ['영역', '흡인', '정지'],
+    // 가챠 SR/SSR 고유
+    sakuraSlash:     ['회전', '광역'],
+    moonShot:        ['관통', '유도'],
+    starSong:        ['광역', '다중공격'],
+    timeButterfly:   ['유도', '슬로우', '정지'],
+    // 가챠 SR 조합
+    sakuraStorm:     ['회전', '광역', '다중공격'],
+    moonFrostArrow:  ['관통', '유도', '슬로우'],
+    // 가챠 SSR 조합
+    cosmicChorus:    ['광역', '다중공격'],
+    timePrison:      ['유도', '정지', '최강적'],
+    // 가챠 SR 트리플
+    sakuraInferno:   ['회전', '광역'],
+    moonBombardment: ['낙하', '폭발', '슬로우'],
+    // 가챠 SSR 트리플
+    celestialSymphony: ['광역', '낙하', '폭발'],
+    eternalMoment:   ['흡인', '정지', '영역'],
   };
   function getAbilityTags(id) { return ABILITY_TAGS[id] || []; }
   function tagChipHtml(tag) {
@@ -5338,6 +7459,14 @@
     'grandReaper', 'pyreShield',
     'ultraGatling', 'absoluteThunder', 'elementalStorm', 'fusionCannon', 'galaxyOrbit',
     'titanMissile', 'plasmaCataclysm', 'voidNova', 'siegeBeam',
+    // 가챠 R (90-98) — PNG 없으면 자동 fallback (색박스+첫글자)
+    'torpedo', 'sunspot', 'pullField',
+    'frozenTorpedo', 'solarStorm', 'voidIceVortex',
+    'deepSeaBarrage', 'stellarCollapse', 'voidStop',
+    // 가챠 SR/SSR (99-110) — PNG 없으면 자동 fallback
+    'sakuraSlash', 'moonShot', 'starSong', 'timeButterfly',
+    'sakuraStorm', 'moonFrostArrow', 'cosmicChorus', 'timePrison',
+    'sakuraInferno', 'moonBombardment', 'celestialSymphony', 'eternalMoment',
   ];
   const ABILITY_ICON_NUMBER = {};
   ABILITY_ICON_ORDER.forEach((id, i) => { ABILITY_ICON_NUMBER[id] = i + 1; });
@@ -5361,6 +7490,112 @@
     }
   }
   loadAbilityIcons();
+
+  // ===== 🖼️ 캐릭터 이미지 로더 (검정 배경 → 투명 chroma key) =====
+  // 검정 배경 PNG 받아서 알파 채널 자동 적용.
+  // chroma key가 실패하면 (file:// CORS 등) 원본 이미지 그대로 사용 (검정 배경 보임).
+  // 항상 SOMETHING이 보이도록 multi-tier fallback.
+  const characterImages = {};        // charId → entry | 'loading' | 'missing'
+  // entry shape: { img: HTMLImageElement, keyed: Canvas|null, src: string,
+  //                dataUrl: string|null, w: number, h: number }
+  const CHROMA_THRESHOLD = 30;
+  const CHROMA_EDGE_BLEND = 60;
+
+  function chromaKeyImage(img) {
+    const c = document.createElement('canvas');
+    c.width  = img.naturalWidth  || img.width;
+    c.height = img.naturalHeight || img.height;
+    const cx = c.getContext('2d');
+    cx.drawImage(img, 0, 0);
+    // getImageData가 tainted canvas (file://) 에서 throw하면 캐치
+    const data = cx.getImageData(0, 0, c.width, c.height);
+    const d = data.data;
+    for (let i = 0; i < d.length; i += 4) {
+      const sum = d[i] + d[i + 1] + d[i + 2];
+      if (sum < CHROMA_THRESHOLD) {
+        d[i + 3] = 0;
+      } else if (sum < CHROMA_EDGE_BLEND) {
+        const t = (sum - CHROMA_THRESHOLD) / (CHROMA_EDGE_BLEND - CHROMA_THRESHOLD);
+        d[i + 3] = Math.round(d[i + 3] * t);
+      }
+    }
+    cx.putImageData(data, 0, 0);
+    return c;
+  }
+
+  function loadCharacterImage(charId) {
+    if (characterImages[charId]) return;
+    characterImages[charId] = 'loading';
+    const img = new Image();
+    const src = `./icons/characters/${charId}.png`;
+    img.onload = () => {
+      let keyed = null;
+      let dataUrl = null;
+      // 1단계: chroma key 시도
+      try { keyed = chromaKeyImage(img); } catch (e) { keyed = null; }
+      // 2단계: toDataURL 시도 (tainted canvas면 실패)
+      if (keyed) {
+        try { dataUrl = keyed.toDataURL('image/png'); }
+        catch (e) { dataUrl = null; }
+      }
+      characterImages[charId] = {
+        img, keyed, src, dataUrl,
+        w: img.naturalWidth, h: img.naturalHeight,
+      };
+    };
+    img.onerror = () => { characterImages[charId] = 'missing'; };
+    img.src = src;
+  }
+  // 캔버스 그리기용: 키잉된 canvas 우선, 안되면 raw img (검정 배경 보임)
+  function getCharacterImage(charId) {
+    const v = characterImages[charId];
+    if (!v || v === 'loading' || v === 'missing') return null;
+    return v.keyed || v.img;
+  }
+  // HTML <img src>용: dataURL 우선, 안되면 원본 경로
+  function getCharacterImageSrc(charId) {
+    const v = characterImages[charId];
+    if (!v || v === 'loading' || v === 'missing') return null;
+    return v.dataUrl || v.src;
+  }
+  function getCharacterImageMeta(charId) {
+    const v = characterImages[charId];
+    if (!v || v === 'loading' || v === 'missing') return null;
+    return { w: v.w, h: v.h };
+  }
+  function preloadAllCharacterImages() {
+    if (typeof CHARACTERS === 'undefined') return;
+    for (const id of Object.keys(CHARACTERS)) loadCharacterImage(id);
+  }
+
+  // ===== 🖼️ 가챠 배너 이미지도 chroma key 처리 =====
+  // file:// 환경에서는 toDataURL 실패 → 원본 src 유지 (검정 배경 그대로 보임)
+  function processGachaBanner() {
+    const bannerEl = document.getElementById('gacha-banner-img');
+    if (!bannerEl) return;
+    const probe = new Image();
+    probe.onload = () => {
+      try {
+        const keyed = chromaKeyImage(probe);
+        try {
+          const dataUrl = keyed.toDataURL('image/png');
+          bannerEl.src = dataUrl;
+          bannerEl.style.background = 'transparent';
+        } catch (e) {
+          // toDataURL 실패 (tainted canvas) → 원본 src 유지
+        }
+      } catch (e) {
+        // getImageData 실패 → 원본 src 유지
+      }
+    };
+    probe.onerror = () => { /* gacha.png 없으면 HTML onerror가 fallback div 표시 */ };
+    probe.src = `./icons/gacha.png?_k=${Date.now()}`;
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', processGachaBanner);
+  } else {
+    processGachaBanner();
+  }
 
   // 캔버스용 아이콘 그리기 (이미지 있으면 그림, 없으면 fallback)
   function drawAbilityIcon(id, x, y, size) {
@@ -5471,6 +7706,26 @@
     { parts: ['plasmaBeam',    'thunder'],  combo: 'plasmaCataclysm', tier: 3 },
     { parts: ['voidField',     'missile'],  combo: 'voidNova',        tier: 3 },
     { parts: ['piercingChain', 'railgun'],  combo: 'siegeBeam',       tier: 3 },
+    // ===== 🎰 가챠 R 조합 (3종) =====
+    { parts: ['torpedo',   'frost'],     combo: 'frozenTorpedo' },
+    { parts: ['sunspot',   'thunder'],   combo: 'solarStorm' },
+    { parts: ['pullField', 'frostNova'], combo: 'voidIceVortex' },
+    // ===== 🎰 가챠 R 트리플 (히든) =====
+    { parts: ['frozenTorpedo', 'missile'],  combo: 'deepSeaBarrage',  tier: 3 },
+    { parts: ['solarStorm',    'meteor'],   combo: 'stellarCollapse', tier: 3 },
+    { parts: ['voidIceVortex', 'timeStop'], combo: 'voidStop',        tier: 3 },
+    // ===== 🎰 가챠 SR 조합 (2종) =====
+    { parts: ['sakuraSlash', 'sword'],      combo: 'sakuraStorm' },
+    { parts: ['moonShot',    'frost'],      combo: 'moonFrostArrow' },
+    // ===== 🎰 가챠 SSR 조합 (2종) =====
+    { parts: ['starSong',      'nova'],     combo: 'cosmicChorus' },
+    { parts: ['timeButterfly', 'timeStop'], combo: 'timePrison' },
+    // ===== 🎰 가챠 SR 트리플 (히든) =====
+    { parts: ['sakuraStorm',    'tornado'], combo: 'sakuraInferno',     tier: 3 },
+    { parts: ['moonFrostArrow', 'missile'], combo: 'moonBombardment',   tier: 3 },
+    // ===== 🎰 가챠 SSR 트리플 (히든) =====
+    { parts: ['cosmicChorus', 'meteor'],    combo: 'celestialSymphony', tier: 3 },
+    { parts: ['timePrison',   'blackhole'], combo: 'eternalMoment',     tier: 3 },
   ];
   // 다중 파트너 인덱스 — 한 능력이 여러 조합에 참여 가능
   const COMBO_PARTNERS = {};
@@ -5658,6 +7913,7 @@
     if (win) SFX.victory(); else SFX.gameOver();
     state.totalTime = state.t;  // 게임 시간 (프레임)
     earnStardust();
+    earnCrystals();
     recordCharUsage();        // 캐릭터 사용 라운드 기록
     checkAchievements();
     saveRecord();
@@ -5707,6 +7963,77 @@
       startScoreMul: 1,
     };
   }
+  // ===== 🎰 가챠 시스템 =====
+  // 가챠 캐릭터 풀 (등급별)
+  const GACHA_POOL = {
+    R:   ['marine', 'solar', 'gravitas'],
+    SR:  ['sakura', 'luna'],
+    SSR: ['aria', 'misaki'],
+  };
+  const GACHA_RATES = { R: 0.943, SR: 0.05, SSR: 0.007 };
+  const GACHA_REFUND = { R: 150, SR: 400, SSR: 800 };  // 중복 시 스타더스트 환불
+  const GACHA_COST = 1;       // 1뽑기 = 결정 1개
+  const GACHA_COST_10 = 9;    // 10뽑기 = 결정 9개 (1개 할인)
+
+  function getCrystals() { return META.crystals || 0; }
+  function spendCrystals(n) {
+    if ((META.crystals || 0) < n) return false;
+    META.crystals = (META.crystals || 0) - n;
+    saveMeta();
+    return true;
+  }
+  function addCrystals(n) {
+    META.crystals = (META.crystals || 0) + n;
+    saveMeta();
+  }
+  // 게임 종료 시 결정 보상 계산 (단일 게임 마일스톤 기반)
+  function earnCrystals() {
+    let crystals = 0;
+    const reasons = [];
+    if (state.score >= 500000) { crystals += 1; reasons.push('점수 50만점 +1 💎'); }
+    if (state.score >= 1000000) { crystals += 1; reasons.push('점수 100만점 +1 💎'); }
+    if (state.round >= 50) { crystals += 1; reasons.push('R50 도달 +1 💎'); }
+    if (state.gameWin) { crystals += 2; reasons.push('R100 클리어 +2 💎'); }
+    const tripleCount = state.tower.abilities.filter(a => ABILITY_DEFS[a.id] && ABILITY_DEFS[a.id].isTriple).length;
+    if (tripleCount >= 3) { crystals += 1; reasons.push('트리플 3개 형성 +1 💎'); }
+    if ((state.totalKills || 0) >= 2000) { crystals += 1; reasons.push('2000 처치 +1 💎'); }
+    if (state.gameWin && (state.ascension || 0) > 0) {
+      const ascBonus = Math.ceil((state.ascension || 0) / 3);
+      crystals += ascBonus;
+      reasons.push(`승천 ${state.ascension} 클리어 +${ascBonus} 💎`);
+    }
+    if (crystals > 0) addCrystals(crystals);
+    state.crystalsEarned = crystals;
+    state.crystalReasons = reasons;
+  }
+  // 한 번 뽑기
+  function gachaPullOne() {
+    const r = Math.random();
+    let rarity;
+    if (r < GACHA_RATES.SSR) rarity = 'SSR';
+    else if (r < GACHA_RATES.SSR + GACHA_RATES.SR) rarity = 'SR';
+    else rarity = 'R';
+    // 풀이 비어있으면 다른 등급으로 대체 (현재 SR/SSR 비어있음)
+    let pool = GACHA_POOL[rarity];
+    if (pool.length === 0) {
+      // 풀이 빌 때는 R로 다운그레이드 (단계 1에선 SR/SSR 없으니까)
+      rarity = 'R';
+      pool = GACHA_POOL.R;
+    }
+    const charId = pool[Math.floor(Math.random() * pool.length)];
+    // 중복 처리
+    META.gachaUnlocked = META.gachaUnlocked || {};
+    const isNew = !META.gachaUnlocked[charId];
+    META.gachaUnlocked[charId] = (META.gachaUnlocked[charId] || 0) + 1;
+    let refund = 0;
+    if (!isNew) {
+      refund = GACHA_REFUND[rarity] || 0;
+      META.stardust = (META.stardust || 0) + refund;
+    }
+    saveMeta();
+    return { rarity, charId, isNew, refund };
+  }
+
   function ascensionLabel(asc) {
     if (asc === 0) return '기본';
     return `승천 ${asc}`;
@@ -5882,10 +8209,78 @@
       passive: { dmgMul: 1.15, bossDmgMul: 1.35, slotMod: 0, levelUpMul: 0.85, slowMul: 1 },
       unlockBy: 'triple3',
     },
+    // ===== 🎰 가챠 캐릭터 (R 등급 — 3명) =====
+    marine: {
+      name: '🌊 마린', color: '#5599cc',
+      desc: '[R] 부유어뢰로 시작. 어뢰 + 빙결 = 빙결어뢰.',
+      startAbilities: ['torpedo'],
+      passive: { dmgMul: 1, bossDmgMul: 1, slotMod: 0, levelUpMul: 1, slowMul: 1.10 },
+      unlockBy: 'gacha:marine',
+      isGacha: true, rarity: 'R',
+    },
+    solar: {
+      name: '☀️ 솔라', color: '#ffaa44',
+      desc: '[R] 태양흑점으로 시작. 흑점 + 벼락 = 태양폭풍.',
+      startAbilities: ['sunspot'],
+      passive: { dmgMul: 1, bossDmgMul: 1, slotMod: 0, levelUpMul: 1, slowMul: 1 },
+      unlockBy: 'gacha:solar',
+      isGacha: true, rarity: 'R',
+    },
+    gravitas: {
+      name: '🌀 그래비타스', color: '#a070d0',
+      desc: '[R] 인력장으로 시작. 인력장 + 빙결파동 = 공허빙수렴.',
+      startAbilities: ['pullField'],
+      passive: { dmgMul: 1, bossDmgMul: 1, slotMod: 0, levelUpMul: 1, slowMul: 1 },
+      unlockBy: 'gacha:gravitas',
+      isGacha: true, rarity: 'R',
+    },
+    // ===== 🎰 가챠 SR 캐릭터 (2명) =====
+    sakura: {
+      name: '🌸 사쿠라', color: '#ff88bb',
+      desc: '[SR] 벚꽃검으로 시작. 검 +20% / 보스 +20%. 벚꽃검 + 검 = 벚꽃폭풍.',
+      startAbilities: ['sakuraSlash'],
+      passive: { dmgMul: 1.20, bossDmgMul: 1.20, slotMod: 0, levelUpMul: 1, slowMul: 1 },
+      unlockBy: 'gacha:sakura',
+      isGacha: true, rarity: 'SR',
+    },
+    luna: {
+      name: '🌙 루나', color: '#aaccff',
+      desc: '[SR] 월광탄으로 시작. 슬로우 +35% / 데미지 +15%. 월광탄 + 빙결 = 월결화살.',
+      startAbilities: ['moonShot'],
+      passive: { dmgMul: 1.15, bossDmgMul: 1, slotMod: 0, levelUpMul: 1, slowMul: 1.35 },
+      unlockBy: 'gacha:luna',
+      isGacha: true, rarity: 'SR',
+    },
+    // ===== 🎰 가챠 SSR 캐릭터 (2명) =====
+    aria: {
+      name: '🌟 아리아', color: '#ffe070',
+      desc: '[SSR] 별의노래로 시작. 데미지 +30% / 보스 +40% / 레벨업 -15%. 별의노래 + 노바 = 우주합창.',
+      startAbilities: ['starSong'],
+      passive: { dmgMul: 1.30, bossDmgMul: 1.40, slotMod: 0, levelUpMul: 0.85, slowMul: 1 },
+      unlockBy: 'gacha:aria',
+      isGacha: true, rarity: 'SSR',
+    },
+    misaki: {
+      name: '🦋 미사키', color: '#cc88ff',
+      desc: '[SSR] 시공나비로 시작. 데미지 +25% / 슬로우 +50% / 슬롯 +1. 시공나비 + 시간정지 = 시간감옥.',
+      startAbilities: ['timeButterfly'],
+      passive: { dmgMul: 1.25, bossDmgMul: 1.15, slotMod: 1, levelUpMul: 0.90, slowMul: 1.50 },
+      unlockBy: 'gacha:misaki',
+      isGacha: true, rarity: 'SSR',
+    },
   };
+  // 모든 캐릭터에 대해 이미지 사전 로드 시도 (chroma key 처리됨)
+  // 파일 없으면 'missing'으로 마킹되어 fallback 동작
+  preloadAllCharacterImages();
+
   function isCharUnlocked(id) {
     const c = CHARACTERS[id];
     if (!c.unlockBy) return true;
+    // 가챠 캐릭터: META.gachaUnlocked 에 있어야 해금
+    if (c.unlockBy.startsWith('gacha:')) {
+      const gachaId = c.unlockBy.slice(6);
+      return !!(META.gachaUnlocked && META.gachaUnlocked[gachaId] && META.gachaUnlocked[gachaId] > 0);
+    }
     const have = getUnlockedAchievements();
     return have.has(c.unlockBy);
   }
@@ -7077,7 +9472,7 @@
     ctx.beginPath(); ctx.arc(CX, CY, ARENA_R, 0, Math.PI*2); ctx.stroke();
   }
   function drawTower() {
-    // 외곽 헥사 링 (천천히 회전)
+    // 외곽 헥사 링 (천천히 회전) — 항상 그림 (캐릭터 이미지 있어도 분위기 유지)
     const ringRot = state.t * 0.004;
     ctx.strokeStyle = 'rgba(106, 196, 255, 0.22)';
     ctx.lineWidth = 1.5;
@@ -7090,24 +9485,48 @@
     }
     ctx.closePath();
     ctx.stroke();
-    // 옅은 외곽 코어 글로우 (느린 펄스)
+
+    // ===== 캐릭터 이미지가 있으면 본체 대신 이미지 사용 =====
+    const charId = state.character || 'standard';
+    const charImg = getCharacterImage(charId);
+    if (charImg) {
+      // 캐릭터 발판 (펄스 글로우)
+      const charDef = CHARACTERS[charId] || {};
+      const glowCol = charDef.color || '#7ad7ff';
+      const pulse = 1 + Math.sin(state.t * 0.05) * 0.10;
+      ctx.save();
+      ctx.globalAlpha = 0.12;
+      ctx.fillStyle = glowCol;
+      ctx.beginPath(); ctx.arc(CX, CY + 14, 12 * pulse, 0, Math.PI * 2); ctx.fill();
+      ctx.restore();
+      // 이미지를 32x32로 중앙 정렬 (원본 비율 유지)
+      const meta = getCharacterImageMeta(charId) || { w: charImg.width, h: charImg.height };
+      const target = 36; // 그리는 영역 한 변 길이 (px)
+      let dw, dh;
+      if (meta.w >= meta.h) { dw = target; dh = target * (meta.h / meta.w); }
+      else { dh = target; dw = target * (meta.w / meta.h); }
+      const dx = CX - dw / 2;
+      const dy = CY - dh / 2 + 2; // 약간 아래로 (발판 위 서있는 느낌)
+      ctx.imageSmoothingEnabled = false;
+      ctx.drawImage(charImg, dx, dy, dw, dh);
+      ctx.imageSmoothingEnabled = true;
+      return;
+    }
+
+    // ===== Fallback: 기존 도트 타워 =====
     const pulse = 1 + Math.sin(state.t * 0.05) * 0.10;
     ctx.fillStyle = 'rgba(106, 196, 255, 0.06)';
     ctx.beginPath(); ctx.arc(CX, CY, 24 * pulse, 0, Math.PI*2); ctx.fill();
-    // 본체 사각 (어두운 베이스)
     ctx.fillStyle = '#1a2030';
     ctx.fillRect(CX - 12, CY - 12, 24, 24);
-    // 사각 외곽 라인
     ctx.strokeStyle = 'rgba(106, 196, 255, 0.35)';
     ctx.lineWidth = 1;
     ctx.strokeRect(CX - 12, CY - 12, 24, 24);
-    // 4 모서리 액센트
     ctx.fillStyle = '#6ac4ff';
     ctx.fillRect(CX - 12, CY - 12, 3, 3);
     ctx.fillRect(CX + 9,  CY - 12, 3, 3);
     ctx.fillRect(CX - 12, CY + 9,  3, 3);
     ctx.fillRect(CX + 9,  CY + 9,  3, 3);
-    // 회전 다이아몬드 (중간 — 반대 방향)
     const diaRot = -state.t * 0.014;
     ctx.save();
     ctx.translate(CX, CY);
@@ -7116,7 +9535,6 @@
     ctx.lineWidth = 1.4;
     ctx.strokeRect(-7, -7, 14, 14);
     ctx.restore();
-    // 중앙 코어 (작고 밝음)
     const corePulse = 0.85 + 0.15 * Math.sin(state.t * 0.09);
     ctx.globalAlpha = corePulse;
     ctx.fillStyle = '#e0f4ff';
@@ -7391,6 +9809,19 @@
         ctx.fillStyle = '#ff80ff'; ctx.font='bold 16px Jua, sans-serif';
         ctx.fillText(`✨ 승천 ${state.newAscensionUnlocked} 해금!`, CX, lineY);
         lineY += 20;
+      }
+      if (state.crystalsEarned) {
+        ctx.fillStyle = '#88ccff'; ctx.font='bold 14px Jua, sans-serif';
+        ctx.fillText(`+${state.crystalsEarned} 💎 결정 획득`, CX, lineY);
+        lineY += 18;
+        // 사유 표시 (최대 3줄)
+        if (state.crystalReasons && state.crystalReasons.length > 0) {
+          ctx.fillStyle = '#88ccff'; ctx.font='10px Jua, sans-serif';
+          for (const r of state.crystalReasons.slice(0, 3)) {
+            ctx.fillText(`· ${r}`, CX, lineY);
+            lineY += 13;
+          }
+        }
       }
       if (state.achievementsEarned && state.achievementsEarned.length > 0) {
         ctx.fillStyle = '#52e07a'; ctx.font='12px Jua, sans-serif';
@@ -8433,6 +10864,8 @@
   const characterScreenEl = document.getElementById('characterScreen');
   const achievementsScreenEl = document.getElementById('achievementsScreen');
   const difficultyScreenEl = document.getElementById('difficultyScreen');
+  const gachaScreenEl = document.getElementById('gachaScreen');
+  const gachaResultScreenEl = document.getElementById('gachaResultScreen');
   const gameEl = document.getElementById('wrap');
   function showScreen(name) {
     currentScreen = name;
@@ -8444,6 +10877,8 @@
     characterScreenEl.classList.toggle('show', name === 'character');
     achievementsScreenEl.classList.toggle('show', name === 'achievements');
     difficultyScreenEl.classList.toggle('show', name === 'difficulty');
+    gachaScreenEl.classList.toggle('show', name === 'gacha');
+    gachaResultScreenEl.classList.toggle('show', name === 'gachaResult');
     gameEl.style.display = name === 'game' ? 'flex' : 'none';
     if (name === 'game') {
       const usePortrait = window.innerHeight > window.innerWidth * 1.05;
@@ -8511,6 +10946,130 @@
   document.getElementById('characterBtn').onclick = () => { buildCharacterList(); showScreen('character'); };
   document.getElementById('difficultyBtn').onclick = () => { buildDifficultyList(); showScreen('difficulty'); };
   document.getElementById('difficultyBack').onclick = () => showScreen('menu');
+  document.getElementById('gachaBtn').onclick = () => { buildGacha(); showScreen('gacha'); };
+  document.getElementById('gachaBack').onclick = () => showScreen('menu');
+  document.getElementById('gachaPull1').onclick = () => doGachaPull(1);
+  document.getElementById('gachaPull10').onclick = () => doGachaPull(10);
+  document.getElementById('gachaResultClose').onclick = () => { buildGacha(); showScreen('gacha'); };
+  document.getElementById('gachaResultAgain').onclick = () => {
+    if ((META.crystals || 0) < (lastGachaCount === 10 ? GACHA_COST_10 : GACHA_COST)) {
+      buildGacha(); showScreen('gacha');
+      return;
+    }
+    doGachaPull(lastGachaCount);
+  };
+
+  function buildGacha() {
+    // 헤더 정보 갱신
+    document.getElementById('crystal-count').textContent = (META.crystals || 0).toLocaleString();
+    document.getElementById('gacha-stardust').textContent = (META.stardust || 0).toLocaleString();
+    const allGachaIds = [...GACHA_POOL.R, ...GACHA_POOL.SR, ...GACHA_POOL.SSR];
+    const owned = allGachaIds.filter(id => META.gachaUnlocked && META.gachaUnlocked[id] > 0).length;
+    document.getElementById('gacha-collected').textContent = owned;
+    document.getElementById('gacha-total').textContent = allGachaIds.length;
+
+    // 버튼 활성/비활성
+    document.getElementById('gachaPull1').disabled = (META.crystals || 0) < GACHA_COST;
+    document.getElementById('gachaPull10').disabled = (META.crystals || 0) < GACHA_COST_10;
+
+    // 컬렉션
+    const colList = document.getElementById('gacha-collection');
+    colList.innerHTML = '';
+    for (const rarity of ['SSR', 'SR', 'R']) {
+      for (const charId of GACHA_POOL[rarity]) {
+        const c = CHARACTERS[charId];
+        if (!c) continue;
+        const cnt = (META.gachaUnlocked && META.gachaUnlocked[charId]) || 0;
+        const hasIt = cnt > 0;
+        const card = document.createElement('div');
+        const rarityColor = rarity === 'SSR' ? '#ffd479' : (rarity === 'SR' ? '#c084ff' : '#7ad7ff');
+        card.style.cssText = `
+          background:${hasIt ? '#141822' : '#0f1219'};
+          border:1px solid #2a2f3a; border-left:4px solid ${rarityColor};
+          padding:10px 12px; display:flex; flex-direction:column; position:relative;
+          ${hasIt ? '' : 'opacity:0.5;'}
+        `;
+        // 이미지 (있으면 우상단에 작게)
+        const charImgSrc = getCharacterImageSrc(charId);
+        const imgHTML = charImgSrc
+          ? `<img src="${charImgSrc}" style="position:absolute;top:8px;right:8px;width:44px;height:44px;object-fit:contain;image-rendering:pixelated;background:#000;border-radius:4px;${hasIt ? '' : 'filter:grayscale(1) brightness(0.4);'}" />`
+          : '';
+        card.innerHTML = `
+          ${imgHTML}
+          <div style="display:flex;justify-content:space-between;align-items:center;${charImgSrc ? 'padding-right:54px;' : ''}">
+            <span style="color:${rarityColor};font-weight:bold;font-size:11px;">${rarity}</span>
+            ${hasIt ? `<span style="color:#9aa3b3;font-size:11px;">×${cnt}</span>` : `<span style="color:#5a5f6a;font-size:11px;">🔒</span>`}
+          </div>
+          <div style="font-size:15px;font-weight:bold;color:${hasIt ? c.color : '#5a5f6a'};margin-top:4px;${charImgSrc ? 'padding-right:54px;' : ''}">${hasIt ? c.name : '? ? ?'}</div>
+          <div style="font-size:11px;color:#7a8090;margin-top:4px;line-height:1.3;${charImgSrc ? 'padding-right:54px;' : ''}">${hasIt ? c.desc : '뽑기로 해금됩니다'}</div>
+        `;
+        colList.appendChild(card);
+      }
+    }
+  }
+
+  let lastGachaCount = 1;
+  function doGachaPull(count) {
+    const cost = count === 10 ? GACHA_COST_10 : GACHA_COST;
+    if (!spendCrystals(cost)) return;
+    lastGachaCount = count;
+    const results = [];
+    for (let i = 0; i < count; i++) {
+      results.push(gachaPullOne());
+    }
+    SFX.combo();
+    buildGachaResult(results);
+    showScreen('gachaResult');
+  }
+
+  function buildGachaResult(results) {
+    const cards = document.getElementById('gacha-result-cards');
+    cards.innerHTML = '';
+    let totalRefund = 0;
+    let newCount = 0;
+    let bestRarity = 'R';
+    const rarityRank = { R: 0, SR: 1, SSR: 2 };
+    for (const r of results) {
+      const c = CHARACTERS[r.charId];
+      const card = document.createElement('div');
+      card.className = `gacha-result-card rarity-${r.rarity.toLowerCase()}`;
+      const rarityColor = r.rarity === 'SSR' ? '#ffd479' : (r.rarity === 'SR' ? '#c084ff' : '#7ad7ff');
+      card.style.setProperty('--rarity-color', rarityColor);
+      // 이미지 우선 (src 직접 사용, toDataURL 의존 X), 없으면 이모지 fallback
+      const charImgSrc = getCharacterImageSrc(r.charId);
+      let portraitHTML;
+      if (charImgSrc) {
+        portraitHTML = `<div class="card-portrait" style="background:#000;padding:0;overflow:hidden;">
+          <img src="${charImgSrc}" style="width:100%;height:100%;object-fit:contain;image-rendering:pixelated;" />
+        </div>`;
+      } else {
+        const emoji = (c.name.match(/^[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/u) || ['?'])[0];
+        portraitHTML = `<div class="card-portrait">${emoji}</div>`;
+      }
+      const status = r.isNew
+        ? `<div class="card-status new">✨ NEW!</div>`
+        : `<div class="card-status">중복 +${r.refund}★</div>`;
+      card.innerHTML = `
+        <div class="card-rarity-tag">${r.rarity}</div>
+        ${portraitHTML}
+        <div class="card-name">${c.name.replace(/^[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]\s*/u, '')}</div>
+        ${status}
+      `;
+      cards.appendChild(card);
+      if (r.isNew) newCount++;
+      else totalRefund += r.refund;
+      if (rarityRank[r.rarity] > rarityRank[bestRarity]) bestRarity = r.rarity;
+    }
+    // 요약
+    const summary = document.getElementById('gacha-result-summary');
+    const parts = [];
+    parts.push(`${results.length}회 뽑기`);
+    if (newCount > 0) parts.push(`<span style="color:#88ff88">✨ NEW ×${newCount}</span>`);
+    if (totalRefund > 0) parts.push(`<span style="color:#ffd479">⭐ +${totalRefund}</span>`);
+    if (bestRarity === 'SSR') parts.unshift('<span style="color:#ffd479;font-weight:bold;">🎉 SSR 등장!</span>');
+    else if (bestRarity === 'SR') parts.unshift('<span style="color:#c084ff;">✨ SR 등장!</span>');
+    summary.innerHTML = parts.join('  ·  ');
+  }
 
   function buildDifficultyList() {
     const list = document.getElementById('difficulty-list');
@@ -8661,12 +11220,18 @@
       const card = document.createElement('div');
       card.className = 'char-card' + (unlocked ? '' : ' locked') + (selected ? ' selected' : '');
       card.style.borderLeftColor = char.color;
-      // 잠긴 캐릭터는 어떤 업적으로 해금되는지 표시
+      // 잠긴 캐릭터: 가챠 캐릭터는 한글 라벨, 그 외는 업적 정보
       let lockText = '';
       if (!unlocked && char.unlockBy) {
-        const ach = ACHIEVEMENTS.find(a => a.id === char.unlockBy);
-        const achLabel = ach ? `${ach.name} (${ach.desc})` : char.unlockBy;
-        lockText = `<div class="char-lock">🔒 업적 잠김: ${achLabel}</div>`;
+        let lockLabel;
+        if (char.unlockBy.startsWith('gacha:')) {
+          // 가챠 캐릭터: '🌸 사쿠라 획득' 형식
+          lockLabel = `🎰 ${char.name} 획득`;
+        } else {
+          const ach = ACHIEVEMENTS.find(a => a.id === char.unlockBy);
+          lockLabel = ach ? `업적 잠김: ${ach.name} (${ach.desc})` : char.unlockBy;
+        }
+        lockText = `<div class="char-lock">🔒 ${lockLabel}</div>`;
       }
       const selText = selected ? `<div class="char-selected-tag">✓ 선택됨</div>` : '';
       // 잠긴 캐릭터도 시작 능력과 효과는 보여줘서 도전 동기 부여
@@ -8675,7 +11240,27 @@
         return d ? `<span style="color:${d.color}">${d.name}</span>` : aid;
       }).join(', ');
       const startInfo = startAbs ? `<div class="char-start">시작 능력: ${startAbs}</div>` : '';
+      // 등급 배지 (가챠 캐릭터만)
+      let rarityBadge = '';
+      if (char.rarity) {
+        const rColor = char.rarity === 'SSR' ? '#ffd479' : (char.rarity === 'SR' ? '#c084ff' : '#7ad7ff');
+        const rBg    = char.rarity === 'SSR' ? 'linear-gradient(135deg,#3a2a10,#1a1208)' :
+                       char.rarity === 'SR'  ? 'linear-gradient(135deg,#2a1a40,#15082a)' :
+                                               'linear-gradient(135deg,#103040,#08182a)';
+        rarityBadge = `<div style="position:absolute;top:8px;right:8px;padding:3px 9px;border:1.5px solid ${rColor};border-radius:6px;font-size:11px;font-weight:bold;color:${rColor};background:${rBg};letter-spacing:1px;text-shadow:0 0 6px ${rColor};z-index:2;">${char.rarity}</div>`;
+        card.style.borderLeftColor = rColor;
+        card.style.position = 'relative';
+      }
+      // 캐릭터 이미지 (있을 때만 큰 프리뷰) — src 직접 사용
+      const charImgSrc = getCharacterImageSrc(id);
+      let portraitHTML = '';
+      if (charImgSrc) {
+        const size = char.rarity ? 64 : 48; // 가챠 캐릭터는 큰 이미지
+        portraitHTML = `<img src="${charImgSrc}" style="width:${size}px;height:${size}px;object-fit:contain;image-rendering:pixelated;float:right;margin-left:8px;margin-top:${char.rarity ? '20px' : '0'};background:#000;border-radius:4px;${unlocked ? '' : 'opacity:0.3;filter:grayscale(1);'}" />`;
+      }
       card.innerHTML = `
+        ${rarityBadge}
+        ${portraitHTML}
         <div class="char-name" style="color:${char.color}">${char.name}</div>
         <div class="char-desc">${char.desc}</div>
         ${startInfo}
