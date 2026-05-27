@@ -950,6 +950,13 @@
     background: #102818; color: #88dda8;
     border: 1px solid #2a5a3a;
   }
+  .achievement-card .ach-reward.title {
+    background: #2a1e10; color: #ffd479;
+    border: 1px solid #5a4220;
+  }
+  .achievement-card .ach-reward.title .rank-title {
+    margin-right: 0;  /* title chip 안에선 여백 제거 */
+  }
   .achievement-card .ach-reward.count {
     background: #182030; color: #9bb3ff;
     border: 1px solid #2a4878;
@@ -1011,6 +1018,7 @@
       <div>
         <div style="color:#ffd479; font-size:13px; font-weight:bold; margin-bottom:6px;">🏆 칭호 (업적 달성으로 해금)</div>
         <div id="title-preview" style="background:#0f1219; border:1px solid #2a2f3a; border-radius:6px; padding:8px 12px; margin-bottom:6px; text-align:center; font-size:14px; min-height:22px;"></div>
+        <div id="title-unlock-hint" style="background:#241510; border:1px solid #aa5530; border-radius:6px; padding:8px 12px; margin-bottom:6px; font-size:12px; color:#ffaa88; line-height:1.5; display:none;"></div>
         <div id="title-picker" class="title-picker-grid"></div>
       </div>
     </div>
@@ -8338,6 +8346,9 @@
       refreshMenuNickname();
     }
   }
+  // 모달 내 임시 선택 (확인 누르기 전엔 META에 저장 X)
+  let _modalPreviewTitle = null;
+
   function openNicknameModal(forceRequired) {
     const modal = document.getElementById('nicknameModal');
     modal.style.display = 'flex';
@@ -8345,51 +8356,88 @@
     input.value = META.nickname || '';
     document.getElementById('nicknameError').textContent = '';
     modal._forceRequired = forceRequired;
+    // 미리보기 — 현재 저장된 칭호로 초기화
+    _modalPreviewTitle = getSelectedTitle();
     buildTitlePicker();
     updateTitlePreview();
-    input.addEventListener('input', updateTitlePreview);
+    updateUnlockHint();
+    updateNicknameSubmitState();
+    // input에 keydown listener는 한 번만
+    if (!input._previewBound) {
+      input.addEventListener('input', updateTitlePreview);
+      input._previewBound = true;
+    }
     setTimeout(() => input.focus(), 50);
   }
-  // 칭호 그리드 빌드
+  // 칭호 그리드 빌드 — 미보유도 클릭 가능
   function buildTitlePicker() {
     const grid = document.getElementById('title-picker');
     grid.innerHTML = '';
     const owned = new Set(getOwnedTitles());
-    const selected = getSelectedTitle();
 
     // 선택 안 함 옵션
     const none = document.createElement('div');
-    none.className = 'title-pick-item' + (!selected ? ' selected' : '');
+    none.className = 'title-pick-item' + (_modalPreviewTitle === null ? ' selected' : '');
     none.textContent = '없음';
-    none.onclick = () => { setSelectedTitle(null); refreshTitlePicker(); };
+    none.onclick = () => { _modalPreviewTitle = null; refreshTitlePicker(); };
     grid.appendChild(none);
 
-    // 모든 칭호 (보유 = 클릭 가능, 미보유 = 잠금)
+    // 모든 칭호 (보유 = 정상 / 미보유 = 잠금 표시지만 클릭 가능)
     for (const tid in TITLES) {
       const t = TITLES[tid];
       const isOwned = owned.has(tid);
-      const isSel = tid === selected;
+      const isSel = tid === _modalPreviewTitle;
       const item = document.createElement('div');
       item.className = 'title-pick-item' + (isSel ? ' selected' : '') + (!isOwned ? ' locked' : '');
       item.innerHTML = titleHTML(tid);
-      if (isOwned) {
-        item.onclick = () => { setSelectedTitle(tid); refreshTitlePicker(); };
-        item.title = `업적: ${t.achId}`;
-      } else {
-        item.title = `🔒 업적 [${t.achId}] 달성 시 해금`;
-      }
+      // 미보유도 클릭 → 미리보기 + 안내 표시
+      item.onclick = () => { _modalPreviewTitle = tid; refreshTitlePicker(); };
+      item.title = isOwned ? `업적: ${t.achId}` : `🔒 미보유 — 클릭으로 미리보기`;
       grid.appendChild(item);
     }
   }
   function refreshTitlePicker() {
     buildTitlePicker();
     updateTitlePreview();
+    updateUnlockHint();
+    updateNicknameSubmitState();
   }
   function updateTitlePreview() {
     const preview = document.getElementById('title-preview');
     const nick = document.getElementById('nicknameInput').value.trim() || '닉네임';
-    const tid = getSelectedTitle();
+    const tid = _modalPreviewTitle;
     preview.innerHTML = `${titleHTML(tid)} <span style="color:#fff;font-weight:bold;">${escapeHtml(nick)}</span>`;
+  }
+  // 미보유 칭호 선택 시 해금 방법 안내
+  function updateUnlockHint() {
+    const hint = document.getElementById('title-unlock-hint');
+    if (!hint) return;
+    const tid = _modalPreviewTitle;
+    if (!tid) { hint.style.display = 'none'; return; }
+    const owned = new Set(getOwnedTitles());
+    if (owned.has(tid)) { hint.style.display = 'none'; return; }
+    // 미보유 — 업적 정보로 안내 만들기
+    const t = TITLES[tid];
+    if (!t) { hint.style.display = 'none'; return; }
+    const ach = ACHIEVEMENTS.find(a => a.id === t.achId);
+    if (ach) {
+      hint.innerHTML = `🔒 <b>해금 조건:</b> [${escapeHtml(ach.name)}] ${escapeHtml(ach.desc)}`;
+    } else {
+      hint.innerHTML = `🔒 해금 조건: 업적 [${escapeHtml(t.achId)}] 달성`;
+    }
+    hint.style.display = '';
+  }
+  // 확인 버튼 활성/비활성 — 미보유 칭호 선택 시 비활성
+  function updateNicknameSubmitState() {
+    const submit = document.getElementById('nicknameSubmit');
+    if (!submit) return;
+    const tid = _modalPreviewTitle;
+    const owned = new Set(getOwnedTitles());
+    const isLocked = !!(tid && !owned.has(tid));
+    submit.disabled = isLocked;
+    submit.style.opacity = isLocked ? '0.45' : '1';
+    submit.style.cursor = isLocked ? 'not-allowed' : 'pointer';
+    submit.textContent = isLocked ? '🔒 미보유 칭호 — 선택 불가' : '확인';
   }
   function closeNicknameModal() {
     const modal = document.getElementById('nicknameModal');
@@ -8403,6 +8451,13 @@
       document.getElementById('nicknameError').textContent = err;
       return;
     }
+    // 미리보기 칭호 → 보유 중일 때만 실제 저장 (잠긴 건 거부)
+    const owned = new Set(getOwnedTitles());
+    if (_modalPreviewTitle && !owned.has(_modalPreviewTitle)) {
+      document.getElementById('nicknameError').textContent = '🔒 미보유 칭호는 선택할 수 없습니다';
+      return;
+    }
+    setSelectedTitle(_modalPreviewTitle);
     const modal = document.getElementById('nicknameModal');
     modal._forceRequired = false;
     modal.style.display = 'none';
@@ -12084,6 +12139,12 @@
         if (ach.unlocks.ability) {
           const ab = ABILITY_DEFS[ach.unlocks.ability];
           if (ab) chips.push(`<span class="ach-reward ability">⚡ ${ab.name}</span>`);
+        }
+      }
+      // 🏆 이 업적이 잠금 해제하는 칭호 자동 매칭 (TITLES 레지스트리에서 역추적)
+      for (const tid in TITLES) {
+        if (TITLES[tid].achId === ach.id) {
+          chips.push(`<span class="ach-reward title">🏆 ${titleHTML(tid)}</span>`);
         }
       }
       card.innerHTML = `
