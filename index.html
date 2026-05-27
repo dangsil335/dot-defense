@@ -337,6 +337,19 @@
     touch-action: manipulation;
   }
   .update-cache-btn:hover { background: #143040; color: #aaeaff; }
+  /* 새 버전 있을 때 — 강조 (펄스 + 컬러) */
+  .update-cache-btn.update-needed {
+    background: #4a2010;
+    color: #ffaa66;
+    border-color: #ff8844;
+    font-weight: bold;
+    animation: update-pulse 1.5s ease-in-out infinite;
+  }
+  .update-cache-btn.update-needed:hover { background: #5a3018; color: #ffcc88; }
+  @keyframes update-pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(255,136,68,0.6); }
+    50% { box-shadow: 0 0 12px 4px rgba(255,136,68,0.5); }
+  }
   #menu .subtitle {
     color: #6b7283;
     margin-bottom: clamp(12px, 5vmin, 50px);
@@ -12247,32 +12260,124 @@
     location.reload();
   };
 
-  // 캐시 초기화 (업데이트) — 저장 데이터 유지하고 캐시만 비움
-  // iOS PWA 의 디스크 HTTP 캐시까지 우회하기 위해 cache-busting URL 사용
-  document.getElementById('updateCacheBtn').onclick = async () => {
-    const btn = document.getElementById('updateCacheBtn');
-    btn.disabled = true;
-    btn.textContent = '🔄 업데이트 중...';
+  // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
+  // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
+  const APP_VERSION = 87;
+
+  // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
+  async function fetchLatestVersion() {
     try {
-      // 1) 서비스워커 해제 (모든 SW 등록 제거)
+      const r = await fetch('./sw.js?_=' + Date.now(), { cache: 'no-store' });
+      if (!r.ok) return null;
+      const text = await r.text();
+      const m = text.match(/dot-defense-v(\d+)/);
+      if (!m) return null;
+      return parseInt(m[1], 10);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  // 캐시 비우고 새로고침 (기존 업데이트 로직 분리)
+  async function doFullUpdate() {
+    try {
       if ('serviceWorker' in navigator) {
         const regs = await navigator.serviceWorker.getRegistrations();
         await Promise.all(regs.map(r => r.unregister()));
       }
-      // 2) Cache Storage 비우기 (서비스워커 캐시)
       if ('caches' in window) {
         const names = await caches.keys();
         await Promise.all(names.map(n => caches.delete(n)));
       }
-      // ※ localStorage 는 건드리지 않음 (저장 데이터 유지)
-      // 3) cache-busting URL 로 강제 새로고침 — iOS PWA HTTP 캐시까지 우회
+      // localStorage 는 건드리지 않음 (저장 데이터 유지)
       const ts = Date.now();
       const target = location.pathname + '?_update=' + ts;
       location.replace(target);
     } catch (e) {
       alert('업데이트 실패: ' + e.message + '\n수동으로 PWA 재시작 또는 강력 새로고침 시도');
-      btn.disabled = false;
+      const btn = document.getElementById('updateCacheBtn');
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = '🔄 최신으로 업데이트';
+      }
+    }
+  }
+
+  // 업데이트 버튼 자체 — 항상 동작
+  document.getElementById('updateCacheBtn').onclick = async () => {
+    const btn = document.getElementById('updateCacheBtn');
+    btn.disabled = true;
+    btn.textContent = '🔄 업데이트 중...';
+    await doFullUpdate();
+  };
+
+  // 최신 버전 비교 — 새 버전 있으면 알림 + 자동 업데이트 권유
+  let _lastVersionCheck = 0;
+  let _latestVersion = null;
+  let _isUpdating = false;
+  const VERSION_CHECK_INTERVAL = 60 * 1000; // 1분마다 최대 1회 체크 (스팸 방지)
+
+  async function checkAndPromptUpdate(opts = {}) {
+    if (_isUpdating) return;
+    const { silent = false, force = false } = opts;
+    if (!force && Date.now() - _lastVersionCheck < VERSION_CHECK_INTERVAL) return;
+    _lastVersionCheck = Date.now();
+
+    const latest = await fetchLatestVersion();
+    if (latest == null) return; // 네트워크 실패 등 — 조용히 무시
+    _latestVersion = latest;
+    if (latest <= APP_VERSION) {
+      // 최신 — 버튼 정상 표시
+      restoreUpdateButton();
+      return;
+    }
+    // 새 버전 발견
+    console.log(`🆕 새 버전 v${latest} 발견 (현재 v${APP_VERSION})`);
+    highlightUpdateButton(latest);
+    if (!silent) {
+      // 자동 업데이트 prompt — 메뉴 화면에서만
+      maybeAutoUpdate(latest);
+    }
+  }
+
+  function highlightUpdateButton(latest) {
+    const btn = document.getElementById('updateCacheBtn');
+    if (!btn) return;
+    btn.textContent = `🆕 v${latest} 업데이트 필요!`;
+    btn.classList.add('update-needed');
+  }
+  function restoreUpdateButton() {
+    const btn = document.getElementById('updateCacheBtn');
+    if (!btn) return;
+    if (btn.classList.contains('update-needed')) {
       btn.textContent = '🔄 최신으로 업데이트';
+      btn.classList.remove('update-needed');
+    }
+  }
+
+  // 자동 업데이트 prompt — 메뉴에서만 발동, 게임 중엔 발동 X
+  async function maybeAutoUpdate(latest) {
+    if (currentScreen !== 'menu') return;
+    if (_isUpdating) return;
+    _isUpdating = true;
+    const ok = confirm(`🆕 새 버전 v${latest} 가 있습니다.\n(현재 v${APP_VERSION})\n\n지금 업데이트하시겠어요?\n저장 데이터는 그대로 유지됩니다.`);
+    if (ok) {
+      await doFullUpdate();
+    } else {
+      _isUpdating = false;
+    }
+  }
+
+  // ===== 자동 체크 트리거 =====
+  // 1) 페이지 로드 시 (지연 — 게임 안 끊기게)
+  setTimeout(() => checkAndPromptUpdate({ silent: true, force: true }), 3000);
+  // 2) 메뉴 화면 진입 시 (silent — 자동 prompt 까지)
+  const _origShowScreen = showScreen;
+  showScreen = function(name) {
+    _origShowScreen(name);
+    if (name === 'menu') {
+      // 60초 쿨다운으로 매번 체크
+      checkAndPromptUpdate({ silent: false });
     }
   };
 
