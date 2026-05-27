@@ -981,10 +981,8 @@
   <button id="resetDataBtn" class="reset-data-btn" title="개발용: 모든 저장 데이터 초기화">🗑 데이터 초기화</button>
   <h1>DOT DEFENSE</h1>
   <div class="subtitle">픽셀 디펜스 · 능력 조합 빌더</div>
-  <button id="startBtn" class="menu-btn">▶ 스타트</button>
-  <button id="newGameBtn" class="menu-btn" style="display:none">🔄 새 게임</button>
+  <button id="startBtn" class="menu-btn">▶ 새 게임</button>
   <button id="difficultyBtn" class="menu-btn" style="display:none">⚡ 난이도: 기본</button>
-  <button id="characterBtn" class="menu-btn">👤 캐릭터 선택</button>
   <button id="gachaBtn" class="menu-btn">🎰 가챠</button>
   <button id="shopBtn" class="menu-btn">⭐ 강화소</button>
   <button id="codexBtn" class="menu-btn">📖 도감</button>
@@ -997,25 +995,31 @@
 </div>
 
 <!-- ===== 🌐 닉네임 입력 모달 (첫 실행 시) ===== -->
-<div id="nicknameModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.92); z-index:9998; align-items:center; justify-content:center; padding:20px;">
-  <div style="background:#1a1f2b; border:2px solid #7ad7ff; border-radius:12px; padding:24px; max-width:420px; width:100%; box-shadow:0 0 40px rgba(122,215,255,0.4);">
-    <div style="font-size:22px; font-weight:bold; color:#7ad7ff; margin-bottom:8px;">👋 환영합니다!</div>
-    <div style="color:#9aa3b3; font-size:13px; line-height:1.5; margin-bottom:18px;">
-      글로벌 랭킹에 표시될 닉네임을 정해주세요. (1~12자, 한/영/숫자)
+<div id="nicknameModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.92); z-index:9998; align-items:center; justify-content:center; padding:8px; box-sizing:border-box;">
+  <div style="background:#1a1f2b; border:2px solid #7ad7ff; border-radius:12px; max-width:420px; width:100%; max-height:100vh; max-height:calc(100dvh - 16px); display:flex; flex-direction:column; box-shadow:0 0 40px rgba(122,215,255,0.4); overflow:hidden;">
+    <!-- 헤더 (고정) -->
+    <div style="padding:14px 18px 6px; flex-shrink:0;">
+      <div style="font-size:20px; font-weight:bold; color:#7ad7ff; margin-bottom:4px;">👋 환영합니다!</div>
+      <div style="color:#9aa3b3; font-size:12px; line-height:1.4;">
+        글로벌 랭킹에 표시될 닉네임을 정해주세요. (1~12자, 한/영/숫자)
+      </div>
     </div>
-    <input id="nicknameInput" type="text" maxlength="12" placeholder="예: 도트마스터" style="width:100%; box-sizing:border-box; background:#0f1219; border:2px solid #2a2f3a; color:#fff; padding:12px 14px; border-radius:8px; font-family:inherit; font-size:18px; text-align:center; margin-bottom:14px;" />
-    <div id="nicknameError" style="color:#ff8888; font-size:12px; margin-bottom:10px; min-height:16px;"></div>
-
-    <!-- 🏆 칭호 선택 -->
-    <div style="margin-bottom:14px;">
-      <div style="color:#ffd479; font-size:13px; font-weight:bold; margin-bottom:6px;">🏆 칭호 (업적 달성으로 해금)</div>
-      <div id="title-preview" style="background:#0f1219; border:1px solid #2a2f3a; border-radius:6px; padding:8px 12px; margin-bottom:6px; text-align:center; font-size:14px; min-height:22px;"></div>
-      <div id="title-picker" class="title-picker-grid"></div>
+    <!-- 본문 (스크롤 가능) -->
+    <div style="padding:6px 18px; flex:1 1 auto; overflow-y:auto; min-height:0;">
+      <input id="nicknameInput" type="text" maxlength="12" placeholder="예: 도트마스터" style="width:100%; box-sizing:border-box; background:#0f1219; border:2px solid #2a2f3a; color:#fff; padding:10px 14px; border-radius:8px; font-family:inherit; font-size:17px; text-align:center; margin-bottom:8px;" />
+      <div id="nicknameError" style="color:#ff8888; font-size:12px; margin-bottom:8px; min-height:16px;"></div>
+      <div>
+        <div style="color:#ffd479; font-size:13px; font-weight:bold; margin-bottom:6px;">🏆 칭호 (업적 달성으로 해금)</div>
+        <div id="title-preview" style="background:#0f1219; border:1px solid #2a2f3a; border-radius:6px; padding:8px 12px; margin-bottom:6px; text-align:center; font-size:14px; min-height:22px;"></div>
+        <div id="title-picker" class="title-picker-grid"></div>
+      </div>
     </div>
-
-    <button id="nicknameSubmit" style="width:100%; background:#7ad7ff; color:#000; border:none; padding:14px; border-radius:8px; font-weight:bold; font-size:16px; cursor:pointer;">확인</button>
-    <div style="color:#5a5f6a; font-size:11px; margin-top:12px; text-align:center;">
-      나중에 메뉴 하단에서 변경 가능
+    <!-- 푸터 (고정) -->
+    <div style="padding:10px 18px 14px; flex-shrink:0; border-top:1px solid #2a2f3a;">
+      <button id="nicknameSubmit" style="width:100%; background:#7ad7ff; color:#000; border:none; padding:12px; border-radius:8px; font-weight:bold; font-size:15px; cursor:pointer;">확인</button>
+      <div style="color:#5a5f6a; font-size:11px; margin-top:8px; text-align:center;">
+        나중에 메뉴 하단에서 변경 가능
+      </div>
     </div>
   </div>
 </div>
@@ -1068,6 +1072,57 @@
   .rank-meta { font-size: 11px; color: #7a8090; }
   .rank-score { text-align: right; font-weight: bold; color: #ffd479; font-size: 15px; white-space: nowrap; }
 
+  /* === 캐릭터 선택 화면 플로팅 시작 버튼 === */
+  .char-floating-bar {
+    position: fixed;
+    left: 0; right: 0;
+    bottom: 0;
+    background: linear-gradient(to top, #0b0d12 50%, rgba(11,13,18,0.85) 90%, rgba(11,13,18,0));
+    padding: 18px 16px calc(18px + env(safe-area-inset-bottom));
+    z-index: 50;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    pointer-events: none;
+  }
+  .char-floating-bar > * { pointer-events: auto; }
+  .char-floating-selected {
+    font-size: 13px;
+    color: #9aa3b3;
+    background: rgba(20,24,34,0.9);
+    padding: 6px 14px;
+    border-radius: 14px;
+    border: 1px solid #2a2f3a;
+  }
+  .char-start-btn {
+    background: linear-gradient(135deg, #7ad7ff, #5870a0);
+    color: #0b0d12;
+    border: 2px solid #aae6ff;
+    border-radius: 12px;
+    padding: 14px 36px;
+    font-family: inherit;
+    font-size: 17px;
+    font-weight: bold;
+    cursor: pointer;
+    box-shadow: 0 6px 24px rgba(122,215,255,0.5);
+    transition: transform 0.1s, box-shadow 0.15s;
+    min-width: 240px;
+    touch-action: manipulation;
+  }
+  .char-start-btn:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 28px rgba(122,215,255,0.7);
+  }
+  .char-start-btn:active:not(:disabled) { transform: translateY(0); }
+  .char-start-btn:disabled {
+    background: #2a2f3a;
+    color: #5a5f6a;
+    border-color: #3a4256;
+    box-shadow: none;
+    cursor: not-allowed;
+  }
+
   /* === 🏆 칭호 스타일 === */
   .rank-title { font-size: 12px; margin-right: 4px; }
   .title-normal { color: var(--c, #9aa3b3); }
@@ -1102,10 +1157,9 @@
   /* === 칭호 선택 그리드 (닉네임 모달용) === */
   .title-picker-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
     gap: 6px;
-    max-height: 200px;
-    overflow-y: auto;
+    /* max-height 제거 — 부모 (모달 본문)가 스크롤 처리하므로 그리드 자체는 자유롭게 늘어남 */
     padding: 6px;
     background: #0f1219;
     border: 1px solid #2a2f3a;
@@ -1198,7 +1252,12 @@
     <h2>캐릭터 선택</h2>
     <button id="characterBack" class="codex-back">← 메뉴로</button>
   </div>
-  <div id="character-list"></div>
+  <div id="character-list" style="padding-bottom:calc(180px + env(safe-area-inset-bottom));"></div>
+  <!-- 플로팅 시작 버튼 (화면 하단 고정) -->
+  <div class="char-floating-bar">
+    <div class="char-floating-selected" id="char-floating-selected">선택된 캐릭터: <span style="color:#7ad7ff;">표준</span></div>
+    <button id="charStartGameBtn" class="char-start-btn">▶ 게임 시작</button>
+  </div>
 </div>
 
 <!-- ===== 🎰 가챠 화면 ===== -->
@@ -11593,17 +11652,11 @@
       fitScaleSoon();
     }
     if (name === 'menu') {
-      // 진행 중 게임이 있으면 "이어하기" 표시 + 새 게임 버튼 노출
-      const inProgress = state && !state.gameOver && state.tower && state.tower.abilities;
+      // 진행 중 게임이 있으면 "이어하기", 없으면 "새 게임" — 단일 버튼만
+      const inProgress = state && !state.gameOver && state.tower &&
+                       (state.round > 1 || (state.totalKills || 0) > 0 || (state.score || 0) > 0);
       const startBtn = document.getElementById('startBtn');
-      const newGameBtn = document.getElementById('newGameBtn');
-      if (inProgress) {
-        startBtn.textContent = '▶ 이어하기';
-        newGameBtn.style.display = '';
-      } else {
-        startBtn.textContent = '▶ 스타트';
-        newGameBtn.style.display = 'none';
-      }
+      startBtn.textContent = inProgress ? '▶ 이어하기' : '▶ 새 게임';
       // 승천 해금된 경우 난이도 버튼 표시
       const diffBtn = document.getElementById('difficultyBtn');
       if (diffBtn) {
@@ -11735,24 +11788,18 @@
   });
 
   document.getElementById('startBtn').onclick = () => {
-    // 진행 중 게임 있으면 이어하기 (상태/일시정지 유지), 없으면 새 게임
-    const inProgress = state && !state.gameOver && state.tower && state.tower.abilities;
-    if (!inProgress) {
-      reset();
-      paused = false;
-      document.getElementById('pauseBtn').textContent = '⏸ 일시정지';
+    const inProgress = state && !state.gameOver && state.tower &&
+                       (state.round > 1 || (state.totalKills || 0) > 0 || (state.score || 0) > 0);
+    if (inProgress) {
+      // 이어하기 — paused 상태 유지, 게임 화면으로
+      renderPanel();
+      showScreen('game');
+    } else {
+      // 새 게임 — 먼저 캐릭터 선택 화면으로
+      buildCharacterList();
+      updateCharStartButton();
+      showScreen('character');
     }
-    // 이어하기: paused 상태 그대로, 사용자가 ▶ 재개 누르거나 Space로 풀 수 있음
-    renderPanel();
-    showScreen('game');
-  };
-  document.getElementById('newGameBtn').onclick = () => {
-    // 명시적 새 게임 — 항상 리셋
-    reset();
-    paused = false;
-    document.getElementById('pauseBtn').textContent = '⏸ 일시정지';
-    renderPanel();
-    showScreen('game');
   };
   document.getElementById('codexBtn').onclick = () => {
     buildCodex();
@@ -11787,7 +11834,28 @@
   document.getElementById('recordDetailBack').onclick = () => showScreen('records');
   document.getElementById('shopBtn').onclick = () => { buildShop(); showScreen('shop'); };
   document.getElementById('shopBack').onclick = () => showScreen('menu');
-  document.getElementById('characterBtn').onclick = () => { buildCharacterList(); showScreen('character'); };
+  // 캐릭터 선택 버튼 제거됨 — "새 게임" 클릭 시 자동으로 캐릭터 선택 화면으로
+  // 플로팅 시작 버튼 — 선택된 캐릭터로 새 게임 시작
+  function updateCharStartButton() {
+    const btn = document.getElementById('charStartGameBtn');
+    const sel = document.getElementById('char-floating-selected');
+    if (!btn || !sel) return;
+    const c = CHARACTERS[selectedCharacter] || CHARACTERS.standard;
+    const unlocked = isCharUnlocked(selectedCharacter);
+    sel.innerHTML = `선택: <span style="color:${c.color};font-weight:bold;">${c.name}</span>`;
+    btn.disabled = !unlocked;
+    btn.textContent = unlocked ? '▶ 게임 시작' : '🔒 잠긴 캐릭터';
+  }
+  document.getElementById('charStartGameBtn').onclick = () => {
+    if (!isCharUnlocked(selectedCharacter)) return;
+    SFX.click();
+    reset();
+    paused = false;
+    const pauseBtn = document.getElementById('pauseBtn');
+    if (pauseBtn) pauseBtn.textContent = '⏸ 일시정지';
+    renderPanel();
+    showScreen('game');
+  };
   document.getElementById('difficultyBtn').onclick = () => { buildDifficultyList(); showScreen('difficulty'); };
   document.getElementById('difficultyBack').onclick = () => showScreen('menu');
   document.getElementById('gachaBtn').onclick = () => { buildGacha(); showScreen('gacha'); };
@@ -12112,11 +12180,13 @@
       `;
       if (unlocked) {
         card.onclick = () => {
+          // 캐릭터 선택 — 표시만 갱신, 게임 시작은 플로팅 버튼으로
           selectedCharacter = id;
           META.selectedCharacter = id;
           saveMeta();
           SFX.click();
           buildCharacterList();
+          updateCharStartButton();
         };
       }
       list.appendChild(card);
