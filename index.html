@@ -468,28 +468,57 @@
   /* ===== 강화소 ===== */
   #shop { padding: 24px; align-items: stretch; }
   #shop-list {
-    max-width: 720px; width: 100%; margin: 0 auto;
+    max-width: 900px; width: 100%; margin: 0 auto;
     overflow-y: auto; flex: 1;
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 8px;
+    display: flex; flex-direction: column;
+    gap: 6px;
     padding-bottom: 24px;
+  }
+  /* 카테고리 헤더 */
+  .shop-category-header {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 14px 4px 6px;
+    margin-top: 8px;
+    border-bottom: 2px solid #2a2f3a;
+  }
+  .shop-category-header:first-child { margin-top: 0; }
+  .shop-category-header .cat-label {
+    font-size: 17px; font-weight: bold; letter-spacing: 1px;
+  }
+  .shop-category-header .cat-progress {
+    color: #6b7283; font-size: 12px;
+  }
+  /* 카테고리 내 카드 그리드 — 2열 (모바일은 1열) */
+  .shop-category-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+    gap: 8px;
+    margin-top: 4px;
   }
   .shop-card {
     background: #141822;
     border: 1px solid #2a2f3a;
     border-left: 4px solid #7ad7ff;
-    padding: 14px;
+    padding: 12px 14px;
     display: grid;
     grid-template-columns: 1fr auto;
     gap: 12px;
     align-items: center;
   }
-  .shop-card.maxed { border-left-color: #52e07a; opacity: 0.7; }
+  .shop-card.maxed { border-left-color: #52e07a; opacity: 0.75; }
   .shop-card .name { font-weight: bold; font-size: 14px; margin-bottom: 4px; }
-  .shop-card .desc { font-size: 12px; color: #c8cdd8; }
+  .shop-card .desc { font-size: 12px; color: #c8cdd8; line-height: 1.3; }
   .shop-card .lv {
     color: #9bb3ff; font-size: 11px; margin-top: 4px;
+  }
+  /* Lv 진행도 바 */
+  .shop-lv-bar {
+    height: 3px; background: #1a1f2b; margin-top: 5px; overflow: hidden;
+    border-radius: 2px;
+  }
+  .shop-lv-bar > i {
+    display: block; height: 100%; background: #7ad7ff;
+    transition: width 0.3s;
   }
   .shop-buy {
     background: #1f2735; color: #ffd479;
@@ -643,6 +672,7 @@
   <div class="subtitle">픽셀 디펜스 · 능력 조합 빌더</div>
   <button id="startBtn" class="menu-btn">▶ 스타트</button>
   <button id="newGameBtn" class="menu-btn" style="display:none">🔄 새 게임</button>
+  <button id="difficultyBtn" class="menu-btn" style="display:none">⚡ 난이도: 기본</button>
   <button id="characterBtn" class="menu-btn">👤 캐릭터 선택</button>
   <button id="shopBtn" class="menu-btn">⭐ 강화소</button>
   <button id="codexBtn" class="menu-btn">📖 도감</button>
@@ -667,6 +697,16 @@
     <button id="characterBack" class="codex-back">← 메뉴로</button>
   </div>
   <div id="character-list"></div>
+</div>
+
+<!-- ===== 난이도 선택 (승천) ===== -->
+<div id="difficultyScreen" class="screen">
+  <div class="codex-header">
+    <h2>난이도 선택</h2>
+    <button id="difficultyBack" class="codex-back">← 메뉴로</button>
+  </div>
+  <div class="stardust-bar" id="ascension-info">현재: <span id="ascension-current">기본</span></div>
+  <div id="difficulty-list"></div>
 </div>
 
 <!-- ===== 강화소 화면 ===== -->
@@ -764,7 +804,14 @@
 
   const ARENA_R = 290;
   const CORE_R  = 22;
-  const MAX_ALIVE = 80;         // 이 수치 넘으면 게임오버
+  const MAX_ALIVE_BASE = 80;    // 기본값 — 강화/승천으로 동적 변경
+  function getMaxAlive() {
+    let v = MAX_ALIVE_BASE;
+    if (typeof state !== 'undefined' && state && state.metaMods) v += (state.metaMods.maxAliveBonus || 0);
+    if (typeof state !== 'undefined' && state && state.asc) v += (state.asc.maxAliveAdd || 0);
+    return v;
+  }
+  const MAX_ALIVE = MAX_ALIVE_BASE;  // 레거시 참조용 (UI 등에서 사용)
   const MAX_SLOTS = 6;          // 액티브/패시브 각각 6칸씩
   function maxActiveSlots() {
     const metaBonus = (META.upgrades && META.upgrades.extraSlot) || 0;
@@ -1969,8 +2016,12 @@
       draw(ab) {
         if (ab.fxLife <= 0) return;
         const a = ab.fxLife / 30;
-        ctx.globalAlpha = a * 0.4;
-        ctx.fillStyle = '#dde0ff';
+        // 풀스크린 번쩍임 → 가장자리 비네팅 효과로 변경 (눈 부담 ↓)
+        ctx.globalAlpha = a * 0.18;
+        const grad = ctx.createRadialGradient(CX, CY, CX * 0.4, CX, CY, CX * 1.1);
+        grad.addColorStop(0, 'rgba(221, 224, 255, 0)');
+        grad.addColorStop(1, '#dde0ff');
+        ctx.fillStyle = grad;
         ctx.fillRect(0, 0, W, H);
         ctx.globalAlpha = 1;
       },
@@ -2653,11 +2704,12 @@
       draw(ab) {
         if (ab.fxLife <= 0) return;
         const a = ab.fxLife / 25;
-        ctx.globalAlpha = a * 0.45;
-        ctx.fillStyle = '#ffaaff';
-        ctx.fillRect(0, 0, W, H);
-        ctx.globalAlpha = a * 0.3;
-        ctx.fillStyle = '#ffffff';
+        // 풀스크린 번쩍임 → 가장자리 비네팅 (눈 부담 ↓)
+        ctx.globalAlpha = a * 0.22;
+        const grad = ctx.createRadialGradient(CX, CY, CX * 0.45, CX, CY, CX * 1.15);
+        grad.addColorStop(0, 'rgba(255, 170, 255, 0)');
+        grad.addColorStop(1, '#ffaaff');
+        ctx.fillStyle = grad;
         ctx.fillRect(0, 0, W, H);
         ctx.globalAlpha = 1;
       },
@@ -2701,9 +2753,9 @@
     },
     vampiric: {
       name: '흡혈', isPassive: true, baseCost: 65, color: '#cc6699',
-      desc: lv => `처치 시 추가 골드 +${lv*15}%`,
+      desc: lv => `처치 시 추가 골드 +${lv*8}%`,
       init() {},
-      tick(ab) { if (state.metaMods) state.metaMods.bonusGoldMul = ab.level * 0.15; },
+      tick(ab) { if (state.metaMods) state.metaMods.bonusGoldMul = ab.level * 0.08; },
     },
     fortune: {
       name: '행운', isPassive: true, baseCost: 60, color: '#ffcc66',
@@ -2722,9 +2774,9 @@
     },
     scholar: {
       name: '연구', isPassive: true, baseCost: 60, color: '#bb99cc',
-      desc: lv => `강화 비용 -${lv*8}%`,
+      desc: lv => `강화 비용 -${lv*4}%`,
       init() {},
-      tick(ab) { if (state.metaMods) state.metaMods.scholarMul = 1 - ab.level * 0.08; },
+      tick(ab) { if (state.metaMods) state.metaMods.scholarMul = 1 - ab.level * 0.04; },
     },
     ironwill: {
       name: '강철의지', isPassive: true, baseCost: 70, color: '#aaaaaa',
@@ -4803,8 +4855,11 @@
       },
       draw(ab) {
         if (ab.fxLife > 0) {
-          ctx.globalAlpha = (ab.fxLife / 18) * 0.35;
-          ctx.fillStyle = '#ff88ff';
+          ctx.globalAlpha = (ab.fxLife / 18) * 0.18;
+          const fxGrad = ctx.createRadialGradient(CX, CY, CX * 0.45, CX, CY, CX * 1.15);
+          fxGrad.addColorStop(0, 'rgba(255, 136, 255, 0)');
+          fxGrad.addColorStop(1, '#ff88ff');
+          ctx.fillStyle = fxGrad;
           ctx.fillRect(0, 0, W, H);
           ctx.globalAlpha = 1;
         }
@@ -5444,25 +5499,37 @@
   // 100라운드: 5라운드분 시간(150초) + 보스 3마리 + 잡몹 다수 (최종전).
   const MAX_ROUND = 100;
   function enemyHpFor(n) {
-    // R1~25 지수 성장, R26+ 선형(완만화) — R100을 4트리플 빌드로 클리어 가능하게
+    // R1~25 지수 성장, R26+ 선형 + 약한 2차 항 → 후반 가파르게
     if (n <= 25) return Math.ceil(3 * Math.pow(1.35, n - 1));
     const base = Math.ceil(3 * Math.pow(1.35, 24));
-    return Math.ceil(base * (1 + (n - 25) * 0.13));  // ↓ 0.18 → 0.13 (28% 완화)
+    const d = n - 25;
+    // 선형 0.18 + 2차 0.0035 — R50: 5.7x, R75: 10.4x, R100: 17.5x
+    return Math.ceil(base * (1 + d * 0.18 + d * d * 0.0035));
   }
   function roundConfig(n) {
-    const hp = enemyHpFor(n);
+    const baseHp = enemyHpFor(n);
     const isFinal = n === MAX_ROUND;
     const isBoss  = n > 0 && n % 5 === 0 && !isFinal;
+    // 승천 배수 적용 (state 가 있을 때만; 메뉴에서 호출 시엔 무시)
+    const asc = (typeof state !== 'undefined' && state && state.asc) ? state.asc : {
+      enemyHpMul: 1, bossHpMul: 1, enemySpeedMul: 1, enemyCountAdd: 0, roundTimeMul: 1
+    };
+    const mm = (typeof state !== 'undefined' && state && state.metaMods) ? state.metaMods : { roundTimeBonus: 0 };
+    const hp = Math.ceil(baseHp * asc.enemyHpMul);
+    const bossHp = Math.ceil(baseHp * (isFinal ? 13 : 10) * asc.bossHpMul);
+    const baseTime = isFinal ? 180 : 30;
+    const duration = Math.max(15, Math.floor((baseTime + (mm.roundTimeBonus || 0)) * asc.roundTimeMul)) * FPS;
+    const baseSpawn = isFinal ? 30 : (isBoss ? 10 : 20);
+    const spawnCount = baseSpawn + (isFinal ? 0 : (asc.enemyCountAdd || 0));
     return {
-      duration:      (isFinal ? 180 : 30) * FPS,         // 최종 3분
-      spawnCount:    isFinal ? 30 : (isBoss ? 10 : 20),  // 최종 30마리 (40→30)
+      duration,
+      spawnCount,
       spawnInterval: isFinal ? 5 * FPS : (isBoss ? 2 * FPS : 1 * FPS),
       enemyHp:       hp,
-      enemySpeed:    0.008 + (n - 1) * 0.0005,
-      // 골드: sqrt(hp) 기반
+      enemySpeed:    (0.008 + (n - 1) * 0.0005) * asc.enemySpeedMul,
       enemyGold:     Math.max(1, Math.ceil(Math.sqrt(hp) * 0.10)),
       isBoss, isFinal,
-      bossHp:        Math.ceil(hp * (isFinal ? 13 : 10)),  // 최종 보스 ×18→×13 (대폭 완화)
+      bossHp,
       bossGold:      Math.ceil(Math.sqrt(hp) * (isFinal ? 15 : 6)),
     };
   }
@@ -5493,6 +5560,7 @@
       cardCost: 0,           // 카드 모달 표시용 비용 (UI)
       cardCostPaid: 0,       // 실제 차감된 골드 (취소 시 환불용)
       cardCancelable: false, // 카드 모달이 취소 가능한지 (랜덤 구매로 열렸을 때만)
+      autoCardTimer: 0,      // 자동 카드 선택 카운트다운 (프레임)
       round: 1,
       roundFrame: 0,        // 현재 라운드 경과 프레임
       spawnPlan: [],        // 이번 라운드에 남은 스폰 시점
@@ -5507,11 +5575,15 @@
     const mods = getMetaMods();
     const char = CHARACTERS[selectedCharacter] || CHARACTERS.standard;
     const cp = char.passive;
-    state.gold = mods.startGold;
+    // 승천 난이도 적용
+    state.ascension = getSelectedAscension();
+    const asc = getAscensionMods(state.ascension);
+    state.asc = asc;
+    state.gold = Math.floor(mods.startGold * asc.startGoldMul);
     state.metaMods = {
       goldMul:    mods.goldMul,
       scoreMul:   mods.scoreMul,
-      enhanceMul: mods.enhanceMul * (cp.enhanceMul || 1),
+      enhanceMul: mods.enhanceMul * (cp.enhanceMul || 1) * asc.enhanceMul,
       bossDmgMul: mods.bossDmgMul * (cp.bossDmgMul || 1),
       dmgMul:     cp.dmgMul || 1,
       dmgBoost:   mods.dmgBoost || 0,
@@ -5521,9 +5593,16 @@
       levelUpFast: mods.levelUpFast || 0,
       slotMod:    cp.slotMod || 0,
       freeRolls:  mods.freeRolls,
+      // 신규 메타 강화
+      luckyChanceBonus:      mods.luckyChanceBonus || 0,
+      superLuckyChanceBonus: mods.superLuckyChanceBonus || 0,
+      comboPowerBonus:       mods.comboPowerBonus || 0,
+      maxAliveBonus:         mods.maxAliveBonus || 0,
+      startReroll:           mods.startReroll || 0,
+      roundTimeBonus:        mods.roundTimeBonus || 0,
     };
-    // 메타 강화: 시작 점수
-    if (mods.startScore) state.score = mods.startScore;
+    // 메타 강화: 시작 점수 (승천 페널티 적용)
+    if (mods.startScore) state.score = Math.floor(mods.startScore * asc.startScoreMul);
     state.character = selectedCharacter;
     // 캐릭터 시작 능력 부여
     for (const id of char.startAbilities) {
@@ -5594,25 +5673,95 @@
   function saveMeta() {
     try { localStorage.setItem(META_KEY, JSON.stringify(META)); } catch {}
   }
+
+  // ===== 승천(Ascension) 난이도 시스템 =====
+  // 0 = 기본, 1~15 = 승천 1~15
+  const MAX_ASCENSION = 15;
+  function getMaxAscension() { return META.maxAscension || 0; }
+  function getSelectedAscension() {
+    const a = META.selectedAscension || 0;
+    return Math.max(0, Math.min(getMaxAscension(), a));
+  }
+  function setSelectedAscension(a) {
+    META.selectedAscension = Math.max(0, Math.min(getMaxAscension(), a));
+    saveMeta();
+  }
+  // 승천 N 의 적용 효과 — 선형 + 2차 항으로 후반 가파르게 (목숨↓ HP↑)
+  function getAscensionMods(asc) {
+    return {
+      // 적 HP: 선형 +20% + 2차 +1%/단계² (Asc5: 2.25x / Asc10: 4x / Asc15: 6.25x)
+      enemyHpMul:    1 + 0.20 * asc + 0.01 * asc * asc,
+      // 보스 HP: 선형 +26% + 2차 +1.3%/단계² (Asc5: 2.6x / Asc10: 4.9x / Asc15: 7.8x)
+      bossHpMul:     1 + 0.26 * asc + 0.013 * asc * asc,
+      // 적 수용 한계: -3/단계 (Asc15: 80→35, "목숨" 절반 이상 줄어듦)
+      maxAliveAdd:  -3 * asc,
+      // 보상도 비례 상승
+      scoreReward:   1 + 0.10 * asc,            // Asc15 = +150%
+      stardustMul:   1 + 0.07 * asc,            // Asc15 = +105%
+      // 기존 호환용
+      enemySpeedMul: 1,
+      enemyCountAdd: 0,
+      roundTimeMul:  1,
+      enhanceMul:    1,
+      startGoldMul:  1,
+      startScoreMul: 1,
+    };
+  }
+  function ascensionLabel(asc) {
+    if (asc === 0) return '기본';
+    return `승천 ${asc}`;
+  }
+  function ascensionDescriptions() {
+    const descs = ['기본 — 표준 난이도'];
+    for (let a = 1; a <= MAX_ASCENSION; a++) {
+      const m = getAscensionMods(a);
+      const hp = Math.round((m.enemyHpMul - 1) * 100);
+      const bossHp = Math.round((m.bossHpMul - 1) * 100);
+      const maxAlive = 80 + m.maxAliveAdd;
+      const score = Math.round((m.scoreReward - 1) * 100);
+      const dust = Math.round((m.stardustMul - 1) * 100);
+      descs.push(`승천 ${a}: 적 HP +${hp}%, 보스 HP +${bossHp}%, 한계 ${maxAlive}마리 · 보상 점수+${score}%, ★+${dust}%`);
+    }
+    return descs;
+  }
   function metaLv(id) { return (META.upgrades && META.upgrades[id]) || 0; }
   function metaDust() { return META.stardust || 0; }
 
   // 강화소 항목 정의 (확장: 11종, 더 높은 max 레벨)
+  // 카테고리 정의 (UI 그룹화용)
+  const SHOP_CATEGORIES = [
+    { id: 'resource', label: '💰 자원',     color: '#ffd479' },
+    { id: 'combat',   label: '⚔️ 전투력',    color: '#ff8a98' },
+    { id: 'build',    label: '🎴 빌드 / 카드', color: '#b890ff' },
+    { id: 'survival', label: '🛡️ 생존 / 슬롯',  color: '#7ad7ff' },
+  ];
   const META_UPGRADES = [
-    { id: 'startGold',   name: '시작 골드',         desc: 'lv당 +25 골드',          maxLv: 15, cost: lv => 15 * (lv + 1),  apply: lv => 25 * lv },
-    { id: 'goldGain',    name: '골드 획득량',       desc: 'lv당 +5%',              maxLv: 8,  cost: lv => 60 * (lv + 1),  apply: lv => 0.05 * lv },
-    { id: 'freeRolls',   name: '시작 레벨업',       desc: 'lv당 무료 레벨업 +1',     maxLv: 5,  cost: lv => 250 * (lv + 1), apply: lv => lv },
-    { id: 'enhance',     name: '강화 비용 절감',    desc: 'lv당 -7%',              maxLv: 6,  cost: lv => 100 * (lv + 1), apply: lv => 0.07 * lv },
-    { id: 'extraSlot',   name: '액티브 슬롯 +1',    desc: 'lv당 +1칸 (max 8칸)',    maxLv: 2,  cost: lv => 1200 * (lv + 1), apply: lv => lv },
-    { id: 'bossDmg',     name: '보스 추가 데미지',  desc: 'lv당 +15%',             maxLv: 6,  cost: lv => 120 * (lv + 1), apply: lv => 0.15 * lv },
-    { id: 'killScore',   name: '처치 점수 보너스',  desc: 'lv당 +20%',             maxLv: 8,  cost: lv => 50 * (lv + 1),  apply: lv => 0.20 * lv },
-    // 신규 강화 4종
-    { id: 'startScore',  name: '시작 점수',         desc: 'lv당 +500 시작 점수',    maxLv: 5,  cost: lv => 30 * (lv + 1),  apply: lv => 500 * lv },
-    { id: 'levelUpFast', name: '빠른 성장',         desc: 'lv당 레벨업 처치 -1',    maxLv: 5,  cost: lv => 80 * (lv + 1),  apply: lv => lv },
-    { id: 'dmgBoost',    name: '데미지 부스트',     desc: 'lv당 +3% 모든 데미지',   maxLv: 5,  cost: lv => 150 * (lv + 1), apply: lv => 0.03 * lv },
-    { id: 'bossGold',    name: '보스 골드 보너스',  desc: 'lv당 +15% 보스 골드',    maxLv: 4,  cost: lv => 100 * (lv + 1), apply: lv => 0.15 * lv },
-    // 카드 리롤 — 영구 1회 강화. 카드 선택할 때마다 3장 다시 뽑기 1번 가능.
-    { id: 'reroll',      name: '카드 리롤',         desc: '카드 선택 시 3장 다시 뽑기 1회', maxLv: 1, cost: lv => 800, apply: lv => lv },
+    // === 💰 자원 ===
+    { id: 'startGold',   category: 'resource', name: '시작 골드',         desc: 'lv당 +25 골드',          maxLv: 15, cost: lv => 15 * (lv + 1),  apply: lv => 25 * lv },
+    { id: 'startScore',  category: 'resource', name: '시작 점수',         desc: 'lv당 +500 시작 점수',    maxLv: 5,  cost: lv => 30 * (lv + 1),  apply: lv => 500 * lv },
+    { id: 'goldGain',    category: 'resource', name: '골드 획득량',       desc: 'lv당 +4%',              maxLv: 8,  cost: lv => 60 * (lv + 1),  apply: lv => 0.04 * lv },
+    { id: 'bossGold',    category: 'resource', name: '보스 골드 보너스',  desc: 'lv당 +15% 보스 골드',    maxLv: 4,  cost: lv => 100 * (lv + 1), apply: lv => 0.15 * lv },
+    { id: 'killScore',   category: 'resource', name: '처치 점수 보너스',  desc: 'lv당 +20%',             maxLv: 8,  cost: lv => 50 * (lv + 1),  apply: lv => 0.20 * lv },
+
+    // === ⚔️ 전투력 ===
+    { id: 'dmgBoost',    category: 'combat',  name: '데미지 부스트',     desc: 'lv당 +3% 모든 데미지',   maxLv: 5,  cost: lv => 150 * (lv + 1), apply: lv => 0.03 * lv },
+    { id: 'bossDmg',     category: 'combat',  name: '보스 추가 데미지',  desc: 'lv당 +15%',             maxLv: 6,  cost: lv => 120 * (lv + 1), apply: lv => 0.15 * lv },
+    { id: 'comboPower',  category: 'combat',  name: '조합 위계 강화',     desc: 'lv당 조합 +3%, 트리플 +5%', maxLv: 10, cost: lv => 250 * (lv + 1), apply: lv => 0.03 * lv },
+
+    // === 🎴 빌드 / 카드 ===
+    { id: 'freeRolls',   category: 'build',   name: '시작 레벨업',       desc: 'lv당 무료 레벨업 +1',     maxLv: 5,  cost: lv => 250 * (lv + 1), apply: lv => lv },
+    { id: 'levelUpFast', category: 'build',   name: '빠른 성장',         desc: 'lv당 레벨업 처치 -1',    maxLv: 5,  cost: lv => 80 * (lv + 1),  apply: lv => lv },
+    { id: 'enhance',     category: 'build',   name: '강화 비용 절감',    desc: 'lv당 -5%',              maxLv: 6,  cost: lv => 100 * (lv + 1), apply: lv => 0.05 * lv },
+    { id: 'enhance2',    category: 'build',   name: '강화 비용 절감 II', desc: 'lv당 -3% (enhance와 누적)', maxLv: 8, cost: lv => 180 * (lv + 1), apply: lv => 0.03 * lv },
+    { id: 'reroll',      category: 'build',   name: '카드 리롤',         desc: '카드 선택 시 3장 다시 뽑기 1회', maxLv: 1, cost: lv => 800, apply: lv => lv },
+    { id: 'startReroll', category: 'build',   name: '시작 리롤',         desc: '게임 시작 시 무료 리롤 +1', maxLv: 3, cost: lv => 500 * (lv + 1), apply: lv => lv },
+    { id: 'luckyChance', category: 'build',   name: '🍀 럭키 카드 확률',  desc: 'lv당 +2%',                maxLv: 8, cost: lv => 200 * (lv + 1), apply: lv => 0.02 * lv },
+    { id: 'superLuckyChance', category: 'build', name: '💫 슈퍼럭키 확률', desc: 'lv당 +1%',              maxLv: 6, cost: lv => 400 * (lv + 1), apply: lv => 0.01 * lv },
+
+    // === 🛡️ 생존 / 슬롯 ===
+    { id: 'extraSlot',   category: 'survival', name: '액티브 슬롯 +1',    desc: 'lv당 +1칸 (최대 +2)',    maxLv: 2,  cost: lv => 1200 * (lv + 1), apply: lv => lv },
+    { id: 'maxAliveBonus', category: 'survival', name: '적 수용 한계',    desc: 'lv당 +5 마리',           maxLv: 6,  cost: lv => 350 * (lv + 1), apply: lv => 5 * lv },
+    { id: 'roundTime',   category: 'survival', name: '라운드 시간 보너스', desc: 'lv당 +1초',              maxLv: 5,  cost: lv => 300 * (lv + 1), apply: lv => lv },
   ];
   function getMetaMods() {
     const v = id => {
@@ -5623,7 +5772,7 @@
       startGold:   v('startGold'),
       goldMul:     1 + v('goldGain'),
       freeRolls:   metaLv('freeRolls'),
-      enhanceMul:  1 - v('enhance'),
+      enhanceMul:  (1 - v('enhance')) * (1 - v('enhance2')),  // 두 강화 누적
       extraSlot:   metaLv('extraSlot'),
       bossDmgMul:  1 + v('bossDmg'),
       scoreMul:    1 + v('killScore'),
@@ -5631,6 +5780,13 @@
       levelUpFast: v('levelUpFast'),
       dmgBoost:    v('dmgBoost'),
       bossGoldMul: v('bossGold'),
+      // 신규 강화 항목
+      luckyChanceBonus:      v('luckyChance'),         // 럭키 카드 추가 확률
+      superLuckyChanceBonus: v('superLuckyChance'),    // 슈퍼럭키 추가 확률
+      comboPowerBonus:       v('comboPower'),          // 조합/트리플 데미지 보너스
+      maxAliveBonus:         v('maxAliveBonus'),       // 적 수용 한계 추가
+      startReroll:           metaLv('startReroll'),    // 시작 시 추가 리롤
+      roundTimeBonus:        v('roundTime'),           // 라운드 시간 추가 (초)
     };
   }
   function buyUpgrade(id) {
@@ -5648,8 +5804,14 @@
     return true;
   }
   function earnStardust() {
-    const earned = Math.floor(state.score / 800) + state.round * 3 + (state.gameWin ? 300 : 0);
+    const ascMul = (state.asc && state.asc.stardustMul) || 1;
+    const earned = Math.floor((Math.floor(state.score / 800) + state.round * 3 + (state.gameWin ? 300 : 0)) * ascMul);
     META.stardust = (META.stardust || 0) + earned;
+    // 승천 클리어 시 다음 단계 해금
+    if (state.gameWin && state.ascension >= getMaxAscension() && state.ascension < MAX_ASCENSION) {
+      META.maxAscension = (META.maxAscension || 0) + 1;
+      state.newAscensionUnlocked = META.maxAscension;
+    }
     saveMeta();
     state.stardustEarned = earned;
   }
@@ -5780,6 +5942,11 @@
     { id: 'speedrun',  name: '스피드런',  desc: 'R10을 5분 이내', reward: 150, check: s => s.round >= 10 && s.totalTime < 60 * 60 * 5,
       unlocks: { ability: 'blackhole' } },
     { id: 'lowSlot',   name: '한방능력자',desc: '능력 1개로만 R8 도달', reward: 200, check: s => s.round >= 8 && s.tower.abilities.length <= 1 },
+    // === 승천(Ascension) 업적 ===
+    { id: 'asc1',      name: '✨ 첫 승천',     desc: '승천 1 클리어', reward: 150, check: s => !!s.gameWin && (s.ascension || 0) >= 1 },
+    { id: 'asc5',      name: '🌟 승천 마스터', desc: '승천 5 클리어', reward: 300, check: s => !!s.gameWin && (s.ascension || 0) >= 5 },
+    { id: 'asc10',     name: '💫 승천 챔피언', desc: '승천 10 클리어', reward: 600, check: s => !!s.gameWin && (s.ascension || 0) >= 10 },
+    { id: 'asc15',     name: '👑 승천 정복자', desc: '승천 15 클리어 (최종)', reward: 1500, check: s => !!s.gameWin && (s.ascension || 0) >= 15 },
   ];
 
   // ===== 반복 업적 — 게임 종료마다 조건 충족 시 매번 보상 =====
@@ -5793,6 +5960,9 @@
     { id: 'rKills2k',  name: '대학살 (반복)',   desc: '한 게임 2000처치마다 +80★',       reward: 80,  check: s => (s.totalKills || 0) >= 2000 },
     { id: 'rTriple',   name: '히든 사냥 (반복)', desc: '게임에 트리플 조합 형성마다 +50★', reward: 50,  check: s => s.tower.abilities.some(a => ABILITY_DEFS[a.id].isTriple) },
     { id: 'rBoss5',    name: '보스 사냥 (반복)', desc: '보스 5마리 처치마다 +40★',        reward: 40,  check: s => (s.bossKills || 0) >= 5 },
+    { id: 'rAscClear', name: '승천 도전 (반복)', desc: '승천 클리어마다 +(승천 단계 × 50)★', reward: 50, check: s => !!s.gameWin && (s.ascension || 0) > 0,
+      // 보상은 ascension 단계에 따라 동적 계산 (checkAchievements에서 처리)
+      dynamic: s => (s.ascension || 0) * 50 },
   ];
   function getUnlockedAchievements() {
     return new Set(META.achievements || []);
@@ -5816,7 +5986,9 @@
     for (const ach of REPEAT_ACHIEVEMENTS) {
       if (ach.check(state)) {
         META.repeatCounts[ach.id] = (META.repeatCounts[ach.id] || 0) + 1;
-        repeatEarned += ach.reward;
+        // dynamic 보상이 있으면 그 값 사용 (예: 승천 단계 × 50)
+        const reward = ach.dynamic ? ach.dynamic(state) : ach.reward;
+        repeatEarned += reward;
         repeatHits.push(ach);
       }
     }
@@ -5879,6 +6051,8 @@
       date: Date.now(),
       abilities: state.tower.abilities.map(a => ({ id: a.id, level: a.level })),
       win: !!state.gameWin,
+      ascension: state.ascension || 0,            // 신규 — 난이도 저장
+      character: state.character || 'standard',   // 캐릭터도 저장
     });
     records.sort((a, b) => b.score - a.score);
     records.length = Math.min(records.length, 10);
@@ -5963,9 +6137,10 @@
       if (mm.resilienceBonus) {
         mul *= (1 + mm.resilienceBonus);
       }
-      // 조합/트리플 위계 보너스 — 현재 tick 중인 능력 기준
-      if (state.currentAbilityTier === 'combo') mul *= 1.40;
-      else if (state.currentAbilityTier === 'triple') mul *= 2.20;
+      // 조합/트리플 위계 보너스 — 메타 강화 적용 (comboPower)
+      const cpb = mm.comboPowerBonus || 0;
+      if (state.currentAbilityTier === 'combo') mul *= (1.40 + cpb);
+      else if (state.currentAbilityTier === 'triple') mul *= (2.20 + cpb * 1.67);  // 트리플은 조합 보너스 ~1.67x
       dmg = dmg * mul;
     }
     // 보호막 적/보스: 처음 N회 데미지는 무효 (보호막 카운트만 줄임)
@@ -5999,7 +6174,7 @@
       const bossGold = e.isBoss ? (1 + (mm.bossGoldMul || 0)) : 1;
       state.gold += Math.ceil(e.goldDrop * mm.goldMul * (1 + (mm.bonusGoldMul || 0)) * bossGold);
       // 점수 + 행운 보너스 (확률)
-      state.score += Math.ceil(10 * state.round * mm.scoreMul);
+      state.score += Math.ceil(10 * state.round * mm.scoreMul * ((state.asc && state.asc.scoreReward) || 1));
       if (mm.fortuneChance && Math.random() < mm.fortuneChance) {
         const fortuneBonus = Math.ceil(40 * state.round * mm.scoreMul);
         state.score += fortuneBonus;
@@ -6100,8 +6275,31 @@
 
     const owned = new Set(state.tower.abilities.map(a => a.id));
     const allowed = getUnlockedAbilityIds();
-    const unownedActive  = BASIC_ABILITY_IDS.filter(id => !owned.has(id) && allowed.has(id) && !ABILITY_DEFS[id].isPassive);
-    const unownedPassive = BASIC_ABILITY_IDS.filter(id => !owned.has(id) && allowed.has(id) &&  ABILITY_DEFS[id].isPassive);
+    // 조합 카드의 재료들 (소진될 예정) 추출
+    const consumedByCombos = new Set();
+    for (const c of choices) {
+      if (c.action === 'combo' && c.parts) {
+        for (const part of c.parts) consumedByCombos.add(part);
+      }
+    }
+    // 조합 카드가 있을 때, 그 카드의 재료(=소진될 능력)와만 조합되는 능력은 제외.
+    // - 조합 파트너십이 전혀 없는 능력 (fury 등) → 통과 (조합과 무관한 일반 능력)
+    // - 트리플 조합 재료가 한 개라도 있으면 → 통과 (user 명시 요구)
+    // - 일반 조합 파트너 중 소진 안 될 파트너가 있으면 → 통과
+    // - 위 모두 해당 안 되면 → 제외 (소진될 재료와만 조합 가능 = 무의미)
+    function abilityHasFutureUse(id) {
+      const partners = COMBO_PARTNERS[id] || [];
+      if (partners.length === 0) return true;   // 조합 없는 능력은 일반 허용
+      for (const p of partners) {
+        if (p.tier === 3) return true;          // 트리플 재료 — 무조건 통과
+      }
+      for (const p of partners) {
+        if (!consumedByCombos.has(p.partner)) return true;  // 소진 안 될 파트너
+      }
+      return false;   // 모든 일반 파트너가 소진 예정 + 트리플 X
+    }
+    const unownedActive  = BASIC_ABILITY_IDS.filter(id => !owned.has(id) && allowed.has(id) && !ABILITY_DEFS[id].isPassive && abilityHasFutureUse(id));
+    const unownedPassive = BASIC_ABILITY_IDS.filter(id => !owned.has(id) && allowed.has(id) &&  ABILITY_DEFS[id].isPassive && abilityHasFutureUse(id));
 
     // 첫 카드 — 액티브만 3장 강제
     if (forceActiveOnly) {
@@ -6149,19 +6347,22 @@
         choices.push({ action: 'new', id, newLevel: 1 });
       } else if (canLv) {
         const p = lvPool[Math.floor(Math.random() * lvPool.length)];
-        // 럭키 카드 확률 roll (강화 카드만)
+        // 럭키 카드 확률 roll (강화 카드만) — 메타 강화 보너스 반영
         const maxLv = maxLvFor(p.id);
-        const remainingLv = maxLv - p.level;   // 올릴 수 있는 최대 레벨
+        const remainingLv = maxLv - p.level;
+        const mm = state.metaMods || {};
+        const luckyP = 0.12 + (mm.luckyChanceBonus || 0);            // 기본 12% + 강화
+        const superLuckyP = 0.03 + (mm.superLuckyChanceBonus || 0);  // 기본 3% + 강화
         let lucky = 0;
-        if (remainingLv >= 3 && Math.random() < 0.03) lucky = 2;       // SUPER LUCKY (+3) 3%
-        else if (remainingLv >= 2 && Math.random() < 0.12) lucky = 1;  // LUCKY (+2) 12%
-        const bonusLevels = lucky;  // 추가 레벨 (0/1/2 = +1/+2/+3 총)
+        if (remainingLv >= 3 && Math.random() < superLuckyP) lucky = 2;
+        else if (remainingLv >= 2 && Math.random() < luckyP) lucky = 1;
+        const bonusLevels = lucky;
         choices.push({
           action: 'level',
           id: p.id,
           level: p.level,
           newLevel: p.level + 1 + bonusLevels,
-          lucky,   // 0: normal, 1: LUCKY, 2: SUPER LUCKY
+          lucky,
         });
       } else break;
     }
@@ -6187,10 +6388,14 @@
     const fast = (state.metaMods && state.metaMods.levelUpFast) || 0;
     state.killsToNextLevel = Math.max(3, Math.floor((8 + state.playerLevel * 4) * mul - fast));
     const choices = generateLevelUpChoices();
-    // 항상 3장 (능력 카드 부족 시 보너스 카드로 채움)
     state.levelUpChoices = choices;
-    state.rerollAvailable = metaLv('reroll') > 0;  // 강화소에서 구매 시 카드마다 1회 리롤
+    state.rerollAvailable = metaLv('reroll') > 0;
+    // 모든 카드가 보너스(점수/스타더스트)면 3초 자동 선택 타이머 시작
+    state.autoCardTimer = isAllBonusChoices(choices) ? 3 * FPS : 0;
     SFX.levelup();
+  }
+  function isAllBonusChoices(choices) {
+    return choices.length > 0 && choices.every(c => c.action === 'bonusScore' || c.action === 'bonusStardust');
   }
   function rerollCards() {
     if (!state.levelUpChoices) return;
@@ -6199,6 +6404,8 @@
     if (choices.length === 0) return;
     state.levelUpChoices = choices;
     state.rerollAvailable = false;
+    // 리롤 후에도 전부 보너스면 타이머 재시작 (사용자가 리롤로 일반 카드 시도했음 → 한 번 더 기다림)
+    state.autoCardTimer = isAllBonusChoices(choices) ? 3 * FPS : 0;
     SFX.click();
   }
   function applyLevelUpChoice(idx) {
@@ -6211,6 +6418,7 @@
         state.cardCostPaid = 0;
         state.cardCancelable = false;
         state.rerollAvailable = false;
+        state.autoCardTimer = 0;
         SFX.click();
       }
       return;
@@ -6291,6 +6499,7 @@
     state.cardCostPaid = 0;
     state.cardCancelable = false;
     state.rerollAvailable = false;
+    state.autoCardTimer = 0;
     SFX.click();
     renderPanel();
   }
@@ -6499,6 +6708,16 @@
 
   // ===== 업데이트 =====
   function update() {
+    // 자동 카드 선택 타이머 (모달 떠있고 일시정지 아닌 동안만 카운트)
+    if (state.levelUpChoices && !paused && state.autoCardTimer > 0) {
+      state.autoCardTimer--;
+      if (state.autoCardTimer <= 0) {
+        // 스타더스트 카드 우선 자동 선택, 없으면 첫 보너스 카드
+        const idx = state.levelUpChoices.findIndex(c => c.action === 'bonusStardust');
+        applyLevelUpChoice(idx >= 0 ? idx : 0);
+        return;
+      }
+    }
     if (paused || state.gameOver || state.levelUpChoices) return;
     state.t++;
 
@@ -6546,8 +6765,9 @@
     }
 
     // 게임오버 체크 (적 누적)
-    if (state.enemies.length >= MAX_ALIVE) {
-      endGame(`적이 ${MAX_ALIVE}마리를 넘김`, false);
+    const maxAlive = getMaxAlive();
+    if (state.enemies.length >= maxAlive) {
+      endGame(`적이 ${maxAlive}마리를 넘김`, false);
     }
 
     // 적 이동 + 특수 행동 처리
@@ -6740,8 +6960,17 @@
     BG.meteors = BG.meteors.filter(m => m.life > 0 && m.x > -60 && m.y < H + 60);
   }
   function drawBackground() {
-    // 어두운 우주 베이스
-    ctx.fillStyle = '#06081a';
+    // 어두운 우주 베이스 — 승천 단계에 따라 살짝 어두워지고 붉어짐
+    const asc = (state && state.ascension) || 0;
+    if (asc > 0) {
+      // 단계별 베이스 컬러: 청색 → 자색 → 적색 (은은하게)
+      const r = Math.min(28, 6 + asc * 1.5);
+      const g = Math.max(4, 8 - asc * 0.3);
+      const b = Math.max(8, 26 - asc * 1.2);
+      ctx.fillStyle = `rgb(${r|0}, ${g|0}, ${b|0})`;
+    } else {
+      ctx.fillStyle = '#06081a';
+    }
     ctx.fillRect(0, 0, W, H);
     // 성운 — 광역 그라데이션
     for (const n of BG.nebulae) {
@@ -6797,6 +7026,37 @@
       ctx.fillStyle = '#ffffff'; ctx.fillRect(m.x - 1, m.y - 1, 3, 3);
     }
     ctx.globalAlpha = 1;
+    // 승천 비네팅 — 가장자리에 단계별로 진해지는 색상 (밤에 부담 적게)
+    if (asc > 0) {
+      const intensity = Math.min(0.55, 0.06 + asc * 0.032);   // Asc1: 0.09, Asc15: 0.54
+      // 컬러: 1~5 자색, 6~10 자홍, 11~15 진홍
+      let color;
+      if (asc <= 5) color = `rgba(140, 60, 180, ${intensity})`;
+      else if (asc <= 10) color = `rgba(200, 50, 130, ${intensity})`;
+      else color = `rgba(220, 30, 60, ${intensity})`;
+      const grad = ctx.createRadialGradient(CX, CY, CX * 0.55, CX, CY, CX * 1.1);
+      grad.addColorStop(0, 'rgba(0,0,0,0)');
+      grad.addColorStop(1, color);
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, W, H);
+
+      // 가장자리 아주 옅은 펄스 (천천히 — 시각 부담 X)
+      const pulse = 0.4 + 0.6 * (Math.sin(state.t * 0.018) * 0.5 + 0.5);
+      ctx.strokeStyle = color.replace(/[\d.]+\)/, (intensity * 0.6 * pulse).toFixed(2) + ')');
+      ctx.lineWidth = 2;
+      ctx.strokeRect(2, 2, W - 4, H - 4);
+
+      // 우측 상단 작은 배지 (캔버스 안)
+      ctx.save();
+      ctx.font = 'bold 14px Jua, sans-serif';
+      ctx.textAlign = 'right';
+      ctx.fillStyle = asc >= 10 ? '#ff80ff' : '#ffd479';
+      ctx.shadowColor = asc >= 10 ? '#ff66bb' : '#ff8060';
+      ctx.shadowBlur = 6;
+      ctx.fillText(`⚡ 승천 ${asc}`, W - 12, 22);
+      ctx.shadowBlur = 0;
+      ctx.restore();
+    }
   }
 
   // ===== 렌더 =====
@@ -7087,8 +7347,12 @@
   function drawComboFlash() {
     if (state.comboFlash <= 0) return;
     const a = state.comboFlash / 30;
-    ctx.fillStyle = state.comboFlashColor;
-    ctx.globalAlpha = a * 0.28;  // 절반 이하로 — 화면 안 가림
+    // 풀스크린 번쩍임 → 가장자리 비네팅으로 변경 (밤에 눈 부담 ↓)
+    const grad = ctx.createRadialGradient(CX, CY, CX * 0.5, CX, CY, CX * 1.2);
+    grad.addColorStop(0, 'rgba(0, 0, 0, 0)');
+    grad.addColorStop(1, state.comboFlashColor);
+    ctx.fillStyle = grad;
+    ctx.globalAlpha = a * 0.30;
     ctx.fillRect(0, 0, W, H);
     ctx.globalAlpha = 1;
   }
@@ -7122,6 +7386,11 @@
         ctx.fillStyle = '#ffd479'; ctx.font='14px Jua, sans-serif';
         ctx.fillText(`+${state.stardustEarned} ★ 스타더스트 획득`, CX, lineY);
         lineY += 18;
+      }
+      if (state.newAscensionUnlocked) {
+        ctx.fillStyle = '#ff80ff'; ctx.font='bold 16px Jua, sans-serif';
+        ctx.fillText(`✨ 승천 ${state.newAscensionUnlocked} 해금!`, CX, lineY);
+        lineY += 20;
       }
       if (state.achievementsEarned && state.achievementsEarned.length > 0) {
         ctx.fillStyle = '#52e07a'; ctx.font='12px Jua, sans-serif';
@@ -7659,6 +7928,21 @@
       drawModalBtn(bx, btnY, bw, bh, '취소 [ESC]', '#1a1f2b', '#3a4256');
       state._cancelBtn = { x: bx, y: btnY, w: bw, h: bh };
     }
+
+    // 자동 카드 선택 카운트다운 (모든 카드 보너스일 때만)
+    if (state.autoCardTimer > 0) {
+      const sec = Math.ceil(state.autoCardTimer / FPS);
+      const countY = btnY + bh + 22;
+      ctx.font = '12px Jua, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillStyle = '#9aa3b3';
+      ctx.fillText('스타더스트 자동 선택', CX, countY);
+      // 카운트다운 숫자 — 작게 강조
+      ctx.font = 'bold 18px Jua, sans-serif';
+      ctx.fillStyle = sec === 1 ? '#ff8898' : (sec === 2 ? '#ffd479' : '#88dda8');
+      ctx.fillText(`${sec}S`, CX, countY + 22);
+    }
+
     ctx.textAlign = 'start';
   }
 
@@ -7684,17 +7968,20 @@
   elRandom.onclick = actRandomAcquire;
 
   function renderStats() {
-    $('s-round').textContent  = state.round;
+    // 라운드 + 승천 뱃지
+    const ascSuffix = (state.ascension && state.ascension > 0) ? ` ⚡${state.ascension}` : '';
+    $('s-round').textContent  = state.round + ascSuffix;
     const cfg = roundConfig(state.round);
     const remain = Math.max(0, cfg.duration - state.roundFrame) / FPS;
     $('s-time').textContent   = remain.toFixed(1) + 's';
     $('s-timebar').style.width = (100 * (cfg.duration - state.roundFrame) / cfg.duration) + '%';
     $('s-gold').textContent   = state.gold;
     $('s-score').textContent  = state.score.toLocaleString();
-    $('s-enemies').textContent = `${state.enemies.length} / ${MAX_ALIVE}`;
+    const _maxA = getMaxAlive();
+    $('s-enemies').textContent = `${state.enemies.length} / ${_maxA}`;
     const pl = $('s-plevel');
     if (pl) pl.textContent = `Lv${state.playerLevel} (${state.kills}/${state.killsToNextLevel} kills)`;
-    const pct = state.enemies.length / MAX_ALIVE;
+    const pct = state.enemies.length / _maxA;
     const bar = $('s-enemybar');
     bar.style.width = (pct*100) + '%';
     bar.parentElement.classList.toggle('danger', pct > 0.75);
@@ -8145,6 +8432,7 @@
   const shopEl = document.getElementById('shop');
   const characterScreenEl = document.getElementById('characterScreen');
   const achievementsScreenEl = document.getElementById('achievementsScreen');
+  const difficultyScreenEl = document.getElementById('difficultyScreen');
   const gameEl = document.getElementById('wrap');
   function showScreen(name) {
     currentScreen = name;
@@ -8155,6 +8443,7 @@
     shopEl.classList.toggle('show', name === 'shop');
     characterScreenEl.classList.toggle('show', name === 'character');
     achievementsScreenEl.classList.toggle('show', name === 'achievements');
+    difficultyScreenEl.classList.toggle('show', name === 'difficulty');
     gameEl.style.display = name === 'game' ? 'flex' : 'none';
     if (name === 'game') {
       const usePortrait = window.innerHeight > window.innerWidth * 1.05;
@@ -8172,6 +8461,16 @@
       } else {
         startBtn.textContent = '▶ 스타트';
         newGameBtn.style.display = 'none';
+      }
+      // 승천 해금된 경우 난이도 버튼 표시
+      const diffBtn = document.getElementById('difficultyBtn');
+      if (diffBtn) {
+        if (getMaxAscension() > 0) {
+          diffBtn.style.display = '';
+          diffBtn.textContent = `⚡ 난이도: ${ascensionLabel(getSelectedAscension())}`;
+        } else {
+          diffBtn.style.display = 'none';
+        }
       }
     }
   }
@@ -8210,6 +8509,39 @@
   document.getElementById('shopBtn').onclick = () => { buildShop(); showScreen('shop'); };
   document.getElementById('shopBack').onclick = () => showScreen('menu');
   document.getElementById('characterBtn').onclick = () => { buildCharacterList(); showScreen('character'); };
+  document.getElementById('difficultyBtn').onclick = () => { buildDifficultyList(); showScreen('difficulty'); };
+  document.getElementById('difficultyBack').onclick = () => showScreen('menu');
+
+  function buildDifficultyList() {
+    const list = document.getElementById('difficulty-list');
+    const cur = document.getElementById('ascension-current');
+    list.innerHTML = '';
+    const maxA = getMaxAscension();
+    const sel = getSelectedAscension();
+    cur.textContent = ascensionLabel(sel);
+    const descs = ascensionDescriptions();
+    for (let a = 0; a <= MAX_ASCENSION; a++) {
+      const card = document.createElement('div');
+      const unlocked = a <= maxA;
+      const isSel = a === sel;
+      card.className = 'char-card' + (isSel ? ' selected' : '') + (!unlocked ? ' locked' : '');
+      card.style.cursor = unlocked ? 'pointer' : 'not-allowed';
+      const tag = isSel ? `<div class="char-selected-tag">✓ 선택됨</div>` : '';
+      const lockTag = !unlocked ? `<div class="char-lock">🔒 이전 단계 R100 클리어로 해금</div>` : '';
+      card.innerHTML = `
+        <div class="char-name" style="color:${a === 0 ? '#7ad7ff' : (a >= 10 ? '#ff66bb' : '#ffd479')}">${ascensionLabel(a)}</div>
+        <div class="char-desc">${descs[a] || ''}</div>
+        ${tag}${lockTag}
+      `;
+      if (unlocked) {
+        card.onclick = () => {
+          setSelectedAscension(a);
+          buildDifficultyList();
+        };
+      }
+      list.appendChild(card);
+    }
+  }
   document.getElementById('characterBack').onclick = () => showScreen('menu');
   document.getElementById('achievementsBtn').onclick = () => { buildAchievements(); showScreen('achievements'); };
   document.getElementById('achievementsBack').onclick = () => showScreen('menu');
@@ -8367,29 +8699,54 @@
     document.getElementById('stardust-count').textContent = (META.stardust || 0).toLocaleString();
     const list = document.getElementById('shop-list');
     list.innerHTML = '';
-    for (const up of META_UPGRADES) {
-      const cur = metaLv(up.id);
-      const maxed = cur >= up.maxLv;
-      const cost = maxed ? null : up.cost(cur);
-      const card = document.createElement('div');
-      card.className = 'shop-card' + (maxed ? ' maxed' : '');
-      let effectText = '';
-      if (cur > 0 && up.apply) {
-        const v = up.apply(cur);
-        effectText = ' · 현재 효과: ' + (v >= 1 ? '+' + Math.round(v) : '+' + Math.round(v * 100) + '%');
-      }
-      card.innerHTML = `
-        <div>
-          <div class="name">${up.name}</div>
-          <div class="desc">${up.desc}</div>
-          <div class="lv">Lv ${cur} / ${up.maxLv}${effectText}</div>
-        </div>
-        <button class="shop-buy${maxed ? ' maxed' : ''}" data-id="${up.id}" ${maxed || (META.stardust || 0) < cost ? 'disabled' : ''}>
-          ${maxed ? 'MAX' : cost + ' ★'}
-        </button>
+
+    for (const cat of SHOP_CATEGORIES) {
+      const inCat = META_UPGRADES.filter(u => u.category === cat.id);
+      if (inCat.length === 0) continue;
+
+      // 카테고리 헤더
+      const header = document.createElement('div');
+      header.className = 'shop-category-header';
+      const maxedCount = inCat.filter(u => metaLv(u.id) >= u.maxLv).length;
+      header.innerHTML = `
+        <span class="cat-label" style="color:${cat.color}">${cat.label}</span>
+        <span class="cat-progress">${maxedCount}/${inCat.length} MAX</span>
       `;
-      list.appendChild(card);
+      list.appendChild(header);
+
+      // 카테고리 내 항목들
+      const grid = document.createElement('div');
+      grid.className = 'shop-category-grid';
+      for (const up of inCat) {
+        const cur = metaLv(up.id);
+        const maxed = cur >= up.maxLv;
+        const cost = maxed ? null : up.cost(cur);
+        const card = document.createElement('div');
+        card.className = 'shop-card' + (maxed ? ' maxed' : '');
+        card.style.borderLeftColor = cat.color;
+        let effectText = '';
+        if (cur > 0 && up.apply) {
+          const v = up.apply(cur);
+          effectText = ' · 현재 효과: ' + (v >= 1 ? '+' + Math.round(v) : '+' + Math.round(v * 100) + '%');
+        }
+        // Lv 진행도 바
+        const pct = Math.min(100, (cur / up.maxLv) * 100);
+        card.innerHTML = `
+          <div>
+            <div class="name">${up.name}</div>
+            <div class="desc">${up.desc}</div>
+            <div class="lv">Lv ${cur} / ${up.maxLv}${effectText}</div>
+            <div class="shop-lv-bar"><i style="width:${pct}%; background:${cat.color}"></i></div>
+          </div>
+          <button class="shop-buy${maxed ? ' maxed' : ''}" data-id="${up.id}" ${maxed || (META.stardust || 0) < cost ? 'disabled' : ''}>
+            ${maxed ? 'MAX' : cost + ' ★'}
+          </button>
+        `;
+        grid.appendChild(card);
+      }
+      list.appendChild(grid);
     }
+
     list.querySelectorAll('.shop-buy').forEach(btn => {
       btn.onclick = () => {
         if (buyUpgrade(btn.dataset.id)) buildShop();
@@ -8502,10 +8859,13 @@
       const d = new Date(rec.date);
       const dateStr = `${String(d.getFullYear()).slice(2)}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
       const roundLabel = rec.win ? '🏆 100라운드 클리어' : `도달 R${rec.round}`;
+      const ascBadge = (rec.ascension && rec.ascension > 0)
+        ? `<span style="background:${rec.ascension >= 10 ? '#ff66bb' : '#ffd479'};color:#0b0d12;padding:1px 6px;border-radius:3px;font-size:11px;font-weight:bold;margin-right:6px">⚡ 승천 ${rec.ascension}</span>`
+        : '';
       card.innerHTML = `
         <div class="rank">${i + 1}</div>
         <div class="info">
-          <div class="score">${rec.score.toLocaleString()} 점</div>
+          <div class="score">${ascBadge}${rec.score.toLocaleString()} 점</div>
           <div class="meta">${roundLabel} · ${dateStr}</div>
         </div>
         <div class="arrow">→</div>
@@ -8528,9 +8888,17 @@
     const header = document.createElement('div');
     header.id = 'record-detail-header';
     if (rec.win) header.className = 'win';
+    const ascLine = (rec.ascension && rec.ascension > 0)
+      ? `<div class="sub" style="color:${rec.ascension >= 10 ? '#ff80ff' : '#ffd479'};font-weight:bold;margin-top:4px">⚡ ${ascensionLabel(rec.ascension)}</div>`
+      : '<div class="sub" style="color:#7ad7ff;margin-top:4px">기본 난이도</div>';
+    const charLine = rec.character && CHARACTERS[rec.character]
+      ? `<div class="sub" style="color:${CHARACTERS[rec.character].color};margin-top:2px">👤 ${CHARACTERS[rec.character].name}</div>`
+      : '';
     header.innerHTML = `
       <div class="big-score">${rec.score.toLocaleString()} 점</div>
       <div class="sub">${rec.win ? '🏆 100라운드 클리어' : `도달 라운드: ${rec.round}`}</div>
+      ${ascLine}
+      ${charLine}
       <div class="when">${fullDate}</div>
     `;
     content.appendChild(header);
