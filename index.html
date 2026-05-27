@@ -6420,15 +6420,15 @@
     // 사쿠라의 벚꽃검 — 부채꼴 광역 검술 (전방 회전)
     sakuraSlash: {
       name: '벚꽃검', baseCost: 80, color: '#ff88bb', isGachaUnique: true,
-      desc: lv => `[SR] 회전 부채꼴 베기 · DMG ${8+lv*5} · 범위 ${130+lv*15}`,
-      init(ab) { ab.cooldown = 50; ab.fx = 0; ab.ang = 0; ab.petals = []; },
+      desc: lv => `[SR] 회전 부채꼴 베기 · DMG ${14+lv*8} · 범위 ${160+lv*18}`,
+      init(ab) { ab.cooldown = 40; ab.fx = 0; ab.ang = 0; ab.petals = []; },
       tick(ab) {
         if (ab.fx > 0) ab.fx--;
         for (const p of ab.petals) { p.x += p.vx; p.y += p.vy; p.life--; p.rot += p.spin; }
         ab.petals = ab.petals.filter(p => p.life > 0);
         if (--ab.cooldown > 0) return;
-        const dmg = 8 + ab.level * 5;
-        const range = 130 + ab.level * 15;
+        const dmg = 14 + ab.level * 8;
+        const range = 160 + ab.level * 18;
         const halfArc = Math.PI / 3; // 120도 부채꼴
         const swingAng = ab.ang = (ab.ang + Math.PI * 0.42) % (Math.PI * 2);
         for (const e of state.enemies) {
@@ -6456,12 +6456,12 @@
           });
         }
         ab.fx = 14;
-        ab.cooldown = Math.max(28, 65 - ab.level * 3);
+        ab.cooldown = Math.max(20, 55 - ab.level * 3);
       },
       draw(ab) {
         if (ab.fx > 0) {
           const t = 1 - ab.fx / 14;
-          const range = 130 + ab.level * 15;
+          const range = 160 + ab.level * 18;
           const halfArc = Math.PI / 3;
           ctx.globalAlpha = ab.fx / 14 * 0.6;
           ctx.fillStyle = '#ff88bb';
@@ -6487,14 +6487,14 @@
     // 루나의 월광탄 — 관통 유도 초승달
     moonShot: {
       name: '월광탄', baseCost: 80, color: '#aaccff', isGachaUnique: true,
-      desc: lv => `[SR] 관통 유도탄 · DMG ${9+lv*5} · ${3+lv}회 관통`,
-      init(ab) { ab.cooldown = 60; ab.bullets = []; ab.bursts = []; },
+      desc: lv => `[SR] 관통 유도탄 · DMG ${14+lv*8} · ${4+lv}회 관통 + 광역`,
+      init(ab) { ab.cooldown = 48; ab.bullets = []; ab.bursts = []; },
       tick(ab) {
         for (const b of ab.bursts) b.life--;
         ab.bursts = ab.bursts.filter(b => b.life > 0);
-        const dmg = 9 + ab.level * 5;
-        const pierceMax = 3 + ab.level;
-        const burstR = 30 + ab.level * 3;
+        const dmg = 14 + ab.level * 8;
+        const pierceMax = 4 + ab.level;
+        const burstR = 42 + ab.level * 5;
         for (const b of ab.bullets) {
           b.life--;
           if (!b.target || b.target.hp <= 0) {
@@ -6523,9 +6523,19 @@
             if (e.hp <= 0 || b.hit.has(e)) continue;
             const [ex, ey] = enemyXY(e);
             if ((b.x-ex)*(b.x-ex) + (b.y-ey)*(b.y-ey) < (e.size+6)*(e.size+6)) {
+              // 직격
               damageEnemy(e, dmg);
-              spawnParticles(ex, ey, '#aaccff', 4);
-              ab.bursts.push({x: ex, y: ey, r: burstR, life: 12});
+              // 광역 폭발 — 주변 적도 60% 데미지
+              for (const e2 of state.enemies) {
+                if (e2.hp <= 0 || e2 === e) continue;
+                const [ex2, ey2] = enemyXY(e2);
+                if ((ex-ex2)*(ex-ex2) + (ey-ey2)*(ey-ey2) < burstR*burstR) {
+                  damageEnemy(e2, dmg * 0.6);
+                  spawnParticles(ex2, ey2, '#aaccff', 2);
+                }
+              }
+              spawnParticles(ex, ey, '#aaccff', 5);
+              ab.bursts.push({x: ex, y: ey, r: burstR, life: 14});
               b.hit.add(e);
               b.pierces++;
               if (b.pierces >= pierceMax) b.life = 0;
@@ -6539,10 +6549,10 @@
         const ang = Math.random() * Math.PI * 2;
         ab.bullets.push({
           x: CX, y: CY,
-          vx: Math.cos(ang) * 3, vy: Math.sin(ang) * 3,
+          vx: Math.cos(ang) * 3.5, vy: Math.sin(ang) * 3.5,
           life: 240, target: null, hit: new Set(), pierces: 0,
         });
-        ab.cooldown = Math.max(35, 70 - ab.level * 3);
+        ab.cooldown = Math.max(25, 55 - ab.level * 3);
       },
       draw(ab) {
         for (const b of ab.bullets) {
@@ -6572,11 +6582,11 @@
     // 아리아의 별의노래 — 광역 + 별 발사
     starSong: {
       name: '별의노래', baseCost: 95, color: '#ffe070', isGachaUnique: true,
-      desc: lv => `[SSR] 광역 펄스 + 별 ${6+lv} · DMG ${12+lv*8} / ${6+lv*4}`,
-      init(ab) { ab.cooldown = 70; ab.fx = 0; ab.stars = []; },
+      desc: lv => `[SSR] 광역 펄스 + 별 ${8+lv*2} · DMG ${20+lv*13} / ${10+lv*7}`,
+      init(ab) { ab.cooldown = 55; ab.fx = 0; ab.stars = []; },
       tick(ab) {
         if (ab.fx > 0) ab.fx--;
-        const starDmg = 6 + ab.level * 4;
+        const starDmg = 10 + ab.level * 7;
         for (const s of ab.stars) {
           s.x += s.vx; s.y += s.vy; s.rot += 0.2; s.life--;
           for (const e of state.enemies) {
@@ -6592,8 +6602,8 @@
         }
         ab.stars = ab.stars.filter(s => s.life > 0);
         if (--ab.cooldown > 0) return;
-        const pulseR = 150 + ab.level * 15;
-        const pulseDmg = 12 + ab.level * 8;
+        const pulseR = 180 + ab.level * 18;
+        const pulseDmg = 20 + ab.level * 13;
         // 광역 펄스
         for (const e of state.enemies) {
           if (e.hp <= 0) continue;
@@ -6603,22 +6613,22 @@
             spawnParticles(ex, ey, '#ffe070', 3);
           }
         }
-        // 별 발사
-        const n = 6 + ab.level;
+        // 별 발사 — 더 많고 멀리 + 별이 한 적당 여러 번 타격 가능
+        const n = 8 + ab.level * 2;
         for (let i = 0; i < n; i++) {
           const a = (i / n) * Math.PI * 2;
           ab.stars.push({
             x: CX, y: CY,
-            vx: Math.cos(a) * 4, vy: Math.sin(a) * 4,
-            life: 90, rot: 0, hit: new Set(),
+            vx: Math.cos(a) * 4.5, vy: Math.sin(a) * 4.5,
+            life: 110, rot: 0, hit: new Set(),
           });
         }
         ab.fx = 18;
-        ab.cooldown = Math.max(50, 95 - ab.level * 4);
+        ab.cooldown = Math.max(40, 80 - ab.level * 4);
       },
       draw(ab) {
         if (ab.fx > 0) {
-          const pulseR = 150 + ab.level * 15;
+          const pulseR = 180 + ab.level * 18;
           const t = 1 - ab.fx / 18;
           ctx.globalAlpha = ab.fx / 18;
           ctx.strokeStyle = '#ffe070'; ctx.lineWidth = 5;
@@ -6650,14 +6660,14 @@
     // 미사키의 시공나비 — 궤도형 유도 나비
     timeButterfly: {
       name: '시공나비', baseCost: 95, color: '#cc88ff', isGachaUnique: true,
-      desc: lv => `[SSR] 유도 나비 ${3+lv}마리 · DMG ${10+lv*6} · 슬로우+정지`,
+      desc: lv => `[SSR] 유도 나비 ${4+lv}마리 · DMG ${18+lv*10} · 강 슬로우 + 정지`,
       init(ab) { ab.butterflies = []; ab.spawnCD = 0; },
       tick(ab) {
-        const dmg = 10 + ab.level * 6;
-        const slowDur = 80 + ab.level * 10;
-        const stopDur = 12 + ab.level * 2;
-        const targetCount = 3 + ab.level;
-        // 부족하면 생성
+        const dmg = 18 + ab.level * 10;
+        const slowDur = 110 + ab.level * 15;
+        const stopDur = 20 + ab.level * 3;
+        const targetCount = 4 + ab.level;
+        // 부족하면 생성 — 더 빨리
         if (ab.butterflies.length < targetCount && --ab.spawnCD <= 0) {
           const ang = Math.random() * Math.PI * 2;
           ab.butterflies.push({
@@ -6667,7 +6677,7 @@
             phase: Math.random() * Math.PI * 2,
             cd: 0,
           });
-          ab.spawnCD = 30;
+          ab.spawnCD = 20;
         }
         for (const b of ab.butterflies) {
           if (b.cd > 0) b.cd--;
@@ -6687,28 +6697,29 @@
             const [tx, ty] = enemyXY(b.target);
             const dx = tx - b.x, dy = ty - b.y;
             const dist = Math.hypot(dx, dy);
-            const speed = 3.5;
+            const speed = 5;  // 3.5 → 5 (속도 ↑)
             b.vx = (dx / dist) * speed + Math.cos(b.phase) * 0.5;
             b.vy = (dy / dist) * speed + Math.sin(b.phase) * 0.5;
           } else {
             // 타워 주변 떠다님
             const dx = CX - b.x, dy = CY - b.y;
             const dist = Math.hypot(dx, dy) || 1;
-            b.vx = (dx / dist) * 1.5 + Math.cos(b.phase) * 1;
-            b.vy = (dy / dist) * 1.5 + Math.sin(b.phase) * 1;
+            b.vx = (dx / dist) * 2 + Math.cos(b.phase) * 1;
+            b.vy = (dy / dist) * 2 + Math.sin(b.phase) * 1;
           }
           b.x += b.vx; b.y += b.vy;
-          // 충돌
+          // 충돌 — 공격 쿨다운 줄여 DPS ↑
           if (b.cd <= 0) {
             for (const e of state.enemies) {
               if (e.hp <= 0) continue;
               const [ex, ey] = enemyXY(e);
-              if ((b.x-ex)*(b.x-ex) + (b.y-ey)*(b.y-ey) < (e.size+6)*(e.size+6)) {
+              if ((b.x-ex)*(b.x-ex) + (b.y-ey)*(b.y-ey) < (e.size+7)*(e.size+7)) {
                 damageEnemy(e, dmg);
                 e.slowFrames = Math.max(e.slowFrames || 0, slowDur);
                 if (!e.isBoss) e.timeStopped = state.t + stopDur;
-                spawnParticles(ex, ey, '#cc88ff', 4);
-                b.cd = 20;
+                else e.slowFrames = Math.max(e.slowFrames || 0, slowDur * 1.3); // 보스에겐 슬로우 강화
+                spawnParticles(ex, ey, '#cc88ff', 5);
+                b.cd = 12;  // 20 → 12 (공격 빈도 67% 증가)
                 break;
               }
             }
@@ -9360,9 +9371,11 @@
         mul *= (1 + mm.resilienceBonus);
       }
       // 조합/트리플 위계 보너스 — 메타 강화 적용 (comboPower)
+      // 사용자 요청: 기본 능력 2개 max 합친 거니까 조합 = 기본max × 2 이상,
+      //              트리플 = 기본max × 3 이상의 위력이어야 함
       const cpb = mm.comboPowerBonus || 0;
-      if (state.currentAbilityTier === 'combo') mul *= (1.40 + cpb);
-      else if (state.currentAbilityTier === 'triple') mul *= (2.20 + cpb * 1.67);  // 트리플은 조합 보너스 ~1.67x
+      if (state.currentAbilityTier === 'combo') mul *= (3.00 + cpb);        // 1.40 → 3.00
+      else if (state.currentAbilityTier === 'triple') mul *= (6.00 + cpb * 1.67); // 2.20 → 6.00
       dmg = dmg * mul;
     }
     // 보호막 적/보스: 처음 N회 데미지는 무효 (보호막 카운트만 줄임)
