@@ -195,11 +195,23 @@
     border-radius: 0;
     margin-top: 4px;
     box-shadow: 0 0 8px rgba(255,212,121,0.15);
-    transition: background .15s, box-shadow .15s;
+    transition: background .25s, box-shadow .25s, border-color .25s, color .25s;
   }
-  .relic-view-btn:hover {
+  .relic-view-btn:hover:not(.empty) {
     background: linear-gradient(135deg, #3a2c14, #221a0c);
     box-shadow: 0 0 14px rgba(255,212,121,0.35);
+  }
+  /* 빈 상태 — 흐릿한 안내 */
+  .relic-view-btn.empty {
+    background: #141822;
+    color: #5a5f6a;
+    border-color: #2a2f3a;
+    box-shadow: none;
+    font-weight: normal;
+  }
+  .relic-view-btn.empty:hover {
+    background: #1a1f2b;
+    color: #7a8090;
   }
   #wrap.portrait .relic-view-btn { padding: 14px; font-size: 14px; min-height: 48px; }
   .ability-row {
@@ -1613,7 +1625,7 @@
     </div>
     <hr/>
     <button id="randomBtn">🎲 랜덤 능력 획득 (50G)</button>
-    <button id="relicViewBtn" class="relic-view-btn" style="display:none;">💎 유물 <span id="relic-view-count">0개</span> 보기</button>
+    <button id="relicViewBtn" class="relic-view-btn empty">💎 유물 <span id="relic-view-count">0개</span></button>
     <div class="ab-tabs">
       <button class="ab-tab active" data-abtab="active">액티브 <span id="ab-active-count">0/6</span></button>
       <button class="ab-tab" data-abtab="passive">패시브 <span id="ab-passive-count">0/6</span></button>
@@ -7801,7 +7813,7 @@
     epic:      { color: '#c084ff', glow: 'rgba(192,132,255,0.6)', label: '영웅', weight: 10 },
     legendary: { color: '#ffd479', glow: 'rgba(255,212,121,0.7)', label: '전설', weight: 2 },
   };
-  const RELIC_DROP_CHANCE = 0.65; // 보스 한 마리당 65% 확률로 등장
+  const RELIC_DROP_CHANCE = 0.40; // 보스 한 마리당 40% 확률로 등장
   const RELICS = {
     // ============================== COMMON (20개) — 위트 있는 이름, 흥미로운 조건 ==============================
     goldBag: { name: '구두쇠의 자루', icon: '💰', rarity: 'common',
@@ -8014,11 +8026,20 @@
     return offering.length > 0 ? offering : null;
   }
   function pickWeightedRarity() {
-    const total = RELIC_RARITY.common.weight + RELIC_RARITY.rare.weight + RELIC_RARITY.epic.weight + RELIC_RARITY.legendary.weight;
+    // 메타 강화 "유물 감식" 보너스 적용 — 일반에서 차감, 고급들로 분배
+    const boost = (state.metaMods && state.metaMods.relicRarityBoost) || 0;
+    const per = boost / 3; // rare/epic/legendary 각각에 분배
+    const w = {
+      common:    Math.max(10, RELIC_RARITY.common.weight - boost),
+      rare:      RELIC_RARITY.rare.weight + per,
+      epic:      RELIC_RARITY.epic.weight + per,
+      legendary: RELIC_RARITY.legendary.weight + per,
+    };
+    const total = w.common + w.rare + w.epic + w.legendary;
     let roll = Math.random() * total;
     for (const r of ['legendary', 'epic', 'rare', 'common']) {
-      if (roll < RELIC_RARITY[r].weight) return r;
-      roll -= RELIC_RARITY[r].weight;
+      if (roll < w[r]) return r;
+      roll -= w[r];
     }
     return 'common';
   }
@@ -8034,6 +8055,8 @@
     state.comboFlash = 30;
     state.comboFlashColor = RELIC_RARITY[r.rarity].color;
     toast(`💎 ${r.icon} ${r.name} 획득!`);
+    // 💎 패널의 "유물 보기" 버튼 즉시 표시 갱신
+    if (typeof renderPanel === 'function') renderPanel();
   }
 
   // ===== 능력 태그 시스템 — 다중 라벨 (한 능력이 여러 태그를 가질 수 있음) =====
@@ -8681,6 +8704,7 @@
       maxAliveBonus:         mods.maxAliveBonus || 0,
       startReroll:           mods.startReroll || 0,
       roundTimeBonus:        mods.roundTimeBonus || 0,
+      relicRarityBoost:      mods.relicRarityBoost || 0,  // 유물 등급 가중치 (0~15)
     };
     // 메타 강화: 시작 점수 (승천 페널티 적용)
     if (mods.startScore) state.score = Math.floor(mods.startScore * asc.startScoreMul);
@@ -9989,6 +10013,7 @@
     { id: 'startReroll', category: 'build',   name: '시작 리롤',         desc: '게임 시작 시 무료 리롤 +1', maxLv: 3, cost: lv => 500 * (lv + 1), apply: lv => lv },
     { id: 'luckyChance', category: 'build',   name: '🍀 럭키 카드 확률',  desc: 'lv당 +2%',                maxLv: 8, cost: lv => 200 * (lv + 1), apply: lv => 0.02 * lv },
     { id: 'superLuckyChance', category: 'build', name: '💫 슈퍼럭키 확률', desc: 'lv당 +1%',              maxLv: 6, cost: lv => 400 * (lv + 1), apply: lv => 0.01 * lv },
+    { id: 'relicRarity', category: 'build', name: '💎 유물 감식',          desc: 'lv당 일반 -3%, 희귀/영웅/전설 각 +1% 확률', maxLv: 5, cost: lv => 600 * (lv + 1), apply: lv => 3 * lv },
 
     // === 🛡️ 생존 / 슬롯 ===
     { id: 'extraSlot',   category: 'survival', name: '액티브 슬롯 +1',    desc: 'lv당 +1칸 (최대 +2)',    maxLv: 2,  cost: lv => 1200 * (lv + 1), apply: lv => lv },
@@ -10019,6 +10044,7 @@
       maxAliveBonus:         v('maxAliveBonus'),       // 적 수용 한계 추가
       startReroll:           metaLv('startReroll'),    // 시작 시 추가 리롤
       roundTimeBonus:        v('roundTime'),           // 라운드 시간 추가 (초)
+      relicRarityBoost:      v('relicRarity'),         // 유물 고급 등급 확률 (0~15)
     };
   }
   function buyUpgrade(id) {
@@ -12098,10 +12124,7 @@
 
   // 💎 유물 상세 모달
   function openRelicDetail() {
-    if (!state || !state.activeRelics || state.activeRelics.length === 0) {
-      toast('보유 중인 유물이 없습니다');
-      return;
-    }
+    if (!state || !state.activeRelics || state.activeRelics.length === 0) return;
     buildRelicDetail();
     document.getElementById('relicDetailModal').style.display = 'flex';
     paused = true; // 읽는 동안 일시정지
@@ -12800,9 +12823,15 @@
   const elToast  = $('toast');
 
   elRandom.onclick = actRandomAcquire;
-  // 💎 유물 보기 버튼
+  // 💎 유물 보기 버튼 — 보유 시 상세 / 빈 상태면 안내
   const _relicViewBtn = document.getElementById('relicViewBtn');
-  if (_relicViewBtn) _relicViewBtn.onclick = openRelicDetail;
+  if (_relicViewBtn) _relicViewBtn.onclick = () => {
+    if ((state.activeRelics || []).length === 0) {
+      toast('💎 보스 처치 시 40% 확률로 유물이 등장합니다');
+      return;
+    }
+    openRelicDetail();
+  };
 
   function renderStats() {
     // 라운드 + 승천 뱃지
@@ -12884,16 +12913,13 @@
 
   function renderPanel() {
     renderStats();
-    // 💎 유물 버튼 표시/숨김 + 카운트 갱신
+    // 💎 유물 버튼 — 항상 표시, 빈 상태(empty) ↔ 활성 클래스 전환
     const relicBtn = document.getElementById('relicViewBtn');
     const relicCnt = document.getElementById('relic-view-count');
-    if (relicBtn && state.activeRelics) {
-      if (state.activeRelics.length > 0) {
-        relicBtn.style.display = '';
-        if (relicCnt) relicCnt.textContent = `${state.activeRelics.length}개`;
-      } else {
-        relicBtn.style.display = 'none';
-      }
+    if (relicBtn) {
+      const n = (state.activeRelics || []).length;
+      if (relicCnt) relicCnt.textContent = n > 0 ? `${n}개 보기` : '0개 (보스 처치 시 등장)';
+      relicBtn.classList.toggle('empty', n === 0);
     }
     elAb.innerHTML = '';
     // 카테고리에 맞는 능력만 필터링
@@ -13799,7 +13825,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 108;
+  const APP_VERSION = 112;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
