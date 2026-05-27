@@ -822,10 +822,11 @@
   #shop { padding: 24px; align-items: stretch; }
   #shop-list {
     max-width: 900px; width: 100%; margin: 0 auto;
-    overflow-y: auto; flex: 1;
+    overflow-y: auto; overflow-x: hidden; flex: 1;
     display: flex; flex-direction: column;
     gap: 6px;
-    padding-bottom: 24px;
+    padding: 0 10px 24px;
+    box-sizing: border-box;
   }
   /* 카테고리 헤더 */
   .shop-category-header {
@@ -844,9 +845,14 @@
   /* 카테고리 내 카드 그리드 — 2열 (모바일은 1열) */
   .shop-category-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
     gap: 8px;
     margin-top: 4px;
+    min-width: 0;
+  }
+  .shop-card { min-width: 0; }
+  .shop-card .name, .shop-card .desc, .shop-card .lv {
+    overflow-wrap: anywhere;
   }
   .shop-card {
     background: #141822;
@@ -901,7 +907,8 @@
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
     gap: 10px;
-    padding: 0 10px 16px;
+    /* 하단 패딩 — 플로팅 시작 버튼 (약 130px + safe-area) 와 겹치지 않게 */
+    padding: 0 10px calc(150px + env(safe-area-inset-bottom));
   }
   .char-card {
     background: #141822;
@@ -13825,7 +13832,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 112;
+  const APP_VERSION = 113;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
@@ -14102,7 +14109,8 @@
       const selected = selectedCharacter === id;
       const card = document.createElement('div');
       card.className = 'char-card' + (unlocked ? '' : ' locked') + (selected ? ' selected' : '');
-      card.style.borderLeftColor = char.color;
+      // 비-가챠 캐릭터는 중립색 (가챠만 등급 색)
+      card.style.borderLeftColor = char.isGacha ? char.color : '#3a4256';
       // 잠긴 캐릭터: 가챠 캐릭터는 한글 라벨, 그 외는 업적 정보
       let lockText = '';
       if (!unlocked && char.unlockBy) {
@@ -14138,12 +14146,13 @@
       const portraitHTML = charImgSrc
         ? `<div class="char-portrait-wrap" style="${unlocked ? '' : 'opacity:0.3;filter:grayscale(1);'}"><img src="${charImgSrc}" /></div>`
         : '';
+      const nameColor = char.isGacha ? char.color : '#e8eaf0';
       card.innerHTML = `
         <div class="char-header">
           ${portraitHTML}
           <div class="char-header-text">
             <div class="char-name-row">
-              <div class="char-name" style="color:${char.color}">${char.name}</div>
+              <div class="char-name" style="color:${nameColor}">${char.name}</div>
               ${rarityPill}
             </div>
           </div>
