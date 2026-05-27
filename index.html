@@ -17,7 +17,10 @@
 <title>Dot Defense</title>
 <style>
   html, body {
-    margin: 0; padding: 0; height: 100%;
+    margin: 0; padding: 0;
+    height: 100vh;
+    height: 100dvh; /* 모바일 동적 viewport 대응 (주소창 표시/숨김 변화 반영) */
+    width: 100vw;
     background: #0b0d12; color: #e8eaf0;
     /* 둥글둥글한 캐주얼 게임 폰트 — Jua가 핵심, 시스템 폰트로 fallback */
     font-family: 'Jua', 'Pretendard', 'Apple SD Gothic Neo', 'Malgun Gothic', system-ui, sans-serif;
@@ -30,6 +33,11 @@
     /* 노치/홈 인디케이터 안전 영역 */
     padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
     box-sizing: border-box;
+  }
+  /* 게임 wrap — transform 기준점 명시 + 정확한 측정용 */
+  #wrap {
+    transform-origin: center center;
+    will-change: transform;
   }
   #wrap { display: flex; gap: 12px; }
   /* 세로 모드: 패널을 캔버스 아래로 쌓고 터치 친화적으로 크게 */
@@ -8457,6 +8465,8 @@
     }
     const have = getUnlockedAchievements();
     for (const id of BASIC_ABILITY_IDS) {
+      // 🎰 가챠 고유 능력은 랜덤/레벨업 풀에서 제외 (해당 캐릭터의 startAbilities 로만 획득)
+      if (ABILITY_DEFS[id].isGachaUnique) continue;
       if (!lockedByAchievement.has(id)) { set.add(id); continue; }
       // 잠긴 능력은 그 업적 보유 시에만 해금
       for (const ach of ACHIEVEMENTS) {
@@ -10753,13 +10763,35 @@
     if (usePortrait && !wasPortrait) collapseAbilities(true, false);
     else if (!usePortrait && wasPortrait) collapseAbilities(false, false);
     wrapEl.style.transform = 'none';
+    // 강제 reflow — transform 제거 후 정확한 natural size 측정
+    void wrapEl.offsetWidth;
     const rect = wrapEl.getBoundingClientRect();
-    if (rect.width === 0 || rect.height === 0) return;
+    if (rect.width === 0 || rect.height === 0) {
+      // 레이아웃이 아직 안 잡힘 — 다음 프레임에 재시도
+      requestAnimationFrame(fitScale);
+      return;
+    }
+    // safe-area 인셋만큼 가용 공간이 줄어드므로 빼기 (env() padding 적용된 body 기준)
+    const safeTop    = parseFloat(getComputedStyle(document.body).paddingTop)    || 0;
+    const safeBot    = parseFloat(getComputedStyle(document.body).paddingBottom) || 0;
+    const safeLeft   = parseFloat(getComputedStyle(document.body).paddingLeft)   || 0;
+    const safeRight  = parseFloat(getComputedStyle(document.body).paddingRight)  || 0;
+    const usableW = vw - safeLeft - safeRight;
+    const usableH = vh - safeTop - safeBot;
     const pad = 16;
-    const scale = Math.min((vw - pad) / rect.width, (vh - pad) / rect.height, 1.8);
+    const scale = Math.min((usableW - pad) / rect.width, (usableH - pad) / rect.height, 1.8);
     wrapEl.style.transform = `scale(${scale})`;
     // 절대 위치 능력창의 bottom anchor 갱신 (panel layout이 안정된 후)
     positionAbilitiesAnchor();
+  }
+  // requestAnimationFrame 래퍼 — 호출 시점이 너무 이르면 다음 프레임에 실행
+  function fitScaleSoon() {
+    requestAnimationFrame(() => {
+      fitScale();
+      // 폰트/이미지 로드 등으로 크기 변동될 수 있어 약간 후 한 번 더
+      setTimeout(fitScale, 100);
+      setTimeout(fitScale, 300);
+    });
   }
 
   // 능력 목록 접기/펴기 — 능력창은 오버레이이므로 wrap 크기/스케일은 안 건드림.
@@ -10779,11 +10811,17 @@
     const offset = panelEl.offsetHeight - toggleBtn.offsetTop + 4;
     panelEl.style.setProperty('--abilities-anchor', offset + 'px');
   }
-  window.addEventListener('resize', fitScale);
-  window.addEventListener('orientationchange', () => setTimeout(fitScale, 100));
-  fitScale();
-  // 폰트/이미지 로드 후 한 번 더 (자연 크기 안정화)
-  setTimeout(fitScale, 50);
+  window.addEventListener('resize', fitScaleSoon);
+  window.addEventListener('orientationchange', () => setTimeout(fitScaleSoon, 100));
+  // visualViewport — 모바일 주소창 표시/숨김 변화 감지 (resize보다 정확)
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', fitScaleSoon);
+  }
+  // 폰트 로드 후 재측정 (Jua 한글 폰트가 늦게 로드되면 patch 크기 변동)
+  if (document.fonts && document.fonts.ready) {
+    document.fonts.ready.then(() => fitScale());
+  }
+  fitScaleSoon();
 
   // ===== 서비스워커 (오프라인 / PWA) =====
   if ('serviceWorker' in navigator) {
@@ -10931,7 +10969,8 @@
     if (name === 'game') {
       const usePortrait = window.innerHeight > window.innerWidth * 1.05;
       collapseAbilities(usePortrait, false);
-      fitScale();
+      // rAF로 한 프레임 양보 후 측정 → 정확한 natural size 보장
+      fitScaleSoon();
     }
     if (name === 'menu') {
       // 진행 중 게임이 있으면 "이어하기" 표시 + 새 게임 버튼 노출
