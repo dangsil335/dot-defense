@@ -8467,7 +8467,13 @@
 
   // ===== 점수 제출 (게임 종료 시) — title 컬럼 미생성 대응 =====
   let _lastSubmitError = null;
-  async function submitGlobalScore() {
+  let _submitPromise = null;       // 진행 중인 제출 Promise (조회 시 await 용도)
+  function submitGlobalScore() {
+    // 항상 새 Promise 반환 — loadGlobalRankings가 await할 수 있게
+    _submitPromise = _submitGlobalScoreImpl();
+    return _submitPromise;
+  }
+  async function _submitGlobalScoreImpl() {
     _lastSubmitError = null;
     if (!isSupabaseEnabled()) { _lastSubmitError = 'Supabase 미설정'; return; }
     const sb = getSupabase();
@@ -8510,6 +8516,7 @@
         console.warn('❌ 점수 제출 실패:', res.error.message, res.error);
       } else {
         console.log(`✅ 점수 제출 성공: ${newScore.toLocaleString()}점`);
+        invalidateRankingCache(); // 새 점수 반영 위해 캐시 폐기
       }
     } catch (e) {
       _lastSubmitError = (e.message || e).toString();
@@ -8517,8 +8524,51 @@
     }
   }
 
-  // ===== 랭킹 조회 + 렌더 =====
-  async function loadGlobalRankings() {
+  // ===== 랭킹 조회 + 렌더 (A: 병렬 + D: 캐시) =====
+  let _rankingCache = null;           // { timestamp, data: { top10, myRow, myRank, userId } }
+  const RANKING_CACHE_TTL = 60000;    // 60초 동안 신선
+  function invalidateRankingCache() { _rankingCache = null; }
+
+  // 순수 fetch — 병렬 처리로 RTT 단축
+  async function fetchRankingsData() {
+    const sb = getSupabase();
+    if (!sb) throw new Error('Supabase 연결 실패');
+    const userId = ensureUserId();
+    const fullCols = 'user_id, nickname, title, score, round, ascension, character, updated_at';
+    const safeCols = 'user_id, nickname, score, round, ascension, character, updated_at';
+
+    // 1단계: top10 + 내 기록 병렬 조회
+    let [top10Res, myRowRes] = await Promise.all([
+      sb.from('rankings').select(fullCols).order('score', { ascending: false }).limit(10),
+      sb.from('rankings').select(fullCols).eq('user_id', userId).maybeSingle(),
+    ]);
+    // title 컬럼 미생성 fallback
+    if ((top10Res.error && /title/i.test(top10Res.error.message || '')) ||
+        (myRowRes.error && /title/i.test(myRowRes.error.message || ''))) {
+      console.warn('⚠️ title 컬럼 없음 — fallback');
+      [top10Res, myRowRes] = await Promise.all([
+        sb.from('rankings').select(safeCols).order('score', { ascending: false }).limit(10),
+        sb.from('rankings').select(safeCols).eq('user_id', userId).maybeSingle(),
+      ]);
+    }
+    if (top10Res.error) throw top10Res.error;
+    const top10 = top10Res.data || [];
+    const myRow = myRowRes.data || null;
+
+    // 2단계: 내 순위 카운트 — myRow 있을 때만 (의존성)
+    let myRank = null;
+    if (myRow) {
+      const { count } = await sb
+        .from('rankings')
+        .select('*', { count: 'exact', head: true })
+        .gt('score', myRow.score);
+      myRank = (count || 0) + 1;
+    }
+    return { top10, myRow, myRank, userId };
+  }
+
+  // 순수 렌더
+  function renderRankings(data, isStale) {
     const statusEl = document.getElementById('globalRank-status');
     const top10El = document.getElementById('globalRank-top10');
     const dividerEl = document.getElementById('globalRank-divider');
@@ -8527,7 +8577,48 @@
     meEl.innerHTML = '';
     dividerEl.style.display = 'none';
 
+    if (!data.top10 || data.top10.length === 0) {
+      statusEl.style.display = '';
+      if (_lastSubmitError) {
+        statusEl.innerHTML = `
+          <div style="color:#ff8888; font-weight:bold;">⚠ 점수 제출 실패</div>
+          <div style="font-size:11px; margin-top:6px; color:#9aa3b3; line-height:1.5;">
+            마지막 제출 에러:<br>
+            <code style="color:#ffaa66; word-break:break-all;">${escapeHtml(_lastSubmitError)}</code>
+          </div>`;
+      } else {
+        statusEl.textContent = '아직 기록이 없습니다. 첫 도전자가 되어보세요!';
+      }
+      return;
+    }
+    statusEl.style.display = 'none';
+    // stale 표시 — 캐시된 데이터 보여주는 중인 경우 작은 배너
+    if (isStale) {
+      const stale = document.createElement('div');
+      stale.id = 'stale-banner';
+      stale.style.cssText = 'text-align:center; color:#7a8090; font-size:11px; padding:6px; background:rgba(122,215,255,0.05); border-bottom:1px solid #1a1f2b; margin-bottom:6px;';
+      stale.textContent = '🔄 백그라운드에서 최신 기록 확인 중...';
+      top10El.appendChild(stale);
+    }
+    for (let i = 0; i < data.top10.length; i++) {
+      const r = data.top10[i];
+      const isMe = data.myRow && r.user_id === data.userId;
+      top10El.appendChild(renderRankRow(i + 1, r, isMe));
+    }
+    if (data.myRow && data.myRank > 10) {
+      dividerEl.style.display = '';
+      meEl.appendChild(renderRankRow(data.myRank, data.myRow, true));
+    }
+  }
+
+  // 메인 진입점 — 캐시 + 병렬 fetch + 백그라운드 갱신
+  async function loadGlobalRankings() {
+    const statusEl = document.getElementById('globalRank-status');
+    const top10El = document.getElementById('globalRank-top10');
+
     if (!isSupabaseEnabled()) {
+      top10El.innerHTML = '';
+      statusEl.style.display = '';
       statusEl.innerHTML = `
         <div style="color:#ffaa66;">⚠ 글로벌 랭킹 미설정</div>
         <div style="margin-top:8px; font-size:12px; color:#7a8090;">
@@ -8536,81 +8627,50 @@
         </div>`;
       return;
     }
+
+    // 진행 중인 점수 제출 대기 — 끝나면 캐시 무효화
+    if (_submitPromise) {
+      top10El.innerHTML = '';
+      statusEl.style.display = '';
+      statusEl.innerHTML = `
+        <div style="color:#7ad7ff;">⬆ 점수 제출 중...</div>
+        <div style="margin-top:6px; font-size:11px; color:#7a8090;">방금 게임 결과를 서버에 전송하고 있어요</div>`;
+      try { await _submitPromise; } catch (e) {}
+      _submitPromise = null;
+      invalidateRankingCache(); // 새 점수 제출됐으니 캐시 폐기
+    }
+
+    // === 캐시 활용 (D: Stale-while-revalidate) ===
+    const cached = _rankingCache;
+    const isFresh = cached && (Date.now() - cached.timestamp < RANKING_CACHE_TTL);
+    if (isFresh) {
+      // 즉시 표시
+      renderRankings(cached.data, true);
+      // 백그라운드 갱신 — 사용자는 대기 없음
+      fetchRankingsData().then(data => {
+        _rankingCache = { timestamp: Date.now(), data };
+        renderRankings(data, false); // 새 데이터로 교체
+      }).catch(e => {
+        // 백그라운드 실패는 조용히 무시 (stale 데이터 그대로 유지)
+        console.warn('백그라운드 갱신 실패:', e);
+        const banner = document.getElementById('stale-banner');
+        if (banner) banner.textContent = '⚠ 갱신 실패 — 캐시된 결과';
+      });
+      return;
+    }
+
+    // === 캐시 없음 — 첫 로드 ===
+    top10El.innerHTML = '';
+    statusEl.style.display = '';
     statusEl.textContent = '불러오는 중...';
-    const sb = getSupabase();
-    if (!sb) { statusEl.textContent = '연결 실패'; return; }
-
     try {
-      const userId = ensureUserId();
-      // title 컬럼 유무 확인 — 없으면 빼고 다시 시도
-      const fullCols = 'user_id, nickname, title, score, round, ascension, character, updated_at';
-      const safeCols = 'user_id, nickname, score, round, ascension, character, updated_at';
-      // 1) 상위 10명 조회
-      let { data: top10, error: e1 } = await sb
-        .from('rankings')
-        .select(fullCols)
-        .order('score', { ascending: false })
-        .limit(10);
-      let useTitle = true;
-      if (e1 && /title/i.test(e1.message || '')) {
-        // title 컬럼 미생성 — 빼고 재시도
-        useTitle = false;
-        const r2 = await sb.from('rankings')
-          .select(safeCols).order('score', { ascending: false }).limit(10);
-        top10 = r2.data; e1 = r2.error;
-      }
-      if (e1) throw e1;
-
-      // 2) 내 기록 조회
-      let { data: myRow } = await sb
-        .from('rankings')
-        .select(useTitle ? fullCols : safeCols)
-        .eq('user_id', userId)
-        .maybeSingle();
-
-      // 3) 내 순위 계산 (내 점수보다 높은 행 수 + 1)
-      let myRank = null;
-      if (myRow) {
-        const { count } = await sb
-          .from('rankings')
-          .select('*', { count: 'exact', head: true })
-          .gt('score', myRow.score);
-        myRank = (count || 0) + 1;
-      }
-
-      // === 렌더 ===
-      statusEl.style.display = 'none';
-      if (!top10 || top10.length === 0) {
-        statusEl.style.display = '';
-        if (_lastSubmitError) {
-          statusEl.innerHTML = `
-            <div style="color:#ff8888; font-weight:bold;">⚠ 점수 제출 실패</div>
-            <div style="font-size:11px; margin-top:6px; color:#9aa3b3; line-height:1.5;">
-              마지막 제출 에러:<br>
-              <code style="color:#ffaa66; word-break:break-all;">${escapeHtml(_lastSubmitError)}</code>
-            </div>
-            <div style="font-size:11px; margin-top:10px; color:#7a8090;">
-              해결: F12 콘솔에서 상세 에러 확인 후 Supabase SQL Editor에서 필요한 SQL 실행
-            </div>`;
-        } else {
-          statusEl.textContent = '아직 기록이 없습니다. 첫 도전자가 되어보세요!';
-        }
-        return;
-      }
-      for (let i = 0; i < top10.length; i++) {
-        const r = top10[i];
-        const isMe = myRow && r.user_id === userId;
-        top10El.appendChild(renderRankRow(i + 1, r, isMe));
-      }
-      // 내 순위가 10위 밖이면 따로 표시
-      if (myRow && myRank > 10) {
-        dividerEl.style.display = '';
-        meEl.appendChild(renderRankRow(myRank, myRow, true));
-      }
+      const data = await fetchRankingsData();
+      _rankingCache = { timestamp: Date.now(), data };
+      renderRankings(data, false);
     } catch (e) {
       console.warn(e);
       statusEl.style.display = '';
-      statusEl.innerHTML = `<div style="color:#ff8888;">⚠ 불러오기 실패</div><div style="font-size:11px; margin-top:6px; color:#7a8090;">${(e.message || e).toString().substring(0, 100)}</div>`;
+      statusEl.innerHTML = `<div style="color:#ff8888;">⚠ 불러오기 실패</div><div style="font-size:11px; margin-top:6px; color:#7a8090;">${escapeHtml((e.message || e).toString().substring(0, 100))}</div>`;
     }
   }
   function renderRankRow(rankNum, r, isMe) {
@@ -11868,7 +11928,10 @@
     loadGlobalRankings();
   };
   document.getElementById('globalRankBack').onclick = () => showScreen('menu');
-  document.getElementById('globalRankRefresh').onclick = loadGlobalRankings;
+  document.getElementById('globalRankRefresh').onclick = () => {
+    invalidateRankingCache();  // 강제 새로고침 — 캐시 폐기
+    loadGlobalRankings();
+  };
   document.getElementById('nickname-display').onclick = () => openNicknameModal(false);
   document.getElementById('nicknameSubmit').onclick = submitNickname;
   document.getElementById('nicknameInput').addEventListener('keydown', (e) => {
