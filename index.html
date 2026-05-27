@@ -7968,6 +7968,12 @@
     shake(20, 15);
     if (win) SFX.victory(); else SFX.gameOver();
     state.totalTime = state.t;  // 게임 시간 (프레임)
+    // 남은 골드 → 점수 환산 (G/10) — 강화 안 쓰고 남긴 골드 보상 (위로 보너스)
+    state.goldRemaining = Math.max(0, state.gold || 0);
+    state.goldBonusScore = Math.floor(state.goldRemaining / 10);
+    if (state.goldBonusScore > 0) {
+      state.score += state.goldBonusScore;
+    }
     earnStardust();
     earnCrystals();
     recordCharUsage();        // 캐릭터 사용 라운드 기록
@@ -9858,6 +9864,12 @@
       const lastRound = state.gameWin ? MAX_ROUND : state.round;
       ctx.fillText(`도달 라운드: ${lastRound}   점수: ${state.score.toLocaleString()}`, CX, CY + 14);
       let lineY = CY + 38;
+      // 남은 골드 → 점수 환산 표시
+      if (state.goldBonusScore && state.goldBonusScore > 0) {
+        ctx.fillStyle = '#ffd479'; ctx.font='12px Jua, sans-serif';
+        ctx.fillText(`💰 남은 골드 ${state.goldRemaining}G → +${state.goldBonusScore.toLocaleString()}점`, CX, lineY);
+        lineY += 16;
+      }
       if (state.stardustEarned) {
         ctx.fillStyle = '#ffd479'; ctx.font='14px Jua, sans-serif';
         ctx.fillText(`+${state.stardustEarned} ★ 스타더스트 획득`, CX, lineY);
