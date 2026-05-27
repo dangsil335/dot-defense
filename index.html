@@ -1014,6 +1014,82 @@
   </div>
 </div>
 
+<!-- ===== 🔐 인증 모달 (회원가입 / 로그인) ===== -->
+<div id="authModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.95); z-index:9997; align-items:center; justify-content:center; padding:8px; box-sizing:border-box;">
+  <div style="background:#1a1f2b; border:2px solid #7ad7ff; border-radius:12px; max-width:420px; width:100%; max-height:calc(100dvh - 16px); display:flex; flex-direction:column; box-shadow:0 0 40px rgba(122,215,255,0.4); overflow:hidden;">
+    <div style="padding:16px 18px 8px; flex-shrink:0;">
+      <div style="font-size:20px; font-weight:bold; color:#7ad7ff; margin-bottom:6px;">🔐 계정</div>
+      <div id="authModalSubtitle" style="color:#9aa3b3; font-size:12px; line-height:1.4;">
+        같은 기기에선 자동 로그인됩니다. 비밀번호는 다른 기기 접속 시 필요.
+      </div>
+    </div>
+    <!-- 탭 -->
+    <div style="display:flex; padding:0 18px; gap:0; flex-shrink:0; border-bottom:1px solid #2a2f3a;">
+      <button id="authTabSignup" class="auth-tab active" data-tab="signup">새 계정</button>
+      <button id="authTabLogin" class="auth-tab" data-tab="login">기존 계정 불러오기</button>
+    </div>
+    <div style="padding:14px 18px; flex:1 1 auto; overflow-y:auto; min-height:0;">
+      <!-- 회원가입 폼 -->
+      <div id="authSignupForm">
+        <input id="signupNicknameInput" type="text" maxlength="12" placeholder="닉네임 (1~12자, 한/영/숫자)" class="auth-input" />
+        <input id="signupPasswordInput" type="password" placeholder="비밀번호 (4자 이상)" class="auth-input" />
+        <input id="signupPasswordConfirm" type="password" placeholder="비밀번호 확인" class="auth-input" />
+        <div id="signupError" class="auth-err"></div>
+        <button id="signupSubmitBtn" class="auth-btn primary">계정 만들기</button>
+      </div>
+      <!-- 로그인 폼 -->
+      <div id="authLoginForm" style="display:none;">
+        <input id="loginNicknameInput" type="text" maxlength="12" placeholder="닉네임" class="auth-input" />
+        <input id="loginPasswordInput" type="password" placeholder="비밀번호" class="auth-input" />
+        <div id="loginError" class="auth-err"></div>
+        <button id="loginSubmitBtn" class="auth-btn primary">로그인 + 데이터 불러오기</button>
+        <div style="color:#ff8866; font-size:11px; margin-top:10px; line-height:1.4; padding:8px; background:#241510; border-radius:4px;">
+          ⚠ 로그인 시 현재 기기의 데이터는 서버 데이터로 <b>덮어쓰여집니다</b>. 진행 중인 게스트 데이터가 있다면 먼저 회원가입을 권장.
+        </div>
+      </div>
+    </div>
+    <div style="padding:10px 18px 14px; flex-shrink:0; border-top:1px solid #2a2f3a; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+      <button id="authSkipBtn" style="background:none; color:#5a5f6a; font-size:11px; border:none; cursor:pointer; text-decoration:underline;">백업 없이 게스트로 시작</button>
+      <button id="authCloseBtn" style="background:#2a2f3a; color:#9aa3b3; border:1px solid #3a4256; padding:6px 14px; border-radius:6px; font-size:12px; cursor:pointer; display:none;">닫기</button>
+    </div>
+  </div>
+</div>
+
+<style>
+  .auth-tab {
+    flex: 1; background: none; border: none;
+    color: #5a5f6a; padding: 10px 8px;
+    font-family: inherit; font-size: 13px; cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: color 0.15s, border-color 0.15s;
+  }
+  .auth-tab:hover { color: #aaeaff; }
+  .auth-tab.active {
+    color: #7ad7ff; border-bottom-color: #7ad7ff; font-weight: bold;
+  }
+  .auth-input {
+    width: 100%; box-sizing: border-box;
+    background: #0f1219; border: 1.5px solid #2a2f3a;
+    color: #fff; padding: 10px 14px; border-radius: 6px;
+    font-family: inherit; font-size: 14px; margin-bottom: 8px;
+  }
+  .auth-input:focus { outline: none; border-color: #7ad7ff; }
+  .auth-err {
+    color: #ff8888; font-size: 12px; margin-bottom: 8px;
+    min-height: 16px; line-height: 1.4;
+  }
+  .auth-btn {
+    width: 100%; padding: 12px;
+    border: none; border-radius: 8px;
+    font-family: inherit; font-size: 14px; font-weight: bold;
+    cursor: pointer; transition: opacity 0.15s;
+  }
+  .auth-btn.primary {
+    background: #7ad7ff; color: #000;
+  }
+  .auth-btn.primary:disabled { opacity: 0.5; cursor: not-allowed; }
+</style>
+
 <!-- ===== 🌐 닉네임 입력 모달 (첫 실행 시) ===== -->
 <div id="nicknameModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.92); z-index:9998; align-items:center; justify-content:center; padding:8px; box-sizing:border-box;">
   <div style="background:#1a1f2b; border:2px solid #7ad7ff; border-radius:12px; max-width:420px; width:100%; max-height:100vh; max-height:calc(100dvh - 16px); display:flex; flex-direction:column; box-shadow:0 0 40px rgba(122,215,255,0.4); overflow:hidden;">
@@ -1038,6 +1114,9 @@
     <!-- 푸터 (고정) -->
     <div style="padding:10px 18px 14px; flex-shrink:0; border-top:1px solid #2a2f3a;">
       <button id="nicknameSubmit" style="width:100%; background:#7ad7ff; color:#000; border:none; padding:12px; border-radius:8px; font-weight:bold; font-size:15px; cursor:pointer;">확인</button>
+      <div id="nicknameAccountActions" style="display:flex; gap:6px; margin-top:8px; flex-wrap:wrap; justify-content:center;">
+        <!-- 계정 상태에 따라 동적 표시 -->
+      </div>
       <div style="color:#5a5f6a; font-size:11px; margin-top:8px; text-align:center;">
         나중에 메뉴 하단에서 변경 가능
       </div>
@@ -1050,6 +1129,14 @@
   <div class="codex-header">
     <h2>🌐 글로벌 랭킹</h2>
     <button id="globalRankBack" class="codex-back">← 메뉴로</button>
+  </div>
+  <!-- 시즌 정보 + 리셋 카운트다운 -->
+  <div id="rank-season-bar" style="background:linear-gradient(90deg,#1a1a2e,#1a2030); border:1px solid #3a4250; border-radius:8px; margin:0 12px 10px; padding:10px 14px; display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; font-size:13px;">
+    <div>
+      <span style="color:#ffd479; font-weight:bold;">🏁 주간 시즌</span>
+      <span style="color:#7a8090; font-size:11px; margin-left:6px;">매주 월 00:00 KST 리셋</span>
+    </div>
+    <div id="rank-countdown" style="color:#88ccff; font-weight:bold; font-family:monospace;">- - - - -</div>
   </div>
   <div id="globalRank-status" style="text-align:center; color:#9aa3b3; padding:30px; font-size:14px;">불러오는 중...</div>
   <div id="globalRank-top10" style="padding:0 12px;"></div>
@@ -8274,6 +8361,8 @@
   })();
   function saveMeta() {
     try { localStorage.setItem(META_KEY, JSON.stringify(META)); } catch {}
+    // 🔐 계정 로그인 상태면 서버에도 동기화 (debounced 5초)
+    if (typeof queueServerSync === 'function') queueServerSync();
   }
 
   // ===== 🌐 Supabase 글로벌 랭킹 시스템 =====
@@ -8351,8 +8440,12 @@
     for (const tid in TITLES) {
       if (have.has(TITLES[tid].achId)) owned.push(tid);
     }
+    // 🏁 시즌 칭호 — 서버에서 fetch한 본인 시즌 우승 목록
+    for (const tid of _ownedSeasonTitles) owned.push(tid);
     return owned;
   }
+  // 시즌 칭호 — 본인이 획득한 시즌 우승 ID 목록 (서버 동기화)
+  let _ownedSeasonTitles = [];
   function getSelectedTitle() { return META.selectedTitle || null; }
   function setSelectedTitle(tid) {
     if (tid && !TITLES[tid]) return;
@@ -8360,9 +8453,31 @@
     META.selectedTitle = tid || null;
     saveMeta();
   }
+  // 🏁 시즌 칭호 파싱 — ID 형식: 'season_N_R' (N=시즌번호, R=순위)
+  // ID만으로 표시 가능 — 다른 유저의 시즌 칭호도 표시됨
+  function parseSeasonTitle(tid) {
+    if (!tid) return null;
+    const m = String(tid).match(/^season_(\d+)_(\d+)$/);
+    if (!m) return null;
+    const num = parseInt(m[1], 10);
+    const rank = parseInt(m[2], 10);
+    if (rank === 1) return { name: `시즌 ${num} 챔피언`, icon: '🥇', style: 'rainbow' };
+    if (rank === 2) return { name: `시즌 ${num} 준우승`, icon: '🥈', style: 'glow', color: '#c8d4e6' };
+    if (rank === 3) return { name: `시즌 ${num} 3위`, icon: '🥉', style: 'bold', color: '#cd8856' };
+    return null;
+  }
+
   // HTML 렌더 — 칭호 + 닉네임 조합 출력
   function titleHTML(tid) {
-    if (!tid || !TITLES[tid]) return '';
+    if (!tid) return '';
+    // 시즌 칭호 — 동적 ID로 파싱
+    const season = parseSeasonTitle(tid);
+    if (season) {
+      const styleVar = season.color ? `--c:${season.color};` : '';
+      return `<span class="rank-title title-${season.style}" style="${styleVar}">[${season.icon} ${season.name}]</span>`;
+    }
+    // 일반 (하드코딩) 칭호
+    if (!TITLES[tid]) return '';
     const t = TITLES[tid];
     const styleVar = t.color ? `--c:${t.color};` : '';
     return `<span class="rank-title title-${t.style}" style="${styleVar}">[${t.icon} ${t.name}]</span>`;
@@ -8397,13 +8512,211 @@
     el.innerHTML = `${titleHTML(tid)}<span style="color:#7ad7ff;">${escapeHtml(nick)}</span>`;
   }
 
-  // 첫 실행 — 닉네임 없으면 모달 강제 표시
-  function checkFirstLaunch() {
-    if (!getNickname()) {
-      openNicknameModal(true); // forceRequired = 첫 실행이라 닫기 불가
-    } else {
-      refreshMenuNickname();
+  // ===== 🔐 계정 인증 시스템 =====
+  // 같은 기기 = META.userId + META.accountPassword 저장 → 자동 로그인 유지
+  // 다른 기기 = 로그인 모달에서 닉/비번 입력 → 데이터 다운로드
+
+  function isAccountLoggedIn() {
+    return !!(META.accountCreated && META.userId && META.accountPassword);
+  }
+  // 데이터 sync up (변경사항 서버에 저장) — debounced
+  let _syncTimer = null;
+  function queueServerSync(immediate = false) {
+    if (!isAccountLoggedIn()) return;
+    if (!isSupabaseEnabled()) return;
+    if (_syncTimer) clearTimeout(_syncTimer);
+    const delay = immediate ? 0 : 5000; // 5초 debounce
+    _syncTimer = setTimeout(syncMetaToServer, delay);
+  }
+  async function syncMetaToServer() {
+    if (!isAccountLoggedIn()) return;
+    const sb = getSupabase();
+    if (!sb) return;
+    try {
+      // password와 accountCreated/accountPassword는 서버 저장 데이터에서 제외
+      // (보안 + 의미 없음)
+      const dataToSync = { ...META };
+      delete dataToSync.accountPassword;
+      const { data, error } = await sb.rpc('sync_account_data', {
+        p_user_id: META.userId,
+        p_password: META.accountPassword,
+        p_data: dataToSync,
+      });
+      if (error) {
+        console.warn('동기화 실패:', error.message);
+      } else if (data === false) {
+        console.warn('동기화 인증 실패 — 비밀번호 변경됐을 가능성');
+      } else {
+        // console.log('✅ 서버 동기화 완료');
+      }
+    } catch (e) {
+      console.warn('동기화 통신 실패:', e);
     }
+  }
+
+  async function signupAccount(nickname, password) {
+    if (!isSupabaseEnabled()) throw new Error('서버 미설정');
+    const sb = getSupabase();
+    if (!sb) throw new Error('Supabase 연결 실패');
+    // 현재 META를 그대로 업로드 (기존 진행 사항 보존)
+    const userId = META.userId || crypto.randomUUID();
+    const dataToUpload = { ...META, nickname, accountCreated: true };
+    delete dataToUpload.accountPassword;
+    const { data, error } = await sb.rpc('signup_account', {
+      p_nickname: nickname,
+      p_password: password,
+      p_user_id: userId,
+      p_data: dataToUpload,
+    });
+    if (error) {
+      if (/nickname_taken/.test(error.message || '')) {
+        throw new Error('이미 사용 중인 닉네임입니다');
+      }
+      throw new Error(error.message || '회원가입 실패');
+    }
+    // 로컬 저장 (자동 로그인용)
+    META = { ...dataToUpload, userId, accountPassword: password };
+    saveMeta();
+    return userId;
+  }
+
+  async function loginAccount(nickname, password) {
+    if (!isSupabaseEnabled()) throw new Error('서버 미설정');
+    const sb = getSupabase();
+    if (!sb) throw new Error('Supabase 연결 실패');
+    const { data, error } = await sb.rpc('login_account', {
+      p_nickname: nickname,
+      p_password: password,
+    });
+    if (error) throw new Error(error.message || '로그인 실패');
+    if (!data || data.length === 0) {
+      throw new Error('닉네임 또는 비밀번호가 일치하지 않습니다');
+    }
+    const row = data[0];
+    // 서버 데이터로 로컬 덮어쓰기 + 로그인 정보 저장
+    const serverData = row.data || {};
+    META = { ...serverData, userId: row.user_id, nickname: row.nickname, accountCreated: true, accountPassword: password };
+    saveMeta();
+    return row;
+  }
+
+  function logoutAccount() {
+    if (!confirm('로그아웃하면 이 기기의 데이터는 초기화됩니다. (서버 데이터는 안전)\n\n계속하시겠어요?')) return;
+    // 로컬 META 초기화 (서버는 그대로)
+    META = {};
+    try { localStorage.removeItem(META_KEY); } catch {}
+    location.reload();
+  }
+
+  // 인증 모달 컨트롤
+  function openAuthModal(opts = {}) {
+    const { tab = 'signup', closable = false } = opts;
+    const modal = document.getElementById('authModal');
+    modal.style.display = 'flex';
+    switchAuthTab(tab);
+    const closeBtn = document.getElementById('authCloseBtn');
+    closeBtn.style.display = closable ? '' : 'none';
+    document.getElementById('signupError').textContent = '';
+    document.getElementById('loginError').textContent = '';
+  }
+  function closeAuthModal() {
+    document.getElementById('authModal').style.display = 'none';
+  }
+  function switchAuthTab(tab) {
+    document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+    document.querySelector(`.auth-tab[data-tab="${tab}"]`).classList.add('active');
+    document.getElementById('authSignupForm').style.display = tab === 'signup' ? '' : 'none';
+    document.getElementById('authLoginForm').style.display = tab === 'login' ? '' : 'none';
+  }
+
+  document.querySelectorAll('.auth-tab').forEach(t => {
+    t.onclick = () => switchAuthTab(t.dataset.tab);
+  });
+  document.getElementById('authCloseBtn').onclick = closeAuthModal;
+  document.getElementById('authSkipBtn').onclick = () => {
+    // 게스트 모드 — 로컬만, 서버 백업 X
+    if (!getNickname()) {
+      // 닉네임 없으면 닉네임 모달 열기 (게스트로 닉만 설정)
+      closeAuthModal();
+      openNicknameModal(true);
+    } else {
+      closeAuthModal();
+    }
+  };
+
+  // 회원가입 제출
+  document.getElementById('signupSubmitBtn').onclick = async () => {
+    const btn = document.getElementById('signupSubmitBtn');
+    const errEl = document.getElementById('signupError');
+    const nick = document.getElementById('signupNicknameInput').value.trim();
+    const pw = document.getElementById('signupPasswordInput').value;
+    const pwc = document.getElementById('signupPasswordConfirm').value;
+    errEl.textContent = '';
+    // 검증
+    const formatErr = validateNickname(nick);
+    if (formatErr) { errEl.textContent = formatErr; return; }
+    if (pw.length < 4) { errEl.textContent = '비밀번호는 4자 이상'; return; }
+    if (pw !== pwc) { errEl.textContent = '비밀번호 확인이 일치하지 않습니다'; return; }
+    btn.disabled = true;
+    btn.textContent = '계정 생성 중...';
+    try {
+      await signupAccount(nick, pw);
+      refreshMenuNickname();
+      closeAuthModal();
+      toast('✅ 계정 생성 완료!');
+    } catch (e) {
+      errEl.textContent = '⚠ ' + (e.message || '실패');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = '계정 만들기';
+    }
+  };
+  // 로그인 제출
+  document.getElementById('loginSubmitBtn').onclick = async () => {
+    const btn = document.getElementById('loginSubmitBtn');
+    const errEl = document.getElementById('loginError');
+    const nick = document.getElementById('loginNicknameInput').value.trim();
+    const pw = document.getElementById('loginPasswordInput').value;
+    errEl.textContent = '';
+    if (!nick || !pw) { errEl.textContent = '닉네임/비밀번호 입력'; return; }
+    btn.disabled = true;
+    btn.textContent = '불러오는 중...';
+    try {
+      await loginAccount(nick, pw);
+      refreshMenuNickname();
+      closeAuthModal();
+      toast('✅ 로그인 완료! 데이터 동기화됨');
+      // 페이지 새로고침 — META가 완전히 바뀌므로 UI 일관성 위해
+      setTimeout(() => location.reload(), 800);
+    } catch (e) {
+      errEl.textContent = '⚠ ' + (e.message || '실패');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = '로그인 + 데이터 불러오기';
+    }
+  };
+
+  // 첫 실행 / 자동 로그인 분기
+  function checkFirstLaunch() {
+    if (isAccountLoggedIn()) {
+      // ✅ 로그인된 상태 — 그냥 진행 (자동 로그인 유지)
+      refreshMenuNickname();
+      return;
+    }
+    if (getNickname() && !META.accountCreated) {
+      // 기존 게스트 플레이어 — 계정 가입 권장 prompt (닫기 가능)
+      refreshMenuNickname();
+      // 한 번만 권장 (sessionStorage로 관리하면 새로고침마다 또 뜨니까 META로 추적)
+      if (!META.skippedSignupPrompt) {
+        setTimeout(() => {
+          openAuthModal({ tab: 'signup', closable: true });
+          // 닫으면 다음 세션에선 또 뜸 — 의도된 약한 nag
+        }, 500);
+      }
+      return;
+    }
+    // 진짜 첫 실행 — 인증 모달
+    openAuthModal({ tab: 'signup', closable: false });
   }
   // 모달 내 임시 선택 (확인 누르기 전엔 META에 저장 X)
   let _modalPreviewTitle = null;
@@ -8421,12 +8734,61 @@
     updateTitlePreview();
     updateUnlockHint();
     updateNicknameSubmitState();
+    // 계정 상태별 버튼 동적 생성
+    buildAccountActions();
     // input에 keydown listener는 한 번만
     if (!input._previewBound) {
       input.addEventListener('input', updateTitlePreview);
       input._previewBound = true;
     }
     setTimeout(() => input.focus(), 50);
+  }
+  function buildAccountActions() {
+    const box = document.getElementById('nicknameAccountActions');
+    if (!box) return;
+    box.innerHTML = '';
+    if (isAccountLoggedIn()) {
+      // 로그인 상태
+      const status = document.createElement('div');
+      status.style.cssText = 'width:100%; font-size:11px; color:#88ff88; text-align:center; padding:4px 0;';
+      status.innerHTML = `🔐 로그인됨: <b>${escapeHtml(META.nickname)}</b>`;
+      box.appendChild(status);
+      const logout = document.createElement('button');
+      logout.style.cssText = 'flex:1; background:#2a1f1a; color:#ffaa88; border:1px solid #5a3020; padding:6px 10px; border-radius:5px; font-size:11px; cursor:pointer;';
+      logout.textContent = '🚪 로그아웃 (이 기기 초기화)';
+      logout.onclick = logoutAccount;
+      box.appendChild(logout);
+      const switchBtn = document.createElement('button');
+      switchBtn.style.cssText = 'flex:1; background:#1a1f2a; color:#aaccff; border:1px solid #3a4256; padding:6px 10px; border-radius:5px; font-size:11px; cursor:pointer;';
+      switchBtn.textContent = '🔄 다른 계정 불러오기';
+      switchBtn.onclick = () => {
+        closeNicknameModal();
+        openAuthModal({ tab: 'login', closable: true });
+      };
+      box.appendChild(switchBtn);
+    } else {
+      // 게스트 — 백업 권장
+      const warn = document.createElement('div');
+      warn.style.cssText = 'width:100%; font-size:11px; color:#ffaa66; text-align:center; padding:4px 0; line-height:1.4;';
+      warn.innerHTML = '⚠ 게스트 모드 — 기기 변경 시 데이터 손실';
+      box.appendChild(warn);
+      const signup = document.createElement('button');
+      signup.style.cssText = 'width:100%; background:#1a2a40; color:#7ad7ff; border:1px solid #2a4878; padding:8px 10px; border-radius:5px; font-size:12px; font-weight:bold; cursor:pointer;';
+      signup.textContent = '🔐 계정 만들어 백업하기';
+      signup.onclick = () => {
+        closeNicknameModal();
+        openAuthModal({ tab: 'signup', closable: true });
+      };
+      box.appendChild(signup);
+      const login = document.createElement('button');
+      login.style.cssText = 'width:100%; background:none; color:#9aa3b3; border:1px solid #3a4256; padding:6px 10px; border-radius:5px; font-size:11px; cursor:pointer; margin-top:2px;';
+      login.textContent = '↩️ 기존 계정 불러오기';
+      login.onclick = () => {
+        closeNicknameModal();
+        openAuthModal({ tab: 'login', closable: true });
+      };
+      box.appendChild(login);
+    }
   }
   // 칭호 그리드 빌드 — 미보유도 클릭 가능
   function buildTitlePicker() {
@@ -8440,6 +8802,17 @@
     none.textContent = '없음';
     none.onclick = () => { _modalPreviewTitle = null; refreshTitlePicker(); };
     grid.appendChild(none);
+
+    // 🏁 시즌 우승 칭호 (본인 보유한 것만) — 최상단에 배치
+    for (const tid of _ownedSeasonTitles) {
+      const isSel = tid === _modalPreviewTitle;
+      const item = document.createElement('div');
+      item.className = 'title-pick-item' + (isSel ? ' selected' : '');
+      item.innerHTML = titleHTML(tid);
+      item.onclick = () => { _modalPreviewTitle = tid; refreshTitlePicker(); };
+      item.title = '🏁 시즌 우승 칭호';
+      grid.appendChild(item);
+    }
 
     // 모든 칭호 (보유 = 정상 / 미보유 = 잠금 표시지만 클릭 가능)
     for (const tid in TITLES) {
@@ -8475,7 +8848,14 @@
     if (!tid) { hint.style.display = 'none'; return; }
     const owned = new Set(getOwnedTitles());
     if (owned.has(tid)) { hint.style.display = 'none'; return; }
-    // 미보유 — 업적 정보로 안내 만들기
+    // 시즌 칭호 미보유
+    const season = parseSeasonTitle(tid);
+    if (season) {
+      hint.innerHTML = `🏁 <b>해금 조건:</b> 시즌 종료 시 글로벌 랭킹 상위 3위 안에 들기 (1위/2위/3위 별도 칭호)`;
+      hint.style.display = '';
+      return;
+    }
+    // 일반 미보유 — 업적 정보
     const t = TITLES[tid];
     if (!t) { hint.style.display = 'none'; return; }
     const ach = ACHIEVEMENTS.find(a => a.id === t.achId);
@@ -8503,25 +8883,54 @@
     if (modal._forceRequired) return; // 첫 실행 시 닫기 금지
     modal.style.display = 'none';
   }
-  function submitNickname() {
+  async function submitNickname() {
     const input = document.getElementById('nicknameInput');
-    const err = setNickname(input.value);
-    if (err) {
-      document.getElementById('nicknameError').textContent = err;
+    const errEl = document.getElementById('nicknameError');
+    const submitBtn = document.getElementById('nicknameSubmit');
+    const newNick = input.value.trim();
+
+    // 1. 형식 검증 (1~12자, 한/영/숫자)
+    const formatErr = validateNickname(newNick);
+    if (formatErr) {
+      errEl.textContent = formatErr;
       return;
     }
-    // 미리보기 칭호 → 보유 중일 때만 실제 저장 (잠긴 건 거부)
+
+    // 2. 미보유 칭호 거부
     const owned = new Set(getOwnedTitles());
     if (_modalPreviewTitle && !owned.has(_modalPreviewTitle)) {
-      document.getElementById('nicknameError').textContent = '🔒 미보유 칭호는 선택할 수 없습니다';
+      errEl.textContent = '🔒 미보유 칭호는 선택할 수 없습니다';
       return;
     }
+
+    // 3. 서버 닉네임 중복 체크 (본인 닉네임 그대로면 스킵)
+    if (newNick !== getNickname()) {
+      submitBtn.disabled = true;
+      submitBtn.style.opacity = '0.6';
+      submitBtn.textContent = '확인 중...';
+      errEl.textContent = '';
+      let taken = false;
+      try {
+        taken = await isNicknameTaken(newNick);
+      } catch (e) { /* 안전 통과 */ }
+      submitBtn.disabled = false;
+      submitBtn.style.opacity = '1';
+      if (taken) {
+        errEl.textContent = `⚠ "${newNick}" 는 이미 사용 중인 닉네임입니다`;
+        updateNicknameSubmitState(); // 버튼 라벨 복구
+        return;
+      }
+    }
+
+    // 4. 저장
+    META.nickname = newNick;
+    saveMeta();
+    refreshMenuNickname();
     setSelectedTitle(_modalPreviewTitle);
     const modal = document.getElementById('nicknameModal');
     modal._forceRequired = false;
     modal.style.display = 'none';
-    ensureUserId(); // userId도 보장
-    refreshMenuNickname();
+    ensureUserId();
     // 🌐 서버 측 프로필 즉시 갱신 (기존 랭킹 기록 있을 경우)
     updateProfileInRankings();
   }
@@ -8672,6 +9081,57 @@
     }
   }
 
+  // ===== 닉네임 중복 체크 (case-insensitive, 자기 자신 제외) =====
+  async function isNicknameTaken(nickname) {
+    if (!isSupabaseEnabled()) return false;
+    const sb = getSupabase();
+    if (!sb) return false;
+    const userId = ensureUserId();
+    try {
+      const { data, error } = await sb
+        .from('rankings')
+        .select('user_id')
+        .ilike('nickname', nickname)   // case-insensitive (PostgreSQL)
+        .neq('user_id', userId)         // 자기 자신 제외 (재선택 시 OK)
+        .limit(1);
+      if (error) {
+        console.warn('닉네임 중복 체크 실패:', error.message);
+        return false; // 안전 fallback — 통과시킴
+      }
+      return !!(data && data.length > 0);
+    } catch (e) {
+      console.warn('닉네임 중복 체크 통신 실패:', e);
+      return false;
+    }
+  }
+
+  // ===== 🏁 시즌 우승 기록 fetch — 본인이 가진 시즌 칭호 동기화 =====
+  async function fetchMySeasonTitles() {
+    if (!isSupabaseEnabled()) return;
+    const sb = getSupabase();
+    if (!sb) return;
+    const userId = ensureUserId();
+    try {
+      const { data, error } = await sb
+        .from('season_winners')
+        .select('season_num, rank')
+        .eq('user_id', userId)
+        .order('season_num', { ascending: false });
+      if (error) {
+        if (/relation .* does not exist/i.test(error.message || '')) {
+          // 테이블 미생성 — 조용히 무시 (SQL 미실행 시)
+          return;
+        }
+        console.warn('시즌 우승 조회 실패:', error.message);
+        return;
+      }
+      _ownedSeasonTitles = (data || []).map(r => `season_${r.season_num}_${r.rank}`);
+      console.log(`🏁 보유 시즌 칭호: ${_ownedSeasonTitles.length}개`);
+    } catch (e) {
+      console.warn('시즌 우승 통신 실패:', e);
+    }
+  }
+
   // ===== 프로필 갱신 (닉네임/칭호 변경 시) — 기존 rankings 행 업데이트 =====
   // 점수는 안 건드리고 nickname, title만 갱신. user_id 매칭 안 되면 (아직 게임 안 함) 그냥 무시.
   async function updateProfileInRankings() {
@@ -8703,6 +9163,61 @@
       }
     } catch (e) {
       console.warn('프로필 갱신 통신 실패:', e);
+    }
+  }
+
+  // ===== 🏁 시즌 리셋 카운트다운 =====
+  // Supabase pg_cron 스케줄과 동기화 — 매주 월요일 00:00 KST (= 일요일 15:00 UTC)
+  // pg_cron 스케줄 변경 시 이 함수도 같이 수정해야 함
+  function getNextResetTime() {
+    const now = new Date();
+    const target = new Date(now);
+    const dow = target.getUTCDay(); // 0=Sun, 1=Mon, ..., 6=Sat
+    // 다음 일요일 15:00 UTC 까지 며칠?
+    let daysToAdd = (7 - dow) % 7;
+    if (daysToAdd === 0) {
+      // 이미 일요일 — 시간 체크
+      if (target.getUTCHours() >= 15) {
+        daysToAdd = 7; // 다음 주
+      }
+    }
+    target.setUTCDate(target.getUTCDate() + daysToAdd);
+    target.setUTCHours(15, 0, 0, 0);
+    return target;
+  }
+
+  let _countdownInterval = null;
+  function startRankCountdown() {
+    stopRankCountdown();
+    const update = () => {
+      const el = document.getElementById('rank-countdown');
+      if (!el) return;
+      const now = new Date();
+      const next = getNextResetTime();
+      let diff = Math.max(0, next - now);
+      const days = Math.floor(diff / 86400000);
+      diff %= 86400000;
+      const hours = Math.floor(diff / 3600000);
+      diff %= 3600000;
+      const minutes = Math.floor(diff / 60000);
+      diff %= 60000;
+      const seconds = Math.floor(diff / 1000);
+      let txt;
+      if (days > 0) txt = `다음 리셋: ${days}일 ${hours}시간 ${String(minutes).padStart(2,'0')}분`;
+      else if (hours > 0) txt = `다음 리셋: ${hours}:${String(minutes).padStart(2,'0')}:${String(seconds).padStart(2,'0')}`;
+      else txt = `⚠ 리셋까지 ${minutes}:${String(seconds).padStart(2,'0')} 남음!`;
+      el.textContent = txt;
+      // 1분 이하 남으면 빨간색 강조
+      el.style.color = (days === 0 && hours === 0 && minutes < 1) ? '#ff8888' :
+                       (days === 0 && hours < 1) ? '#ffaa66' : '#88ccff';
+    };
+    update();
+    _countdownInterval = setInterval(update, 1000);
+  }
+  function stopRankCountdown() {
+    if (_countdownInterval) {
+      clearInterval(_countdownInterval);
+      _countdownInterval = null;
     }
   }
 
@@ -9206,7 +9721,9 @@
     // 도감
     { id: 'codexHalf', name: '도감 절반', desc: '기본 능력 10개 해금', reward: 100, check: () => BASIC_ABILITY_IDS.filter(id => unlockedAbilities.has(id)).length >= 10,
       unlocks: { ability: 'sword' } },
-    { id: 'codexFull', name: '도감 마스터',desc: '기본 능력 모두 해금', reward: 400, check: () => BASIC_ABILITY_IDS.every(id => unlockedAbilities.has(id)),
+    { id: 'codexFull', name: '도감 마스터', desc: '거의 모든 기본 능력 해금 (보상 제외)', reward: 400,
+      // ⚠️ 순환 의존 방지 — 'boomerang' 은 이 업적의 보상이라 체크에서 제외
+      check: () => BASIC_ABILITY_IDS.every(id => id === 'boomerang' || unlockedAbilities.has(id)),
       unlocks: { ability: 'boomerang' } },
     // 캐릭터 사용
     { id: 'allChars',  name: '모든 영웅',  desc: '모든 캐릭터로 R5 도달',
@@ -12070,8 +12587,13 @@
     if (!getNickname()) { openNicknameModal(true); return; }
     showScreen('globalRank');
     loadGlobalRankings();
+    startRankCountdown();
+    fetchMySeasonTitles(); // 본인 시즌 칭호 동기화 (백그라운드)
   };
-  document.getElementById('globalRankBack').onclick = () => showScreen('menu');
+  document.getElementById('globalRankBack').onclick = () => {
+    stopRankCountdown();
+    showScreen('menu');
+  };
   document.getElementById('globalRankRefresh').onclick = refreshRankingsInline;
   // 인라인 새로고침 — statusEl 표시 안 함 (레이아웃 점프 방지)
   // 기존 리스트 유지 + 상단 작은 배너만 표시 + 백그라운드 fetch → 부드러운 교체
@@ -12117,6 +12639,8 @@
   });
   // 첫 실행 감지 — 닉네임 없으면 강제 모달
   checkFirstLaunch();
+  // 시즌 칭호 백그라운드 동기화 (페이지 로드 시 1회) — 닉네임 모달 열 때 미리 보이도록
+  setTimeout(fetchMySeasonTitles, 2000);
 
   document.getElementById('recordsBtn').onclick = () => {
     buildRecords();
@@ -12319,7 +12843,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 88;
+  const APP_VERSION = 94;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
@@ -12838,6 +13362,75 @@
   // 게임은 startBtn 클릭 시 reset() 호출됨. 여기서는 메뉴만 표시.
   reset();              // state 초기 구조만 만들어둠 (loop이 안전하게 동작하도록)
   initBackground();     // 우주 배경 초기화 (별/행성/성운)
+
+  // ===== 🌙 백그라운드 탭에서도 게임 진행 =====
+  // 1) Worker 가 background에서 tick 발사 (브라우저 throttling 일부 우회)
+  // 2) visibilitychange 시 경과 시간만큼 catch-up
+  let _backgroundWorker = null;
+  let _hiddenAt = null;
+  const FRAME_MS = 1000 / FPS;
+  const MAX_CATCHUP_FRAMES = 30 * 60 * FPS; // 최대 30분치 catch-up
+
+  function runGameTick() {
+    if (currentScreen !== 'game') return;
+    if (paused || state.gameOver || state.levelUpChoices) return;
+    const steps = gameSpeed || 1;
+    for (let i = 0; i < steps; i++) update();
+  }
+
+  // Worker — background에서 setInterval 가 throttle 덜 됨
+  try {
+    const workerCode = `
+      let interval = null;
+      self.onmessage = (e) => {
+        if (e.data === 'start') {
+          if (interval) return;
+          interval = setInterval(() => self.postMessage(0), ${FRAME_MS});
+        } else if (e.data === 'stop') {
+          if (interval) { clearInterval(interval); interval = null; }
+        }
+      };
+    `;
+    const blob = new Blob([workerCode], { type: 'application/javascript' });
+    _backgroundWorker = new Worker(URL.createObjectURL(blob));
+    _backgroundWorker.onmessage = () => {
+      // Worker tick — 탭 숨김 상태에서만 game update 실행
+      // (visible 일 때는 RAF가 처리하므로 중복 방지)
+      if (document.hidden) runGameTick();
+    };
+  } catch (e) {
+    console.warn('Background worker 실패 — catch-up 만 사용:', e);
+  }
+
+  // 가시성 변화 — worker 시작/정지 + catch-up
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+      _hiddenAt = performance.now();
+      if (_backgroundWorker) _backgroundWorker.postMessage('start');
+    } else {
+      if (_backgroundWorker) _backgroundWorker.postMessage('stop');
+      // 백그라운드에서 worker tick이 일부 throttle 되었을 수 있으니
+      // 경과 시간 기반으로 추가 catch-up — 차이만큼만 보충
+      if (_hiddenAt !== null && currentScreen === 'game' &&
+          !paused && !state.gameOver && !state.levelUpChoices) {
+        const elapsed = performance.now() - _hiddenAt;
+        let frames = Math.floor(elapsed / FRAME_MS);
+        frames = Math.min(frames, MAX_CATCHUP_FRAMES);
+        // 게임 속도 반영 (x1/x2/x3)
+        const steps = gameSpeed || 1;
+        for (let f = 0; f < frames; f++) {
+          for (let s = 0; s < steps; s++) update();
+          if (state.gameOver) break;
+          if (state.levelUpChoices) {
+            SFX.levelup();
+            break; // 레벨업 모달 뜨면 catch-up 중단 — 유저가 처리
+          }
+        }
+      }
+      _hiddenAt = null;
+    }
+  });
+
   (function loop(){
     if (currentScreen === 'game') {
       const steps = paused || state.gameOver ? 1 : gameSpeed;
