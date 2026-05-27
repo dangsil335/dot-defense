@@ -8463,6 +8463,8 @@
     modal.style.display = 'none';
     ensureUserId(); // userId도 보장
     refreshMenuNickname();
+    // 🌐 서버 측 프로필 즉시 갱신 (기존 랭킹 기록 있을 경우)
+    updateProfileInRankings();
   }
 
   // ===== 점수 제출 (게임 종료 시) — title 컬럼 미생성 대응 =====
@@ -8608,6 +8610,40 @@
     if (data.myRow && data.myRank > 10) {
       dividerEl.style.display = '';
       meEl.appendChild(renderRankRow(data.myRank, data.myRow, true));
+    }
+  }
+
+  // ===== 프로필 갱신 (닉네임/칭호 변경 시) — 기존 rankings 행 업데이트 =====
+  // 점수는 안 건드리고 nickname, title만 갱신. user_id 매칭 안 되면 (아직 게임 안 함) 그냥 무시.
+  async function updateProfileInRankings() {
+    if (!isSupabaseEnabled()) return;
+    const sb = getSupabase();
+    if (!sb) return;
+    const nickname = getNickname();
+    if (!nickname) return;
+    const userId = ensureUserId();
+    try {
+      // title 포함해서 업데이트 시도
+      const fullPatch = {
+        nickname: nickname,
+        title: getSelectedTitle() || null,
+        updated_at: new Date().toISOString(),
+      };
+      let res = await sb.from('rankings').update(fullPatch).eq('user_id', userId);
+      // title 컬럼 없으면 빼고 재시도
+      if (res.error && /title/i.test(res.error.message || '')) {
+        console.warn('⚠️ title 컬럼 없음 — nickname만 갱신');
+        const fallback = { nickname: nickname, updated_at: new Date().toISOString() };
+        res = await sb.from('rankings').update(fallback).eq('user_id', userId);
+      }
+      if (res.error) {
+        console.warn('프로필 갱신 실패:', res.error.message);
+      } else {
+        console.log(`✅ 프로필 갱신: ${nickname} / 칭호 ${getSelectedTitle() || '없음'}`);
+        invalidateRankingCache(); // 다음 랭킹 조회 시 새 프로필 반영
+      }
+    } catch (e) {
+      console.warn('프로필 갱신 통신 실패:', e);
     }
   }
 
