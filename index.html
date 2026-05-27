@@ -8083,18 +8083,25 @@
   function roundConfig(n) {
     const baseHp = enemyHpFor(n);
     const isFinal = n === MAX_ROUND;
-    const isBoss  = n > 0 && n % 5 === 0 && !isFinal;
+    const isBossNormal = n > 0 && n % 5 === 0 && !isFinal;
     // 승천 배수 적용 (state 가 있을 때만; 메뉴에서 호출 시엔 무시)
     const asc = (typeof state !== 'undefined' && state && state.asc) ? state.asc : {
-      enemyHpMul: 1, bossHpMul: 1, enemySpeedMul: 1, enemyCountAdd: 0, roundTimeMul: 1
+      enemyHpMul: 1, bossHpMul: 1, enemySpeedMul: 1, enemyCountAdd: 0, roundTimeMul: 1,
+      extraBossCount: 0, eliteEscorts: 0, extraBossRounds: false,
     };
+    // 추가 보스 라운드 — Asc 13+ 에서 R10, 30, 50, 70, 90 에 보스
+    const isExtraBoss = !isFinal && asc.extraBossRounds && !isBossNormal &&
+                        (n === 10 || n === 30 || n === 50 || n === 70 || n === 90);
+    const isBoss = isBossNormal || isExtraBoss;
     const mm = (typeof state !== 'undefined' && state && state.metaMods) ? state.metaMods : { roundTimeBonus: 0 };
     const hp = Math.ceil(baseHp * asc.enemyHpMul);
     const bossHp = Math.ceil(baseHp * (isFinal ? 13 : 10) * asc.bossHpMul);
     const baseTime = isFinal ? 180 : 30;
     const duration = Math.max(15, Math.floor((baseTime + (mm.roundTimeBonus || 0)) * asc.roundTimeMul)) * FPS;
     const baseSpawn = isFinal ? 30 : (isBoss ? 10 : 20);
-    const spawnCount = baseSpawn + (isFinal ? 0 : (asc.enemyCountAdd || 0));
+    // 보스 라운드 정예 적 + 일반 적 추가
+    const eliteCount = isBoss ? (asc.eliteEscorts || 0) : 0;
+    const spawnCount = baseSpawn + eliteCount + (isFinal ? 0 : (asc.enemyCountAdd || 0));
     return {
       duration,
       spawnCount,
@@ -8102,9 +8109,12 @@
       enemyHp:       hp,
       enemySpeed:    (0.008 + (n - 1) * 0.0005) * asc.enemySpeedMul,
       enemyGold:     Math.max(1, Math.ceil(Math.sqrt(hp) * 0.10)),
-      isBoss, isFinal,
+      isBoss, isFinal, isExtraBoss,
       bossHp,
       bossGold:      Math.ceil(Math.sqrt(hp) * (isFinal ? 15 : 6)),
+      // 보스 추가 개수 + 정예 정보 (planRound 에서 사용)
+      extraBosses:  isBoss ? (asc.extraBossCount || 0) : 0,
+      eliteCount,
     };
   }
 
@@ -8798,13 +8808,26 @@
       enemyHpMul:    1 + 0.20 * asc + 0.01 * asc * asc,
       // 보스 HP: 선형 +26% + 2차 +1.3%/단계² (Asc5: 2.6x / Asc10: 4.9x / Asc15: 7.8x)
       bossHpMul:     1 + 0.26 * asc + 0.013 * asc * asc,
-      // 적 수용 한계: -3/단계 (Asc15: 80→35, "목숨" 절반 이상 줄어듦)
+      // 적 수용 한계: -3/단계 (Asc15: 80→35)
       maxAliveAdd:  -3 * asc,
       // 보상도 비례 상승
       scoreReward:   1 + 0.10 * asc,            // Asc15 = +150%
       stardustMul:   1 + 0.07 * asc,            // Asc15 = +105%
+      // === 신규: 승천 단계별 추가 메커니즘 ===
+      // 적 이동 속도 (Asc4부터): Asc4=+8%, Asc15=+52%
+      enemySpeedMul: asc >= 4 ? (1 + 0.04 * (asc - 3)) : 1,
+      // 보스 추가 개수 (보스 라운드마다)
+      //   Asc 7~9: +1 (보스 2마리)
+      //   Asc 10~12: +2 (보스 3마리) — 트리플 보스
+      //   Asc 13~15: +2 (보스 3마리) + 정예 호위
+      extraBossCount: asc >= 13 ? 2 : (asc >= 10 ? 2 : (asc >= 7 ? 1 : 0)),
+      // 보스 라운드마다 정예 적 동반 (Asc 10+)
+      eliteEscorts:  asc >= 13 ? 5 : (asc >= 10 ? 3 : 0),
+      // 추가 보스 라운드 발생 — Asc 13+에서 R10, 30, 50, 70, 90에도 보스
+      extraBossRounds: asc >= 13,
+      // 보스 데미지 출력 증가 — Asc 5+
+      bossDmgMul:    1 + Math.max(0, asc - 4) * 0.20,
       // 기존 호환용
-      enemySpeedMul: 1,
       enemyCountAdd: 0,
       roundTimeMul:  1,
       enhanceMul:    1,
@@ -8896,7 +8919,16 @@
       const maxAlive = 80 + m.maxAliveAdd;
       const score = Math.round((m.scoreReward - 1) * 100);
       const dust = Math.round((m.stardustMul - 1) * 100);
-      descs.push(`승천 ${a}: 적 HP +${hp}%, 보스 HP +${bossHp}%, 한계 ${maxAlive}마리 · 보상 점수+${score}%, ★+${dust}%`);
+      const spd = Math.round((m.enemySpeedMul - 1) * 100);
+      // 단계별 특수 메커니즘 라벨
+      const extras = [];
+      if (a >= 4) extras.push(`적속도 +${spd}%`);
+      if (a >= 5) extras.push(`보스DMG +${Math.round((m.bossDmgMul - 1) * 100)}%`);
+      if (a >= 7 && a < 10) extras.push(`🐲 보스 2마리`);
+      if (a >= 10) extras.push(`🐲🐲 보스 3마리 + 정예 ${m.eliteEscorts}마리`);
+      if (a >= 13) extras.push(`☠️ R10/30/50/70/90 추가보스`);
+      const extraStr = extras.length > 0 ? ` · ${extras.join(' · ')}` : '';
+      descs.push(`승천 ${a}: HP +${hp}% / 보스HP +${bossHp}% / 한계 ${maxAlive}마리${extraStr} · 보상 +${score}%점 +${dust}%★`);
     }
     return descs;
   }
@@ -9086,34 +9118,34 @@
     // ===== 🎰 가챠 SR 캐릭터 (2명) =====
     sakura: {
       name: '🌸 사쿠라', color: '#ff88bb',
-      desc: '[SR] 벚꽃검으로 시작. 검 +20% / 보스 +20%. 벚꽃검 + 검 = 벚꽃폭풍.',
+      desc: '[SR] 벚꽃검으로 시작. 데미지 +35% / 보스 +35% / 레벨업 -10%. 벚꽃검 + 검 = 벚꽃폭풍.',
       startAbilities: ['sakuraSlash'],
-      passive: { dmgMul: 1.20, bossDmgMul: 1.20, slotMod: 0, levelUpMul: 1, slowMul: 1 },
+      passive: { dmgMul: 1.35, bossDmgMul: 1.35, slotMod: 0, levelUpMul: 0.90, slowMul: 1 },
       unlockBy: 'gacha:sakura',
       isGacha: true, rarity: 'SR',
     },
     luna: {
       name: '🌙 루나', color: '#aaccff',
-      desc: '[SR] 월광탄으로 시작. 슬로우 +35% / 데미지 +15%. 월광탄 + 빙결 = 월결화살.',
+      desc: '[SR] 월광탄으로 시작. 슬로우 +60% / 데미지 +30% / 슬롯 +1. 월광탄 + 빙결 = 월결화살.',
       startAbilities: ['moonShot'],
-      passive: { dmgMul: 1.15, bossDmgMul: 1, slotMod: 0, levelUpMul: 1, slowMul: 1.35 },
+      passive: { dmgMul: 1.30, bossDmgMul: 1.10, slotMod: 1, levelUpMul: 0.95, slowMul: 1.60 },
       unlockBy: 'gacha:luna',
       isGacha: true, rarity: 'SR',
     },
-    // ===== 🎰 가챠 SSR 캐릭터 (2명) =====
+    // ===== 🎰 가챠 SSR 캐릭터 (2명) — 승천 13~15 클리어용 핵심 픽 =====
     aria: {
       name: '🌟 아리아', color: '#ffe070',
-      desc: '[SSR] 별의노래로 시작. 데미지 +30% / 보스 +40% / 레벨업 -15%. 별의노래 + 노바 = 우주합창.',
+      desc: '[SSR] 별의노래로 시작. 데미지 +60% / 보스 +80% / 레벨업 -30% / 강화 -25%. 별의노래 + 노바 = 우주합창.',
       startAbilities: ['starSong'],
-      passive: { dmgMul: 1.30, bossDmgMul: 1.40, slotMod: 0, levelUpMul: 0.85, slowMul: 1 },
+      passive: { dmgMul: 1.60, bossDmgMul: 1.80, slotMod: 0, levelUpMul: 0.70, slowMul: 1, enhanceMul: 0.75 },
       unlockBy: 'gacha:aria',
       isGacha: true, rarity: 'SSR',
     },
     misaki: {
       name: '🦋 미사키', color: '#cc88ff',
-      desc: '[SSR] 시공나비로 시작. 데미지 +25% / 슬로우 +50% / 슬롯 +1. 시공나비 + 시간정지 = 시간감옥.',
+      desc: '[SSR] 시공나비로 시작. 데미지 +50% / 슬로우 +80% / 슬롯 +2 / 레벨업 -20%. 시공나비 + 시간정지 = 시간감옥.',
       startAbilities: ['timeButterfly'],
-      passive: { dmgMul: 1.25, bossDmgMul: 1.15, slotMod: 1, levelUpMul: 0.90, slowMul: 1.50 },
+      passive: { dmgMul: 1.50, bossDmgMul: 1.40, slotMod: 2, levelUpMul: 0.80, slowMul: 1.80 },
       unlockBy: 'gacha:misaki',
       isGacha: true, rarity: 'SSR',
     },
@@ -9309,16 +9341,28 @@
     const cfg = roundConfig(state.round);
     state.roundFrame = 0;
     state.spawnPlan = [];
+    state.bossesSpawnedThisRound = 0;
+    // 정예 적 인덱스 마킹 (앞쪽 N개 스폰을 정예로)
+    state.eliteIndices = new Set();
     for (let i = 0; i < cfg.spawnCount; i++) {
       state.spawnPlan.push((i + 1) * cfg.spawnInterval);
+      if (i < cfg.eliteCount) state.eliteIndices.add(i);
     }
-    // 보스 스폰 큐. 일반: [], 보스 라운드: [60], 최종: [60, +50s, +100s]
+    // 보스 스폰 큐. 일반: [], 보스 라운드: [60, +stagger, ...], 최종: [60, +50s, +100s]
     if (cfg.isFinal) {
       state.bossSpawns = [60, 60 + 50 * FPS, 60 + 100 * FPS];
     } else if (cfg.isBoss) {
+      // 메인 보스 1마리 + 추가 보스 (3초 간격으로 등장)
       state.bossSpawns = [60];
+      for (let k = 1; k <= cfg.extraBosses; k++) {
+        state.bossSpawns.push(60 + 3 * FPS * k);
+      }
     } else {
       state.bossSpawns = [];
+    }
+    // 추가 보스 라운드 경고 — 13+ 승천 R10/30/50/70/90
+    if (cfg.isExtraBoss) {
+      toast(`⚠ 추가 보스 라운드 (R${state.round})`);
     }
   }
 
@@ -9908,21 +9952,28 @@
     if (behavior === 'shielded') hp = Math.ceil(hp * 1.6);  // 더 단단
     if (behavior === 'charger') size = 6;
     if (opts.size) size = opts.size;
+    // === 정예 적 (Asc 10+ 보스 라운드 동반) — HP/속도/크기 강화 ===
+    const isElite = !!opts.isElite;
+    if (isElite) {
+      hp = Math.ceil(hp * 3.0);   // HP 3배
+      size = 9;                    // 더 큼
+    }
     state.enemies.push({
       angle: a, radius: r,
       targetRadius: ENEMY_MIN_R + Math.random() * (ENEMY_MAX_R - ENEMY_MIN_R),
       radiusChangeAt: Math.floor(60 + Math.random()*120),
-      angularSpeed: cfg.enemySpeed * dir * (behavior === 'charger' ? 2.0 : (0.5 + Math.random()*0.8)),
+      angularSpeed: cfg.enemySpeed * dir * (behavior === 'charger' ? 2.0 : (0.5 + Math.random()*0.8)) * (isElite ? 1.35 : 1),
       hp, maxHp: hp, size,
-      goldDrop: cfg.enemyGold,
+      goldDrop: cfg.enemyGold * (isElite ? 4 : 1),
       slowFrames: 0,
       isBoss: false,
+      isElite,
       type: opts.type || getEnemyType(state.round),
       seed: Math.random() * 1000,
       rotation: Math.random() * Math.PI * 2,
       rotSpeed: (Math.random() - 0.5) * 0.04,
       behavior,
-      shieldHp: behavior === 'shielded' ? 5 : 0,  // 첫 X회 데미지 면역
+      shieldHp: behavior === 'shielded' ? 5 : (isElite ? 3 : 0),  // 정예도 약한 보호막
       regenTimer: 0,
       lastDamageAt: 0,
     });
@@ -10021,20 +10072,26 @@
     state.roundFrame++;
     while (state.spawnPlan.length && state.spawnPlan[0] <= state.roundFrame) {
       state.spawnPlan.shift();
-      spawnEnemy();
+      // 정예 적 마킹된 인덱스면 isElite=true로 스폰
+      const totalIdx = (state.eliteIndices ? state.eliteIndices.size : 0) - (state.spawnPlan.length); // 잘못된 계산
+      const spawnedCount = (cfg.spawnCount - 1) - state.spawnPlan.length;
+      const isElite = state.eliteIndices && state.eliteIndices.has(spawnedCount);
+      spawnEnemy({ isElite });
     }
     // 보스 스폰 (큐에 있는 시점 도달 시 차례로)
     while (state.bossSpawns && state.bossSpawns.length && state.roundFrame >= state.bossSpawns[0]) {
       state.bossSpawns.shift();
-      // 이전 보스를 처치하지 못했으면 게임오버
-      if (state.enemies.some(e => e.isBoss)) {
-        endGame('이전 보스를 처치하지 못함', false);
-        break;
-      } else {
-        spawnBoss();
-        shake(15, 12);
-        SFX.bossSpawn();
+      // 첫 보스만 "이전 보스 미처치" 체크 (라운드 시작 보스). 추가 보스는 무조건 스폰
+      if ((state.bossesSpawnedThisRound || 0) === 0) {
+        if (state.enemies.some(e => e.isBoss)) {
+          endGame('이전 보스를 처치하지 못함', false);
+          break;
+        }
       }
+      spawnBoss();
+      state.bossesSpawnedThisRound = (state.bossesSpawnedThisRound || 0) + 1;
+      shake(15, 12);
+      SFX.bossSpawn();
     }
     if (state.gameOver) return;
 
@@ -12262,7 +12319,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 87;
+  const APP_VERSION = 88;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
