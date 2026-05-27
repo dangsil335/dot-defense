@@ -1053,8 +1053,10 @@
   /* 랭킹 행 스타일 */
   .rank-row {
     display: grid;
-    grid-template-columns: 50px 1fr auto;
-    gap: 10px;
+    /* minmax(0, 1fr) → 1fr 컬럼이 콘텐츠보다 작게 줄어들 수 있어야 ellipsis 작동 */
+    /* 점수 컬럼은 min 110px 확보 (8자리 수 + 콤마 + 패딩 여유) */
+    grid-template-columns: 44px minmax(0, 1fr) minmax(110px, auto);
+    gap: 12px;
     align-items: center;
     padding: 10px 12px;
     border-bottom: 1px solid #1a1f2b;
@@ -1075,10 +1077,32 @@
   .rank-row.rank-1 .rank-num { color: #ffd479; font-size: 18px; }
   .rank-row.rank-2 .rank-num { color: #c8d4e6; font-size: 17px; }
   .rank-row.rank-3 .rank-num { color: #cd8856; font-size: 16px; }
-  .rank-info { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-  .rank-nick { font-weight: bold; color: #fff; font-size: 14px; word-break: keep-all; }
-  .rank-meta { font-size: 11px; color: #7a8090; }
-  .rank-score { text-align: right; font-weight: bold; color: #ffd479; font-size: 15px; white-space: nowrap; }
+  .rank-info {
+    display: flex; flex-direction: column; gap: 2px;
+    min-width: 0;          /* grid item이 콘텐츠 폭만큼 강제 확장하는 것 방지 */
+    overflow: hidden;
+  }
+  /* 칭호 + 닉네임 한 줄 — 길면 말줄임표 */
+  .rank-nick {
+    font-weight: bold; color: #fff; font-size: 14px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+  }
+  .rank-nick > span { display: inline; }
+  .rank-meta {
+    font-size: 11px; color: #7a8090;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .rank-score {
+    text-align: right;
+    font-weight: bold; color: #ffd479; font-size: 15px;
+    white-space: nowrap;
+    padding-left: 4px;
+  }
 
   /* === 캐릭터 선택 화면 플로팅 시작 버튼 === */
   .char-floating-bar {
@@ -11964,10 +11988,40 @@
     loadGlobalRankings();
   };
   document.getElementById('globalRankBack').onclick = () => showScreen('menu');
-  document.getElementById('globalRankRefresh').onclick = () => {
-    invalidateRankingCache();  // 강제 새로고침 — 캐시 폐기
-    loadGlobalRankings();
-  };
+  document.getElementById('globalRankRefresh').onclick = refreshRankingsInline;
+  // 인라인 새로고침 — statusEl 표시 안 함 (레이아웃 점프 방지)
+  // 기존 리스트 유지 + 상단 작은 배너만 표시 + 백그라운드 fetch → 부드러운 교체
+  function refreshRankingsInline() {
+    const top10El = document.getElementById('globalRank-top10');
+    // 데이터가 아예 없으면 일반 로드 (첫 진입 케이스)
+    const hasRows = top10El && top10El.children && top10El.children.length > 0;
+    if (!hasRows) {
+      invalidateRankingCache();
+      loadGlobalRankings();
+      return;
+    }
+    // 기존 데이터 유지 + 작은 갱신 배너만 표시
+    let banner = document.getElementById('stale-banner');
+    if (!banner) {
+      banner = document.createElement('div');
+      banner.id = 'stale-banner';
+      banner.style.cssText = 'text-align:center; color:#7a8090; font-size:11px; padding:6px; background:rgba(122,215,255,0.08); border-bottom:1px solid #1a1f2b; margin-bottom:6px;';
+      top10El.insertBefore(banner, top10El.firstChild);
+    }
+    banner.textContent = '🔄 새로고침 중...';
+    banner.style.color = '#7a8090';
+    // 백그라운드 fetch — 끝나면 부드럽게 교체
+    fetchRankingsData().then(data => {
+      _rankingCache = { timestamp: Date.now(), data };
+      renderRankings(data, false); // 새 데이터로 교체 (배너 제거됨)
+    }).catch(e => {
+      console.warn('새로고침 실패:', e);
+      if (banner) {
+        banner.textContent = '⚠ 새로고침 실패 — 기존 결과 유지';
+        banner.style.color = '#ff8888';
+      }
+    });
+  }
   document.getElementById('nickname-display').onclick = () => openNicknameModal(false);
   document.getElementById('nicknameSubmit').onclick = submitNickname;
   document.getElementById('nicknameInput').addEventListener('keydown', (e) => {
