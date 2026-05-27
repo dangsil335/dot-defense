@@ -867,20 +867,21 @@
   /* ===== 캐릭터 선택 화면 ===== */
   #characterScreen { padding: 24px; align-items: stretch; }
   #character-list {
-    max-width: 720px; width: 100%; margin: 0 auto;
+    max-width: 900px; width: 100%; margin: 0 auto;
     overflow-y: auto; flex: 1;
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-    gap: 10px;
-    padding-bottom: 24px;
+    grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+    gap: 8px;
+    padding: 0 8px 16px;
   }
   .char-card {
     background: #141822;
     border: 2px solid #2a2f3a;
     border-left: 4px solid #7ad7ff;
-    padding: 14px;
+    padding: 10px 12px;
     cursor: pointer;
     transition: background .12s, border-color .12s;
+    min-height: 0;
   }
   .char-card:hover:not(.locked) { background: #1a1f2b; }
   .char-card.selected { border-color: #ffd479; background: #1a2030; }
@@ -966,6 +967,10 @@
   .achievement-card .ach-reward.title {
     background: #2a1e10; color: #ffd479;
     border: 1px solid #5a4220;
+  }
+  .achievement-card .ach-reward.relic {
+    background: #1a1428; color: #c084ff;
+    border: 1px solid #5a4080;
   }
   .achievement-card .ach-reward.title .rank-title {
     margin-right: 0;  /* title chip 안에선 여백 제거 */
@@ -1376,6 +1381,14 @@
     <button id="achievementsBack" class="codex-back">← 메뉴로</button>
   </div>
   <div class="achievement-summary" id="achievement-summary">달성 0/0</div>
+  <div class="codex-tabs" id="ach-tabs">
+    <button class="codex-tab active" data-achtab="progress">📈 진행</button>
+    <button class="codex-tab" data-achtab="build">🎴 빌드</button>
+    <button class="codex-tab" data-achtab="combat">⚔️ 처치</button>
+    <button class="codex-tab" data-achtab="ascension">✨ 승천</button>
+    <button class="codex-tab" data-achtab="special">📖 특수</button>
+    <button class="codex-tab" data-achtab="repeat">🔁 반복</button>
+  </div>
   <div id="achievements-list"></div>
 </div>
 
@@ -1385,7 +1398,13 @@
     <h2>캐릭터 선택</h2>
     <button id="characterBack" class="codex-back">← 메뉴로</button>
   </div>
-  <div id="character-list" style="padding-bottom:calc(180px + env(safe-area-inset-bottom));"></div>
+  <div class="codex-tabs" id="char-tabs">
+    <button class="codex-tab active" data-chartab="all">📦 전체</button>
+    <button class="codex-tab" data-chartab="basic">⚜️ 기본</button>
+    <button class="codex-tab" data-chartab="gacha">🎰 가챠</button>
+    <button class="codex-tab" data-chartab="owned">🌟 보유</button>
+  </div>
+  <div id="character-list"></div>
   <!-- 플로팅 시작 버튼 (화면 하단 고정) -->
   <div class="char-floating-bar">
     <div class="char-floating-selected" id="char-floating-selected">선택된 캐릭터: <span style="color:#7ad7ff;">표준</span></div>
@@ -1465,6 +1484,12 @@
     <button id="shopBack" class="codex-back">← 메뉴로</button>
   </div>
   <div class="stardust-bar">스타더스트: <span id="stardust-count">0</span> ★</div>
+  <div class="codex-tabs" id="shop-tabs">
+    <button class="codex-tab active" data-shoptab="resource">💰 자원</button>
+    <button class="codex-tab" data-shoptab="combat">⚔️ 전투력</button>
+    <button class="codex-tab" data-shoptab="build">🎴 빌드</button>
+    <button class="codex-tab" data-shoptab="survival">🛡️ 생존</button>
+  </div>
   <div id="shop-list"></div>
 </div>
 
@@ -7764,7 +7789,7 @@
       apply: (st) => { st.relicEffects.killGoldCritChance = 0.05; }, unlockBy: null },
     wolfFang: { name: '늑대의 송곳니', icon: '🐺', rarity: 'common',
       desc: '저체력 적(HP 25% 이하) 즉사',
-      apply: (st) => { st.relicEffects.executeBelow = Math.max(st.relicEffects.executeBelow, 0.25); }, unlockBy: 'achievement:kills500' },
+      apply: (st) => { st.relicEffects.executeBelow = Math.max(st.relicEffects.executeBelow, 0.25); }, unlockBy: 'achievement:kills1k' },
     starlight: { name: '별빛 부적', icon: '🌟', rarity: 'common',
       desc: '시작 점수 +2,000. 빛나는 모든 것은 별이 된다.',
       apply: (st) => { st.score += 2000; }, unlockBy: null },
@@ -7775,35 +7800,35 @@
       apply: (st) => { st.metaMods.bossGoldMul = (st.metaMods.bossGoldMul || 0) + 2; }, unlockBy: 'achievement:kills2k' },
     oracleOrb: { name: '예언자의 수정구', icon: '🔮', rarity: 'rare',
       desc: '보스 등장 시 5초 정지',
-      apply: (st) => { st.relicEffects.bossStartStop = 300; }, unlockBy: 'achievement:boss5' },
+      apply: (st) => { st.relicEffects.bossStartStop = 300; }, unlockBy: 'achievement:bossRun10' },
     cloverGreat: { name: '대행운의 클로버', icon: '🍀', rarity: 'rare',
       desc: '럭키 +15%, 슈퍼럭키 +5%',
       apply: (st) => {
         st.metaMods.luckyChanceBonus = (st.metaMods.luckyChanceBonus || 0) + 0.15;
         st.metaMods.superLuckyChanceBonus = (st.metaMods.superLuckyChanceBonus || 0) + 0.05;
-      }, unlockBy: 'achievement:combo3' },
+      }, unlockBy: 'achievement:lucky5' },
     cloneEngine: { name: '복제기', icon: '🧬', rarity: 'rare',
       desc: '강화 시 다음 레벨도 동시 +1 (lv +2 효과)',
-      apply: (st) => { st.relicEffects.doubleEnhance = true; }, unlockBy: 'achievement:triple1' },
+      apply: (st) => { st.relicEffects.doubleEnhance = true; }, unlockBy: 'achievement:lvHigh' },
     vintageWine: { name: '빈티지 와인', icon: '🍷', rarity: 'rare',
       desc: '라운드 시작 시 무료 강화 1회',
       apply: (st) => { st.relicEffects.roundStartFreeUpgrade = true; }, unlockBy: 'achievement:round50' },
     flameEssence: { name: '화염의 정수', icon: '🔥', rarity: 'rare',
       desc: '광역 능력 데미지 +50%. 불은 강력하지만 통제 불능.',
-      apply: (st) => { st.relicEffects.aoeDmgMul *= 1.50; }, unlockBy: 'achievement:score100k' },
+      apply: (st) => { st.relicEffects.aoeDmgMul *= 1.50; }, unlockBy: 'achievement:maxAbility' },
     // ↓↓↓ 신규 6개 (조건부 시너지) ↓↓↓
     vampireMantle: { name: '흡혈의 망토', icon: '🩸', rarity: 'rare',
       desc: '능력 발동 시 골드 +2 (자동). 피로 만든 황금.',
-      apply: (st) => { st.relicEffects.abilityUseGold = (st.relicEffects.abilityUseGold || 0) + 2; }, unlockBy: 'achievement:round50' },
+      apply: (st) => { st.relicEffects.abilityUseGold = (st.relicEffects.abilityUseGold || 0) + 2; }, unlockBy: 'achievement:goldHold3k' },
     fateScale: { name: '운명의 저울', icon: '⚖️', rarity: 'rare',
       desc: '한계 적 50% 이상 시 데미지 +75%. 절망이 힘이 된다.',
-      apply: (st) => { st.relicEffects.fateScaleBonus = 0.75; }, unlockBy: 'achievement:round25' },
+      apply: (st) => { st.relicEffects.fateScaleBonus = 0.75; }, unlockBy: 'achievement:lowSlot' },
     echoBell: { name: '메아리의 종', icon: '🔔', rarity: 'rare',
       desc: '모든 능력 데미지 +30%. 같은 소리가 두 번 들린다.',
-      apply: (st) => { st.metaMods.dmgMul *= 1.30; }, unlockBy: 'achievement:triple1' },
+      apply: (st) => { st.metaMods.dmgMul *= 1.30; }, unlockBy: 'achievement:score500k' },
     looterBag: { name: '도굴꾼의 가방', icon: '💼', rarity: 'rare',
       desc: '유물 등장 확률 +25%. 보물은 보물을 부른다.',
-      apply: (st) => { st.relicEffects.relicChanceBonus = (st.relicEffects.relicChanceBonus || 0) + 0.25; }, unlockBy: 'achievement:kills2k' },
+      apply: (st) => { st.relicEffects.relicChanceBonus = (st.relicEffects.relicChanceBonus || 0) + 0.25; }, unlockBy: 'achievement:kills3k' },
     timeWarp: { name: '시간 왜곡', icon: '🌀', rarity: 'rare',
       desc: '적 속도 -25%, 능력 쿨다운 -25%',
       apply: (st) => {
@@ -7812,7 +7837,7 @@
       }, unlockBy: 'achievement:speedrun' },
     gemHunter: { name: '보석 사냥꾼', icon: '💎', rarity: 'rare',
       desc: '처치 시 5% 확률로 골드 +15. 보석함이 쏟아진다.',
-      apply: (st) => { st.relicEffects.gemHunterChance = 0.05; }, unlockBy: 'achievement:combo3' },
+      apply: (st) => { st.relicEffects.gemHunterChance = 0.05; }, unlockBy: 'achievement:gold5kRun' },
 
     // ============================== EPIC (6개) — 게임 변환 메커니즘 ==============================
     handOfByzantium: { name: '비잔틴의 손', icon: '🤝', rarity: 'epic',
@@ -7821,21 +7846,21 @@
       unlockBy: 'achievement:asc1' },
     timeStopClock: { name: '시간 멈춤의 시계', icon: '⏰', rarity: 'epic',
       desc: '라운드 시작 시 모든 적 8초간 정지',
-      apply: (st) => { st.relicEffects.roundStartTimeStop = 480; }, unlockBy: 'achievement:asc1' },
+      apply: (st) => { st.relicEffects.roundStartTimeStop = 480; }, unlockBy: 'achievement:round75' },
     thunderGod: { name: '천둥의 신', icon: '⚡', rarity: 'epic',
       desc: '3초마다 가장 강한 적에게 번개 — 최대 HP의 12% 데미지',
       apply: (st) => { st.relicEffects.thunderGod = true; st.relicEffects.thunderTimer = 180; },
       unlockBy: 'achievement:asc5' },
     odinSpear: { name: '오딘의 창', icon: '⚡', rarity: 'epic',
       desc: '적 처치 시 주변 3마리에 50% 연쇄 데미지',
-      apply: (st) => { st.relicEffects.chainLightning = true; }, unlockBy: 'achievement:asc5' },
+      apply: (st) => { st.relicEffects.chainLightning = true; }, unlockBy: 'achievement:kills5k' },
     // ↓↓↓ 신규 2개 (변환 효과) ↓↓↓
     starAvatar: { name: '별의 화신', icon: '🌟', rarity: 'epic',
       desc: '모든 데미지 +50%, 모든 능력 사거리 ×1.4. 별의 가호.',
       apply: (st) => {
         st.metaMods.dmgMul *= 1.50;
         st.relicEffects.rangeMul *= 1.40;
-      }, unlockBy: 'achievement:asc5' },
+      }, unlockBy: 'achievement:triple3' },
     deathPromise: { name: '죽음의 약속', icon: '💀', rarity: 'epic',
       desc: '시작 R10 점프, 보스 HP -30%. 빠른 길에는 대가가 따른다.',
       apply: (st) => {
@@ -7846,7 +7871,7 @@
           if (typeof planRound === 'function') planRound();
         }
         st.relicEffects.bossHpMul = (st.relicEffects.bossHpMul || 1) * 0.70;
-      }, unlockBy: 'achievement:asc10' },
+      }, unlockBy: 'achievement:asc3' },
 
     // ============================== LEGENDARY (4개) — 게임 체인저 ==============================
     godsWill: { name: '신의 의지', icon: '✨', rarity: 'legendary',
@@ -7859,14 +7884,14 @@
           target.level = maxLvFor(target.id);
           toast(`✨ 신의 의지: ${ABILITY_DEFS[target.id].name} MAX!`);
         }
-      }, unlockBy: 'achievement:asc10' },
+      }, unlockBy: 'achievement:asc7' },
     eternityLight: { name: '영원의 빛', icon: '🌅', rarity: 'legendary',
       desc: '한 게임당 한 번, 한계 초과 시 무효 (자동 부활)',
       apply: (st) => { st.relicEffects.deathDefiance = 1; }, unlockBy: 'achievement:asc10' },
     apocalypseClock: { name: '종말의 시계', icon: '⏳', rarity: 'legendary',
       desc: '보스 5마리마다 다음 라운드 자동 클리어 (3회)',
       apply: (st) => { st.relicEffects.skipRoundCharges = 3; st.relicEffects.skipRoundBossCount = 0; },
-      unlockBy: 'achievement:asc15' },
+      unlockBy: 'achievement:asc12' },
     // ↓↓↓ 신규 1개 (시간 누적형) ↓↓↓
     dimensionDragon: { name: '차원 용', icon: '🐲', rarity: 'legendary',
       desc: '보스 처치마다 데미지 +25% (영구 누적). 용의 분노는 끝나지 않는다.',
@@ -8476,6 +8501,7 @@
       shakeStrength: 0,
       kills: 0,            // 현재 레벨 진행도 처치 수
       totalKills: 0,       // 게임 전체 누적 처치 (업적용)
+      luckyCount: 0,       // 럭키 카드 트리거 횟수 (업적용)
       playerLevel: 1,
       killsToNextLevel: 8,
       levelUpChoices: null, // 레벨업 선택 카드들 (활성 시 모달)
@@ -8797,25 +8823,39 @@
       saveMeta();
       return;
     }
+    // 미리보기 템플릿은 저장 거부 (실제 보유 X)
+    if (String(tid).startsWith('season_preview_')) return;
     // 일반 칭호: TITLES에 있어야 함 / 시즌 칭호: parseSeasonTitle 통과해야 함
     const isStandard = !!TITLES[tid];
-    const isSeason = !!parseSeasonTitle(tid);
+    const seasonInfo = parseSeasonTitle(tid);
+    const isSeason = !!(seasonInfo && !seasonInfo.isPreview);
     if (!isStandard && !isSeason) return; // 알 수 없는 ID 거부
     if (!getOwnedTitles().includes(tid)) return; // 미보유 거부
     META.selectedTitle = tid;
     saveMeta();
   }
-  // 🏁 시즌 칭호 파싱 — ID 형식: 'season_N_R' (N=시즌번호, R=순위)
-  // ID만으로 표시 가능 — 다른 유저의 시즌 칭호도 표시됨
+  // 🏁 시즌 칭호 파싱
+  // ID 형식: 'season_N_R' (실제 보유) 또는 'season_preview_R' (미리보기 템플릿)
   function parseSeasonTitle(tid) {
     if (!tid) return null;
-    const m = String(tid).match(/^season_(\d+)_(\d+)$/);
-    if (!m) return null;
-    const num = parseInt(m[1], 10);
-    const rank = parseInt(m[2], 10);
-    if (rank === 1) return { name: `시즌 ${num} 챔피언`, icon: '🥇', style: 'rainbow' };
-    if (rank === 2) return { name: `시즌 ${num} 준우승`, icon: '🥈', style: 'glow', color: '#c8d4e6' };
-    if (rank === 3) return { name: `시즌 ${num} 3위`, icon: '🥉', style: 'bold', color: '#cd8856' };
+    // 실제 보유 칭호
+    let m = String(tid).match(/^season_(\d+)_(\d+)$/);
+    if (m) {
+      const num = parseInt(m[1], 10);
+      const rank = parseInt(m[2], 10);
+      if (rank === 1) return { name: `시즌 ${num} 챔피언`, icon: '🥇', style: 'rainbow' };
+      if (rank === 2) return { name: `시즌 ${num} 준우승`, icon: '🥈', style: 'glow', color: '#c8d4e6' };
+      if (rank === 3) return { name: `시즌 ${num} 3위`, icon: '🥉', style: 'bold', color: '#cd8856' };
+      return null;
+    }
+    // 미리보기 템플릿 (어떤 시즌 칭호가 있는지 보여주기용)
+    m = String(tid).match(/^season_preview_(\d+)$/);
+    if (m) {
+      const rank = parseInt(m[1], 10);
+      if (rank === 1) return { name: '시즌 N 챔피언', icon: '🥇', style: 'rainbow', isPreview: true };
+      if (rank === 2) return { name: '시즌 N 준우승', icon: '🥈', style: 'glow', color: '#c8d4e6', isPreview: true };
+      if (rank === 3) return { name: '시즌 N 3위', icon: '🥉', style: 'bold', color: '#cd8856', isPreview: true };
+    }
     return null;
   }
 
@@ -9148,14 +9188,13 @@
     grid.innerHTML = '';
     const owned = new Set(getOwnedTitles());
 
-    // 선택 안 함 옵션
-    const none = document.createElement('div');
-    none.className = 'title-pick-item' + (_modalPreviewTitle === null ? ' selected' : '');
-    none.textContent = '없음';
-    none.onclick = () => { _modalPreviewTitle = null; refreshTitlePicker(); };
-    grid.appendChild(none);
+    // 🏁 시즌 우승 칭호 섹션 (헤더 + 보유 + 미리보기 템플릿)
+    const seasonHeader = document.createElement('div');
+    seasonHeader.style.cssText = 'grid-column:1/-1; font-size:11px; color:#ffd479; padding:4px 6px; margin-top:2px; border-bottom:1px solid #2a2f3a;';
+    seasonHeader.textContent = '🏁 시즌 우승 칭호 (글로벌 랭킹 1~3위 시즌 종료 시 부여)';
+    grid.appendChild(seasonHeader);
 
-    // 🏁 시즌 우승 칭호 (본인 보유한 것만) — 최상단에 배치
+    // 보유한 시즌 칭호 (실제 보유, 선택 가능)
     for (const tid of _ownedSeasonTitles) {
       const isSel = tid === _modalPreviewTitle;
       const item = document.createElement('div');
@@ -9165,6 +9204,32 @@
       item.title = '🏁 시즌 우승 칭호';
       grid.appendChild(item);
     }
+    // 미리보기 템플릿 (3개 등급 — 어떤 시즌 칭호가 있는지 보여주기)
+    // 클릭하면 미리보기 가능, 확인 누르면 거부 (locked 상태)
+    for (const rank of [1, 2, 3]) {
+      const tid = `season_preview_${rank}`;
+      const isSel = tid === _modalPreviewTitle;
+      const item = document.createElement('div');
+      item.className = 'title-pick-item locked' + (isSel ? ' selected' : '');
+      item.innerHTML = titleHTML(tid);
+      item.onclick = () => { _modalPreviewTitle = tid; refreshTitlePicker(); };
+      const rankName = rank === 1 ? '1위' : rank === 2 ? '2위' : '3위';
+      item.title = `🔒 글로벌 랭킹 ${rankName} 시즌 종료 시 부여`;
+      grid.appendChild(item);
+    }
+
+    // 구분선
+    const divider = document.createElement('div');
+    divider.style.cssText = 'grid-column:1/-1; font-size:11px; color:#9aa3b3; padding:8px 6px 4px; border-bottom:1px solid #2a2f3a; margin-top:6px;';
+    divider.textContent = '🏆 업적 칭호';
+    grid.appendChild(divider);
+
+    // 선택 안 함 옵션 — 업적 칭호 섹션 시작
+    const none = document.createElement('div');
+    none.className = 'title-pick-item' + (_modalPreviewTitle === null ? ' selected' : '');
+    none.textContent = '없음';
+    none.onclick = () => { _modalPreviewTitle = null; refreshTitlePicker(); };
+    grid.appendChild(none);
 
     // 모든 칭호 (보유 = 정상 / 미보유 = 잠금 표시지만 클릭 가능)
     for (const tid in TITLES) {
@@ -9200,10 +9265,17 @@
     if (!tid) { hint.style.display = 'none'; return; }
     const owned = new Set(getOwnedTitles());
     if (owned.has(tid)) { hint.style.display = 'none'; return; }
-    // 시즌 칭호 미보유
+    // 시즌 칭호 미보유 / 미리보기 템플릿
     const season = parseSeasonTitle(tid);
     if (season) {
-      hint.innerHTML = `🏁 <b>해금 조건:</b> 시즌 종료 시 글로벌 랭킹 상위 3위 안에 들기 (1위/2위/3위 별도 칭호)`;
+      if (season.isPreview) {
+        // 템플릿 — 등급별 안내
+        const rank = tid.match(/^season_preview_(\d+)$/)[1];
+        const rankName = rank === '1' ? '🥇 1위' : rank === '2' ? '🥈 2위' : '🥉 3위';
+        hint.innerHTML = `🏁 <b>예시 미리보기</b> — 글로벌 랭킹 ${rankName} 로 시즌 종료 시 부여됩니다.<br/>실제 칭호엔 시즌 번호가 들어가요 (예: "시즌 3 챔피언").`;
+      } else {
+        hint.innerHTML = `🏁 <b>해금 조건:</b> 시즌 종료 시 글로벌 랭킹 1~3위 안에 들기`;
+      }
       hint.style.display = '';
       return;
     }
@@ -9250,6 +9322,10 @@
 
     // 2. 미보유 칭호 거부
     const owned = new Set(getOwnedTitles());
+    if (_modalPreviewTitle && String(_modalPreviewTitle).startsWith('season_preview_')) {
+      errEl.textContent = '🏁 미리보기 — 시즌 우승 후 실제 칭호로 부여됩니다';
+      return;
+    }
     if (_modalPreviewTitle && !owned.has(_modalPreviewTitle)) {
       errEl.textContent = '🔒 미보유 칭호는 선택할 수 없습니다';
       return;
@@ -10096,6 +10172,29 @@
     { id: 'speedrun',  name: '스피드런',  desc: 'R10을 5분 이내', reward: 150, check: s => s.round >= 10 && s.totalTime < 60 * 60 * 5,
       unlocks: { ability: 'blackhole' } },
     { id: 'lowSlot',   name: '한방능력자',desc: '능력 1개로만 R8 도달', reward: 200, check: s => s.round >= 8 && s.tower.abilities.length <= 1 },
+    // === 💎 유물 해금 전용 업적 11개 (분배용) ===
+    { id: 'kills1k',   name: '백 명의 추적자', desc: '한 게임 1,000 처치', reward: 100,
+      check: s => (s.totalKills || 0) >= 1000 },
+    { id: 'bossRun10', name: '보스 학살자',    desc: '한 게임 보스 10마리 처치', reward: 200,
+      check: s => (s.bossKills || 0) >= 10 },
+    { id: 'lucky5',    name: '🍀 행운의 5연',  desc: '한 게임 럭키 카드 5번', reward: 150,
+      check: s => (s.luckyCount || 0) >= 5 },
+    { id: 'goldHold3k',name: '구두쇠',         desc: '골드 3,000 동시 보유', reward: 100,
+      check: s => (s.gold || 0) >= 3000 },
+    { id: 'kills3k',   name: '대학살',         desc: '한 게임 3,000 처치', reward: 250,
+      check: s => (s.totalKills || 0) >= 3000 },
+    { id: 'gold5kRun', name: '황금 폭우',      desc: '한 게임 누적 골드 5,000', reward: 200,
+      check: s => ((s.relicEffects && s.relicEffects.goldEarnedTotal) || 0) >= 5000 },
+    { id: 'round75',   name: '75라운드 돌파',  desc: 'R75 도달', reward: 350,
+      check: s => s.round >= 75 },
+    { id: 'kills5k',   name: '학살의 신',      desc: '한 게임 5,000 처치', reward: 400,
+      check: s => (s.totalKills || 0) >= 5000 },
+    { id: 'asc3',      name: '✨ 승천 3 클리어', desc: '승천 3 클리어', reward: 200,
+      check: s => !!s.gameWin && (s.ascension || 0) >= 3 },
+    { id: 'asc7',      name: '✨ 승천 7 클리어', desc: '승천 7 클리어', reward: 400,
+      check: s => !!s.gameWin && (s.ascension || 0) >= 7 },
+    { id: 'asc12',     name: '💫 승천 12 클리어',desc: '승천 12 클리어', reward: 800,
+      check: s => !!s.gameWin && (s.ascension || 0) >= 12 },
     // === 💎 유물 업적 — 유물 해금용 ===
     { id: 'relicFirst', name: '💎 첫 유물',     desc: '첫 유물 획득', reward: 50,
       check: s => (s.activeRelics || []).length >= 1 },
@@ -10745,6 +10844,7 @@
         const increment = 1 + (c.lucky || 0);
         a.level = Math.min(a.level + increment, maxLvFor(a.id));
         // 럭키 효과 표시
+        if (c.lucky > 0) state.luckyCount = (state.luckyCount || 0) + 1; // 업적 추적
         if (c.lucky === 1) {
           toast(`🍀 LUCKY! ${ABILITY_DEFS[a.id].name} +2 레벨!`);
           state.comboFlash = 24;
@@ -13515,6 +13615,14 @@
     }
   }
   document.getElementById('characterBack').onclick = () => showScreen('menu');
+  // 캐릭터 탭
+  document.querySelectorAll('#char-tabs .codex-tab').forEach(btn => {
+    btn.onclick = () => {
+      charTab = btn.dataset.chartab;
+      document.querySelectorAll('#char-tabs .codex-tab').forEach(x => x.classList.toggle('active', x === btn));
+      buildCharacterList();
+    };
+  });
   document.getElementById('achievementsBtn').onclick = () => { buildAchievements(); showScreen('achievements'); };
   document.getElementById('achievementsBack').onclick = () => showScreen('menu');
 
@@ -13528,7 +13636,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 99;
+  const APP_VERSION = 104;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
@@ -13647,6 +13755,24 @@
     }
   };
 
+  // 업적 카테고리 매핑
+  const ACH_CAT_MAP = {
+    progress: ['first', 'round10', 'round25', 'round50', 'round75', 'round100'],
+    build:    ['combo3', 'triple1', 'triple3', 'maxAbility', 'lvHigh'],
+    combat:   ['boss5', 'bossRun10', 'kills500', 'kills1k', 'kills2k', 'kills3k', 'kills5k', 'score100k', 'score500k'],
+    ascension:['asc1', 'asc3', 'asc5', 'asc7', 'asc10', 'asc12', 'asc15'],
+    special:  ['codexHalf', 'codexFull', 'allChars', 'speedrun', 'lowSlot',
+               'lucky5', 'goldHold3k', 'gold5kRun',
+               'relicFirst', 'relic3', 'relic5', 'relicRare', 'relicEpic', 'relicLeg', 'relicAllRar'],
+  };
+  function getAchCategory(id) {
+    for (const cat in ACH_CAT_MAP) {
+      if (ACH_CAT_MAP[cat].includes(id)) return cat;
+    }
+    return 'special'; // fallback
+  }
+
+  let achTab = 'progress';
   function buildAchievements() {
     const list = document.getElementById('achievements-list');
     list.innerHTML = '';
@@ -13656,14 +13782,49 @@
     const repeatDust = REPEAT_ACHIEVEMENTS.reduce((acc, a) => acc + (repeatCounts[a.id] || 0) * a.reward, 0);
     // 요약
     document.getElementById('achievement-summary').innerHTML =
-      `단발 <b>${have.size}/${ACHIEVEMENTS.length}</b> · 누적 획득 <b>${singleDust + repeatDust}★</b> (단발 ${singleDust} + 반복 ${repeatDust})`;
+      `단발 <b>${have.size}/${ACHIEVEMENTS.length}</b> · 누적 <b>${singleDust + repeatDust}★</b>`;
 
-    // ── 단발 업적 섹션 ──
-    const singleHeader = document.createElement('div');
-    singleHeader.className = 'ach-section-header';
-    singleHeader.textContent = '✦ 단발 업적 (한 번만)';
-    list.appendChild(singleHeader);
+    // 탭 카운트 갱신
+    for (const cat in ACH_CAT_MAP) {
+      const ids = ACH_CAT_MAP[cat];
+      const done = ids.filter(id => have.has(id)).length;
+      const btn = document.querySelector(`#ach-tabs .codex-tab[data-achtab="${cat}"]`);
+      if (btn) {
+        const labels = { progress:'📈 진행', build:'🎴 빌드', combat:'⚔️ 처치', ascension:'✨ 승천', special:'📖 특수' };
+        btn.textContent = `${labels[cat]} ${done}/${ids.length}`;
+      }
+    }
+    // 반복 탭 카운트
+    const repeatBtn = document.querySelector('#ach-tabs .codex-tab[data-achtab="repeat"]');
+    if (repeatBtn) repeatBtn.textContent = `🔁 반복 ${REPEAT_ACHIEVEMENTS.length}`;
+
+    // 반복 탭
+    if (achTab === 'repeat') {
+      for (const ach of REPEAT_ACHIEVEMENTS) {
+        const count = repeatCounts[ach.id] || 0;
+        const earned = count * ach.reward;
+        const card = document.createElement('div');
+        card.className = 'achievement-card repeat' + (count > 0 ? ' unlocked' : '');
+        card.innerHTML = `
+          <div class="ach-icon">🔁</div>
+          <div class="ach-info">
+            <div class="ach-name">${ach.name}</div>
+            <div class="ach-desc">${ach.desc}</div>
+            <div class="ach-rewards">
+              <span class="ach-reward stardust">회당 +${ach.reward} ★</span>
+              <span class="ach-reward count">달성 ${count}회 (${earned}★)</span>
+            </div>
+          </div>
+        `;
+        list.appendChild(card);
+      }
+      return;
+    }
+
+    // 일반 탭 — 해당 카테고리만 표시
+    const showIds = new Set(ACH_CAT_MAP[achTab] || []);
     for (const ach of ACHIEVEMENTS) {
+      if (!showIds.has(ach.id)) continue;
       const isUL = have.has(ach.id);
       const card = document.createElement('div');
       card.className = 'achievement-card' + (isUL ? ' unlocked' : '');
@@ -13685,6 +13846,15 @@
           chips.push(`<span class="ach-reward title">🏆 ${titleHTML(tid)}</span>`);
         }
       }
+      // 💎 이 업적이 잠금 해제하는 유물 자동 매칭 (RELICS 레지스트리에서 역추적)
+      const needle = 'achievement:' + ach.id;
+      for (const rid in RELICS) {
+        const r = RELICS[rid];
+        if (r.unlockBy === needle) {
+          const rar = RELIC_RARITY[r.rarity];
+          chips.push(`<span class="ach-reward relic" style="border-color:${rar.color};color:${rar.color}">💎 ${r.icon} ${r.name}</span>`);
+        }
+      }
       card.innerHTML = `
         <div class="ach-icon">${isUL ? '✓' : '🔒'}</div>
         <div class="ach-info">
@@ -13696,35 +13866,48 @@
       list.appendChild(card);
     }
 
-    // ── 반복 업적 섹션 ──
-    const repeatHeader = document.createElement('div');
-    repeatHeader.className = 'ach-section-header';
-    repeatHeader.textContent = '🔁 반복 업적 (매 게임마다 가능)';
-    list.appendChild(repeatHeader);
-    for (const ach of REPEAT_ACHIEVEMENTS) {
-      const count = repeatCounts[ach.id] || 0;
-      const earned = count * ach.reward;
-      const card = document.createElement('div');
-      card.className = 'achievement-card repeat' + (count > 0 ? ' unlocked' : '');
-      card.innerHTML = `
-        <div class="ach-icon">🔁</div>
-        <div class="ach-info">
-          <div class="ach-name">${ach.name}</div>
-          <div class="ach-desc">${ach.desc}</div>
-          <div class="ach-rewards">
-            <span class="ach-reward stardust">회당 +${ach.reward} ★</span>
-            <span class="ach-reward count">달성 ${count}회 (${earned}★)</span>
-          </div>
-        </div>
-      `;
-      list.appendChild(card);
-    }
+    // (반복 업적은 'repeat' 탭에서 별도 렌더링됨)
   }
+  // 업적 탭 클릭 핸들러
+  document.querySelectorAll('#ach-tabs .codex-tab').forEach(btn => {
+    btn.onclick = () => {
+      achTab = btn.dataset.achtab;
+      document.querySelectorAll('#ach-tabs .codex-tab').forEach(x => x.classList.toggle('active', x === btn));
+      buildAchievements();
+    };
+  });
 
+  let charTab = 'all';
   function buildCharacterList() {
     const list = document.getElementById('character-list');
     list.innerHTML = '';
-    for (const id of Object.keys(CHARACTERS)) {
+    // 탭 카운트 갱신
+    const allIds = Object.keys(CHARACTERS);
+    const basicCount = allIds.filter(id => !CHARACTERS[id].isGacha).length;
+    const gachaCount = allIds.filter(id => CHARACTERS[id].isGacha).length;
+    const ownedCount = allIds.filter(id => isCharUnlocked(id)).length;
+    const tabLabels = {
+      all:   `📦 전체 ${ownedCount}/${allIds.length}`,
+      basic: `⚜️ 기본 ${allIds.filter(id => !CHARACTERS[id].isGacha && isCharUnlocked(id)).length}/${basicCount}`,
+      gacha: `🎰 가챠 ${allIds.filter(id => CHARACTERS[id].isGacha && isCharUnlocked(id)).length}/${gachaCount}`,
+      owned: `🌟 보유 ${ownedCount}`,
+    };
+    for (const tab in tabLabels) {
+      const btn = document.querySelector(`#char-tabs .codex-tab[data-chartab="${tab}"]`);
+      if (btn) btn.textContent = tabLabels[tab];
+    }
+
+    // 필터링
+    const filtered = allIds.filter(id => {
+      const c = CHARACTERS[id];
+      if (charTab === 'all') return true;
+      if (charTab === 'basic') return !c.isGacha;
+      if (charTab === 'gacha') return !!c.isGacha;
+      if (charTab === 'owned') return isCharUnlocked(id);
+      return true;
+    });
+
+    for (const id of filtered) {
       const char = CHARACTERS[id];
       const unlocked = isCharUnlocked(id);
       const selected = selectedCharacter === id;
@@ -13793,57 +13976,53 @@
   }
 
   // 강화소 콘텐츠
+  let shopTab = 'resource';
   function buildShop() {
     document.getElementById('stardust-count').textContent = (META.stardust || 0).toLocaleString();
     const list = document.getElementById('shop-list');
     list.innerHTML = '';
 
+    // 탭별 카운트 표시 갱신
     for (const cat of SHOP_CATEGORIES) {
       const inCat = META_UPGRADES.filter(u => u.category === cat.id);
-      if (inCat.length === 0) continue;
-
-      // 카테고리 헤더
-      const header = document.createElement('div');
-      header.className = 'shop-category-header';
-      const maxedCount = inCat.filter(u => metaLv(u.id) >= u.maxLv).length;
-      header.innerHTML = `
-        <span class="cat-label" style="color:${cat.color}">${cat.label}</span>
-        <span class="cat-progress">${maxedCount}/${inCat.length} MAX</span>
-      `;
-      list.appendChild(header);
-
-      // 카테고리 내 항목들
-      const grid = document.createElement('div');
-      grid.className = 'shop-category-grid';
-      for (const up of inCat) {
-        const cur = metaLv(up.id);
-        const maxed = cur >= up.maxLv;
-        const cost = maxed ? null : up.cost(cur);
-        const card = document.createElement('div');
-        card.className = 'shop-card' + (maxed ? ' maxed' : '');
-        card.style.borderLeftColor = cat.color;
-        let effectText = '';
-        if (cur > 0 && up.apply) {
-          const v = up.apply(cur);
-          effectText = ' · 현재 효과: ' + (v >= 1 ? '+' + Math.round(v) : '+' + Math.round(v * 100) + '%');
-        }
-        // Lv 진행도 바
-        const pct = Math.min(100, (cur / up.maxLv) * 100);
-        card.innerHTML = `
-          <div>
-            <div class="name">${up.name}</div>
-            <div class="desc">${up.desc}</div>
-            <div class="lv">Lv ${cur} / ${up.maxLv}${effectText}</div>
-            <div class="shop-lv-bar"><i style="width:${pct}%; background:${cat.color}"></i></div>
-          </div>
-          <button class="shop-buy${maxed ? ' maxed' : ''}" data-id="${up.id}" ${maxed || (META.stardust || 0) < cost ? 'disabled' : ''}>
-            ${maxed ? 'MAX' : cost + ' ★'}
-          </button>
-        `;
-        grid.appendChild(card);
-      }
-      list.appendChild(grid);
+      const maxed = inCat.filter(u => metaLv(u.id) >= u.maxLv).length;
+      const btn = document.querySelector(`#shop-tabs .codex-tab[data-shoptab="${cat.id}"]`);
+      if (btn) btn.textContent = `${cat.label} ${maxed}/${inCat.length}`;
     }
+
+    // 활성 탭의 카테고리만 표시
+    const cat = SHOP_CATEGORIES.find(c => c.id === shopTab) || SHOP_CATEGORIES[0];
+    const inCat = META_UPGRADES.filter(u => u.category === cat.id);
+
+    const grid = document.createElement('div');
+    grid.className = 'shop-category-grid';
+    for (const up of inCat) {
+      const cur = metaLv(up.id);
+      const maxed = cur >= up.maxLv;
+      const cost = maxed ? null : up.cost(cur);
+      const card = document.createElement('div');
+      card.className = 'shop-card' + (maxed ? ' maxed' : '');
+      card.style.borderLeftColor = cat.color;
+      let effectText = '';
+      if (cur > 0 && up.apply) {
+        const v = up.apply(cur);
+        effectText = ' · 현재 효과: ' + (v >= 1 ? '+' + Math.round(v) : '+' + Math.round(v * 100) + '%');
+      }
+      const pct = Math.min(100, (cur / up.maxLv) * 100);
+      card.innerHTML = `
+        <div>
+          <div class="name">${up.name}</div>
+          <div class="desc">${up.desc}</div>
+          <div class="lv">Lv ${cur} / ${up.maxLv}${effectText}</div>
+          <div class="shop-lv-bar"><i style="width:${pct}%; background:${cat.color}"></i></div>
+        </div>
+        <button class="shop-buy${maxed ? ' maxed' : ''}" data-id="${up.id}" ${maxed || (META.stardust || 0) < cost ? 'disabled' : ''}>
+          ${maxed ? 'MAX' : cost + ' ★'}
+        </button>
+      `;
+      grid.appendChild(card);
+    }
+    list.appendChild(grid);
 
     list.querySelectorAll('.shop-buy').forEach(btn => {
       btn.onclick = () => {
@@ -13851,6 +14030,14 @@
       };
     });
   }
+  // 탭 클릭 핸들러
+  document.querySelectorAll('#shop-tabs .codex-tab').forEach(btn => {
+    btn.onclick = () => {
+      shopTab = btn.dataset.shoptab;
+      document.querySelectorAll('#shop-tabs .codex-tab').forEach(x => x.classList.toggle('active', x === btn));
+      buildShop();
+    };
+  });
 
   // ===== 도감 콘텐츠 생성 =====
   let codexTab = 'basic';
