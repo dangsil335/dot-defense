@@ -1054,9 +1054,9 @@
   .rank-row {
     display: grid;
     /* minmax(0, 1fr) → 1fr 컬럼이 콘텐츠보다 작게 줄어들 수 있어야 ellipsis 작동 */
-    /* 점수 컬럼은 min 110px 확보 (8자리 수 + 콤마 + 패딩 여유) */
-    grid-template-columns: 44px minmax(0, 1fr) minmax(110px, auto);
-    gap: 12px;
+    /* 점수 컬럼은 min 140px 확보 (천만 자리 + 콤마 + 패딩 여유) */
+    grid-template-columns: 40px minmax(0, 1fr) minmax(140px, max-content);
+    gap: 10px;
     align-items: center;
     padding: 10px 12px;
     border-bottom: 1px solid #1a1f2b;
@@ -1101,7 +1101,8 @@
     text-align: right;
     font-weight: bold; color: #ffd479; font-size: 15px;
     white-space: nowrap;
-    padding-left: 4px;
+    padding-left: 6px;
+    min-width: 130px;   /* 보장 폭 — 어떤 큰 점수도 안 잘림 */
   }
 
   /* === 캐릭터 선택 화면 플로팅 시작 버튼 === */
