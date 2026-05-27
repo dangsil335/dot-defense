@@ -13636,7 +13636,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 104;
+  const APP_VERSION = 105;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
@@ -14041,10 +14041,11 @@
 
   // ===== 도감 콘텐츠 생성 =====
   let codexTab = 'basic';
-  document.querySelectorAll('.codex-tab').forEach(btn => {
+  // codex 화면 내부의 탭만 — 강화소/업적/캐릭터 탭 충돌 방지
+  document.querySelectorAll('#codex .codex-tab').forEach(btn => {
     btn.onclick = () => {
       codexTab = btn.dataset.tab;
-      document.querySelectorAll('.codex-tab').forEach(x => x.classList.toggle('active', x === btn));
+      document.querySelectorAll('#codex .codex-tab').forEach(x => x.classList.toggle('active', x === btn));
       buildCodex();
     };
   });
