@@ -185,6 +185,23 @@
   button:hover:not(:disabled) { background: #2a3550; }
   button:disabled { opacity: 0.4; cursor: not-allowed; }
   #randomBtn { width: 100%; padding: 10px; font-weight: bold; }
+  .relic-view-btn {
+    width: 100%; padding: 10px;
+    background: linear-gradient(135deg, #2a2010, #1a1408);
+    color: #ffd479;
+    border: 1.5px solid #5a4220;
+    font-family: inherit; font-size: 12px; font-weight: bold;
+    cursor: pointer;
+    border-radius: 0;
+    margin-top: 4px;
+    box-shadow: 0 0 8px rgba(255,212,121,0.15);
+    transition: background .15s, box-shadow .15s;
+  }
+  .relic-view-btn:hover {
+    background: linear-gradient(135deg, #3a2c14, #221a0c);
+    box-shadow: 0 0 14px rgba(255,212,121,0.35);
+  }
+  #wrap.portrait .relic-view-btn { padding: 14px; font-size: 14px; min-height: 48px; }
   .ability-row {
     display: grid; grid-template-columns: 1fr auto auto;
     gap: 4px; align-items: center;
@@ -867,12 +884,12 @@
   /* ===== 캐릭터 선택 화면 ===== */
   #characterScreen { padding: 24px; align-items: stretch; }
   #character-list {
-    max-width: 900px; width: 100%; margin: 0 auto;
+    max-width: 960px; width: 100%; margin: 0 auto;
     overflow-y: auto; flex: 1;
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
-    gap: 8px;
-    padding: 0 8px 16px;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 10px;
+    padding: 0 10px 16px;
   }
   .char-card {
     background: #141822;
@@ -881,13 +898,54 @@
     padding: 10px 12px;
     cursor: pointer;
     transition: background .12s, border-color .12s;
-    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+  }
+  /* 카드 내부 — 헤더 (이미지 + 이름 + 등급) */
+  .char-card .char-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+  }
+  .char-card .char-portrait-wrap {
+    width: 44px; height: 44px;
+    flex-shrink: 0;
+    background: #000;
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .char-card .char-portrait-wrap img {
+    width: 100%; height: 100%;
+    object-fit: contain;
+    image-rendering: pixelated;
+  }
+  .char-card .char-header-text {
+    flex: 1; min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .char-card .char-name-row {
+    display: flex; align-items: center; gap: 6px;
+    min-width: 0;
+  }
+  .char-card .char-rarity-pill {
+    flex-shrink: 0;
+    padding: 1px 6px;
+    border: 1px solid;
+    border-radius: 3px;
+    font-size: 10px;
+    font-weight: bold;
+    letter-spacing: 1px;
   }
   .char-card:hover:not(.locked) { background: #1a1f2b; }
   .char-card.selected { border-color: #ffd479; background: #1a2030; }
   .char-card.locked { opacity: 0.5; cursor: not-allowed; }
-  .char-card .char-name { font-size: 16px; font-weight: bold; margin-bottom: 4px; }
-  .char-card .char-desc { font-size: 12px; color: #c8cdd8; line-height: 1.5; }
+  .char-card .char-name { font-size: 14px; font-weight: bold; flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .char-card .char-desc { font-size: 12px; color: #c8cdd8; line-height: 1.4; word-break: keep-all; }
   .char-card .char-lock { font-size: 11px; color: #ff8a98; margin-top: 6px; }
   .char-card .char-selected-tag { font-size: 11px; color: #ffd479; margin-top: 6px; font-weight: bold; }
   .char-card .char-start { font-size: 11px; color: #9aa3b3; margin-top: 6px; }
@@ -1327,6 +1385,19 @@
 </style>
 
 <!-- ===== 🎮 치트 모달 (123123123 입력 시) ===== -->
+<!-- ===== 💎 유물 상세 모달 (게임 중 보유 유물 확인) ===== -->
+<div id="relicDetailModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:9990; align-items:center; justify-content:center; padding:10px; box-sizing:border-box;">
+  <div style="background:#0b0d14; border:2px solid #ffd479; border-radius:10px; max-width:520px; width:100%; max-height:90vh; max-height:90dvh; display:flex; flex-direction:column; box-shadow:0 0 40px rgba(255,212,121,0.3); overflow:hidden;">
+    <!-- 헤더 -->
+    <div style="padding:14px 16px; flex-shrink:0; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #2a2f3a;">
+      <div style="font-size:18px; font-weight:bold; color:#ffd479;">💎 보유 유물 <span id="relic-detail-count" style="font-size:13px; color:#9aa3b3; font-weight:normal;">0개</span></div>
+      <button id="relicDetailClose" style="background:#2a2f3a; color:#fff; border:none; padding:6px 12px; border-radius:6px; cursor:pointer; font-size:12px;">✕ 닫기</button>
+    </div>
+    <!-- 본문 -->
+    <div id="relic-detail-list" style="padding:12px; flex:1; overflow-y:auto;"></div>
+  </div>
+</div>
+
 <div id="cheatModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:9999; align-items:center; justify-content:center; padding:20px;">
   <div style="background:#1a1f2b; border:2px solid #ffd479; border-radius:12px; padding:24px; max-width:480px; width:100%; max-height:90vh; overflow:auto; box-shadow:0 0 40px rgba(255,212,121,0.4);">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
@@ -1542,6 +1613,7 @@
     </div>
     <hr/>
     <button id="randomBtn">🎲 랜덤 능력 획득 (50G)</button>
+    <button id="relicViewBtn" class="relic-view-btn" style="display:none;">💎 유물 <span id="relic-view-count">0개</span> 보기</button>
     <div class="ab-tabs">
       <button class="ab-tab active" data-abtab="active">액티브 <span id="ab-active-count">0/6</span></button>
       <button class="ab-tab" data-abtab="passive">패시브 <span id="ab-passive-count">0/6</span></button>
@@ -12024,27 +12096,85 @@
     ctx.globalAlpha = 1;
   }
 
-  // 💎 보유 유물 HUD — 좌하단 작은 아이콘
+  // 💎 유물 상세 모달
+  function openRelicDetail() {
+    if (!state || !state.activeRelics || state.activeRelics.length === 0) {
+      toast('보유 중인 유물이 없습니다');
+      return;
+    }
+    buildRelicDetail();
+    document.getElementById('relicDetailModal').style.display = 'flex';
+    paused = true; // 읽는 동안 일시정지
+    const pauseBtn = document.getElementById('pauseBtn');
+    if (pauseBtn) pauseBtn.textContent = '▶ 재개';
+  }
+  function closeRelicDetail() {
+    document.getElementById('relicDetailModal').style.display = 'none';
+    // paused는 유저가 명시적으로 일시정지한 게 아니므로 풀어줌
+    paused = false;
+    const pauseBtn = document.getElementById('pauseBtn');
+    if (pauseBtn) pauseBtn.textContent = '⏸ 일시정지';
+  }
+  function buildRelicDetail() {
+    const list = document.getElementById('relic-detail-list');
+    const countEl = document.getElementById('relic-detail-count');
+    list.innerHTML = '';
+    const relics = state.activeRelics || [];
+    countEl.textContent = `${relics.length}개`;
+
+    // 등급별 그룹화 (legendary → epic → rare → common)
+    const order = ['legendary', 'epic', 'rare', 'common'];
+    const byRarity = { common: [], rare: [], epic: [], legendary: [] };
+    for (const r of relics) byRarity[r.rarity].push(r);
+
+    for (const rar of order) {
+      const group = byRarity[rar];
+      if (group.length === 0) continue;
+      const rarInfo = RELIC_RARITY[rar];
+      // 등급 헤더
+      const header = document.createElement('div');
+      header.style.cssText = `font-size:12px; color:${rarInfo.color}; font-weight:bold; margin:10px 0 4px; padding:4px 8px; border-left:3px solid ${rarInfo.color}; background:rgba(255,255,255,0.03);`;
+      header.textContent = `${rarInfo.label} (${group.length})`;
+      list.appendChild(header);
+      // 각 유물 카드
+      for (const r of group) {
+        const card = document.createElement('div');
+        card.style.cssText = `display:flex; gap:10px; padding:10px 12px; background:#141822; border-left:4px solid ${rarInfo.color}; border-radius:4px; margin-bottom:6px; align-items:center;`;
+        card.innerHTML = `
+          <div style="font-size:28px; flex-shrink:0; width:36px; text-align:center;">${r.icon}</div>
+          <div style="flex:1; min-width:0;">
+            <div style="font-size:14px; font-weight:bold; color:${rarInfo.color}; margin-bottom:2px;">${r.name}</div>
+            <div style="font-size:12px; color:#c8cdd8; line-height:1.4;">${r.desc}</div>
+          </div>
+        `;
+        list.appendChild(card);
+      }
+    }
+  }
+  document.getElementById('relicDetailClose').onclick = closeRelicDetail;
+  document.getElementById('relicDetailModal').onclick = (e) => {
+    if (e.target.id === 'relicDetailModal') closeRelicDetail();
+  };
+
+  // 💎 보유 유물 HUD — 좌하단 작은 아이콘 (시각 보조용)
+  // 상세 확인은 패널의 "💎 유물 N개 보기" 버튼으로
   function drawRelicHUD() {
     if (!state.activeRelics || state.activeRelics.length === 0) return;
-    const size = 22;
-    const gap = 4;
+    const size = 18;
+    const gap = 3;
     const startX = 8;
     const startY = H - size - 8;
     for (let i = 0; i < state.activeRelics.length; i++) {
       const r = state.activeRelics[i];
       const rar = RELIC_RARITY[r.rarity];
-      const x = startX + (i % 12) * (size + gap);
-      const y = startY - Math.floor(i / 12) * (size + gap);
-      // 배경
+      const x = startX + (i % 14) * (size + gap);
+      const y = startY - Math.floor(i / 14) * (size + gap);
       ctx.fillStyle = '#0a0d14';
       ctx.fillRect(x, y, size, size);
-      // 등급 테두리
       ctx.strokeStyle = rar.color;
       ctx.lineWidth = 1.5;
       ctx.strokeRect(x + 0.5, y + 0.5, size - 1, size - 1);
-      // 아이콘
-      ctx.font = '16px sans-serif';
+      ctx.font = '13px sans-serif';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillStyle = '#fff';
@@ -12670,6 +12800,9 @@
   const elToast  = $('toast');
 
   elRandom.onclick = actRandomAcquire;
+  // 💎 유물 보기 버튼
+  const _relicViewBtn = document.getElementById('relicViewBtn');
+  if (_relicViewBtn) _relicViewBtn.onclick = openRelicDetail;
 
   function renderStats() {
     // 라운드 + 승천 뱃지
@@ -12751,6 +12884,17 @@
 
   function renderPanel() {
     renderStats();
+    // 💎 유물 버튼 표시/숨김 + 카운트 갱신
+    const relicBtn = document.getElementById('relicViewBtn');
+    const relicCnt = document.getElementById('relic-view-count');
+    if (relicBtn && state.activeRelics) {
+      if (state.activeRelics.length > 0) {
+        relicBtn.style.display = '';
+        if (relicCnt) relicCnt.textContent = `${state.activeRelics.length}개`;
+      } else {
+        relicBtn.style.display = 'none';
+      }
+    }
     elAb.innerHTML = '';
     // 카테고리에 맞는 능력만 필터링
     const isPassiveTab = currentAbTab === 'passive';
@@ -12897,6 +13041,11 @@
 
   // ===== 입력 =====
   window.addEventListener('keydown', e => {
+    // 💎 유물 상세 모달 열려있으면 ESC로 닫기 (다른 입력 차단)
+    if (document.getElementById('relicDetailModal').style.display === 'flex') {
+      if (e.code === 'Escape') closeRelicDetail();
+      return;
+    }
     if (state.gameOver) {
       if (e.code === 'KeyR') { reset(); renderPanel(); document.getElementById('pauseBtn').textContent = '⏸ 일시정지'; }
       if (e.code === 'Escape') { document.getElementById('menuBtn').click(); }
@@ -12955,6 +13104,20 @@
         }
       }
       return; // 제안 활성 중엔 다른 클릭 무시
+    }
+    // 💎 유물 HUD 클릭 처리 — 좌하단 영역
+    if (state.activeRelics && state.activeRelics.length > 0 && !state.levelUpChoices) {
+      const size = 22, gap = 4;
+      const startX = 8;
+      const totalRelics = state.activeRelics.length;
+      const rows = Math.ceil(totalRelics / 12);
+      const startY = H - size - 8 - (rows - 1) * (size + gap);
+      const hudW = Math.min(totalRelics, 12) * (size + gap);
+      const hudH = rows * (size + gap);
+      if (x >= startX && x <= startX + hudW && y >= startY && y <= H - 4) {
+        openRelicDetail();
+        return;
+      }
     }
     if (!state.levelUpChoices) return;
     const cardW = 175, cardH = 290, gap = 12;   // drawLevelUpModal과 일치
@@ -13636,7 +13799,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 105;
+  const APP_VERSION = 108;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
@@ -13934,28 +14097,31 @@
         return d ? `<span style="color:${d.color}">${d.name}</span>` : aid;
       }).join(', ');
       const startInfo = startAbs ? `<div class="char-start">시작 능력: ${startAbs}</div>` : '';
-      // 등급 배지 (가챠 캐릭터만)
-      let rarityBadge = '';
+      // 등급 배지 (가챠 캐릭터만) — 이름 옆 인라인
+      let rarityPill = '';
       if (char.rarity) {
         const rColor = char.rarity === 'SSR' ? '#ffd479' : (char.rarity === 'SR' ? '#c084ff' : '#7ad7ff');
-        const rBg    = char.rarity === 'SSR' ? 'linear-gradient(135deg,#3a2a10,#1a1208)' :
-                       char.rarity === 'SR'  ? 'linear-gradient(135deg,#2a1a40,#15082a)' :
-                                               'linear-gradient(135deg,#103040,#08182a)';
-        rarityBadge = `<div style="position:absolute;top:8px;right:8px;padding:3px 9px;border:1.5px solid ${rColor};border-radius:6px;font-size:11px;font-weight:bold;color:${rColor};background:${rBg};letter-spacing:1px;text-shadow:0 0 6px ${rColor};z-index:2;">${char.rarity}</div>`;
+        const rBg    = char.rarity === 'SSR' ? '#2a2010' :
+                       char.rarity === 'SR'  ? '#1a1428' :
+                                               '#0a2028';
+        rarityPill = `<span class="char-rarity-pill" style="color:${rColor};border-color:${rColor};background:${rBg};">${char.rarity}</span>`;
         card.style.borderLeftColor = rColor;
-        card.style.position = 'relative';
       }
-      // 캐릭터 이미지 (있을 때만 큰 프리뷰) — src 직접 사용
+      // 캐릭터 이미지 (있을 때만)
       const charImgSrc = getCharacterImageSrc(id);
-      let portraitHTML = '';
-      if (charImgSrc) {
-        const size = char.rarity ? 64 : 48; // 가챠 캐릭터는 큰 이미지
-        portraitHTML = `<img src="${charImgSrc}" style="width:${size}px;height:${size}px;object-fit:contain;image-rendering:pixelated;float:right;margin-left:8px;margin-top:${char.rarity ? '20px' : '0'};background:#000;border-radius:4px;${unlocked ? '' : 'opacity:0.3;filter:grayscale(1);'}" />`;
-      }
+      const portraitHTML = charImgSrc
+        ? `<div class="char-portrait-wrap" style="${unlocked ? '' : 'opacity:0.3;filter:grayscale(1);'}"><img src="${charImgSrc}" /></div>`
+        : '';
       card.innerHTML = `
-        ${rarityBadge}
-        ${portraitHTML}
-        <div class="char-name" style="color:${char.color}">${char.name}</div>
+        <div class="char-header">
+          ${portraitHTML}
+          <div class="char-header-text">
+            <div class="char-name-row">
+              <div class="char-name" style="color:${char.color}">${char.name}</div>
+              ${rarityPill}
+            </div>
+          </div>
+        </div>
         <div class="char-desc">${char.desc}</div>
         ${startInfo}
         ${lockText}${selText}
