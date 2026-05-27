@@ -1049,7 +1049,7 @@
       </div>
     </div>
     <div style="padding:10px 18px 14px; flex-shrink:0; border-top:1px solid #2a2f3a; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
-      <button id="authSkipBtn" style="background:none; color:#5a5f6a; font-size:11px; border:none; cursor:pointer; text-decoration:underline;">백업 없이 게스트로 시작</button>
+      <button id="authSkipBtn" style="background:none; color:#5a5f6a; font-size:11px; border:none; cursor:pointer; text-decoration:underline;">닉네임만 설정 (백업 없음) →</button>
       <button id="authCloseBtn" style="background:#2a2f3a; color:#9aa3b3; border:1px solid #3a4256; padding:6px 14px; border-radius:6px; font-size:12px; cursor:pointer; display:none;">닫기</button>
     </div>
   </div>
@@ -8448,9 +8448,17 @@
   let _ownedSeasonTitles = [];
   function getSelectedTitle() { return META.selectedTitle || null; }
   function setSelectedTitle(tid) {
-    if (tid && !TITLES[tid]) return;
-    if (tid && !getOwnedTitles().includes(tid)) return; // 미보유 칭호는 거부
-    META.selectedTitle = tid || null;
+    if (!tid) {
+      META.selectedTitle = null;
+      saveMeta();
+      return;
+    }
+    // 일반 칭호: TITLES에 있어야 함 / 시즌 칭호: parseSeasonTitle 통과해야 함
+    const isStandard = !!TITLES[tid];
+    const isSeason = !!parseSeasonTitle(tid);
+    if (!isStandard && !isSeason) return; // 알 수 없는 ID 거부
+    if (!getOwnedTitles().includes(tid)) return; // 미보유 거부
+    META.selectedTitle = tid;
     saveMeta();
   }
   // 🏁 시즌 칭호 파싱 — ID 형식: 'season_N_R' (N=시즌번호, R=순위)
@@ -8635,12 +8643,12 @@
   document.getElementById('authCloseBtn').onclick = closeAuthModal;
   document.getElementById('authSkipBtn').onclick = () => {
     // 게스트 모드 — 로컬만, 서버 백업 X
+    // 닉네임이 없으면 무조건 닉네임 모달 열어서 랭킹 등록 가능하게 함
+    closeAuthModal();
     if (!getNickname()) {
-      // 닉네임 없으면 닉네임 모달 열기 (게스트로 닉만 설정)
-      closeAuthModal();
-      openNicknameModal(true);
+      openNicknameModal(true); // 닫기 불가 — 반드시 입력
     } else {
-      closeAuthModal();
+      toast('게스트로 계속 진행 — 닉네임은 메뉴 하단에서 변경 가능');
     }
   };
 
@@ -8922,15 +8930,14 @@
       }
     }
 
-    // 4. 저장
+    // 4. 저장 — ⚠ 순서 중요: 칭호 먼저 저장 → 그 다음 메뉴 새로고침 (안 그러면 1회 lag)
     META.nickname = newNick;
-    saveMeta();
-    refreshMenuNickname();
-    setSelectedTitle(_modalPreviewTitle);
+    setSelectedTitle(_modalPreviewTitle);  // META.selectedTitle 갱신 + 저장
+    refreshMenuNickname();                  // 이제 새 칭호 반영된 상태로 메뉴 갱신
+    ensureUserId();
     const modal = document.getElementById('nicknameModal');
     modal._forceRequired = false;
     modal.style.display = 'none';
-    ensureUserId();
     // 🌐 서버 측 프로필 즉시 갱신 (기존 랭킹 기록 있을 경우)
     updateProfileInRankings();
   }
@@ -9134,7 +9141,12 @@
 
   // ===== 프로필 갱신 (닉네임/칭호 변경 시) — 기존 rankings 행 업데이트 =====
   // 점수는 안 건드리고 nickname, title만 갱신. user_id 매칭 안 되면 (아직 게임 안 함) 그냥 무시.
-  async function updateProfileInRankings() {
+  let _updateProfilePromise = null;
+  function updateProfileInRankings() {
+    _updateProfilePromise = _updateProfileImpl();
+    return _updateProfilePromise;
+  }
+  async function _updateProfileImpl() {
     if (!isSupabaseEnabled()) return;
     const sb = getSupabase();
     if (!sb) return;
@@ -9248,6 +9260,11 @@
       try { await _submitPromise; } catch (e) {}
       _submitPromise = null;
       invalidateRankingCache(); // 새 점수 제출됐으니 캐시 폐기
+    }
+    // 진행 중인 프로필 갱신 대기 (닉네임/칭호 변경 직후 진입한 경우)
+    if (_updateProfilePromise) {
+      try { await _updateProfilePromise; } catch (e) {}
+      _updateProfilePromise = null;
     }
 
     // === 캐시 활용 (D: Stale-while-revalidate) ===
@@ -12843,7 +12860,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 94;
+  const APP_VERSION = 96;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
