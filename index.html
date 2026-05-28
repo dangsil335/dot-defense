@@ -1639,6 +1639,7 @@
       <div class="row"><span class="label">적</span><span id="s-enemies">0 / 80</span></div>
       <div class="bar"><i id="s-enemybar" style="width:0%"></i></div>
       <div class="row"><span class="label">레벨</span><span id="s-plevel">Lv1 (0/8)</span></div>
+      <div class="row"><span class="label">누적 처치</span><span id="s-totalkills">0</span></div>
     </div>
     <hr/>
     <button id="randomBtn">🎲 랜덤 능력 획득 (50G)</button>
@@ -1756,11 +1757,11 @@
     },
     nova: {
       name: '노바', baseCost: 55, color: '#b890ff',
-      desc: lv => `확장 충격파 · DMG ${1+lv}`,
+      desc: lv => `확장 충격파 · DMG ${3+lv*2}`,
       // 충격파가 중심에서 외곽까지 퍼지며, 지나가는 모든 적에 1회 데미지
       init(ab) { ab.cooldown = 60; ab.waves = []; },
       tick(ab) {
-        const dmg = 1 + ab.level;
+        const dmg = 3 + ab.level * 2;
         for (const w of ab.waves) {
           w.prevR = w.r;
           w.r += 5;
@@ -1778,7 +1779,7 @@
         ab.waves = ab.waves.filter(w => w.r < ARENA_R + 30);
         if (--ab.cooldown > 0) return;
         ab.waves.push({ r: CORE_R, prevR: CORE_R, hit: new Set() });
-        ab.cooldown = Math.max(70, 150 - ab.level * 8);
+        ab.cooldown = Math.max(50, 110 - ab.level * 6);
       },
       draw(ab) {
         for (const w of ab.waves) {
@@ -1792,7 +1793,7 @@
     },
     laser: {
       name: '레이저', baseCost: 50, color: '#ff5b6e',
-      desc: lv => `관통 빔 · DMG ${2+lv}`,
+      desc: lv => `관통 빔 · DMG ${4+lv*2}`,
       // 가장 가까운 적 방향으로 아레나 끝까지 관통 빔
       init(ab) { ab.cooldown = 30; ab.fx = 0; ab.fxAng = 0; },
       tick(ab) {
@@ -1805,7 +1806,7 @@
         const len = ARENA_R + 20;
         const ex = CX + Math.cos(ang) * len;
         const ey = CY + Math.sin(ang) * len;
-        const dmg = 2 + ab.level;
+        const dmg = 4 + ab.level * 2;
         for (const e of state.enemies) {
           const [px, py] = enemyXY(e);
           if (distPointSegmentSq(px, py, CX, CY, ex, ey) < 144) {
@@ -1815,7 +1816,8 @@
         }
         ab.fxAng = ang;
         ab.fx = 8;
-        ab.cooldown = 75;
+        // 쿨다운도 레벨 따라 단축 (75 고정 → max 35, lv8=43)
+        ab.cooldown = Math.max(35, 75 - ab.level * 4);
       },
       draw(ab) {
         if (ab.fx <= 0) return;
@@ -1955,19 +1957,20 @@
     // ===== 추가 확장 능력 =====
     scatter: {
       name: '산탄', baseCost: 40, color: '#ffb070',
-      desc: lv => `${6+lv*2}방향 산탄 · DMG ${1+Math.floor(lv/2)}`,
+      desc: lv => `${6+lv*2}방향 산탄 · DMG ${2+lv*2}`,
       // 매 발사마다 360도로 균등 분산. 타겟 없이 사방으로.
       init(ab) { ab.cooldown = 30; },
       tick(ab) {
         if (--ab.cooldown > 0) return;
         const n = 6 + ab.level * 2;
-        const dmg = 1 + Math.floor(ab.level / 2);
+        // 데미지 상향: 1+lv/2 → 2+lv*2 (lv8 = 18) — 분산 발사 보정
+        const dmg = 2 + ab.level * 2;
         const off = Math.random() * (Math.PI * 2 / n);
         for (let i = 0; i < n; i++) {
           const ang = (Math.PI * 2 / n) * i + off;
           fireBullet(ang, dmg, '#ffb070', null);
         }
-        ab.cooldown = Math.max(45, 90 - ab.level * 5);
+        ab.cooldown = Math.max(35, 80 - ab.level * 5);
       },
     },
 
@@ -2044,7 +2047,7 @@
 
     turret: {
       name: '터렛', baseCost: 70, color: '#88aaff',
-      desc: lv => `${2+lv}개 보조포 · DMG 1 · 빠른 연사`,
+      desc: lv => `${2+lv}개 보조포 · DMG ${1+lv} · 빠른 연사`,
       // 타워 주변 N개의 미니 포탑이 각자 가장 가까운 적에게 연사.
       init(ab) { ab.angle = 0; ab.cooldowns = []; },
       tick(ab) {
@@ -2071,7 +2074,7 @@
             state.bullets.push({
               x: tx, y: ty,
               vx: Math.cos(ang)*7, vy: Math.sin(ang)*7,
-              dmg: 1, life: 80, color: '#88aaff',
+              dmg: 1 + ab.level, life: 80, color: '#88aaff',
               target: null, leader: null, offsetAngle: 0,
               sourceId: state.currentAbilityId || null,
             });
@@ -2296,10 +2299,11 @@
 
     frost: {
       name: '빙결', baseCost: 50, color: '#88ddff',
-      desc: lv => `슬로우 충격파 · DMG ${1+Math.floor(lv/2)} · ${((50+lv*15)/60).toFixed(1)}s 슬로우`,
+      desc: lv => `슬로우 충격파 · DMG ${2+lv*2} · ${((50+lv*15)/60).toFixed(1)}s 슬로우`,
       init(ab) { ab.cooldown = 60; ab.waves = []; },
       tick(ab) {
-        const dmg = 1 + Math.floor(ab.level / 2);
+        // 데미지 상향: 1+lv/2 → 2+lv*2 (lv8 = 18) — CC + 데미지 균형
+        const dmg = 2 + ab.level * 2;
         const slowDur = 50 + ab.level * 15;
         for (const w of ab.waves) {
           w.prevR = w.r; w.r += 4.5;
@@ -2318,7 +2322,7 @@
         ab.waves = ab.waves.filter(w => w.r < ARENA_R + 30);
         if (--ab.cooldown > 0) return;
         ab.waves.push({ r: CORE_R, prevR: CORE_R, hit: new Set() });
-        ab.cooldown = Math.max(50, 120 - ab.level * 5);
+        ab.cooldown = Math.max(45, 100 - ab.level * 5);
       },
       draw(ab) {
         for (const w of ab.waves) {
@@ -2812,8 +2816,8 @@
 
     starfall: {
       name: '별빛', baseCost: 55, color: '#ffe070',
-      desc: lv => `${3+lv}개 별 낙하 · DMG ${3+lv}`,
-      // 다수의 별이 무작위 위치에 낙하. 작은 광역 데미지.
+      desc: lv => `${4+lv}개 별 낙하 (적 추적) · DMG ${6+lv*3} · 반경 ${40+lv*5}`,
+      // 다수의 별이 적의 위치를 추적해 낙하. 적 없으면 무작위 위치.
       init(ab) { ab.cooldown = 90; ab.stars = []; ab.flashes = []; },
       tick(ab) {
         for (const f of ab.flashes) f.life--;
@@ -2821,8 +2825,8 @@
         for (const s of ab.stars) {
           s.t++;
           if (s.t >= 30) {
-            const radius = 30 + ab.level * 4;
-            const dmg = 3 + ab.level;
+            const radius = 40 + ab.level * 5;
+            const dmg = 6 + ab.level * 3;
             for (const e of state.enemies) {
               if (e.hp <= 0) continue;
               const [ex, ey] = enemyXY(e);
@@ -2837,13 +2841,25 @@
         }
         ab.stars = ab.stars.filter(s => !s.done);
         if (--ab.cooldown > 0) return;
-        const count = 3 + ab.level;
+        const count = 4 + ab.level;
+        // 살아있는 적의 위치에 약간의 오프셋을 두고 떨어뜨림 (보스/강한 적 우선)
+        const pool = state.enemies.filter(e => e.hp > 0);
         for (let i = 0; i < count; i++) {
-          const a = Math.random() * Math.PI * 2;
-          const r = Math.random() * (ARENA_R - 30);
-          ab.stars.push({ x: CX + Math.cos(a) * r, y: CY + Math.sin(a) * r, t: -i * 4 });
+          let sx, sy;
+          if (pool.length > 0) {
+            // 무작위 적 위치에 ±25px 오프셋 (보스 추적 + 일반 적 분산)
+            const target = pool[Math.floor(Math.random() * pool.length)];
+            const [tx, ty] = enemyXY(target);
+            sx = tx + (Math.random() - 0.5) * 50;
+            sy = ty + (Math.random() - 0.5) * 50;
+          } else {
+            const a = Math.random() * Math.PI * 2;
+            const r = Math.random() * (ARENA_R - 30);
+            sx = CX + Math.cos(a) * r; sy = CY + Math.sin(a) * r;
+          }
+          ab.stars.push({ x: sx, y: sy, t: -i * 4 });
         }
-        ab.cooldown = Math.max(60, 120 - ab.level * 5);
+        ab.cooldown = Math.max(45, 100 - ab.level * 5);
       },
       draw(ab) {
         for (const s of ab.stars) {
@@ -3222,7 +3238,7 @@
       name: '중력장', baseCost: 75, color: '#8866cc',
       desc: lv => `타워 주변 영구 슬로우 필드 · DMG ${1+lv}/주기 · 반경 ${120+lv*12}`,
       // 변경: 끌어당김 X → 정적 슬로우 필드 (적 통과 시 강한 슬로우)
-      init(ab) { ab.tickT = 14; },
+      init(ab) { ab.tickT = 20; },
       tick(ab) {
         const radius = 120 + ab.level * 12;
         const dmg = 1 + ab.level;
@@ -3236,7 +3252,8 @@
           }
         }
         if (ab.tickT <= 0) {
-          ab.tickT = 14;
+          // 데미지 틱 간격 완화: 14 → 20프레임 (30% 너프, 클러스터 폭딜 완화)
+          ab.tickT = 20;
           for (const e of state.enemies) {
             if (e.hp <= 0) continue;
             const [ex, ey] = enemyXY(e);
@@ -3574,13 +3591,14 @@
     },
     purgeWave: {
       name: '정화광선', baseCost: 75, color: '#ffaaff',
-      desc: lv => `풀스크린 정화 점멸 · DMG ${5+lv*3} · 보호막 일괄 제거`,
+      desc: lv => `풀스크린 정화 점멸 · DMG ${10+lv*6} · 보호막 일괄 제거`,
       // 변경: 충격파 → 풀스크린 디버프 (즉시 모든 적 데미지 + 보호막 일괄 제거)
       init(ab) { ab.cooldown = 240; ab.fxLife = 0; },
       tick(ab) {
         if (ab.fxLife > 0) ab.fxLife--;
         if (--ab.cooldown > 0) return;
-        const dmg = 5 + ab.level * 3;
+        // 데미지 상향: 5+lv*3 → 10+lv*6 (lv8 = 58) — 풀스크린 단발 가치
+        const dmg = 10 + ab.level * 6;
         for (const e of state.enemies) {
           if (e.hp <= 0) continue;
           if (e.shieldHp > 0) {
@@ -3592,7 +3610,8 @@
         }
         ab.fxLife = 25;
         shake(8, 8);
-        ab.cooldown = Math.max(180, 340 - ab.level * 14);
+        // 쿨다운 단축: max 180→120, lv당 -16 (lv8 = 212 → 약 3.5초)
+        ab.cooldown = Math.max(120, 340 - ab.level * 16);
       },
       draw(ab) {
         if (ab.fxLife <= 0) return;
@@ -4356,11 +4375,12 @@
 
     cosmicCollapse: {
       name: '천체붕괴', isCombo: true, baseCost: 200, color: '#9933cc',
-      desc: lv => `중력장 → 운석 강타 · DMG ${20+lv*10} · 반경 ${120+lv*15}`,
+      desc: lv => `중력장 → 운석 강타 · DMG ${40+lv*25} · 반경 ${120+lv*15}`,
       // 1.5초 동안 블랙홀이 적을 빨아들인 뒤 거대 운석이 떨어져 폭발.
       init(ab) { ab.cooldown = 240; ab.events = []; },
       tick(ab) {
-        const dmg = 20 + ab.level * 10;
+        // 데미지 대폭 상향: 20+lv*10 → 40+lv*25 (lv5 = 165, 약 2.4배) — 긴 차징 보상
+        const dmg = 40 + ab.level * 25;
         const radius = 120 + ab.level * 15;
         const pullR = 150 + ab.level * 10;
         for (const ev of ab.events) {
@@ -4401,7 +4421,8 @@
         }
         if (highEnemy) { const [hx, hy] = enemyXY(highEnemy); bestX = hx; bestY = hy; }
         ab.events.push({ x: bestX, y: bestY, t: 0 });
-        ab.cooldown = Math.max(150, 280 - ab.level * 10);
+        // 쿨다운 단축: max 150→110, lv당 -15 (lv5 = 205)
+        ab.cooldown = Math.max(110, 280 - ab.level * 15);
       },
       draw(ab) {
         for (const ev of ab.events) {
@@ -4782,9 +4803,14 @@
     // ========== 패시브 + 액티브 조합 ==========
     precisionShot: {
       name: '정밀사격', isCombo: true, baseCost: 110, color: '#a0d8ff',
-      desc: lv => `크리티컬 단발 · DMG ${5+lv*3} · 50% ×2`,
+      desc: lv => `크리티컬 단발 · DMG ${5+lv*3} · 50% ×2 · 전체 데미지 +${lv*8}%`,
       init(ab) { ab.cooldown = 0; },
       tick(ab) {
+        // 🎯 정확 패시브 계승 — 모든 데미지 +8%/lv
+        if (state.metaMods) {
+          const own = ab.level * 0.08;
+          if (own > (state.metaMods.precisionBonus || 0)) state.metaMods.precisionBonus = own;
+        }
         if (--ab.cooldown > 0) return;
         const target = findNearestEnemy(ARENA_R + 50);
         if (!target) return;
@@ -4799,10 +4825,18 @@
     },
     rapidBarrage: {
       name: '미니건', isCombo: true, baseCost: 110, color: '#80ffd0',
-      desc: lv => `1발씩 초고속 연사 · DMG ${2+lv}`,
-      // 변경: 부채꼴 → 한 발씩 빠르게 연속 (미니건 정체성)
+      desc: lv => `1발씩 초고속 연사 · DMG ${2+lv} · 타 액티브 쿨다운 -${lv*5}%/초`,
+      // 변경: 부채꼴 → 한 발씩 빠르게 연속 (미니건 정체성) + 신속 패시브 계승
       init(ab) { ab.cooldown = 0; },
       tick(ab) {
+        // ⏩ 신속 패시브 계승 — 다른 액티브 쿨다운 비율 감소 (초당 lv*5%)
+        const cdMul = ab.level * 0.05 / 60;
+        for (const a of state.tower.abilities) {
+          if (a === ab) continue;
+          const d = ABILITY_DEFS[a.id];
+          if (d.isPassive) continue;
+          if (a.cooldown !== undefined && a.cooldown > 0) a.cooldown *= (1 - cdMul);
+        }
         if (--ab.cooldown > 0) return;
         const target = findNearestEnemy(ARENA_R + 50);
         if (!target) return;
@@ -4815,9 +4849,18 @@
     },
     frenzyWave: {
       name: '광기파동', isCombo: true, baseCost: 120, color: '#ff7777',
-      desc: lv => `처치 누적 파동 · DMG ${5+lv*3} · 광폭 가속`,
-      init(ab) { ab.cooldown = 80; ab.waves = []; ab.killBuf = 0; },
+      desc: lv => `처치 누적 파동 · DMG ${5+lv*3} · 처치 시 3초 전체 데미지 +${lv*10}%`,
+      init(ab) { ab.cooldown = 80; ab.waves = []; ab.killBuf = 0; ab.frenzyFrames = 0; },
       tick(ab) {
+        // 🔥 광폭 패시브 계승 — 처치 시 3초간 전체 데미지 +10%/lv
+        if (state.frenzyTrigger) ab.frenzyFrames = 180;
+        if (state.metaMods) {
+          if (ab.frenzyFrames > 0) {
+            ab.frenzyFrames--;
+            const own = ab.level * 0.10;
+            if (own > (state.metaMods.frenzyBonus || 0)) state.metaMods.frenzyBonus = own;
+          }
+        }
         const dmg = 5 + ab.level * 3;
         for (const w of ab.waves) {
           w.prevR = w.r; w.r += 6;
@@ -4852,9 +4895,15 @@
     },
     lootBomb: {
       name: '약탈폭격', isCombo: true, baseCost: 130, color: '#cc6699',
-      desc: lv => `광역 폭격 · DMG ${8+lv*5} · 처치 시 추가 골드`,
+      desc: lv => `광역 폭격 · DMG ${14+lv*10} · 폭격 처치 시 +35% 골드 + 전체 골드 +${lv*12}%`,
       init(ab) { ab.cooldown = 90; ab.fx = []; },
       tick(ab) {
+        // 🩸 흡혈 패시브 효과 계승 — 모든 처치 골드 +12%/lv (vampiric 대체)
+        if (state.metaMods) {
+          const existing = state.metaMods.bonusGoldMul || 0;
+          const ownBonus = ab.level * 0.12;
+          if (ownBonus > existing) state.metaMods.bonusGoldMul = ownBonus;
+        }
         for (const e of ab.fx) e.life--;
         ab.fx = ab.fx.filter(e => e.life > 0);
         if (--ab.cooldown > 0) return;
@@ -4863,7 +4912,8 @@
         if (!target) return;
         const [tx, ty] = enemyXY(target);
         const radius = 60 + ab.level * 10;
-        const dmg = 8 + ab.level * 5;
+        // 데미지 대폭 상향: 8+lv*5 → 14+lv*10 (lv5 = 64, 약 2배)
+        const dmg = 14 + ab.level * 10;
         for (const e of state.enemies) {
           if (e.hp <= 0) continue;
           const [ex, ey] = enemyXY(e);
@@ -4871,14 +4921,14 @@
             const wasHp = e.hp;
             damageEnemy(e, dmg);
             if (wasHp > 0 && e.hp <= 0) {
-              // 약탈 보너스 (Vampiric 효과 강화)
               state.gold += Math.ceil(e.goldDrop * 0.35);
             }
             spawnParticles(ex, ey, '#cc6699', 4);
           }
         }
         ab.fx.push({ x: tx, y: ty, r: radius, life: 16 });
-        ab.cooldown = Math.max(55, 100 - ab.level * 5);
+        // 쿨다운 단축: max 55→40, lv당 -6 (lv5 = 70 → 55)
+        ab.cooldown = Math.max(40, 85 - ab.level * 6);
       },
       draw(ab) {
         for (const e of ab.fx) {
@@ -4895,15 +4945,22 @@
     },
     luckyChain: {
       name: '행운연쇄', isCombo: true, baseCost: 120, color: '#ffcc66',
-      desc: lv => `${3+lv}회 연쇄 · DMG ${4+lv*3} · 처치 시 점수×3`,
+      desc: lv => `${3+lv}회 연쇄 · DMG ${6+lv*6} · 모든 처치 ${lv*8}% 확률 보너스 점수`,
       init(ab) { ab.cooldown = 60; ab.chains = []; },
       tick(ab) {
+        // 🍀 행운 패시브 효과 계승 — 모든 처치에 확률적 점수 보너스 (lv당 +8%)
+        if (state.metaMods) {
+          const existing = state.metaMods.fortuneChance || 0;
+          const ownBonus = ab.level * 0.08;
+          if (ownBonus > existing) state.metaMods.fortuneChance = ownBonus;
+        }
         for (const c of ab.chains) c.life--;
         ab.chains = ab.chains.filter(c => c.life > 0);
         if (--ab.cooldown > 0) return;
         const first = findNearestEnemy(ARENA_R + 50);
         if (!first) return;
-        const dmg = 4 + ab.level * 3;
+        // 데미지 상향: 4+lv*3 → 6+lv*6 (lv5 = 36, 약 2배)
+        const dmg = 6 + ab.level * 6;
         const chains = 3 + ab.level;
         const hit = new Set();
         let current = first;
@@ -4946,9 +5003,15 @@
     },
     masteryOrbit: {
       name: '통달궤도', isCombo: true, baseCost: 130, color: '#88aaff',
-      desc: lv => `위성 수 = 액티브 보유 수 · DMG ${4+lv*3}`,
+      desc: lv => `위성 수 = 액티브 보유 수 · DMG ${4+lv*3} · 액티브 수 × ${lv*5}% 전체 데미지`,
       init(ab) { ab.angle = 0; ab.hits = new Map(); ab.radius = 160; ab.targetRadius = 160; },
       tick(ab) {
+        // 🎓 숙련 패시브 계승 — 보유 액티브 수 × 5%/lv 전체 데미지 보너스
+        if (state.metaMods) {
+          const n = state.tower.abilities.filter(a => !ABILITY_DEFS[a.id].isPassive).length;
+          const own = n * ab.level * 0.05;
+          if (own > (state.metaMods.masteryBonus || 0)) state.metaMods.masteryBonus = own;
+        }
         ab.angle += 0.04 + ab.level * 0.005;
         const target = findNearestEnemy(ARENA_R + 100);
         if (target) {
@@ -4997,9 +5060,14 @@
     },
     scholarSnipe: {
       name: '학자저격', isCombo: true, baseCost: 130, color: '#bb99cc',
-      desc: lv => `최강 적 저격 · DMG ${12+lv*7} · 처치 시 쿨다운 -15%`,
+      desc: lv => `최강 적 저격 · DMG ${12+lv*7} · 처치 시 쿨다운 -15% · 강화 비용 -${lv*5}%`,
       init(ab) { ab.cooldown = 50; },
       tick(ab) {
+        // 📚 연구 패시브 계승 — 강화 비용 -5%/lv
+        if (state.metaMods) {
+          const own = 1 - ab.level * 0.05;
+          if (own < (state.metaMods.scholarMul || 1)) state.metaMods.scholarMul = own;
+        }
         if (--ab.cooldown > 0) return;
         let target = null, best = -1;
         for (const e of state.enemies) { if (e.hp > best) { best = e.hp; target = e; } }
@@ -5028,9 +5096,14 @@
     },
     resolveBoomerang: {
       name: '결의부메랑', isCombo: true, baseCost: 140, color: '#aaaaaa',
-      desc: lv => `보스 우선 추적 · DMG ${8+lv*6} · 보스 추가 데미지 +75%`,
+      desc: lv => `보스 우선 추적 · DMG ${8+lv*6} · 보스 추가 데미지 +75% · 전체 보스 데미지 +${lv*18}%`,
       init(ab) { ab.cooldown = 70; ab.boomerangs = []; },
       tick(ab) {
+        // 🛡 강철의지 패시브 계승 — 모든 능력 보스 데미지 +18%/lv
+        if (state.metaMods) {
+          const own = ab.level * 0.18;
+          if (own > (state.metaMods.ironwillBonus || 0)) state.metaMods.ironwillBonus = own;
+        }
         const dmg = 8 + ab.level * 6;
         for (const b of ab.boomerangs) {
           b.life--; b.rotation += 0.4;
@@ -5134,17 +5207,20 @@
     },
     pelletGun: {
       name: '펠릿건', isCombo: true, baseCost: 120, color: '#ffaa88',
-      desc: lv => `${12+lv*4}발 빠른 산탄 · DMG ${2+Math.floor(lv/2)}`,
+      desc: lv => `${10+lv*3}발 집중 산탄 · DMG ${5+lv*5}`,
+      // 산탄을 좁히고 데미지 강화 — 단일 표적에 여러 발 명중되도록 조정
       init(ab) { ab.cooldown = 20; },
       tick(ab) {
         if (--ab.cooldown > 0) return;
         const target = findNearestEnemy(ARENA_R + 50);
         const base = target ? Math.atan2(enemyXY(target)[1] - CY, enemyXY(target)[0] - CX) : Math.random() * Math.PI * 2;
-        const n = 12 + ab.level * 4;
-        const spread = Math.PI * 0.6;
+        const n = 10 + ab.level * 3;
+        // 분산각 0.6π → 0.35π (단일 표적 명중률 ↑)
+        const spread = Math.PI * 0.35;
+        const dmg = 5 + ab.level * 5;
         for (let i = 0; i < n; i++) {
           const off = n === 1 ? 0 : (-spread/2 + spread * (i/(n-1)));
-          fireBullet(base + off, 2 + Math.floor(ab.level / 2), '#ffaa88', null);
+          fireBullet(base + off, dmg, '#ffaa88', null);
         }
         ab.cooldown = Math.max(15, 35 - ab.level);
       },
@@ -5423,11 +5499,12 @@
     },
     echoStorm: {
       name: '진동폭풍', isCombo: true, baseCost: 130, color: '#88ffaa',
-      desc: lv => `${8+lv} 방향 다중 펄스 · DMG ${5+lv*4}`,
+      desc: lv => `${8+lv} 방향 다중 펄스 · DMG ${8+lv*8}`,
       // echoBlast + nova — 더 많은 방향 + 거대 광역 펄스
       init(ab) { ab.cooldown = 60; ab.pulses = []; },
       tick(ab) {
-        const dmg = 5 + ab.level * 4;
+        // 데미지 상향: 5+lv*4 → 8+lv*8 (lv5 = 48, 약 2배)
+        const dmg = 8 + ab.level * 8;
         for (const p of ab.pulses) {
           p.prevR = p.r;
           p.r += 8;
@@ -5455,7 +5532,8 @@
             r: 20, prevR: 0, hit: new Set(), life: 70,
           });
         }
-        ab.cooldown = Math.max(50, 100 - ab.level * 5);
+        // 쿨다운 단축: max 50→40, lv당 -6 (lv5 = 65)
+        ab.cooldown = Math.max(40, 95 - ab.level * 6);
       },
       draw(ab) {
         for (const p of ab.pulses) {
@@ -5477,11 +5555,12 @@
     },
     rocketBarrage: {
       name: '로켓산탄', isCombo: true, baseCost: 140, color: '#ff7755',
-      desc: lv => `${10+lv*3}발 산탄 로켓 폭격 · DMG ${5+lv*3} · 폭발 ${40+lv*7}`,
+      desc: lv => `${10+lv*3}발 산탄 로켓 폭격 · DMG ${10+lv*8} · 폭발 ${40+lv*7}`,
       // rocketSwarm + scatter — 산탄으로 사방에 폭발탄
       init(ab) { ab.cooldown = 60; ab.rockets = []; ab.explosions = []; },
       tick(ab) {
-        const dmg = 5 + ab.level * 3;
+        // 데미지 상향: 5+lv*3 → 10+lv*8 (lv5 = 50, 약 2.5배) — 명중률 낮으니 한 방 강하게
+        const dmg = 10 + ab.level * 8;
         const exR = 40 + ab.level * 7;
         for (const e of ab.explosions) e.life--;
         ab.explosions = ab.explosions.filter(e => e.life > 0);
@@ -5777,16 +5856,23 @@
     // 패시브 + 액티브 신규 조합
     grandReaper: {
       name: '대수확자', isCombo: true, baseCost: 160, color: '#aa44aa',
-      desc: lv => `HP ${10+lv*3}% 이하 적 즉사 + 처치 시 폭발`,
-      // executioner + reaper — 즉사 + 처치 시 폭발
+      desc: lv => `HP ${15+lv*5}% 이하 적 즉사 · 처치 시 +${5+lv*2}G + 광역 폭발 · 저체력(50% 이하) 적 데미지 +${lv*18}%`,
+      // executioner + reaper — 즉사 임계값 강화 + 처치 시 폭발 + 골드 보너스 + 처형 계승
       init(ab) { ab.cooldown = 0; ab.explosions = []; },
       tick(ab) {
+        // ⚔ 처형 패시브 계승 — 모든 능력의 저체력 적 데미지 +18%/lv
+        if (state.metaMods) {
+          const own = ab.level * 0.18;
+          if (own > (state.metaMods.executionerBonus || 0)) state.metaMods.executionerBonus = own;
+        }
         for (const e of ab.explosions) e.life--;
         ab.explosions = ab.explosions.filter(e => e.life > 0);
         if (--ab.cooldown > 0) return;
-        const threshold = (10 + ab.level * 3) / 100;
+        // 임계값 상향: 10+lv*3 → 15+lv*5 (lv5 = 40%, 베이스 수확자 32% 초과)
+        const threshold = (15 + ab.level * 5) / 100;
         const explodeR = 60 + ab.level * 6;
         const explodeDmg = 5 + ab.level * 3;
+        const bonusGold = 5 + ab.level * 2;  // 수확자 골드 보너스 계승 + 강화
         for (const e of state.enemies) {
           if (e.hp <= 0 || e.isBoss) continue;
           if (e.hp / e.maxHp <= threshold) {
@@ -5796,6 +5882,13 @@
               text: 'REAP', color: '#aa44aa', life: 30, size: 12,
             });
             spawnParticles(ex, ey, '#aa44aa', 12);
+            // 💀 골드 보너스 (수확자 계승)
+            state.gold += bonusGold;
+            if (state.relicEffects) state.relicEffects.goldEarnedTotal = (state.relicEffects.goldEarnedTotal || 0) + bonusGold;
+            state.damageNumbers.push({
+              x: ex, y: ey - e.size - 14, vy: -1.2,
+              text: `+${bonusGold}G`, color: '#ffd479', life: 32, size: 11,
+            });
             // 처치 시 광역 폭발
             for (const e2 of state.enemies) {
               if (e2 === e || e2.hp <= 0) continue;
@@ -5823,10 +5916,16 @@
     },
     pyreShield: {
       name: '강철화염장', isCombo: true, baseCost: 140, color: '#ff4422',
-      desc: lv => `타워 주변 화염장 · DPS ${2+lv*2} · 반경 ${130+lv*15} · 보스 추가`,
-      // resilience + fire — 강화된 영구 화염장
+      desc: lv => `타워 주변 화염장 · DPS ${2+lv*2} · 반경 ${130+lv*15} · 보스 추가 · 누적 처치 비례 데미지 (최대 +${lv*35}%)`,
+      // resilience + fire — 강화된 영구 화염장 + 불굴 패시브 계승
       init(ab) { ab.hits = new Map(); ab.particles = []; },
       tick(ab) {
+        // 💪 불굴 패시브 계승 — 누적 처치 비례 전체 데미지 (최대 +35%/lv)
+        if (state.metaMods) {
+          const max = ab.level * 0.35;
+          const own = Math.min(max, (state.totalKills || 0) * 0.0012 * ab.level);
+          if (own > (state.metaMods.resilienceBonus || 0)) state.metaMods.resilienceBonus = own;
+        }
         for (const [e, cd] of ab.hits) {
           if (cd <= 1 || e.hp <= 0) ab.hits.delete(e);
           else ab.hits.set(e, cd - 1);
@@ -6009,7 +6108,7 @@
     },
     siegeBeam: {
       name: '공성빔', isCombo: true, isTriple: true, baseCost: 260, color: '#88ddff',
-      desc: lv => `차징 거대 분열빔 · DMG ${25+lv*15} · 다중 분기`,
+      desc: lv => `차징 거대 분열빔 · DMG ${50+lv*35} · 다중 분기`,
       // piercingChain + railgun — 거대 빔이 모든 가까운 적에 분기
       init(ab) { ab.cooldown = 100; ab.chargeFrames = 0; ab.fireFx = 0; ab.fireBeams = []; },
       tick(ab) {
@@ -6017,8 +6116,8 @@
         if (ab.chargeFrames > 0) {
           ab.chargeFrames--;
           if (ab.chargeFrames === 0) {
-            // 발사 — 가장 가까운 적 + 분기
-            const dmg = 25 + ab.level * 15;
+            // 데미지 대폭 상향: 25+lv*15 → 50+lv*35 (lv4 = 190, 약 2.2배) — 트리플 차징 보상
+            const dmg = 50 + ab.level * 35;
             const branchCount = 3 + ab.level;
             const pool = state.enemies.filter(e => e.hp > 0)
               .sort((a, b) => Math.hypot(enemyXY(a)[0]-CX, enemyXY(a)[1]-CY) - Math.hypot(enemyXY(b)[0]-CX, enemyXY(b)[1]-CY));
@@ -6041,7 +6140,8 @@
             }
             ab.fireFx = 16;
             shake(24, 16);
-            ab.cooldown = Math.max(120, 200 - ab.level * 6);
+            // 쿨다운 단축: max 120→80, lv당 -12 (lv4 = 152)
+            ab.cooldown = Math.max(80, 200 - ab.level * 12);
           }
         }
         if (ab.chargeFrames > 0) return;
@@ -6368,7 +6468,7 @@
     },
     solarStorm: {
       name: '태양폭풍', isCombo: true, baseCost: 130, color: '#ff8844',
-      desc: lv => `광역 폭발 + ${1+lv}곳 낙뢰 · DMG ${5+lv*3}`,
+      desc: lv => `광역 폭발 + ${1+lv}곳 낙뢰 · DMG ${10+lv*7}`,
       init(ab) { ab.cooldown = 55; ab.fx = 0; ab.bolts = []; },
       tick(ab) {
         if (ab.fx > 0) ab.fx--;
@@ -6376,7 +6476,8 @@
         ab.bolts = ab.bolts.filter(b => b.life > 0);
         if (--ab.cooldown > 0) return;
         const radius = 100 + ab.level * 15;
-        const dmg = 5 + ab.level * 3;
+        // 데미지 상향: 5+lv*3 → 10+lv*7 (lv5 = 45, 약 2.25배)
+        const dmg = 10 + ab.level * 7;
         // 광역
         for (const e of state.enemies) {
           if (e.hp <= 0) continue;
@@ -6740,12 +6841,15 @@
         const dmg = 14 + ab.level * 8;
         const pierceMax = 4 + ab.level;
         const burstR = 42 + ab.level * 5;
+        const burstR2 = burstR * burstR;
+        // 🛡 탄환 처리 — 죽은 탄환 즉시 스킵 + 모든 루프에 명시적 break 조건
         for (const b of ab.bullets) {
+          if (b.life <= 0) continue;
           b.life--;
           if (!b.target || b.target.hp <= 0) {
             let best = Infinity, tg = null;
             for (const e of state.enemies) {
-              if (e.hp <= 0 || (b.hit && b.hit.has(e))) continue;
+              if (e.hp <= 0 || b.hit.has(e)) continue;
               const [ex, ey] = enemyXY(e);
               const d2 = (b.x-ex)*(b.x-ex) + (b.y-ey)*(b.y-ey);
               if (d2 < best) { best = d2; tg = e; }
@@ -6754,55 +6858,71 @@
           }
           if (b.target) {
             const [tx, ty] = enemyXY(b.target);
-            const curAng = Math.atan2(b.vy, b.vx);
-            const wantAng = Math.atan2(ty - b.y, tx - b.x);
-            let diff = wantAng - curAng;
-            // NaN/무한 루프 방어
-            if (!isFinite(diff)) diff = 0;
-            else {
-              while (diff > Math.PI) diff -= Math.PI * 2;
-              while (diff < -Math.PI) diff += Math.PI * 2;
+            const dx = tx - b.x, dy = ty - b.y;
+            // 🛡 적이 정확히 같은 위치(NaN 방어) — atan2(0,0)=0이지만 안전 가드
+            const distSq = dx*dx + dy*dy;
+            if (distSq < 0.01) {
+              // 매우 가까움 — 직진 유지
+            } else {
+              const curAng = Math.atan2(b.vy, b.vx);
+              const wantAng = Math.atan2(dy, dx);
+              let diff = wantAng - curAng;
+              if (!isFinite(diff)) diff = 0;
+              // while 루프 → 클램프로 변경 (안전성 보장)
+              diff = ((diff + Math.PI) % (Math.PI * 2) + Math.PI * 2) % (Math.PI * 2) - Math.PI;
+              const c = Math.max(-0.14, Math.min(0.14, diff));
+              const a = curAng + c;
+              b.vx = Math.cos(a) * 5; b.vy = Math.sin(a) * 5;
             }
-            const c = Math.max(-0.14, Math.min(0.14, diff));
-            const a = curAng + c;
-            b.vx = Math.cos(a) * 5; b.vy = Math.sin(a) * 5;
           }
           b.x += b.vx; b.y += b.vy;
+          // 🛡 충돌 체크 — break로 즉시 종료
+          let hit = false;
           for (const e of state.enemies) {
+            if (hit) break;
             if (e.hp <= 0 || b.hit.has(e)) continue;
             const [ex, ey] = enemyXY(e);
-            if ((b.x-ex)*(b.x-ex) + (b.y-ey)*(b.y-ey) < (e.size+6)*(e.size+6)) {
-              // 직격
+            const hitR = e.size + 6;
+            if ((b.x-ex)*(b.x-ex) + (b.y-ey)*(b.y-ey) < hitR*hitR) {
               damageEnemy(e, dmg);
-              // 광역 폭발 — 주변 적도 60% 데미지
+              // 광역 폭발 — 주변 적도 60% 데미지 (탄환 직격점 기준)
               for (const e2 of state.enemies) {
                 if (e2.hp <= 0 || e2 === e) continue;
                 const [ex2, ey2] = enemyXY(e2);
-                if ((ex-ex2)*(ex-ex2) + (ey-ey2)*(ey-ey2) < burstR*burstR) {
+                if ((b.x-ex2)*(b.x-ex2) + (b.y-ey2)*(b.y-ey2) < burstR2) {
                   damageEnemy(e2, dmg * 0.6);
                   spawnParticles(ex2, ey2, '#aaccff', 2);
                 }
               }
               spawnParticles(ex, ey, '#aaccff', 5);
-              ab.bursts.push({x: ex, y: ey, r: burstR, life: 14});
+              ab.bursts.push({x: b.x, y: b.y, r: burstR, life: 14});
               b.hit.add(e);
               b.pierces++;
-              b.target = null;  // 🔧 타깃 즉시 해제 → 다음 적으로 진행 (고정 추적 방지)
+              b.target = null;
               if (b.pierces >= pierceMax) b.life = 0;
-              break;
+              hit = true;
             }
           }
+          // 아레나 이탈
           if ((b.x-CX)*(b.x-CX) + (b.y-CY)*(b.y-CY) > (ARENA_R+30)*(ARENA_R+30)) b.life = 0;
         }
         ab.bullets = ab.bullets.filter(b => b.life > 0);
         if (--ab.cooldown > 0) return;
-        // 🛡 동시 비행 탄환 상한 (프리징 방지) — 최대 5발
         if (ab.bullets.length >= 5) { ab.cooldown = 8; return; }
-        const ang = Math.random() * Math.PI * 2;
+        // 🎯 첫 발사: 가장 가까운 적 방향으로 (랜덤 X) — 프리징 방지 + 적중률↑
+        let fireAng;
+        const initTarget = findNearestEnemy(ARENA_R + 50);
+        if (initTarget) {
+          const [tx, ty] = enemyXY(initTarget);
+          fireAng = Math.atan2(ty - CY, tx - CX);
+        } else {
+          fireAng = Math.random() * Math.PI * 2;
+        }
         ab.bullets.push({
           x: CX, y: CY,
-          vx: Math.cos(ang) * 3.5, vy: Math.sin(ang) * 3.5,
-          life: 240, target: null, hit: new Set(), pierces: 0,
+          vx: Math.cos(fireAng) * 5, vy: Math.sin(fireAng) * 5,
+          life: 180, target: initTarget || null, hit: new Set(), pierces: 0,
+          sourceId: state.currentAbilityId || null,
         });
         ab.cooldown = Math.max(25, 55 - ab.level * 3);
       },
@@ -7929,8 +8049,9 @@
         st.metaMods.superLuckyChanceBonus = (st.metaMods.superLuckyChanceBonus || 0) + 0.05;
       }, unlockBy: 'achievement:lucky5' },
     cloneEngine: { name: '복제기', icon: '🧬', rarity: 'rare',
-      desc: '강화 시 다음 레벨도 동시 +1 (lv +2 효과)',
-      apply: (st) => { st.relicEffects.doubleEnhance = true; }, unlockBy: 'achievement:lvHigh' },
+      desc: '강화 시 추가 +1 레벨 (총 5회 한정). 충전 소진 시 일반 강화로 돌아옴.',
+      apply: (st) => { st.relicEffects.doubleEnhance = true; st.relicEffects.doubleEnhanceCharges = 5; },
+      unlockBy: 'achievement:lvHigh' },
     vintageWine: { name: '빈티지 와인', icon: '🍷', rarity: 'rare',
       desc: '라운드 시작 시 무료 강화 1회',
       apply: (st) => { st.relicEffects.roundStartFreeUpgrade = true; }, unlockBy: 'achievement:round50' },
@@ -8566,6 +8687,8 @@
   const MAX_ROUND = 100;
   // ♾ 엔드리스 모드 HP 배수 — R100 클리어 후 한 라운드마다 ×1.5 (기하급수)
   const ENDLESS_HP_MUL = 1.5;
+  // 능력 상향 보정 — 평균 빌드 DPS +20~30% 만큼 적 HP +8% 보정 (전 구간)
+  const ABILITY_BUFF_HP_COMP = 1.08;
   function enemyHpFor(n) {
     // R1~25 지수 성장, R26+ 선형 + 약한 2차 항 → 후반 가파르게
     let base;
@@ -8578,10 +8701,11 @@
     }
     // ♾ 엔드리스: R100 이후 매 라운드 ×ENDLESS_HP_MUL (R101 = R100 × 1.5, R102 = R100 × 2.25, ...)
     if (n > MAX_ROUND) {
-      const r100 = enemyHpFor(MAX_ROUND);  // R100 기준값
+      const r100 = enemyHpFor(MAX_ROUND);  // R100 기준값 (이미 보정 포함)
       base = Math.ceil(r100 * Math.pow(ENDLESS_HP_MUL, n - MAX_ROUND));
+      return base;  // 엔드리스는 r100에 이미 보정 포함이므로 추가 보정 X
     }
-    return base;
+    return Math.ceil(base * ABILITY_BUFF_HP_COMP);
   }
   function roundConfig(n) {
     const baseHp = enemyHpFor(n);
@@ -8685,6 +8809,7 @@
         autoGold:            false,
         bossKillResetCooldown: false,
         doubleEnhance:       false,
+        doubleEnhanceCharges: 0,  // 복제기 충전 (5회 한정)
         bossStartStop:       0,
         roundStartTimeStop:  0,
         roundStartFreeUpgrade: false,
@@ -8890,14 +9015,90 @@
   }
 
   // ===== 메타 프로그레션 (스타더스트 영구 통화) =====
-  const META_KEY = 'dot-defense-meta';
+  // 🔐 localStorage 난독화 — 캐주얼한 데이터 수정 방어
+  //    완벽한 보호는 아니지만 (소스 노출됨) JSON 직접 편집은 차단
+  //    실제 안티치트는 서버 sync_account_data의 델타 검증 (Supabase RPC) 에서 처리
+  const META_KEY = '_dd_v2_4f7e';   // 위장된 키 이름 (이전 'dot-defense-meta')
+  const META_KEY_OLD = 'dot-defense-meta';  // 마이그레이션용
+  const _OBF_KEY = 'dd2026.x7Y3@k9F-pQz1';  // XOR 키 (단순 난독화)
+  function _obfuscate(json) {
+    let x = '';
+    for (let i = 0; i < json.length; i++) {
+      x += String.fromCharCode(json.charCodeAt(i) ^ _OBF_KEY.charCodeAt(i % _OBF_KEY.length));
+    }
+    // 유니코드 안전 base64
+    return btoa(unescape(encodeURIComponent(x)));
+  }
+  function _deobfuscate(packed) {
+    try {
+      const x = decodeURIComponent(escape(atob(packed)));
+      let json = '';
+      for (let i = 0; i < x.length; i++) {
+        json += String.fromCharCode(x.charCodeAt(i) ^ _OBF_KEY.charCodeAt(i % _OBF_KEY.length));
+      }
+      return json;
+    } catch { return null; }
+  }
+  function _checksum(s) {
+    // FNV-1a 32비트 해시 — 빠르고 짧음
+    let h = 2166136261 >>> 0;
+    for (let i = 0; i < s.length; i++) {
+      h ^= s.charCodeAt(i);
+      h = Math.imul(h, 16777619) >>> 0;
+    }
+    return h.toString(36);
+  }
+  // 저장 포맷: "<checksum>.<obfuscated_base64>"
+  function _packMeta(obj) {
+    const json = JSON.stringify(obj);
+    return _checksum(json) + '.' + _obfuscate(json);
+  }
+  function _unpackMeta(packed) {
+    if (!packed) return {};
+    // 이전 평문 JSON 호환 (마이그레이션)
+    if (packed.charAt(0) === '{') {
+      try { return JSON.parse(packed); } catch { return {}; }
+    }
+    const sep = packed.indexOf('.');
+    if (sep < 0) return {};
+    const expected = packed.slice(0, sep);
+    const obf = packed.slice(sep + 1);
+    const json = _deobfuscate(obf);
+    if (json === null) return {};
+    if (_checksum(json) !== expected) {
+      console.warn('⚠️ 데이터 무결성 검증 실패 — 변조 감지됨. 서버 데이터 시도 중...');
+      // 실패 시 빈 객체 — 로그인되어 있으면 pullMetaFromServer로 복구됨
+      return {};
+    }
+    try { return JSON.parse(json); } catch { return {}; }
+  }
   let META = (function() {
-    try { return JSON.parse(localStorage.getItem(META_KEY) || '{}'); }
-    catch { return {}; }
+    // 1) 새 키 (난독화 형식) 우선 시도
+    try {
+      const packed = localStorage.getItem(META_KEY);
+      if (packed) {
+        const data = _unpackMeta(packed);
+        if (Object.keys(data).length > 0) return data;
+      }
+    } catch {}
+    // 2) 이전 평문 키에서 마이그레이션
+    try {
+      const old = localStorage.getItem(META_KEY_OLD);
+      if (old) {
+        const obj = JSON.parse(old);
+        // 새 키로 저장 후 이전 키 삭제
+        try {
+          localStorage.setItem(META_KEY, _packMeta(obj));
+          localStorage.removeItem(META_KEY_OLD);
+        } catch {}
+        return obj;
+      }
+    } catch {}
+    return {};
   })();
   function saveMeta() {
-    try { localStorage.setItem(META_KEY, JSON.stringify(META)); } catch {}
-    // 🔐 계정 로그인 상태면 서버에도 동기화 (debounced 5초)
+    try { localStorage.setItem(META_KEY, _packMeta(META)); } catch {}
+    // 🔐 계정 로그인 상태면 서버에도 동기화
     if (typeof queueServerSync === 'function') queueServerSync();
   }
 
@@ -9077,15 +9278,71 @@
   function isAccountLoggedIn() {
     return !!(META.accountCreated && META.userId && META.accountPassword);
   }
-  // 데이터 sync up (변경사항 서버에 저장) — debounced
+  // 데이터 sync up (변경사항 서버에 저장) — debounced + max-delay 보장
   let _syncTimer = null;
+  let _syncMaxTimer = null;  // 변경 후 최대 N초 안에는 무조건 동기화
   function queueServerSync(immediate = false) {
     if (!isAccountLoggedIn()) return;
     if (!isSupabaseEnabled()) return;
     if (_syncTimer) clearTimeout(_syncTimer);
-    const delay = immediate ? 0 : 5000; // 5초 debounce
-    _syncTimer = setTimeout(syncMetaToServer, delay);
+    if (immediate) {
+      // 즉시 동기화 — 강화소 구매 등 중요 변경
+      if (_syncMaxTimer) { clearTimeout(_syncMaxTimer); _syncMaxTimer = null; }
+      syncMetaToServer();
+      return;
+    }
+    // 일반: 3초 디바운스 (이전 5초에서 단축)
+    _syncTimer = setTimeout(() => {
+      _syncTimer = null;
+      if (_syncMaxTimer) { clearTimeout(_syncMaxTimer); _syncMaxTimer = null; }
+      syncMetaToServer();
+    }, 3000);
+    // 첫 변경 후 최대 15초 안에는 반드시 동기화 (계속 변경되어도 적어도 15초마다 1회)
+    if (!_syncMaxTimer) {
+      _syncMaxTimer = setTimeout(() => {
+        _syncMaxTimer = null;
+        if (_syncTimer) { clearTimeout(_syncTimer); _syncTimer = null; }
+        syncMetaToServer();
+      }, 15000);
+    }
   }
+  // 페이지 닫힘/숨김 시 미동기화 변경사항 즉시 플러시
+  function flushPendingSync() {
+    if (!_syncTimer && !_syncMaxTimer) return;  // 대기 중인 sync 없음
+    if (!isAccountLoggedIn() || !isSupabaseEnabled()) return;
+    if (_syncTimer) { clearTimeout(_syncTimer); _syncTimer = null; }
+    if (_syncMaxTimer) { clearTimeout(_syncMaxTimer); _syncMaxTimer = null; }
+    // sendBeacon은 비동기 안전 — 페이지 unload 시에도 동작
+    try {
+      const sb = getSupabase();
+      if (!sb) return;
+      const dataToSync = { ...META };
+      delete dataToSync.accountPassword;
+      // navigator.sendBeacon 사용을 위해 RPC 직접 호출 (fetch + keepalive)
+      const url = `${SUPABASE_URL}/rest/v1/rpc/sync_account_data`;
+      const body = JSON.stringify({
+        p_user_id: META.userId,
+        p_password: META.accountPassword,
+        p_data: dataToSync,
+      });
+      fetch(url, {
+        method: 'POST',
+        headers: {
+          'apikey': SUPABASE_ANON_KEY,
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body,
+        keepalive: true,  // unload 중에도 요청 완료 보장
+      }).catch(() => {});
+    } catch (e) {}
+  }
+  // 페이지 unload + 가시성 변화 → 동기화 보장
+  window.addEventListener('beforeunload', flushPendingSync);
+  window.addEventListener('pagehide', flushPendingSync);
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) flushPendingSync();
+  });
   async function syncMetaToServer() {
     if (!isAccountLoggedIn()) return;
     const sb = getSupabase();
@@ -9109,6 +9366,69 @@
       }
     } catch (e) {
       console.warn('동기화 통신 실패:', e);
+    }
+  }
+
+  // 🔄 앱 시작 시 서버에서 최신 데이터 가져오기 (로컬과 병합)
+  // 다기기 동기화 지원 — 어제 다른 기기에서 한 강화가 오늘 반영됨
+  async function pullMetaFromServer() {
+    if (!isAccountLoggedIn()) return false;
+    if (!isSupabaseEnabled()) return false;
+    const sb = getSupabase();
+    if (!sb) return false;
+    try {
+      const { data, error } = await sb.rpc('login_account', {
+        p_nickname: META.nickname,
+        p_password: META.accountPassword,
+      });
+      if (error || !data || data.length === 0) return false;
+      const server = data[0].data || {};
+      // 🤝 병합 — 로컬과 서버 중 더 많은 값을 채택 (오프라인 진행 손실 방지)
+      const merged = { ...META };
+      // 스타더스트: max
+      merged.stardust = Math.max(META.stardust || 0, server.stardust || 0);
+      // 강화 레벨: 각 항목별 max
+      merged.upgrades = { ...(server.upgrades || {}) };
+      const localUp = META.upgrades || {};
+      for (const k of new Set([...Object.keys(merged.upgrades), ...Object.keys(localUp)])) {
+        merged.upgrades[k] = Math.max(merged.upgrades[k] || 0, localUp[k] || 0);
+      }
+      // 최대 승천 단계: max
+      merged.maxAscension = Math.max(META.maxAscension || 0, server.maxAscension || 0);
+      // 가챠 보유 캐릭터: 합집합
+      const localUnlocks = META.unlockedChars || {};
+      const serverUnlocks = server.unlockedChars || {};
+      merged.unlockedChars = { ...serverUnlocks, ...localUnlocks };
+      // 업적: 합집합
+      const localAch = META.achievements || {};
+      const serverAch = server.achievements || {};
+      merged.achievements = { ...serverAch, ...localAch };
+      // 결정체(보석): max
+      merged.crystals = Math.max(META.crystals || 0, server.crystals || 0);
+      // 캐릭터 사용 기록: 각각 max (최고 도달 라운드)
+      const localUsage = META.charUsage || {};
+      const serverUsage = server.charUsage || {};
+      merged.charUsage = { ...serverUsage };
+      for (const k of Object.keys(localUsage)) {
+        merged.charUsage[k] = Math.max(merged.charUsage[k] || 0, localUsage[k]);
+      }
+      // 시즌 칭호: 합집합
+      const localTitles = META.seasonTitles || [];
+      const serverTitles = server.seasonTitles || [];
+      merged.seasonTitles = [...new Set([...serverTitles, ...localTitles])];
+      // 인증 정보는 로컬 유지 (서버에서 받은 nickname/userId는 신뢰)
+      merged.userId = data[0].user_id || META.userId;
+      merged.nickname = data[0].nickname || META.nickname;
+      merged.accountCreated = true;
+      merged.accountPassword = META.accountPassword;  // 비밀번호는 서버 응답 X
+      META = merged;
+      saveMeta();
+      // 병합한 결과를 서버에도 동기화 (서버가 로컬보다 뒤처져 있었을 수 있음)
+      queueServerSync(true);
+      return true;
+    } catch (e) {
+      console.warn('서버 데이터 pull 실패:', e);
+      return false;
     }
   }
 
@@ -9162,7 +9482,10 @@
     if (!confirm('로그아웃하면 이 기기의 데이터는 초기화됩니다. (서버 데이터는 안전)\n\n계속하시겠어요?')) return;
     // 로컬 META 초기화 (서버는 그대로)
     META = {};
-    try { localStorage.removeItem(META_KEY); } catch {}
+    try {
+      localStorage.removeItem(META_KEY);
+      localStorage.removeItem(META_KEY_OLD);  // 이전 평문 키도 삭제
+    } catch {}
     location.reload();
   }
 
@@ -9919,32 +10242,33 @@
     META.selectedAscension = Math.max(0, Math.min(getMaxAscension(), a));
     saveMeta();
   }
-  // 승천 N 의 적용 효과 — 선형 + 2차 항으로 후반 가파르게 (목숨↓ HP↑)
+  // 승천 N 의 적용 효과 — 선형 + 2차 항을 강화해 단계별 체감이 확실하게
   function getAscensionMods(asc) {
     return {
-      // 적 HP: 선형 +20% + 2차 +1%/단계² (Asc5: 2.25x / Asc10: 4x / Asc15: 6.25x)
-      enemyHpMul:    1 + 0.20 * asc + 0.01 * asc * asc,
-      // 보스 HP: 선형 +26% + 2차 +1.3%/단계² (Asc5: 2.6x / Asc10: 4.9x / Asc15: 7.8x)
-      bossHpMul:     1 + 0.26 * asc + 0.013 * asc * asc,
-      // 적 수용 한계: -3/단계 (Asc15: 80→35)
+      // 적 HP: 선형 +30% + 2차 +2.5%/단계² (Asc1: 1.33x / Asc5: 3.13x / Asc10: 6.5x / Asc15: 11.13x)
+      enemyHpMul:    1 + 0.30 * asc + 0.025 * asc * asc,
+      // 보스 HP: 선형 +40% + 2차 +3%/단계² (Asc1: 1.43x / Asc5: 3.75x / Asc10: 8.0x / Asc15: 13.75x)
+      bossHpMul:     1 + 0.40 * asc + 0.030 * asc * asc,
+      // 적 수용 한계: -3/단계 (Asc5: 65 / Asc10: 50 / Asc15: 35) — HP/속도/보스 이미 강화됐으니 한계는 유지
       maxAliveAdd:  -3 * asc,
-      // 보상도 비례 상승
-      scoreReward:   1 + 0.10 * asc,            // Asc15 = +150%
-      stardustMul:   1 + 0.07 * asc,            // Asc15 = +105%
-      // === 신규: 승천 단계별 추가 메커니즘 ===
-      // 적 이동 속도 (Asc4부터): Asc4=+8%, Asc15=+52%
-      enemySpeedMul: asc >= 4 ? (1 + 0.04 * (asc - 3)) : 1,
-      // 보스 추가 개수 (보스 라운드마다)
+      // 보상도 비례 상승 (난이도 상승에 맞춰 더 후하게)
+      scoreReward:   1 + 0.12 * asc,            // Asc15 = +180%
+      stardustMul:   1 + 0.08 * asc,            // Asc15 = +120%
+      // === 단계별 추가 메커니즘 (더 일찍, 더 가파르게) ===
+      // 적 이동 속도: Asc1부터 +5%/단계 (Asc5: +25%, Asc10: +50%, Asc15: +75%)
+      enemySpeedMul: 1 + 0.05 * asc,
+      // 보스 추가 개수
+      //   Asc 4~6: +1 (보스 2마리)
       //   Asc 7~9: +1 (보스 2마리)
-      //   Asc 10~12: +2 (보스 3마리) — 트리플 보스
-      //   Asc 13~15: +2 (보스 3마리) + 정예 호위
-      extraBossCount: asc >= 13 ? 2 : (asc >= 10 ? 2 : (asc >= 7 ? 1 : 0)),
-      // 보스 라운드마다 정예 적 동반 (Asc 10+)
-      eliteEscorts:  asc >= 13 ? 5 : (asc >= 10 ? 3 : 0),
-      // 추가 보스 라운드 발생 — Asc 13+에서 R10, 30, 50, 70, 90에도 보스
-      extraBossRounds: asc >= 13,
-      // 보스 데미지 출력 증가 — Asc 5+
-      bossDmgMul:    1 + Math.max(0, asc - 4) * 0.20,
+      //   Asc 10~12: +2 (보스 3마리)
+      //   Asc 13~15: +3 (보스 4마리) — 헬모드
+      extraBossCount: asc >= 13 ? 3 : (asc >= 10 ? 2 : (asc >= 4 ? 1 : 0)),
+      // 정예 호위 — Asc 8부터 일찍 등장
+      eliteEscorts:  asc >= 14 ? 6 : (asc >= 11 ? 4 : (asc >= 8 ? 2 : 0)),
+      // 추가 보스 라운드 발생 — Asc 10+에서 R10, 30, 50, 70, 90에도 보스
+      extraBossRounds: asc >= 10,
+      // 보스 데미지 출력(처치 보너스) — Asc 3+
+      bossDmgMul:    1 + Math.max(0, asc - 2) * 0.20,
       // 기존 호환용
       enemyCountAdd: 0,
       roundTimeMul:  1,
@@ -10040,11 +10364,14 @@
       const spd = Math.round((m.enemySpeedMul - 1) * 100);
       // 단계별 특수 메커니즘 라벨
       const extras = [];
-      if (a >= 4) extras.push(`적속도 +${spd}%`);
-      if (a >= 5) extras.push(`보스DMG +${Math.round((m.bossDmgMul - 1) * 100)}%`);
-      if (a >= 7 && a < 10) extras.push(`🐲 보스 2마리`);
-      if (a >= 10) extras.push(`🐲🐲 보스 3마리 + 정예 ${m.eliteEscorts}마리`);
-      if (a >= 13) extras.push(`☠️ R10/30/50/70/90 추가보스`);
+      if (a >= 1) extras.push(`적속도 +${spd}%`);
+      if (a >= 3) extras.push(`보스DMG +${Math.round((m.bossDmgMul - 1) * 100)}%`);
+      if (m.extraBossCount > 0) {
+        const dragons = '🐲'.repeat(1 + m.extraBossCount);
+        extras.push(`${dragons} 보스 ${1 + m.extraBossCount}마리`);
+      }
+      if (m.eliteEscorts > 0) extras.push(`⭐ 정예 ${m.eliteEscorts}`);
+      if (m.extraBossRounds) extras.push(`☠️ R10/30/50/70/90 추가보스`);
       const extraStr = extras.length > 0 ? ` · ${extras.join(' · ')}` : '';
       descs.push(`승천 ${a}: HP +${hp}% / 보스HP +${bossHp}% / 한계 ${maxAlive}마리${extraStr} · 보상 +${score}%점 +${dust}%★`);
     }
@@ -10128,6 +10455,8 @@
     META.upgrades = META.upgrades || {};
     META.upgrades[id] = cur + 1;
     saveMeta();
+    // 강화소 구매는 중요한 영구 진행 → 즉시 서버 동기화 (디바운스 X)
+    if (typeof queueServerSync === 'function') queueServerSync(true);
     SFX.combo();
     return true;
   }
@@ -10922,7 +11251,20 @@
         const fallback = preferActive ? newPassivePool : newActivePool;
         const finalPool = pool.length > 0 ? pool : fallback;
         if (finalPool.length === 0) break;
-        const id = finalPool[Math.floor(Math.random() * finalPool.length)];
+        // 🧩 보유 능력의 조합 파트너 가중치 ×4 (조합 형성 기회 ↑)
+        const ownedNow = new Set(state.tower.abilities.map(a => a.id));
+        const weights = finalPool.map(id => {
+          const partners = COMBO_PARTNERS[id] || [];
+          const hasOwnedPartner = partners.some(p => ownedNow.has(p.partner));
+          return hasOwnedPartner ? 4 : 1;
+        });
+        const totalW = weights.reduce((s, w) => s + w, 0);
+        let rW = Math.random() * totalW;
+        let id = finalPool[finalPool.length - 1];
+        for (let i = 0; i < finalPool.length; i++) {
+          rW -= weights[i];
+          if (rW <= 0) { id = finalPool[i]; break; }
+        }
         choices.push({ action: 'new', id, newLevel: 1 });
       } else if (canLv) {
         const p = lvPool[Math.floor(Math.random() * lvPool.length)];
@@ -11134,13 +11476,21 @@
   function enhanceCost(ability) {
     const def = ABILITY_DEFS[ability.id];
     const mm = state.metaMods || { enhanceMul: 1 };
-    // 📚 scholar 패시브 실시간 계산 (tick이 아직 안 돈 직후에도 즉시 반영)
+    // 📚 scholar / scholarSnipe 패시브 실시간 계산 (tick이 아직 안 돈 직후에도 즉시 반영)
     let scholarMul = 1;
     if (state.tower && state.tower.abilities) {
       const sa = state.tower.abilities.find(a => a.id === 'scholar');
-      if (sa) scholarMul = 1 - sa.level * 0.04;
+      if (sa) scholarMul = Math.min(scholarMul, 1 - sa.level * 0.04);
+      const ss = state.tower.abilities.find(a => a.id === 'scholarSnipe');
+      if (ss) scholarMul = Math.min(scholarMul, 1 - ss.level * 0.05);
     }
-    return Math.ceil(def.baseCost * (ability.level + 1) * 0.7 * mm.enhanceMul * scholarMul);
+    // 🛡 누적 할인 최저 한도 — 강화소 + 패시브 + 캐릭터 + 유물 무한 누적 방지
+    // 모든 곱연산의 최저값 0.45 (최대 -55% 누적 할인까지만 허용)
+    const totalMul = Math.max(0.45, mm.enhanceMul * scholarMul);
+    // 베이스 계수 0.7 → 1.0 — 후반 강화 가속화 차단 (강화 곡선 자체 강화)
+    // 추가로 lv*0.10 가속 → 후반 비싸지는 곡선 강화 (lv8 강화 = 8 + 0.7 = 8.7x base, 이전엔 5.6x)
+    const lvScale = (ability.level + 1) + ability.level * 0.10;
+    return Math.ceil(def.baseCost * lvScale * 1.0 * totalMul);
   }
 
   // 랜덤 능력 획득 비용: 0, 25, 60, 110, 180, 270, ...
@@ -11159,15 +11509,28 @@
     if (state.gold < cost) return toast('골드 부족');
     const aSlotsFree = activeCount() < maxActiveSlots();
     const pSlotsFree = passiveCount() < maxPassiveSlots();
-    // 슬롯 가득이라도 조합 가능하면 허용 (조합 카드 선택하면 재료 2개 → 결과 1개로 슬롯 해방)
     const hasCombo = findAvailableCombos().length > 0;
-    // 강화(레벨업)도 슬롯 안 차지 → 능력이 있으면 허용
     const hasUpgradable = state.tower.abilities.some(a => !isAtMax(a));
-    if (!aSlotsFree && !pSlotsFree && !hasCombo && !hasUpgradable) {
-      return toast('슬롯 가득 + 조합/강화 불가 (삭제 후 가능)');
+    // 슬롯/조합/강화 전부 불가 → 보너스 카드 (점수/스타더스트) 만 제공
+    const bonusOnly = !aSlotsFree && !pSlotsFree && !hasCombo && !hasUpgradable;
+    // 카드 생성 — bonusOnly 면 보너스 3장으로 채움, 아니면 정상 풀
+    let choices;
+    if (bonusOnly) {
+      choices = [];
+      const scoreMul = (state.metaMods && state.metaMods.scoreMul) || 1;
+      for (let i = 0; i < 3; i++) {
+        // 골고루 — 점수 2장 + 스타더스트 1장
+        if (i < 2) {
+          const amount = Math.floor(600 * state.round * scoreMul * (0.85 + Math.random() * 0.4));
+          choices.push({ action: 'bonusScore', amount });
+        } else {
+          const dustAmount = Math.max(1, Math.floor(state.round / 3));
+          choices.push({ action: 'bonusStardust', amount: dustAmount });
+        }
+      }
+    } else {
+      choices = generateLevelUpChoices();
     }
-    // 3장 카드 생성 (레벨업과 동일한 풀)
-    const choices = generateLevelUpChoices();
     if (choices.length === 0) return toast('새 능력 없음');
     // 즉시 골드 차감 (카드 모달 떠있는 동안 강화로 골드 빠지는 버그 방지)
     state.gold -= cost;
@@ -11190,13 +11553,16 @@
     if (state.gold < cost) return toast('골드 부족');
     state.gold -= cost;
     a.level += 1;
-    // 💎 복제기 (cloneEngine) — 강화 시 추가 +1 레벨
+    // 💎 복제기 (cloneEngine) — 강화 시 추가 +1 레벨 (충전 소진형, 총 5회)
     let cloneApplied = false;
-    if (state.relicEffects && state.relicEffects.doubleEnhance && !isAtMax(a)) {
+    const re = state.relicEffects;
+    if (re && re.doubleEnhance && (re.doubleEnhanceCharges || 0) > 0 && !isAtMax(a)) {
       a.level += 1;
+      re.doubleEnhanceCharges--;
       cloneApplied = true;
     }
-    toast(`${ABILITY_DEFS[a.id].name} Lv${a.level}${cloneApplied ? ' (🧬+1)' : ''}${isAtMax(a) ? ' MAX!' : ''}`);
+    const chargeTxt = cloneApplied ? ` (🧬+1 / 잔여 ${re.doubleEnhanceCharges})` : '';
+    toast(`${ABILITY_DEFS[a.id].name} Lv${a.level}${chargeTxt}${isAtMax(a) ? ' MAX!' : ''}`);
     renderPanel();
   }
 
@@ -11400,23 +11766,26 @@
     }
     if (state.gameOver) return;
 
+    // 🐲 보스 생존 여부 — 조기 클리어 가드
+    const bossAlive = state.enemies.some(e => e.isBoss && e.hp > 0);
     // 조기 클리어: 모든 적 처치 + 더 이상 스폰 없음 → 즉시 다음 라운드 + 시간 보너스
+    // 단, 보스가 살아있으면 스킵 X — 보스가 다음 라운드까지 따라왔을 때 시간 깎이는 페널티 방지
     if (state.enemies.length === 0
         && state.spawnPlan.length === 0
         && state.bossSpawns.length === 0
-        && state.roundFrame > 60) {
-      const timeSaved = (cfg.duration - state.roundFrame) / FPS;
-      const bonus = Math.floor(timeSaved * 10 * state.round);
+        && state.roundFrame > 60
+        && !bossAlive) {
+      const timeSaved = Math.max(0, (cfg.duration - state.roundFrame) / FPS);
+      const bonus = Math.max(0, Math.floor(timeSaved * 10 * state.round));
       state.score += bonus;
       SFX.waveClear();
-      // 화면 가운데 큰 텍스트로 클리어 표시
       state.waveClearText = {
         round: state.round, bonus, timeSaved, life: 70,
       };
       toast(`R${state.round} 클리어! +${bonus} (${timeSaved.toFixed(1)}s 단축)`);
       advanceRound();
     }
-    // 라운드 시간 만료 → 다음 라운드 (적이 남았어도 진행)
+    // 라운드 시간 만료 → 다음 라운드 (적이 남았어도 진행 — 원래 동작)
     else if (state.roundFrame >= cfg.duration) {
       advanceRound();
     }
@@ -13162,21 +13531,26 @@
     $('s-enemies').textContent = `${state.enemies.length} / ${_maxA}`;
     const pl = $('s-plevel');
     if (pl) pl.textContent = `Lv${state.playerLevel} (${state.kills}/${state.killsToNextLevel} kills)`;
+    const tk = $('s-totalkills');
+    if (tk) tk.textContent = (state.totalKills || 0).toLocaleString();
     const pct = state.enemies.length / _maxA;
     const bar = $('s-enemybar');
     bar.style.width = (pct*100) + '%';
     bar.parentElement.classList.toggle('danger', pct > 0.75);
     bar.parentElement.classList.toggle('warn',   pct > 0.5 && pct <= 0.75);
-    // 랜덤 버튼 상태 — 액티브/패시브 슬롯 둘 다 가득 차야 비활성
-    const owned = new Set(state.tower.abilities.map(a=>a.id));
-    const poolLeft = BASIC_ABILITY_IDS.filter(id => !owned.has(id)).length;  // 조합은 풀에서 제외
+    // 랜덤 버튼 상태 — 골드만 충족하면 항상 활성 (슬롯 가득 시 보너스 카드 모드)
     const acqCost = randomAcquireCost();
+    elRandom.disabled = state.gold < acqCost;
+    // 슬롯 가득이면 보너스 카드 모드임을 명시
     const aFull = activeCount() >= maxActiveSlots();
     const pFull = passiveCount() >= maxPassiveSlots();
-    elRandom.disabled = state.gold < acqCost || (aFull && pFull) || poolLeft === 0;
-    elRandom.textContent = acqCost === 0
-      ? `🎲 랜덤 능력 획득 (무료)`
-      : `🎲 랜덤 능력 획득 (${acqCost}G)`;
+    const hasCombo = findAvailableCombos().length > 0;
+    const hasUpgradable = state.tower.abilities.some(a => !isAtMax(a));
+    const bonusOnly = aFull && pFull && !hasCombo && !hasUpgradable;
+    const costLabel = acqCost === 0 ? '무료' : `${acqCost}G`;
+    elRandom.textContent = bonusOnly
+      ? `🎁 보너스 카드 (${costLabel})`
+      : `🎲 랜덤 능력 획득 (${costLabel})`;
     // 능력 강화 버튼 어포더블 상태 매 프레임 갱신 (골드 변경에 즉시 반응)
     refreshAbilityAffordability();
   }
@@ -13367,6 +13741,18 @@
   }
   document.getElementById('pauseBtn').onclick = togglePause;
   document.getElementById('resetBtn').onclick = () => {
+    // 진행 중인 게임이면 확인 팝업 (실수 방지)
+    const inProgress = state && !state.gameOver && state.tower &&
+                       (state.round > 1 || (state.totalKills || 0) > 0 || (state.score || 0) > 0);
+    if (inProgress) {
+      const wasPaused = paused;
+      paused = true;  // 확인 동안 일시정지
+      const ok = confirm(`현재 진행: R${state.round} · 점수 ${state.score.toLocaleString()}\n\n정말 다시 시작할까요? (진행 내역이 모두 사라집니다)`);
+      if (!ok) {
+        paused = wasPaused;  // 취소 시 원래 일시정지 상태 복원
+        return;
+      }
+    }
     reset();
     renderPanel();
     document.getElementById('pauseBtn').textContent = '⏸ 일시정지';
@@ -14178,7 +14564,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 122;
+  const APP_VERSION = 135;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
@@ -14822,6 +15208,16 @@
   // 게임은 startBtn 클릭 시 reset() 호출됨. 여기서는 메뉴만 표시.
   reset();              // state 초기 구조만 만들어둠 (loop이 안전하게 동작하도록)
   initBackground();     // 우주 배경 초기화 (별/행성/성운)
+  // 🔄 로그인 상태면 서버에서 최신 데이터 pull (다기기 동기화 + 로컬 손실 복구)
+  if (isAccountLoggedIn()) {
+    pullMetaFromServer().then(ok => {
+      if (ok) {
+        // 가져온 데이터를 UI에 반영 (메뉴/패널/강화소 다시 그리기)
+        if (typeof refreshMenuNickname === 'function') refreshMenuNickname();
+        if (typeof renderPanel === 'function') renderPanel();
+      }
+    });
+  }
 
   // ===== 🌙 백그라운드 탭에서도 게임 진행 =====
   // 1) Worker 가 background에서 tick 발사 (브라우저 throttling 일부 우회)
