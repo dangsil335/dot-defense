@@ -1837,6 +1837,16 @@
   // path: 적이 이동하는 셀들 (시작→끝 순서, 인접해야 함)
   // slots: 타워 배치 가능 셀들
   // core: 적이 도달하면 타워가 데미지 받는 셀 (path의 마지막)
+  // 단일 path → paths[0] 변환 헬퍼 (구버전 호환)
+  function getMapPaths(map) {
+    if (map.paths) return map.paths;
+    return [map.path];
+  }
+  function getMapSpawns(map) {
+    if (map.spawns) return map.spawns;
+    const p = (map.paths || [map.path])[0];
+    return [p[0]];
+  }
   const TD_MAPS = {
     basic: {
       name: '기본 미로',
@@ -1884,7 +1894,107 @@
       // 적 진입점
       spawn: {col:0, row:0},
     },
+    // 🔱 twin — Asc 5~9: 2갈래 미로 (좌·우 동시 압박)
+    twin: {
+      name: '쌍둥이 미로',
+      paths: [
+        // 경로 A — 좌측 절반 S자 (col 0~4)
+        [
+          {col:0, row:0}, {col:1, row:0}, {col:2, row:0}, {col:3, row:0}, {col:4, row:0},
+          {col:4, row:1}, {col:4, row:2},
+          {col:4, row:3}, {col:3, row:3}, {col:2, row:3}, {col:1, row:3}, {col:0, row:3},
+          {col:0, row:4}, {col:0, row:5},
+          {col:0, row:6}, {col:1, row:6}, {col:2, row:6}, {col:3, row:6}, {col:4, row:6},
+          {col:4, row:7}, {col:4, row:8},
+          {col:4, row:9}, {col:5, row:9},
+        ],
+        // 경로 B — 우측 절반 S자 (col 5~9)
+        [
+          {col:9, row:0}, {col:8, row:0}, {col:7, row:0}, {col:6, row:0}, {col:5, row:0},
+          {col:5, row:1}, {col:5, row:2},
+          {col:5, row:3}, {col:6, row:3}, {col:7, row:3}, {col:8, row:3}, {col:9, row:3},
+          {col:9, row:4}, {col:9, row:5},
+          {col:9, row:6}, {col:8, row:6}, {col:7, row:6}, {col:6, row:6}, {col:5, row:6},
+          {col:5, row:7}, {col:5, row:8},
+          {col:5, row:9},
+        ],
+      ],
+      slots: [
+        // 좌측 영역 (path A 주변)
+        {col:1, row:1}, {col:2, row:1}, {col:3, row:1},
+        {col:1, row:2}, {col:2, row:2}, {col:3, row:2},
+        {col:1, row:4}, {col:2, row:4}, {col:3, row:4},
+        {col:1, row:5}, {col:2, row:5}, {col:3, row:5},
+        {col:1, row:7}, {col:2, row:7}, {col:3, row:7},
+        {col:1, row:8}, {col:2, row:8}, {col:3, row:8},
+        // 우측 영역 (path B 주변)
+        {col:6, row:1}, {col:7, row:1}, {col:8, row:1},
+        {col:6, row:2}, {col:7, row:2}, {col:8, row:2},
+        {col:6, row:4}, {col:7, row:4}, {col:8, row:4},
+        {col:6, row:5}, {col:7, row:5}, {col:8, row:5},
+        {col:6, row:7}, {col:7, row:7}, {col:8, row:7},
+        {col:6, row:8}, {col:7, row:8}, {col:8, row:8},
+      ],
+      core: {col:5, row:9},
+      spawns: [{col:0, row:0}, {col:9, row:0}],
+    },
+    // 🌐 triple — Asc 10+: 3갈래 (좌/중/우 동시 압박)
+    triple: {
+      name: '삼중 미로',
+      paths: [
+        // 경로 A — 좌측 (col 0~2)
+        [
+          {col:0, row:0}, {col:1, row:0}, {col:2, row:0},
+          {col:2, row:1}, {col:2, row:2}, {col:2, row:3}, {col:2, row:4},
+          {col:1, row:4}, {col:0, row:4},
+          {col:0, row:5}, {col:0, row:6}, {col:0, row:7}, {col:0, row:8},
+          {col:1, row:8}, {col:2, row:8}, {col:3, row:8}, {col:4, row:8},
+          {col:4, row:9}, {col:5, row:9},
+        ],
+        // 경로 B — 중앙 (col 3~6)
+        [
+          {col:4, row:0}, {col:5, row:0},
+          {col:5, row:1}, {col:5, row:2}, {col:5, row:3}, {col:5, row:4}, {col:5, row:5}, {col:5, row:6}, {col:5, row:7}, {col:5, row:8},
+          {col:5, row:9},
+        ],
+        // 경로 C — 우측 (col 7~9, A의 거울)
+        [
+          {col:9, row:0}, {col:8, row:0}, {col:7, row:0},
+          {col:7, row:1}, {col:7, row:2}, {col:7, row:3}, {col:7, row:4},
+          {col:8, row:4}, {col:9, row:4},
+          {col:9, row:5}, {col:9, row:6}, {col:9, row:7}, {col:9, row:8},
+          {col:8, row:8}, {col:7, row:8}, {col:6, row:8},
+          {col:6, row:9}, {col:5, row:9},
+        ],
+      ],
+      slots: [
+        // 좌측 경로 사이
+        {col:0, row:1}, {col:1, row:1}, {col:3, row:1},
+        {col:0, row:2}, {col:1, row:2}, {col:3, row:2},
+        {col:0, row:3}, {col:1, row:3}, {col:3, row:3},
+        {col:3, row:4},
+        {col:1, row:5}, {col:2, row:5}, {col:3, row:5},
+        {col:1, row:6}, {col:2, row:6}, {col:3, row:6},
+        {col:1, row:7}, {col:2, row:7}, {col:3, row:7},
+        // 우측 경로 사이
+        {col:6, row:1}, {col:8, row:1}, {col:9, row:1},
+        {col:6, row:2}, {col:8, row:2}, {col:9, row:2},
+        {col:6, row:3}, {col:8, row:3}, {col:9, row:3},
+        {col:6, row:4},
+        {col:6, row:5}, {col:7, row:5}, {col:8, row:5},
+        {col:6, row:6}, {col:7, row:6}, {col:8, row:6},
+        {col:6, row:7}, {col:7, row:7}, {col:8, row:7},
+      ],
+      core: {col:5, row:9},
+      spawns: [{col:0, row:0}, {col:4, row:0}, {col:9, row:0}],
+    },
   };
+  // 🏰 승천별 맵 선택 — Asc 0~4: basic, 5~9: twin, 10+: triple
+  function pickMapForAscension(asc) {
+    if (asc >= 10) return 'triple';
+    if (asc >= 5)  return 'twin';
+    return 'basic';
+  }
   // 셀 → 적이 이 셀에 도달했을 때의 path index 찾기
   function pathIndexOf(map, cell) {
     for (let i = 0; i < map.path.length; i++) {
@@ -8984,19 +9094,33 @@
     const baseSpawn = isFinal ? 30 : (isBoss ? 10 : 20);
     // 보스 라운드 정예 적 + 일반 적 추가
     const eliteCount = isBoss ? (asc.eliteEscorts || 0) : 0;
-    const spawnCount = Math.max(1, Math.round((baseSpawn + eliteCount + (isFinal ? 0 : (asc.enemyCountAdd || 0))) * tdCountMul));
+    // 🏰 다중경로 맵 (twin/triple): 경로 수만큼 적 수 가중치 (per-path 부담 유지)
+    // state.tdMapId 가 설정돼있으면 그것 기준, 없으면 ascension 기준 추정 (메뉴 미리보기 대응)
+    let tdMultipathMul = 1;
+    if (isDefenseMode && !isBoss && !isFinal) {
+      let mapId = (typeof state !== 'undefined' && state && state.tdMapId) || null;
+      if (!mapId && typeof state !== 'undefined' && state) {
+        mapId = pickMapForAscension(state.ascension || 0);
+      }
+      // 경로 수 ↑ → 적 수 ↑ 단, per-path 부담은 줄이도록 (선형보다 약간 낮게)
+      if (mapId === 'twin') tdMultipathMul = 1.35;       // 1.5 대신 1.35 (per-path ~67%)
+      else if (mapId === 'triple') tdMultipathMul = 1.7; // 2.0 대신 1.7 (per-path ~57%)
+    }
+    const spawnCount = Math.max(1, Math.round((baseSpawn + eliteCount + (isFinal ? 0 : (asc.enemyCountAdd || 0))) * tdCountMul * tdMultipathMul));
+    // 🏰 TD 골드 가중치 — 표준 모드 대비 ×3 (타워 30+개 유지 비용 보전)
+    const tdGoldMul = isDefenseMode ? 3.0 : 1.0;
     return {
       duration,
       spawnCount,
       spawnInterval: isFinal ? 5 * FPS : (isBoss ? 2 * FPS : 1 * FPS),
       enemyHp:       hp,
       enemySpeed:    (0.008 + (n - 1) * 0.0005) * asc.enemySpeedMul * relicEnemySpd,
-      // 골드 인플레이션 방지 — 0.10 → 0.03 (70% 감축, 후반 ~30G/적 → ~10G/적)
-      enemyGold:     Math.max(1, Math.ceil(Math.sqrt(hp) * 0.03)),
+      // 일반 적 골드: 클래식 sqrt(hp)*0.03, TD sqrt(hp)*0.09 (3배)
+      enemyGold:     Math.max(1, Math.ceil(Math.sqrt(hp) * 0.03 * tdGoldMul)),
       isBoss, isFinal, isExtraBoss,
       bossHp,
-      // 보스 골드 — 6 → 1.8, isFinal 15 → 4.5 (70% 감축)
-      bossGold:      Math.ceil(Math.sqrt(hp) * (isFinal ? 4.5 : 1.8)),
+      // 보스 골드 — 클래식 sqrt(hp)*1.8, TD sqrt(hp)*5.4 (3배). isFinal: 클래식 4.5, TD 13.5
+      bossGold:      Math.ceil(Math.sqrt(hp) * (isFinal ? 4.5 : 1.8) * tdGoldMul),
       // 보스 추가 개수 + 정예 정보 (planRound 에서 사용)
       extraBosses:  isBoss ? (asc.extraBossCount || 0) : 0,
       eliteCount,
@@ -9159,7 +9283,9 @@
       state.towerHP = state.towerMaxHP;
       state.defenseReviveUsed = false;
       state.towers = [];   // 배치된 타워 entity 배열
-      state.tdMapId = 'basic';   // MVP는 단일 맵
+      // 🏰 Phase 4: 승천별 다중경로 맵 — Asc 0~4: basic, 5~9: twin, 10+: triple
+      state.tdMapId = pickMapForAscension(state.ascension || 0);
+      state.tdNextPathId = 0;          // 다음 스폰 적의 path 인덱스 (라운드로빈)
       state.selectedSlot = null;       // 슬롯 선택 중 (배치 모달)
       state.selectedTower = null;      // 기존 타워 선택 중 (강화 모달)
       // 🏰 TD 시작 골드 — 타워 1~2개 배치 가능하도록 (메타/승천 시작 골드와 합산)
@@ -9219,7 +9345,7 @@
         if (healed > 0) {
           state.towerHP += healed;
           const map = getActiveTDMap();
-          const last = map.path[map.path.length - 1];
+          const last = map.core || (getMapPaths(map)[0].slice(-1)[0]);
           const lc = cellCenter(last.col, last.row);
           state.damageNumbers.push({
             x: lc.x, y: lc.y - 30, vy: -1.5,
@@ -12097,7 +12223,14 @@
     // 🏰 디펜스 모드 (TD): 경로 따라 이동하는 적 스폰
     if (state.mode === 'defense') {
       const map = getActiveTDMap();
-      const start = map.path[0];
+      const paths = getMapPaths(map);
+      // 🔱 Phase 4: 다중경로 — 라운드로빈으로 path 할당 (or opts.pathId)
+      const pathId = (opts.pathId !== undefined)
+        ? opts.pathId
+        : (state.tdNextPathId || 0) % paths.length;
+      state.tdNextPathId = ((state.tdNextPathId || 0) + 1) % paths.length;
+      const path = paths[pathId];
+      const start = path[0];
       const center = cellCenter(start.col, start.row);
       const behavior = opts.behavior !== undefined ? opts.behavior : pickEnemyBehavior(state.round);
       let hp = opts.hp !== undefined ? opts.hp : cfg.enemyHp;
@@ -12112,6 +12245,7 @@
       state.enemies.push({
         _cart: true,
         x: center.x, y: center.y,
+        pathId,             // 🔱 어떤 경로를 따라갈지
         pathIdx: 0,         // 현재 path 인덱스 (목표는 path[pathIdx+1])
         pathT: 0,           // 현재 segment 진행도 (0~1)
         speed: speedCellPerFrame,
@@ -12189,11 +12323,16 @@
     // 🏰 디펜스 모드 (TD): 보스도 path 시작점에서 스폰 (느리게)
     if (state.mode === 'defense') {
       const map = getActiveTDMap();
-      const start = map.path[0];
+      const paths = getMapPaths(map);
+      // 🔱 보스는 무작위 path 선택 (다중경로 맵에서도 한 경로만 사용)
+      const pathId = Math.floor(Math.random() * paths.length);
+      const path = paths[pathId];
+      const start = path[0];
       const center = cellCenter(start.col, start.row);
       state.enemies.push({
         _cart: true,
         x: center.x, y: center.y,
+        pathId,
         pathIdx: 0,
         pathT: 0,
         speed: cfg.enemySpeed * 0.7,  // 보스 천천히
@@ -12402,17 +12541,19 @@
       const slowMul = fullyStopped ? 0 : (e.slowFrames > 0 ? 0.35 : 1);
       if (e.slowFrames > 0) e.slowFrames--;
       if (isDefenseMode) {
-        // 🏰 디펜스 모드 (TD): 경로 따라 셀→셀 이동
+        // 🏰 디펜스 모드 (TD): 경로 따라 셀→셀 이동 (다중경로 지원)
         e.rotation = (e.rotation || 0) + (e.rotSpeed || 0) * slowMul;
         const map = getActiveTDMap();
-        const totalSegments = map.path.length - 1;
+        const paths = getMapPaths(map);
+        const myPath = paths[e.pathId || 0] || paths[0];
+        const totalSegments = myPath.length - 1;
         if (e.pathIdx >= totalSegments) {
           // 본진 도달
           const armor = state.metaMods.towerArmor || 0;
           const dmg = e.isBoss ? Math.max(5, Math.floor(e.maxHp / 8)) : 1;
           const finalDmg = Math.max(1, Math.ceil(dmg * (1 - armor)));
           state.towerHP -= finalDmg;
-          const last = map.path[map.path.length - 1];
+          const last = myPath[myPath.length - 1];
           const lc = cellCenter(last.col, last.row);
           shake(e.isBoss ? 18 : 6, e.isBoss ? 12 : 4);
           spawnParticles(lc.x, lc.y, '#ff5b6e', e.isBoss ? 20 : 6);
@@ -12424,8 +12565,8 @@
           e._reachedTower = true;
         } else {
           // 다음 셀로 이동
-          const from = map.path[e.pathIdx];
-          const to = map.path[e.pathIdx + 1];
+          const from = myPath[e.pathIdx];
+          const to = myPath[e.pathIdx + 1];
           const fc = cellCenter(from.col, from.row);
           const tc = cellCenter(to.col, to.row);
           const segLen = Math.hypot(tc.x - fc.x, tc.y - fc.y);
@@ -12882,46 +13023,65 @@
   // 🏰 디펜스 모드 아레나 (TD): 우주 배경 + 미니멀 그리드
   function drawDefenseArena() {
     const map = getActiveTDMap();
-    // 1) 경로 — 옅은 라인으로만 표시 (셀 채우기 X)
-    ctx.strokeStyle = 'rgba(255, 100, 120, 0.18)';
-    ctx.lineWidth = TD.cellW * 0.55;
+    const paths = getMapPaths(map);
+    // 경로별 색상 — 다중경로일 때 시각적 구분
+    const PATH_COLORS = [
+      { bg: 'rgba(255, 100, 120, 0.18)', hi: 'rgba(255, 150, 170, 0.25)', flow: 'rgba(255, 200, 200, 0.4)' },  // 빨강
+      { bg: 'rgba(120, 180, 255, 0.18)', hi: 'rgba(160, 200, 255, 0.25)', flow: 'rgba(200, 220, 255, 0.4)' },  // 파랑
+      { bg: 'rgba(180, 255, 140, 0.18)', hi: 'rgba(200, 255, 170, 0.25)', flow: 'rgba(220, 255, 200, 0.4)' },  // 초록
+    ];
+    // 1) 각 경로를 색상별로 그림
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
-    ctx.beginPath();
-    for (let i = 0; i < map.path.length; i++) {
-      const c = cellCenter(map.path[i].col, map.path[i].row);
-      if (i === 0) ctx.moveTo(c.x, c.y); else ctx.lineTo(c.x, c.y);
+    for (let pi = 0; pi < paths.length; pi++) {
+      const path = paths[pi];
+      const colors = PATH_COLORS[pi % PATH_COLORS.length];
+      // 베이스
+      ctx.strokeStyle = colors.bg;
+      ctx.lineWidth = TD.cellW * 0.55;
+      ctx.beginPath();
+      for (let i = 0; i < path.length; i++) {
+        const c = cellCenter(path[i].col, path[i].row);
+        if (i === 0) ctx.moveTo(c.x, c.y); else ctx.lineTo(c.x, c.y);
+      }
+      ctx.stroke();
+      // 강조 라인
+      ctx.strokeStyle = colors.hi;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      for (let i = 0; i < path.length; i++) {
+        const c = cellCenter(path[i].col, path[i].row);
+        if (i === 0) ctx.moveTo(c.x, c.y); else ctx.lineTo(c.x, c.y);
+      }
+      ctx.stroke();
     }
-    ctx.stroke();
-    // 경로 내부 강조 라인 (얇게)
-    ctx.strokeStyle = 'rgba(255, 150, 170, 0.25)';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    for (let i = 0; i < map.path.length; i++) {
-      const c = cellCenter(map.path[i].col, map.path[i].row);
-      if (i === 0) ctx.moveTo(c.x, c.y); else ctx.lineTo(c.x, c.y);
-    }
-    ctx.stroke();
     ctx.lineCap = 'butt';
     ctx.lineJoin = 'miter';
-    // 2) 진행 방향 점선 흐름 (애니메이션)
-    ctx.strokeStyle = 'rgba(255, 200, 200, 0.4)';
-    ctx.lineWidth = 1.5;
-    ctx.setLineDash([5, 12]);
-    ctx.lineDashOffset = -(state.t * 0.5) % 17;
-    ctx.beginPath();
-    for (let i = 0; i < map.path.length; i++) {
-      const c = cellCenter(map.path[i].col, map.path[i].row);
-      if (i === 0) ctx.moveTo(c.x, c.y); else ctx.lineTo(c.x, c.y);
+    // 2) 진행 방향 점선 흐름 (애니메이션) — 모든 경로에 표시
+    for (let pi = 0; pi < paths.length; pi++) {
+      const path = paths[pi];
+      const colors = PATH_COLORS[pi % PATH_COLORS.length];
+      ctx.strokeStyle = colors.flow;
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([5, 12]);
+      ctx.lineDashOffset = -(state.t * 0.5) % 17;
+      ctx.beginPath();
+      for (let i = 0; i < path.length; i++) {
+        const c = cellCenter(path[i].col, path[i].row);
+        if (i === 0) ctx.moveTo(c.x, c.y); else ctx.lineTo(c.x, c.y);
+      }
+      ctx.stroke();
     }
-    ctx.stroke();
     ctx.setLineDash([]);
-    // 3) 시작 셀 표시
-    const startC = cellCenter(map.path[0].col, map.path[0].row);
-    ctx.fillStyle = 'rgba(255, 100, 120, 0.8)';
-    ctx.font = 'bold 10px Jua, sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText('▼ ENEMY', startC.x, startC.y - 22);
+    // 3) 각 경로의 시작 셀 (ENEMY 라벨)
+    for (let pi = 0; pi < paths.length; pi++) {
+      const path = paths[pi];
+      const startC = cellCenter(path[0].col, path[0].row);
+      ctx.fillStyle = pi === 0 ? 'rgba(255, 100, 120, 0.85)' : (pi === 1 ? 'rgba(120, 180, 255, 0.85)' : 'rgba(180, 255, 140, 0.85)');
+      ctx.font = 'bold 10px Jua, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(paths.length > 1 ? `▼ ENEMY ${pi + 1}` : '▼ ENEMY', startC.x, startC.y - 22);
+    }
     // 4) 타워 슬롯 (빈 것만 — 작은 원형 마커)
     const towers = state.towers || [];
     for (const slot of map.slots) {
@@ -12942,8 +13102,8 @@
       ctx.font = 'bold 18px Jua, sans-serif';
       ctx.fillText('+', c.x, c.y + 6);
     }
-    // 5) 본진 (path 끝 셀)
-    const coreCell = map.path[map.path.length - 1];
+    // 5) 본진 (map.core 또는 첫 path 끝)
+    const coreCell = map.core || paths[0][paths[0].length - 1];
     const coreC = cellCenter(coreCell.col, coreCell.row);
     // 본진 외곽 글로우
     const corePulse = 0.4 + 0.2 * Math.sin(state.t * 0.05);
@@ -14052,7 +14212,8 @@
       if (evolveResults.length > 0) {
         const curIsCombo = !!def.isCombo;
         const curIsTriple = !!def.isTriple;
-        const tierMul = curIsTriple ? 9 : (curIsCombo ? 4 : 1.5);
+        // 진화 비용 — 일반→콤보 1.0×, 콤보→트리플 2.5×, 트리플 이상 5× (실질 종착)
+        const tierMul = curIsTriple ? 5 : (curIsCombo ? 2.5 : 1.0);
         const evolveCost = Math.ceil((tower.placedCost || 100) * tierMul);
         const canAfford = state.gold >= evolveCost;
         const evolveBtn = document.createElement('button');
@@ -16041,7 +16202,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 156;
+  const APP_VERSION = 158;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
