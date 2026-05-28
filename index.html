@@ -10519,13 +10519,46 @@
       const server = data[0].data || {};
       // 🤝 병합 — 로컬과 서버 중 더 많은 값을 채택 (오프라인 진행 손실 방지)
       const merged = { ...META };
-      // 스타더스트: max
-      merged.stardust = Math.max(META.stardust || 0, server.stardust || 0);
+      // 🛡 스타더스트/결정 — earned/spent 누적값으로 정확한 합산 (refund 버그 방어)
+      //   기존 데이터 마이그레이션: earned 가 없으면 현재값을 earned 로 간주, spent = 0
+      const localStarEarned = (META.stardustEarned !== undefined) ? META.stardustEarned : (META.stardust || 0);
+      const localStarSpent  = META.stardustSpent || 0;
+      const serverStarEarned = (server.stardustEarned !== undefined) ? server.stardustEarned : (server.stardust || 0);
+      const serverStarSpent  = server.stardustSpent || 0;
+      merged.stardustEarned = Math.max(localStarEarned, serverStarEarned);
+      merged.stardustSpent  = Math.max(localStarSpent,  serverStarSpent);
+      merged.stardust = Math.max(0, merged.stardustEarned - merged.stardustSpent);
+      // 결정도 동일 패턴
+      const localCryEarned = (META.crystalsEarned !== undefined) ? META.crystalsEarned : (META.crystals || 0);
+      const localCrySpent  = META.crystalsSpent || 0;
+      const serverCryEarned = (server.crystalsEarned !== undefined) ? server.crystalsEarned : (server.crystals || 0);
+      const serverCrySpent  = server.crystalsSpent || 0;
+      merged.crystalsEarned = Math.max(localCryEarned, serverCryEarned);
+      merged.crystalsSpent  = Math.max(localCrySpent,  serverCrySpent);
+      merged.crystals = Math.max(0, merged.crystalsEarned - merged.crystalsSpent);
       // 강화 레벨: 각 항목별 max
       merged.upgrades = { ...(server.upgrades || {}) };
       const localUp = META.upgrades || {};
       for (const k of new Set([...Object.keys(merged.upgrades), ...Object.keys(localUp)])) {
         merged.upgrades[k] = Math.max(merged.upgrades[k] || 0, localUp[k] || 0);
+      }
+      // 능력 영구 강화 레벨: 각 항목별 max (양쪽에서 강화 가능)
+      merged.abilityPerma = { ...(server.abilityPerma || {}) };
+      const localPerma = META.abilityPerma || {};
+      for (const k of new Set([...Object.keys(merged.abilityPerma), ...Object.keys(localPerma)])) {
+        merged.abilityPerma[k] = Math.max(merged.abilityPerma[k] || 0, localPerma[k] || 0);
+      }
+      // 캐릭터 별 등급: 각 항목별 max
+      merged.charStars = { ...(server.charStars || {}) };
+      const localStars = META.charStars || {};
+      for (const k of new Set([...Object.keys(merged.charStars), ...Object.keys(localStars)])) {
+        merged.charStars[k] = Math.max(merged.charStars[k] || 0, localStars[k] || 0);
+      }
+      // 가챠 누적 카운트: max
+      merged.gachaUnlocked = { ...(server.gachaUnlocked || {}) };
+      const localGacha = META.gachaUnlocked || {};
+      for (const k of new Set([...Object.keys(merged.gachaUnlocked), ...Object.keys(localGacha)])) {
+        merged.gachaUnlocked[k] = Math.max(merged.gachaUnlocked[k] || 0, localGacha[k] || 0);
       }
       // 최대 승천 단계: max
       merged.maxAscension = Math.max(META.maxAscension || 0, server.maxAscension || 0);
@@ -10537,8 +10570,6 @@
       const localAch = Array.isArray(META.achievements) ? META.achievements : [];
       const serverAch = Array.isArray(server.achievements) ? server.achievements : [];
       merged.achievements = [...new Set([...serverAch, ...localAch])];
-      // 결정체(보석): max
-      merged.crystals = Math.max(META.crystals || 0, server.crystals || 0);
       // 캐릭터 사용 기록: 각각 max (최고 도달 라운드)
       const localUsage = META.charUsage || {};
       const serverUsage = server.charUsage || {};
@@ -11511,11 +11542,13 @@
   function spendCrystals(n) {
     if ((META.crystals || 0) < n) return false;
     META.crystals = (META.crystals || 0) - n;
+    META.crystalsSpent = (META.crystalsSpent || 0) + n;   // 🛡 누적 소비 카운터
     saveMeta();
     return true;
   }
   function addCrystals(n) {
     META.crystals = (META.crystals || 0) + n;
+    META.crystalsEarned = (META.crystalsEarned !== undefined ? META.crystalsEarned : (META.crystals - n)) + n;
     saveMeta();
   }
   // 게임 종료 시 결정 보상 계산 (단일 게임 마일스톤 기반)
@@ -11586,6 +11619,7 @@
         // 별 만렙 → 스타더스트 환급
         refund = GACHA_REFUND[rarity] || 0;
         META.stardust = (META.stardust || 0) + refund;
+        META.stardustEarned = (META.stardustEarned !== undefined ? META.stardustEarned : (META.stardust - refund)) + refund;
       }
     }
     saveMeta();
@@ -11659,9 +11693,11 @@
     const cost = abilityPermaCost(id);
     if ((META.stardust || 0) < cost) return false;
     META.stardust -= cost;
+    META.stardustSpent = (META.stardustSpent || 0) + cost;   // 🛡 누적 소비 카운터
     META.abilityPerma = META.abilityPerma || {};
     META.abilityPerma[id] = lv + 1;
     saveMeta();
+    if (typeof queueServerSync === 'function') queueServerSync(true);
     return true;
   }
 
@@ -11757,6 +11793,7 @@
     const cost = up.cost(cur);
     if ((META.stardust || 0) < cost) return false;
     META.stardust -= cost;
+    META.stardustSpent = (META.stardustSpent || 0) + cost;   // 🛡 누적 소비 카운터 (refund 버그 방어)
     META.upgrades = META.upgrades || {};
     META.upgrades[id] = cur + 1;
     saveMeta();
@@ -11769,6 +11806,7 @@
     const ascMul = (state.asc && state.asc.stardustMul) || 1;
     const earned = Math.floor((Math.floor(state.score / 800) + state.round * 3 + (state.gameWin ? 300 : 0)) * ascMul);
     META.stardust = (META.stardust || 0) + earned;
+    META.stardustEarned = (META.stardustEarned !== undefined ? META.stardustEarned : (META.stardust - earned)) + earned;
     // 승천 클리어 시 다음 단계 해금
     if (state.gameWin && state.ascension >= getMaxAscension() && state.ascension < MAX_ASCENSION) {
       META.maxAscension = (META.maxAscension || 0) + 1;
@@ -12076,7 +12114,9 @@
     }
     if (newOnes.length > 0 || repeatEarned > 0) {
       META.achievements = [...have];
-      META.stardust = (META.stardust || 0) + earned + repeatEarned;
+      const totalGain = earned + repeatEarned;
+      META.stardust = (META.stardust || 0) + totalGain;
+      META.stardustEarned = (META.stardustEarned !== undefined ? META.stardustEarned : (META.stardust - totalGain)) + totalGain;
       saveMeta();
       state.achievementsEarned = newOnes;
       state.achievementStardust = earned;
@@ -12856,6 +12896,7 @@
       toast(`🎁 점수 +${c.amount.toLocaleString()}`);
     } else if (c.action === 'bonusStardust') {
       META.stardust = (META.stardust || 0) + c.amount;
+      META.stardustEarned = (META.stardustEarned !== undefined ? META.stardustEarned : (META.stardust - c.amount)) + c.amount;
       saveMeta();
       state.damageNumbers.push({
         x: CX, y: CY - 80, vy: -1.5,
@@ -16863,6 +16904,7 @@
     if (m) {
       const n = parseInt(m[1], 10);
       META.stardust = (META.stardust || 0) + n;
+      META.stardustEarned = (META.stardustEarned !== undefined ? META.stardustEarned : (META.stardust - n)) + n;
       saveMeta();
       cheatFeedback(`⭐ 스타더스트 +${n} (현재: ${META.stardust})`);
       return;
@@ -17148,6 +17190,7 @@
         return;
       }
       META.stardust -= cost;
+      META.stardustSpent = (META.stardustSpent || 0) + cost;   // 🛡 누적 소비 카운터
       addCrystals(1);
       saveMeta();
       buildGacha();   // 결정/스타더스트 표시 갱신
@@ -17361,7 +17404,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 168;
+  const APP_VERSION = 169;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
