@@ -901,6 +901,43 @@
 
   /* ===== 캐릭터 선택 화면 ===== */
   #characterScreen { padding: 24px; align-items: stretch; }
+  /* === 모드 선택 카드 === */
+  #modeScreen { padding: 0; align-items: stretch; }
+  .mode-card {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    padding: 18px;
+    background: linear-gradient(135deg, #1a1f2b 0%, #0f1219 100%);
+    border: 2px solid #2a2f3a;
+    border-radius: 12px;
+    cursor: pointer;
+    color: inherit;
+    text-align: left;
+    font: inherit;
+    transition: border-color 0.15s, transform 0.1s, box-shadow 0.15s;
+  }
+  .mode-card:hover {
+    border-color: #7ad7ff;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(122,215,255,0.15);
+  }
+  .mode-card:active { transform: translateY(0); }
+  .mode-card[data-mode="defense"]:hover { border-color: #ffd479; box-shadow: 0 6px 20px rgba(255,212,121,0.2); }
+  .mode-icon { font-size: 48px; flex-shrink: 0; }
+  .mode-info { flex: 1; min-width: 0; }
+  .mode-name { font-size: 18px; font-weight: bold; color: #fff; margin-bottom: 4px; }
+  .mode-desc { font-size: 12px; color: #cfd6e3; line-height: 1.4; margin-bottom: 8px; }
+  .mode-tags { display: flex; gap: 6px; flex-wrap: wrap; }
+  .mode-tag {
+    font-size: 10px; padding: 3px 8px; background: rgba(122,215,255,0.12);
+    border: 1px solid rgba(122,215,255,0.3); border-radius: 10px; color: #88c4d8;
+  }
+  .mode-card[data-mode="defense"] .mode-tag {
+    background: rgba(255,212,121,0.12);
+    border-color: rgba(255,212,121,0.3);
+    color: #ddc080;
+  }
   #character-list {
     max-width: 960px; width: 100%; margin: 0 auto;
     overflow-y: auto; flex: 1;
@@ -1220,6 +1257,11 @@
     </div>
     <div id="rank-countdown" style="color:#88ccff; font-weight:bold; font-family:monospace;">- - - - -</div>
   </div>
+  <!-- 🏰 모드별 탭 -->
+  <div class="codex-tabs" id="rank-mode-tabs" style="margin:0 12px 8px;">
+    <button class="codex-tab active" data-rankmode="standard">⚔️ 클래식</button>
+    <button class="codex-tab" data-rankmode="defense">🏰 디펜스</button>
+  </div>
   <div id="globalRank-status" style="text-align:center; color:#9aa3b3; padding:30px; font-size:14px;">불러오는 중...</div>
   <div id="globalRank-top10" style="padding:0 12px;"></div>
   <div id="globalRank-divider" style="display:none; height:1px; background:#2a2f3a; margin:18px 12px 12px; position:relative;">
@@ -1413,6 +1455,18 @@
 
 <!-- ===== 🎮 치트 모달 (123123123 입력 시) ===== -->
 <!-- ===== 💎 유물 상세 모달 (게임 중 보유 유물 확인) ===== -->
+<!-- 🏰 TD 모드 타워 배치/강화 인라인 패널 (게임 흐름 방해 없도록 하단 고정) -->
+<!-- pointer-events:none on outer + auto on inner → 게임 캔버스 클릭은 패널을 통과해 적/슬롯에 닿음 -->
+<div id="tdTowerModal" style="display:none; position:fixed; left:0; right:0; bottom:0; background:transparent; pointer-events:none; z-index:9992; align-items:flex-end; justify-content:center; padding:0 6px 6px; box-sizing:border-box;">
+  <div style="background:rgba(11, 13, 20, 0.96); border:2px solid #7ad7ff; border-radius:10px 10px 6px 6px; max-width:520px; width:100%; max-height:240px; display:flex; flex-direction:column; box-shadow:0 -4px 20px rgba(122,215,255,0.25); overflow:hidden; pointer-events:auto;">
+    <div style="padding:8px 12px; flex-shrink:0; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #2a2f3a;">
+      <div id="td-modal-title" style="font-size:13px; font-weight:bold; color:#7ad7ff;">🏰 타워 배치</div>
+      <button id="tdTowerModalClose" style="background:#2a2f3a; color:#fff; border:none; padding:4px 10px; border-radius:6px; cursor:pointer; font-size:11px;">✕</button>
+    </div>
+    <div id="td-tower-list" style="padding:8px 10px; flex:1; overflow-y:auto;"></div>
+  </div>
+</div>
+
 <div id="dmgStatsModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:9991; align-items:center; justify-content:center; padding:10px; box-sizing:border-box;">
   <div style="background:#0b0d14; border:2px solid #88e0ff; border-radius:10px; max-width:600px; width:100%; max-height:90vh; max-height:90dvh; display:flex; flex-direction:column; box-shadow:0 0 40px rgba(136,224,255,0.3); overflow:hidden;">
     <div style="padding:14px 16px; flex-shrink:0; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #2a2f3a;">
@@ -1498,6 +1552,40 @@
     <button class="codex-tab" data-achtab="repeat">🔁 반복</button>
   </div>
   <div id="achievements-list"></div>
+</div>
+
+<!-- ===== 모드 선택 화면 ===== -->
+<div id="modeScreen" class="screen">
+  <div class="codex-header">
+    <h2>게임 모드 선택</h2>
+    <button id="modeBack" class="codex-back">← 메뉴로</button>
+  </div>
+  <div style="display:flex; flex-direction:column; gap:14px; padding:20px; max-width:600px; margin:0 auto; width:100%;">
+    <button class="mode-card" data-mode="standard">
+      <div class="mode-icon">⚔️</div>
+      <div class="mode-info">
+        <div class="mode-name">표준 모드</div>
+        <div class="mode-desc">적이 한계를 초과하면 패배. 끝없이 몰려오는 적을 학살하는 클래식 모드.</div>
+        <div class="mode-tags">
+          <span class="mode-tag">💥 화력 빌드</span>
+          <span class="mode-tag">⚡ 빠른 처치</span>
+          <span class="mode-tag">100라운드</span>
+        </div>
+      </div>
+    </button>
+    <button class="mode-card" data-mode="defense">
+      <div class="mode-icon">🏰</div>
+      <div class="mode-info">
+        <div class="mode-name">디펜스 모드</div>
+        <div class="mode-desc">적이 타워로 직진. 타워 HP가 0이 되면 패배. 사거리와 CC가 핵심.</div>
+        <div class="mode-tags">
+          <span class="mode-tag">🛡 방어 빌드</span>
+          <span class="mode-tag">❄ 슬로우/정지</span>
+          <span class="mode-tag">사거리 ↑</span>
+        </div>
+      </div>
+    </button>
+  </div>
 </div>
 
 <!-- ===== 캐릭터 선택 화면 ===== -->
@@ -1646,6 +1734,13 @@
       <div class="row"><span class="label">점수</span><span id="s-score">0</span></div>
       <div class="row"><span class="label">적</span><span id="s-enemies">0 / 80</span></div>
       <div class="bar"><i id="s-enemybar" style="width:0%"></i></div>
+      <!-- 🏰 디펜스 모드 (TD) 전용: 본진 HP -->
+      <div id="s-defense-block" style="display:none;">
+        <div class="row primary" style="border-left-color:#ff5b6e;">
+          <span class="label">🏰 본진</span><span id="s-towerhp">30 / 30</span>
+        </div>
+        <div class="bar"><i id="s-towerhp-bar" style="width:100%; background:#ff5b6e;"></i></div>
+      </div>
       <div class="row"><span class="label">레벨</span><span id="s-plevel">Lv1 (0/8)</span></div>
       <div class="row"><span class="label">누적 처치</span><span id="s-totalkills">0</span></div>
     </div>
@@ -1685,10 +1780,92 @@
   canvas.style.height = H + 'px';
   ctx.scale(DPR, DPR);
   ctx.imageSmoothingEnabled = false;
-  const CX = W/2, CY = H/2;
+  // ⚠ CX, CY는 가변 — 타워별 컨텍스트 스왑 시 임시로 변경됨 (TD 모드)
+  // 그래도 대부분의 시간엔 "캔버스 중앙"의 의미로 동작
+  let CX = W/2, CY = H/2;
+  const CX_BASE = CX, CY_BASE = CY;  // 변경 불가 원본 (UI/그림 기준점)
 
   const ARENA_R = 290;
   const CORE_R  = 22;
+  // 🏰 디펜스 모드 — Tower Defense 클래식 (셀 그리드 미로)
+  // 캔버스 540×720 가정 (세로 비율). 셀 60×60. → 9×12 그리드
+  const TD = {
+    cellW: 60,                         // 셀 한 변 픽셀
+    cols: 9,
+    rows: 12,
+    canvasW: 540,                      // TD 모드 캔버스 폭
+    canvasH: 720,                      // TD 모드 캔버스 높이
+  };
+  // 셀 (col, row) → 픽셀 (x, y) 중심
+  function cellCenter(col, row) {
+    return { x: col * TD.cellW + TD.cellW / 2, y: row * TD.cellW + TD.cellW / 2 };
+  }
+  // 셀 영역 (사각형)
+  function cellRect(col, row) {
+    return { x: col * TD.cellW, y: row * TD.cellW, w: TD.cellW, h: TD.cellW };
+  }
+  // 두 셀 중심 간 거리 (path 진행용)
+  function cellDist(a, b) {
+    const ca = cellCenter(a.col, a.row), cb = cellCenter(b.col, b.row);
+    return Math.hypot(cb.x - ca.x, cb.y - ca.y);
+  }
+  // 📜 MVP 맵 정의 — 기본 미로 (S자 경로)
+  // path: 적이 이동하는 셀들 (시작→끝 순서, 인접해야 함)
+  // slots: 타워 배치 가능 셀들
+  // core: 적이 도달하면 타워가 데미지 받는 셀 (path의 마지막)
+  const TD_MAPS = {
+    basic: {
+      name: '기본 미로',
+      // 9x12 grid, S자 경로
+      path: [
+        {col:0, row:0}, {col:1, row:0}, {col:2, row:0}, {col:3, row:0},
+        {col:4, row:0}, {col:5, row:0}, {col:6, row:0}, {col:7, row:0},
+        {col:7, row:1}, {col:7, row:2}, {col:7, row:3},
+        {col:6, row:3}, {col:5, row:3}, {col:4, row:3}, {col:3, row:3},
+        {col:2, row:3}, {col:1, row:3},
+        {col:1, row:4}, {col:1, row:5}, {col:1, row:6},
+        {col:2, row:6}, {col:3, row:6}, {col:4, row:6},
+        {col:5, row:6}, {col:6, row:6}, {col:7, row:6},
+        {col:7, row:7}, {col:7, row:8}, {col:7, row:9},
+        {col:6, row:9}, {col:5, row:9}, {col:4, row:9}, {col:3, row:9},
+        {col:2, row:9}, {col:1, row:9},
+        {col:1, row:10}, {col:1, row:11},
+        {col:2, row:11}, {col:3, row:11}, {col:4, row:11},
+      ],
+      // 타워 설치 가능 셀 — 경로 사이 '주머니' 셀 전부 (42칸, 전략적 자유도 ↑)
+      slots: [
+        // Row 1 (path row 0 ↔ row 3 사이, 상단)
+        {col:1, row:1}, {col:2, row:1}, {col:3, row:1}, {col:4, row:1}, {col:5, row:1}, {col:6, row:1},
+        // Row 2 (path row 0 ↔ row 3 사이, 하단)
+        {col:1, row:2}, {col:2, row:2}, {col:3, row:2}, {col:4, row:2}, {col:5, row:2}, {col:6, row:2},
+        // Row 4 (path row 3 ↔ row 6 사이, 상단)
+        {col:2, row:4}, {col:3, row:4}, {col:4, row:4}, {col:5, row:4}, {col:6, row:4}, {col:7, row:4},
+        // Row 5 (path row 3 ↔ row 6 사이, 하단)
+        {col:2, row:5}, {col:3, row:5}, {col:4, row:5}, {col:5, row:5}, {col:6, row:5}, {col:7, row:5},
+        // Row 7 (path row 6 ↔ row 9 사이, 상단)
+        {col:1, row:7}, {col:2, row:7}, {col:3, row:7}, {col:4, row:7}, {col:5, row:7}, {col:6, row:7},
+        // Row 8 (path row 6 ↔ row 9 사이, 하단)
+        {col:1, row:8}, {col:2, row:8}, {col:3, row:8}, {col:4, row:8}, {col:5, row:8}, {col:6, row:8},
+        // Row 10 (path row 9 ↔ row 11 사이)
+        {col:2, row:10}, {col:3, row:10}, {col:4, row:10}, {col:5, row:10}, {col:6, row:10}, {col:7, row:10},
+      ],
+      // 본진 (적 도달 = 타워 HP 감소)
+      core: {col:4, row:11},
+      // 적 진입점
+      spawn: {col:0, row:0},
+    },
+  };
+  // 셀 → 적이 이 셀에 도달했을 때의 path index 찾기
+  function pathIndexOf(map, cell) {
+    for (let i = 0; i < map.path.length; i++) {
+      if (map.path[i].col === cell.col && map.path[i].row === cell.row) return i;
+    }
+    return -1;
+  }
+  // 현재 active 맵 가져오기 (state.tdMapId 기준, 기본 'basic')
+  function getActiveTDMap() {
+    return TD_MAPS[(state && state.tdMapId) || 'basic'] || TD_MAPS.basic;
+  }
   const MAX_ALIVE_BASE = 80;    // 기본값 — 강화/승천으로 동적 변경
   function getMaxAlive() {
     let v = MAX_ALIVE_BASE;
@@ -1993,7 +2170,7 @@
         if (--ab.cooldown > 0) return;
         let target = null, best = -1;
         for (const e of state.enemies) {
-          if (e.hp > best) { best = e.hp; target = e; }
+          { const _s = e.isBoss ? e.hp + 1e9 : e.hp; if (_s > best) { best = _s; target = e; } }
         }
         if (!target) return;
         const [tx, ty] = enemyXY(target);
@@ -2289,7 +2466,7 @@
         if (--ab.cooldown > 0) return;
         let target = null, best = -1;
         for (const e of state.enemies) {
-          if (e.hp > best) { best = e.hp; target = e; }
+          { const _s = e.isBoss ? e.hp + 1e9 : e.hp; if (_s > best) { best = _s; target = e; } }
         }
         if (!target) return;
         const [tx, ty] = enemyXY(target);
@@ -3572,7 +3749,7 @@
         // 가장 강한 적 선택
         let target = null, best = -1;
         for (const e of state.enemies) {
-          if (e.hp > best) { best = e.hp; target = e; }
+          { const _s = e.isBoss ? e.hp + 1e9 : e.hp; if (_s > best) { best = _s; target = e; } }
         }
         if (!target) return;
         const [tx, ty] = enemyXY(target);
@@ -3713,13 +3890,16 @@
     },
     resilience: {
       name: '불굴', isPassive: true, baseCost: 65, color: '#88cc88',
-      desc: lv => `누적 처치마다 데미지 +0.1%/lv (최대 +${lv*30}%)`,
-      // 변경: 적 수 조건부 → 게임 내 누적 처치에 비례한 영구 성장
+      // 50처치당 1스택 (lv 1당 +1.5%, 최대 lv당 +50%)
+      // R100 게임 ~1500처치 = 30스택, lv 8 시 30 × 12% = 360% (cap 400%)
+      desc: lv => `누적 50처치마다 데미지 +${(lv*1.5).toFixed(1)}% (최대 +${lv*50}%)`,
       init(ab) { ab.bonus = 0; },
       tick(ab) {
         if (!state.metaMods) return;
-        const max = ab.level * 0.30;
-        ab.bonus = Math.min(max, (state.totalKills || 0) * 0.001 * ab.level);
+        const stacks = Math.floor((state.totalKills || 0) / 50);
+        const perStack = ab.level * 0.015;     // 50처치당 +1.5%/lv
+        const max = ab.level * 0.50;            // 최대 50%/lv
+        ab.bonus = Math.min(max, stacks * perStack);
         state.metaMods.resilienceBonus = ab.bonus;
       },
     },
@@ -4066,7 +4246,7 @@
         // 최강 적 추적
         let target = null, best = -1;
         for (const e of state.enemies) {
-          if (e.hp > best) { best = e.hp; target = e; }
+          { const _s = e.isBoss ? e.hp + 1e9 : e.hp; if (_s > best) { best = _s; target = e; } }
         }
         if (!target) return;
         const [tx, ty] = enemyXY(target);
@@ -4766,7 +4946,7 @@
         if (--ab.cooldown > 0) return;
         let target = null, best = -1;
         for (const e of state.enemies) {
-          if (e.hp > best) { best = e.hp; target = e; }
+          { const _s = e.isBoss ? e.hp + 1e9 : e.hp; if (_s > best) { best = _s; target = e; } }
         }
         if (!target) return;
         const [tx, ty] = enemyXY(target);
@@ -4916,7 +5096,7 @@
         ab.fx = ab.fx.filter(e => e.life > 0);
         if (--ab.cooldown > 0) return;
         let target = null, best = -1;
-        for (const e of state.enemies) { if (e.hp > best) { best = e.hp; target = e; } }
+        for (const e of state.enemies) { { const _s = e.isBoss ? e.hp + 1e9 : e.hp; if (_s > best) { best = _s; target = e; } } }
         if (!target) return;
         const [tx, ty] = enemyXY(target);
         const radius = 60 + ab.level * 10;
@@ -5078,7 +5258,7 @@
         }
         if (--ab.cooldown > 0) return;
         let target = null, best = -1;
-        for (const e of state.enemies) { if (e.hp > best) { best = e.hp; target = e; } }
+        for (const e of state.enemies) { { const _s = e.isBoss ? e.hp + 1e9 : e.hp; if (_s > best) { best = _s; target = e; } } }
         if (!target) return;
         const [tx, ty] = enemyXY(target);
         const ang = Math.atan2(ty - CY, tx - CX);
@@ -5142,7 +5322,7 @@
         let target = state.enemies.find(e => e.isBoss && e.hp > 0);
         if (!target) {
           let best = -1;
-          for (const e of state.enemies) { if (e.hp > best) { best = e.hp; target = e; } }
+          for (const e of state.enemies) { { const _s = e.isBoss ? e.hp + 1e9 : e.hp; if (_s > best) { best = _s; target = e; } } }
         }
         if (!target) return;
         const [tx, ty] = enemyXY(target);
@@ -5813,7 +5993,7 @@
         // 최강 적 방향 거대 빔
         let target = null, best = -1;
         for (const e of state.enemies) {
-          if (e.hp > best) { best = e.hp; target = e; }
+          { const _s = e.isBoss ? e.hp + 1e9 : e.hp; if (_s > best) { best = _s; target = e; } }
         }
         if (target) {
           const [tx, ty] = enemyXY(target);
@@ -5928,10 +6108,10 @@
       // resilience + fire — 강화된 영구 화염장 + 불굴 패시브 계승
       init(ab) { ab.hits = new Map(); ab.particles = []; },
       tick(ab) {
-        // 💪 불굴 패시브 계승 — 누적 처치 비례 전체 데미지 (최대 +35%/lv)
+        // 💪 불굴 패시브 계승 — 50처치당 +1.8%/lv (최대 +60%/lv)
         if (state.metaMods) {
-          const max = ab.level * 0.35;
-          const own = Math.min(max, (state.totalKills || 0) * 0.0012 * ab.level);
+          const stacks = Math.floor((state.totalKills || 0) / 50);
+          const own = Math.min(ab.level * 0.60, stacks * ab.level * 0.018);
           if (own > (state.metaMods.resilienceBonus || 0)) state.metaMods.resilienceBonus = own;
         }
         for (const [e, cd] of ab.hits) {
@@ -6073,7 +6253,7 @@
             if (e.hp <= 0) continue;
             const [ex, ey] = enemyXY(e);
             if ((ex-CX)*(ex-CX) + (ey-CY)*(ey-CY) > radius*radius) continue;
-            if (e.hp > best) { best = e.hp; target = e; }
+            { const _s = e.isBoss ? e.hp + 1e9 : e.hp; if (_s > best) { best = _s; target = e; } }
           }
           if (target) {
             const [tx, ty] = enemyXY(target);
@@ -6612,7 +6792,7 @@
           if (!t.target || t.target.hp <= 0) {
             let best = -1, tg = null;  // 최강 적
             for (const e of state.enemies) {
-              if (e.hp > best) { best = e.hp; tg = e; }
+              { const _s = e.isBoss ? e.hp + 1e9 : e.hp; if (_s > best) { best = _s; tg = e; } }
             }
             t.target = tg;
           }
@@ -7389,7 +7569,7 @@
             let best = -1, tg = null;
             for (const e of state.enemies) {
               if (e.hp <= 0) continue;
-              if (e.hp > best) { best = e.hp; tg = e; } // 최강 타겟 우선
+              { const _s = e.isBoss ? e.hp + 1e9 : e.hp; if (_s > best) { best = _s; tg = e; } } // 최강 타겟 우선
             }
             b.target = tg;
           }
@@ -7817,7 +7997,7 @@
             let best = -1, tg = null;
             for (const e of state.enemies) {
               if (e.hp <= 0) continue;
-              if (e.hp > best) { best = e.hp; tg = e; }
+              { const _s = e.isBoss ? e.hp + 1e9 : e.hp; if (_s > best) { best = _s; tg = e; } }
             }
             b.target = tg;
           }
@@ -8731,24 +8911,49 @@
     const mm = (typeof state !== 'undefined' && state && state.metaMods) ? state.metaMods : { roundTimeBonus: 0 };
     const relicEnemySpd = (typeof state !== 'undefined' && state && state.relicEffects && state.relicEffects.enemySpeedMul) || 1;
     const relicBossHp = (typeof state !== 'undefined' && state && state.relicEffects && state.relicEffects.bossHpMul) || 1;
-    const hp = Math.ceil(baseHp * asc.enemyHpMul);
-    const bossHp = Math.ceil(baseHp * (isFinal ? 13 : 10) * asc.bossHpMul * relicBossHp);
+    // 🏰 TD 밸런스 — 두 단계 적용
+    //  • R1~4 초반: 타워 1~2개로 클리어 가능하게 적 수/HP 감소
+    //  • R5+ 중·후반: TD는 진화가 콤보보다 저렴(1능력만 소모) → 적 HP/보스 HP 가중치 ↑
+    //                  대신 적 수는 그대로 유지 (배치 공간 한정 고려)
+    const isDefenseMode = (typeof state !== 'undefined' && state && state.mode === 'defense');
+    let tdHpMul = 1, tdCountMul = 1, tdBossHpMul = 1;
+    if (isDefenseMode) {
+      if (!isBoss && !isFinal) {
+        // 초반 약화
+        if (n === 1)      { tdHpMul = 0.5;  tdCountMul = 0.4; }
+        else if (n === 2) { tdHpMul = 0.6;  tdCountMul = 0.55; }
+        else if (n === 3) { tdHpMul = 0.75; tdCountMul = 0.7; }
+        else if (n === 4) { tdHpMul = 0.85; tdCountMul = 0.85; }
+        // R5+ : 진화 비용 메리트 보상용 HP 가중치 (점진적 강화)
+        else if (n <= 9)   tdHpMul = 1.20;  // R5~9
+        else if (n <= 14)  tdHpMul = 1.30;  // R10~14
+        else if (n <= 24)  tdHpMul = 1.35;  // R15~24
+        else               tdHpMul = 1.40;  // R25+
+      } else {
+        // 보스/최종 보스: HP 가중치 (위치 제약으로 보스 키팅 어려움 보상)
+        tdBossHpMul = 1.35;
+      }
+    }
+    const hp = Math.ceil(baseHp * asc.enemyHpMul * tdHpMul);
+    const bossHp = Math.ceil(baseHp * (isFinal ? 13 : 10) * asc.bossHpMul * relicBossHp * tdBossHpMul);
     const baseTime = isFinal ? 180 : 30;
     const duration = Math.max(15, Math.floor((baseTime + (mm.roundTimeBonus || 0)) * asc.roundTimeMul)) * FPS;
     const baseSpawn = isFinal ? 30 : (isBoss ? 10 : 20);
     // 보스 라운드 정예 적 + 일반 적 추가
     const eliteCount = isBoss ? (asc.eliteEscorts || 0) : 0;
-    const spawnCount = baseSpawn + eliteCount + (isFinal ? 0 : (asc.enemyCountAdd || 0));
+    const spawnCount = Math.max(1, Math.round((baseSpawn + eliteCount + (isFinal ? 0 : (asc.enemyCountAdd || 0))) * tdCountMul));
     return {
       duration,
       spawnCount,
       spawnInterval: isFinal ? 5 * FPS : (isBoss ? 2 * FPS : 1 * FPS),
       enemyHp:       hp,
       enemySpeed:    (0.008 + (n - 1) * 0.0005) * asc.enemySpeedMul * relicEnemySpd,
-      enemyGold:     Math.max(1, Math.ceil(Math.sqrt(hp) * 0.10)),
+      // 골드 인플레이션 방지 — 0.10 → 0.03 (70% 감축, 후반 ~30G/적 → ~10G/적)
+      enemyGold:     Math.max(1, Math.ceil(Math.sqrt(hp) * 0.03)),
       isBoss, isFinal, isExtraBoss,
       bossHp,
-      bossGold:      Math.ceil(Math.sqrt(hp) * (isFinal ? 15 : 6)),
+      // 보스 골드 — 6 → 1.8, isFinal 15 → 4.5 (70% 감축)
+      bossGold:      Math.ceil(Math.sqrt(hp) * (isFinal ? 4.5 : 1.8)),
       // 보스 추가 개수 + 정예 정보 (planRound 에서 사용)
       extraBosses:  isBoss ? (asc.extraBossCount || 0) : 0,
       eliteCount,
@@ -8758,7 +8963,15 @@
   // ===== 게임 상태 =====
   let state, paused;
   function reset() {
+    // 🏰 게임 모드 — 메뉴 → 모드 선택에서 결정
+    // 'standard': 기존 — 적 한계 초과 시 패배
+    // 'defense':  디펜스 — 적이 타워로 직진, 타워 HP 0 시 패배
+    const gameMode = META.lastSelectedMode === 'defense' ? 'defense' : 'standard';
     state = {
+      mode: gameMode,
+      // 🏰 디펜스 모드 전용 — 타워 체력
+      towerHP:    gameMode === 'defense' ? 40 : 0,
+      towerMaxHP: gameMode === 'defense' ? 40 : 0,
       tower: {
         abilities: [],     // [{id, level, cooldown, ...각 능력별 상태}]
         acquireCount: 0,   // 랜덤 능력 획득 누적 횟수 (비용 계산용)
@@ -8889,7 +9102,29 @@
       startReroll:           mods.startReroll || 0,
       roundTimeBonus:        mods.roundTimeBonus || 0,
       relicRarityBoost:      mods.relicRarityBoost || 0,  // 유물 등급 가중치 (0~15)
+      // 🏰 디펜스 모드 전용
+      towerRegenLv:          mods.towerRegenLv || 0,
+      wallRegenLv:           mods.wallRegenLv || 0,
+      towerArmor:            mods.towerArmor || 0,
+      defenseRangeBonus:     mods.defenseRangeBonus || 0,
+      defenseSlowBonus:      mods.defenseSlowBonus || 0,
+      defenseRevive:         mods.defenseRevive || 0,
     };
+    // 🏰 디펜스 모드 (TD): 본진 HP + 타워 entity 배열
+    if (state.mode === 'defense') {
+      state.towerMaxHP = 30 + (mods.towerHPBonus || 0);
+      state.towerHP = state.towerMaxHP;
+      state.defenseReviveUsed = false;
+      state.towers = [];   // 배치된 타워 entity 배열
+      state.tdMapId = 'basic';   // MVP는 단일 맵
+      state.selectedSlot = null;       // 슬롯 선택 중 (배치 모달)
+      state.selectedTower = null;      // 기존 타워 선택 중 (강화 모달)
+      // 🏰 TD 시작 골드 — 타워 1~2개 배치 가능하도록 (메타/승천 시작 골드와 합산)
+      state.gold = (state.gold || 0) + 300;
+      // 🏰 TD Prep Phase — 첫 라운드는 Start 버튼 누를 때까지 적 스폰 정지
+      state.tdPrepPhase = true;
+      state.tdPrepRoundFrameLock = true;
+    }
     // 메타 강화: 시작 점수 (승천 페널티 적용)
     if (mods.startScore) state.score = Math.floor(mods.startScore * asc.startScoreMul);
     state.character = selectedCharacter;
@@ -8932,6 +9167,23 @@
     // 💎 직전 라운드 클리어 보너스 — 묘비의 화환 누적
     if (state.relicEffects && state.relicEffects.tombStackPerRound > 0) {
       state.relicEffects.tombStackBonus += state.relicEffects.tombStackPerRound;
+    }
+    // 🏰 디펜스 모드 (TD): 라운드 클리어 시 타워 HP 회복
+    if (state.mode === 'defense' && state.towerHP > 0) {
+      const towerRegen = state.metaMods.towerRegenLv || 0;
+      if (towerRegen > 0) {
+        const healed = Math.min(towerRegen, state.towerMaxHP - state.towerHP);
+        if (healed > 0) {
+          state.towerHP += healed;
+          const map = getActiveTDMap();
+          const last = map.path[map.path.length - 1];
+          const lc = cellCenter(last.col, last.row);
+          state.damageNumbers.push({
+            x: lc.x, y: lc.y - 30, vy: -1.5,
+            text: `+${healed} HP`, color: '#88ff88', life: 45, size: 14,
+          });
+        }
+      }
     }
     state.round++;
     if (state.round > MAX_ROUND && !state.endless) {
@@ -9875,17 +10127,24 @@
     const nickname = getNickname();
     if (!nickname) { _lastSubmitError = '닉네임 없음'; return; }
     const userId = ensureUserId();
+    const gameMode = state.mode || 'standard';  // 🏰 모드별 분리
     try {
-      // 최고 기록 조회
-      const { data: existing, error: e0 } = await sb
-        .from('rankings')
-        .select('score')
-        .eq('user_id', userId)
-        .maybeSingle();
-      if (e0) { _lastSubmitError = `조회 실패: ${e0.message}`; console.warn(_lastSubmitError); return; }
+      // 같은 모드의 최고 기록만 조회 (모드 컬럼 미생성 시 user_id 만으로 조회 → 전체 fallback)
+      let existing = null;
+      const tryQuery = await sb.from('rankings').select('score').eq('user_id', userId).eq('mode', gameMode).maybeSingle();
+      if (tryQuery.error && /mode/i.test(tryQuery.error.message || '')) {
+        // mode 컬럼 없음 — 구버전 호환
+        const fb = await sb.from('rankings').select('score').eq('user_id', userId).maybeSingle();
+        if (fb.error) { _lastSubmitError = `조회 실패: ${fb.error.message}`; console.warn(_lastSubmitError); return; }
+        existing = fb.data;
+      } else if (tryQuery.error) {
+        _lastSubmitError = `조회 실패: ${tryQuery.error.message}`; console.warn(_lastSubmitError); return;
+      } else {
+        existing = tryQuery.data;
+      }
       const newScore = state.score || 0;
       if (existing && existing.score >= newScore) {
-        console.log(`기존 점수(${existing.score})가 더 높아 제출 생략`);
+        console.log(`기존 점수(${existing.score})가 더 높아 제출 생략 (mode=${gameMode})`);
         return;
       }
       const baseRow = {
@@ -9898,10 +10157,20 @@
         updated_at: new Date().toISOString(),
       };
       const titleVal = getSelectedTitle() || null;
-      // 1차 시도: title 포함
-      let res = await sb.from('rankings').upsert({ ...baseRow, title: titleVal }, { onConflict: 'user_id' });
+      // 1차 시도: mode + title 포함
+      let res = await sb.from('rankings').upsert(
+        { ...baseRow, title: titleVal, mode: gameMode },
+        { onConflict: 'user_id,mode' }
+      );
+      // 모드 컬럼 미생성 시 fallback (구 user_id 단독 PK)
+      if (res.error && /mode/i.test(res.error.message || '')) {
+        console.warn('⚠️ mode 컬럼 없음 — Supabase에서 다음 SQL 실행 필요:\n' +
+                     '  alter table rankings add column if not exists mode text default \'standard\';\n' +
+                     '  alter table rankings drop constraint rankings_pkey;\n' +
+                     '  alter table rankings add primary key (user_id, mode);');
+        res = await sb.from('rankings').upsert({ ...baseRow, title: titleVal }, { onConflict: 'user_id' });
+      }
       if (res.error && /title/i.test(res.error.message || '')) {
-        // title 컬럼 미생성 → 빼고 재시도
         console.warn('⚠️ title 컬럼 없음 — Supabase에서 다음 SQL 실행 필요:\n  alter table rankings add column if not exists title text;');
         res = await sb.from('rankings').upsert(baseRow, { onConflict: 'user_id' });
       }
@@ -9909,7 +10178,7 @@
         _lastSubmitError = res.error.message;
         console.warn('❌ 점수 제출 실패:', res.error.message, res.error);
       } else {
-        console.log(`✅ 점수 제출 성공: ${newScore.toLocaleString()}점`);
+        console.log(`✅ 점수 제출 성공: ${newScore.toLocaleString()}점 (mode=${gameMode})`);
         invalidateRankingCache(); // 새 점수 반영 위해 캐시 폐기
       }
     } catch (e) {
@@ -9919,23 +10188,39 @@
   }
 
   // ===== 랭킹 조회 + 렌더 (A: 병렬 + D: 캐시) =====
-  let _rankingCache = null;           // { timestamp, data: { top10, myRow, myRank, userId } }
-  const RANKING_CACHE_TTL = 60000;    // 60초 동안 신선
-  function invalidateRankingCache() { _rankingCache = null; }
+  // 🏰 모드별 랭킹 — 캐시는 모드별 분리
+  let _rankingCache = { standard: null, defense: null };
+  let _selectedRankMode = 'standard';  // 현재 선택된 랭킹 모드 탭
+  const RANKING_CACHE_TTL = 60000;
+  function invalidateRankingCache() { _rankingCache = { standard: null, defense: null }; }
 
-  // 순수 fetch — 병렬 처리로 RTT 단축
-  async function fetchRankingsData() {
+  async function fetchRankingsData(mode) {
+    mode = mode || _selectedRankMode || 'standard';
     const sb = getSupabase();
     if (!sb) throw new Error('Supabase 연결 실패');
     const userId = ensureUserId();
-    const fullCols = 'user_id, nickname, title, score, round, ascension, character, updated_at';
+    const fullCols = 'user_id, nickname, title, score, round, ascension, character, updated_at, mode';
+    const safeColsNoMode = 'user_id, nickname, title, score, round, ascension, character, updated_at';
     const safeCols = 'user_id, nickname, score, round, ascension, character, updated_at';
 
-    // 1단계: top10 + 내 기록 병렬 조회
+    // 1단계: top10 + 내 기록 병렬 조회 (모드 필터)
     let [top10Res, myRowRes] = await Promise.all([
-      sb.from('rankings').select(fullCols).order('score', { ascending: false }).limit(10),
-      sb.from('rankings').select(fullCols).eq('user_id', userId).maybeSingle(),
+      sb.from('rankings').select(fullCols).eq('mode', mode).order('score', { ascending: false }).limit(10),
+      sb.from('rankings').select(fullCols).eq('user_id', userId).eq('mode', mode).maybeSingle(),
     ]);
+    // mode 컬럼 없으면 fallback — 전체 조회 (standard로 간주)
+    if ((top10Res.error && /mode/i.test(top10Res.error.message || '')) ||
+        (myRowRes.error && /mode/i.test(myRowRes.error.message || ''))) {
+      console.warn('⚠️ mode 컬럼 없음 — 전체 랭킹 조회로 fallback (Supabase SQL: alter table rankings add column mode text default \'standard\';)');
+      if (mode !== 'standard') {
+        // defense 모드인데 컬럼 없으면 빈 결과
+        return { top10: [], myRow: null, myRank: null, userId, mode };
+      }
+      [top10Res, myRowRes] = await Promise.all([
+        sb.from('rankings').select(safeColsNoMode).order('score', { ascending: false }).limit(10),
+        sb.from('rankings').select(safeColsNoMode).eq('user_id', userId).maybeSingle(),
+      ]);
+    }
     // title 컬럼 미생성 fallback
     if ((top10Res.error && /title/i.test(top10Res.error.message || '')) ||
         (myRowRes.error && /title/i.test(myRowRes.error.message || ''))) {
@@ -9949,16 +10234,23 @@
     const top10 = top10Res.data || [];
     const myRow = myRowRes.data || null;
 
-    // 2단계: 내 순위 카운트 — myRow 있을 때만 (의존성)
+    // 2단계: 내 순위 카운트 — myRow 있을 때만 (의존성, 모드 필터)
     let myRank = null;
     if (myRow) {
-      const { count } = await sb
+      const rankQuery = await sb
         .from('rankings')
         .select('*', { count: 'exact', head: true })
+        .eq('mode', mode)
         .gt('score', myRow.score);
-      myRank = (count || 0) + 1;
+      if (rankQuery.error && /mode/i.test(rankQuery.error.message || '')) {
+        // fallback without mode
+        const fb = await sb.from('rankings').select('*', { count: 'exact', head: true }).gt('score', myRow.score);
+        myRank = (fb.count || 0) + 1;
+      } else {
+        myRank = (rankQuery.count || 0) + 1;
+      }
     }
-    return { top10, myRow, myRank, userId };
+    return { top10, myRow, myRank, userId, mode };
   }
 
   // 순수 렌더
@@ -10184,18 +10476,16 @@
       _updateProfilePromise = null;
     }
 
-    // === 캐시 활용 (D: Stale-while-revalidate) ===
-    const cached = _rankingCache;
+    // === 캐시 활용 (D: Stale-while-revalidate) — 모드별 분리 ===
+    const mode = _selectedRankMode || 'standard';
+    const cached = _rankingCache[mode];
     const isFresh = cached && (Date.now() - cached.timestamp < RANKING_CACHE_TTL);
     if (isFresh) {
-      // 즉시 표시
       renderRankings(cached.data, true);
-      // 백그라운드 갱신 — 사용자는 대기 없음
-      fetchRankingsData().then(data => {
-        _rankingCache = { timestamp: Date.now(), data };
-        renderRankings(data, false); // 새 데이터로 교체
+      fetchRankingsData(mode).then(data => {
+        _rankingCache[mode] = { timestamp: Date.now(), data };
+        renderRankings(data, false);
       }).catch(e => {
-        // 백그라운드 실패는 조용히 무시 (stale 데이터 그대로 유지)
         console.warn('백그라운드 갱신 실패:', e);
         const banner = document.getElementById('stale-banner');
         if (banner) banner.textContent = '⚠ 갱신 실패 — 캐시된 결과';
@@ -10208,8 +10498,8 @@
     statusEl.style.display = '';
     statusEl.textContent = '불러오는 중...';
     try {
-      const data = await fetchRankingsData();
-      _rankingCache = { timestamp: Date.now(), data };
+      const data = await fetchRankingsData(mode);
+      _rankingCache[mode] = { timestamp: Date.now(), data };
       renderRankings(data, false);
     } catch (e) {
       console.warn(e);
@@ -10402,6 +10692,7 @@
     { id: 'combat',   label: '⚔️ 전투력',    color: '#ff8a98' },
     { id: 'build',    label: '🎴 빌드 / 카드', color: '#b890ff' },
     { id: 'survival', label: '🛡️ 생존 / 슬롯',  color: '#7ad7ff' },
+    { id: 'defense',  label: '🏰 디펜스 모드', color: '#ddc080' },
   ];
   const META_UPGRADES = [
     // === 💰 자원 ===
@@ -10431,6 +10722,16 @@
     { id: 'extraSlot',   category: 'survival', name: '액티브 슬롯 +1',    desc: 'lv당 +1칸 (최대 +2)',    maxLv: 2,  cost: lv => 1200 * (lv + 1), apply: lv => lv },
     { id: 'maxAliveBonus', category: 'survival', name: '적 수용 한계',    desc: 'lv당 +5 마리',           maxLv: 6,  cost: lv => 350 * (lv + 1), apply: lv => 5 * lv },
     { id: 'roundTime',   category: 'survival', name: '라운드 시간 보너스', desc: 'lv당 +1초',              maxLv: 5,  cost: lv => 300 * (lv + 1), apply: lv => lv },
+
+    // === 🏰 디펜스 모드 전용 ===
+    { id: 'towerHP',       category: 'defense', name: '🏰 타워 시작 HP',   desc: 'lv당 +5 HP (기본 40)',     maxLv: 8,  cost: lv => 250 * (lv + 1), apply: lv => 5 * lv },
+    { id: 'wallHP',        category: 'defense', name: '🧱 방벽 시작 HP',   desc: 'lv당 +10 HP (기본 60)',    maxLv: 8,  cost: lv => 200 * (lv + 1), apply: lv => 10 * lv },
+    { id: 'wallRegen',     category: 'defense', name: '🔧 방벽 수복',       desc: 'lv당 라운드 클리어 시 방벽 +5 HP', maxLv: 5,  cost: lv => 350 * (lv + 1), apply: lv => 5 * lv },
+    { id: 'towerRegen',    category: 'defense', name: '❤ 타워 회복',       desc: 'lv당 라운드 클리어 시 타워 +1 HP', maxLv: 5,  cost: lv => 400 * (lv + 1), apply: lv => lv },
+    { id: 'towerArmor',    category: 'defense', name: '🛡 방어력',          desc: 'lv당 받는 데미지 -10% (max -50%)', maxLv: 5, cost: lv => 500 * (lv + 1), apply: lv => 0.10 * lv },
+    { id: 'defenseRange',  category: 'defense', name: '📡 사거리 보너스',   desc: 'lv당 모든 능력 사거리 +5%', maxLv: 6,  cost: lv => 300 * (lv + 1), apply: lv => 0.05 * lv },
+    { id: 'defenseSlow',   category: 'defense', name: '❄ 슬로우 강화',     desc: 'lv당 적 이동속도 -5%',     maxLv: 5,  cost: lv => 350 * (lv + 1), apply: lv => 0.05 * lv },
+    { id: 'defenseRevive', category: 'defense', name: '🌅 한 번의 부활',   desc: '게임당 1회, HP 1 직전 풀회복', maxLv: 1,  cost: lv => 2000, apply: lv => lv },
   ];
   function getMetaMods() {
     const v = id => {
@@ -10457,6 +10758,15 @@
       startReroll:           metaLv('startReroll'),    // 시작 시 추가 리롤
       roundTimeBonus:        v('roundTime'),           // 라운드 시간 추가 (초)
       relicRarityBoost:      v('relicRarity'),         // 유물 고급 등급 확률 (0~15)
+      // 🏰 디펜스 모드 전용 (디펜스 모드일 때만 적용)
+      towerHPBonus:          v('towerHP'),             // 타워 시작 HP 추가
+      wallHPBonus:           v('wallHP'),              // 방벽 시작 HP 추가
+      wallRegenLv:           v('wallRegen'),           // 라운드 클리어 시 방벽 회복량
+      towerRegenLv:          v('towerRegen'),          // 라운드 클리어 시 타워 회복량
+      towerArmor:            v('towerArmor'),          // 받는 데미지 감소율
+      defenseRangeBonus:     v('defenseRange'),        // 사거리 보너스
+      defenseSlowBonus:      v('defenseSlow'),         // 적 속도 감소
+      defenseRevive:         metaLv('defenseRevive'),  // 부활 1회 (0 또는 1)
     };
   }
   function buyUpgrade(id) {
@@ -10909,15 +11219,16 @@
   // leader: 리더 탄환 (null이면 일반 탄환). 사이드 탄환은 리더 방향을 추종.
   // offsetAngle: 리더 진행 방향 대비 사이드 탄환의 고정 각도 오프셋
   function fireBullet(angle, dmg, color, target, leader, offsetAngle) {
+    const tx = towerX(), ty = towerY();
     const b = {
-      x: CX, y: CY,
+      x: tx, y: ty,
       vx: Math.cos(angle)*7, vy: Math.sin(angle)*7,
       dmg, life: 100, color,
       target: target || null,
       leader: leader || null,
       offsetAngle: offsetAngle || 0,
-      tier: state.currentAbilityTier || 'basic',  // 위계 보너스 추적용
-      sourceId: state.currentAbilityId || null,   // 📊 데미지 통계 추적용
+      tier: state.currentAbilityTier || 'basic',
+      sourceId: state.currentAbilityId || null,
     };
     state.bullets.push(b);
     return b;
@@ -11021,6 +11332,8 @@
       });
     }
     if (e.hp <= 0) {
+      // 🏰 디펜스 모드: 타워에 도달해서 죽은 적은 보상 X (이미 페널티 줬음)
+      if (e._reachedTower) return;
       const mm = state.metaMods || { goldMul: 1, scoreMul: 1 };
       // 골드 — 흡혈 패시브 + 보스 골드 보너스 (메타)
       // 보스 골드 배수 — 0 이하로는 떨어지지 않게 클램프 (deathPromise -0.5 + 기타 음수 합산 방어)
@@ -11177,8 +11490,98 @@
   }
 
   // ===== 레벨업 시스템 =====
+  // 🏰 TD 모드 레벨업 카드 — 패시브 + 보너스 (액티브 X)
+  function generateTDLevelUpChoices() {
+    const choices = [];
+    const ownedIds = new Set(state.tower.abilities.map(a => a.id));
+    const allowed = getUnlockedAbilityIds();
+    // 미보유 패시브 후보
+    const passivePool = [...allowed].filter(id => {
+      const d = ABILITY_DEFS[id];
+      return d && d.isPassive && !ownedIds.has(id);
+    });
+    // 강화 가능 패시브 (현재 보유 중 max 미만)
+    const upgradablePassives = state.tower.abilities.filter(a => {
+      const d = ABILITY_DEFS[a.id];
+      return d && d.isPassive && !isAtMax(a);
+    });
+    // 🏰 초반(플레이어 레벨 ≤ 3)에는 보너스 카드(점수/스타더스트) 제외 — 초반 카드는 실질 강화로만
+    const blockBonus = (state.playerLevel || 1) <= 3;
+    // 카드 풀: 신규 패시브 60%, 강화 30%, 보너스 10% (초반은 보너스 차단 후 패시브로 대체)
+    while (choices.length < 3) {
+      const roll = Math.random();
+      let added = false;
+      // 1) 신규 패시브
+      if (roll < 0.6 && passivePool.length > 0) {
+        const candidates = passivePool.filter(id => !choices.some(c => c.action === 'new' && c.id === id));
+        if (candidates.length > 0) {
+          const id = candidates[Math.floor(Math.random() * candidates.length)];
+          choices.push({ action: 'new', id, newLevel: 1 });
+          added = true;
+        }
+      }
+      // 2) 패시브 강화
+      if (!added && roll < 0.9 && upgradablePassives.length > 0) {
+        const candidates = upgradablePassives.filter(a => !choices.some(c => c.action === 'level' && c.id === a.id));
+        if (candidates.length > 0) {
+          const a = candidates[Math.floor(Math.random() * candidates.length)];
+          // 럭키 확률 적용
+          let lucky = 0;
+          const mm = state.metaMods || {};
+          if (Math.random() < ((mm.superLuckyChanceBonus || 0) + 0.03)) lucky = 2;
+          else if (Math.random() < ((mm.luckyChanceBonus || 0) + 0.12)) lucky = 1;
+          choices.push({ action: 'level', id: a.id, level: a.level, newLevel: a.level + 1 + lucky, lucky });
+          added = true;
+        }
+      }
+      // 보너스 비차단 구간: 풀 비었거나 강화 후보도 없으면 보너스 가능
+      // 보너스 차단 구간(초반): 강화 후보가 비었으면 신규 한번 더 시도
+      if (!added) {
+        // 신규 또는 강화 어느 쪽이든 가능하면 한 번 더 시도 (보너스 회피)
+        if (passivePool.length > 0) {
+          const candidates = passivePool.filter(id => !choices.some(c => c.action === 'new' && c.id === id));
+          if (candidates.length > 0) {
+            const id = candidates[Math.floor(Math.random() * candidates.length)];
+            choices.push({ action: 'new', id, newLevel: 1 });
+            added = true;
+          }
+        }
+        if (!added && upgradablePassives.length > 0) {
+          const candidates = upgradablePassives.filter(a => !choices.some(c => c.action === 'level' && c.id === a.id));
+          if (candidates.length > 0) {
+            const a = candidates[Math.floor(Math.random() * candidates.length)];
+            let lucky = 0;
+            const mm = state.metaMods || {};
+            if (Math.random() < ((mm.superLuckyChanceBonus || 0) + 0.03)) lucky = 2;
+            else if (Math.random() < ((mm.luckyChanceBonus || 0) + 0.12)) lucky = 1;
+            choices.push({ action: 'level', id: a.id, level: a.level, newLevel: a.level + 1 + lucky, lucky });
+            added = true;
+          }
+        }
+      }
+      // 3) 보너스 (점수 / 스타더스트) — 초반(playerLevel ≤ 3)에는 차단
+      if (!added && !blockBonus) {
+        const scoreMul = (state.metaMods && state.metaMods.scoreMul) || 1;
+        const ratio = Math.random();
+        if (ratio < 0.6) {
+          choices.push({ action: 'bonusScore', amount: Math.floor(800 * state.round * scoreMul * (0.85 + Math.random() * 0.4)) });
+        } else {
+          choices.push({ action: 'bonusStardust', amount: Math.max(1, Math.floor(state.round / 3)) });
+        }
+        added = true;
+      }
+      if (!added) break;
+    }
+    return choices;
+  }
+
   function generateLevelUpChoices() {
     const choices = [];
+
+    // 🏰 TD 모드: 패시브/유물/보너스만 — 액티브는 타워로 배치하므로 카드 풀에서 제외
+    if (state.mode === 'defense') {
+      return generateTDLevelUpChoices();
+    }
 
     // 액티브 능력이 하나도 없으면 첫 카드는 무조건 액티브 3장 보장 (몬스터 처치 불가 방지)
     const forceActiveOnly = activeCount() === 0;
@@ -11360,7 +11763,8 @@
     state.levelUpChoices = choices;
     state.rerollAvailable = metaLv('reroll') > 0;
     // 모든 카드가 보너스(점수/스타더스트)면 3초 자동 선택 타이머 시작
-    state.autoCardTimer = isAllBonusChoices(choices) ? 3 * FPS : 0;
+    // ⏱ 자동 선택 — 실시간 5초 (게임 속도 배율과 무관). 0 = 비활성, >0 = 절대 시각(ms)
+    state.autoCardTimer = isAllBonusChoices(choices) ? (performance.now() + 5000) : 0;
     SFX.levelup();
   }
   function isAllBonusChoices(choices) {
@@ -11374,7 +11778,8 @@
     state.levelUpChoices = choices;
     state.rerollAvailable = false;
     // 리롤 후에도 전부 보너스면 타이머 재시작 (사용자가 리롤로 일반 카드 시도했음 → 한 번 더 기다림)
-    state.autoCardTimer = isAllBonusChoices(choices) ? 3 * FPS : 0;
+    // ⏱ 자동 선택 — 실시간 5초 (게임 속도 배율과 무관). 0 = 비활성, >0 = 절대 시각(ms)
+    state.autoCardTimer = isAllBonusChoices(choices) ? (performance.now() + 5000) : 0;
     SFX.click();
   }
   function applyLevelUpChoice(idx) {
@@ -11630,8 +12035,56 @@
   }
   function spawnEnemy(opts = {}) {
     const cfg = roundConfig(state.round);
-    const a = opts.angle !== undefined ? opts.angle : Math.random() * Math.PI * 2;
-    const r = opts.radius !== undefined ? opts.radius : ENEMY_MIN_R + Math.random() * (ENEMY_MAX_R - ENEMY_MIN_R);
+    // 🏰 디펜스 모드 (TD): 경로 따라 이동하는 적 스폰
+    if (state.mode === 'defense') {
+      const map = getActiveTDMap();
+      const start = map.path[0];
+      const center = cellCenter(start.col, start.row);
+      const behavior = opts.behavior !== undefined ? opts.behavior : pickEnemyBehavior(state.round);
+      let hp = opts.hp !== undefined ? opts.hp : cfg.enemyHp;
+      let size = 7;
+      if (behavior === 'shielded') hp = Math.ceil(hp * 1.6);
+      if (behavior === 'charger') size = 6;
+      if (opts.size) size = opts.size;
+      const isElite = !!opts.isElite;
+      if (isElite) { hp = Math.ceil(hp * 3.0); size = 9; }
+      // 적 이동 속도 (셀당 frame 수 = 1 / 속도)
+      const speedCellPerFrame = cfg.enemySpeed * 1.2 * (behavior === 'charger' ? 1.8 : 1) * (isElite ? 1.2 : 1);
+      state.enemies.push({
+        _cart: true,
+        x: center.x, y: center.y,
+        pathIdx: 0,         // 현재 path 인덱스 (목표는 path[pathIdx+1])
+        pathT: 0,           // 현재 segment 진행도 (0~1)
+        speed: speedCellPerFrame,
+        angle: 0, radius: 0, targetRadius: 0, radiusChangeAt: 999999,
+        angularSpeed: 0,
+        hp, maxHp: hp, size,
+        goldDrop: cfg.enemyGold * (isElite ? 4 : 1),
+        slowFrames: 0,
+        isBoss: false,
+        isElite,
+        type: opts.type || getEnemyType(state.round),
+        seed: Math.random() * 1000,
+        rotation: Math.random() * Math.PI * 2,
+        rotSpeed: (Math.random() < 0.5 ? -1 : 1) * (0.005 + Math.random() * 0.01),
+        behavior,
+        shieldHp: behavior === 'shielded' ? 3 : 0,
+        lastDamageAt: 0,
+      });
+      return;
+    }
+    // 이하 표준 모드 (라디얼)
+    let a, r;
+    if (opts.angle !== undefined) {
+      a = opts.angle;
+    } else {
+      a = Math.random() * Math.PI * 2;
+    }
+    if (opts.radius !== undefined) {
+      r = opts.radius;
+    } else {
+      r = ENEMY_MIN_R + Math.random() * (ENEMY_MAX_R - ENEMY_MIN_R);
+    }
     const dir = Math.random() < 0.5 ? 1 : -1;
     const behavior = opts.behavior !== undefined ? opts.behavior : pickEnemyBehavior(state.round);
     let hp = opts.hp !== undefined ? opts.hp : cfg.enemyHp;
@@ -11674,7 +12127,42 @@
   }
   function spawnBoss() {
     const cfg = roundConfig(state.round);
-    const a = Math.random() * Math.PI * 2;
+    // 🏰 디펜스 모드 (TD): 보스도 path 시작점에서 스폰 (느리게)
+    if (state.mode === 'defense') {
+      const map = getActiveTDMap();
+      const start = map.path[0];
+      const center = cellCenter(start.col, start.row);
+      state.enemies.push({
+        _cart: true,
+        x: center.x, y: center.y,
+        pathIdx: 0,
+        pathT: 0,
+        speed: cfg.enemySpeed * 0.7,  // 보스 천천히
+        angle: 0, radius: 0, targetRadius: 0, radiusChangeAt: 999999,
+        angularSpeed: 0,
+        hp: cfg.bossHp, maxHp: cfg.bossHp,
+        size: 18, goldDrop: cfg.bossGold,
+        slowFrames: 0, isBoss: true,
+        type: 'boss', seed: Math.random() * 1000,
+        rotation: 0, rotSpeed: 0.012,
+        pattern: pickBossPattern(state.round),
+        patternCD: 180,
+        enraged: false,
+        shieldHp: 0,
+        lastDamageAt: 0,
+      });
+      const re = state.relicEffects;
+      if (re && re.bossStartStop > 0) {
+        for (const en of state.enemies) {
+          en.slowFrames = Math.max(en.slowFrames || 0, re.bossStartStop);
+        }
+        toast(`🔮 시간이 멈춘다 — ${(re.bossStartStop/60).toFixed(1)}초`);
+      }
+      return;
+    }
+    // 이하 표준 모드 (라디얼)
+    let a;
+    a = Math.random() * Math.PI * 2;
     const r = ENEMY_MAX_R - 30;
     state.enemies.push({
       angle: a, radius: r,
@@ -11749,10 +12237,9 @@
 
   // ===== 업데이트 =====
   function update() {
-    // 자동 카드 선택 타이머 (모달 떠있고 일시정지 아닌 동안만 카운트)
+    // 자동 카드 선택 타이머 — 실시간 deadline 방식 (게임 속도 배율 영향 X)
     if (state.levelUpChoices && !paused && state.autoCardTimer > 0) {
-      state.autoCardTimer--;
-      if (state.autoCardTimer <= 0) {
+      if (performance.now() >= state.autoCardTimer) {
         // 스타더스트 카드 우선 자동 선택, 없으면 첫 보너스 카드
         const idx = state.levelUpChoices.findIndex(c => c.action === 'bonusStardust');
         applyLevelUpChoice(idx >= 0 ? idx : 0);
@@ -11764,6 +12251,8 @@
 
     // 라운드 진행
     const cfg = roundConfig(state.round);
+    // 🏰 TD Prep Phase — Start 버튼 누르기 전까지 라운드 진행/스폰 정지
+    if (state.tdPrepPhase) return;
     state.roundFrame++;
     while (state.spawnPlan.length && state.spawnPlan[0] <= state.roundFrame) {
       state.spawnPlan.shift();
@@ -11792,8 +12281,8 @@
 
     // 🐲 보스 생존 여부 — 조기 클리어 가드
     const bossAlive = state.enemies.some(e => e.isBoss && e.hp > 0);
+    // 🏰 디펜스 모드: 살아남은 적은 어차피 아래로 내려와 죽음 → 조기 클리어 일찍 허용
     // 조기 클리어: 모든 적 처치 + 더 이상 스폰 없음 → 즉시 다음 라운드 + 시간 보너스
-    // 단, 보스가 살아있으면 스킵 X — 보스가 다음 라운드까지 따라왔을 때 시간 깎이는 페널티 방지
     if (state.enemies.length === 0
         && state.spawnPlan.length === 0
         && state.bossSpawns.length === 0
@@ -11816,7 +12305,8 @@
 
     // 게임오버 체크 (적 누적)
     const maxAlive = getMaxAlive();
-    if (state.enemies.length >= maxAlive) {
+    // 🏰 디펜스 모드는 적 한계 게임오버 X (HP 0으로만 패배)
+    if (state.mode !== 'defense' && state.enemies.length >= maxAlive) {
       // 🌅 영원의 빛 — 한 게임당 1회 자동 부활 (적 절반 학살 + 전체 정지 2초)
       const re = state.relicEffects;
       if (re && re.deathDefiance > 0) {
@@ -11845,18 +12335,62 @@
     }
 
     // 적 이동 + 특수 행동 처리
+    const isDefenseMode = state.mode === 'defense';
+    const defenseSlowMul = isDefenseMode ? (1 - (state.metaMods.defenseSlowBonus || 0)) : 1;
     for (const e of state.enemies) {
       // 🛑 완전 정지 (timeStopped) — 8개 능력의 "정지" 효과 실제 적용
       const fullyStopped = e.timeStopped && e.timeStopped > state.t;
       const slowMul = fullyStopped ? 0 : (e.slowFrames > 0 ? 0.35 : 1);
       if (e.slowFrames > 0) e.slowFrames--;
-      e.angle += e.angularSpeed * slowMul;
-      const dr = e.targetRadius - e.radius;
-      if (Math.abs(dr) > 0.2) e.radius += Math.sign(dr) * 0.4 * slowMul;
-      e.radiusChangeAt--;
-      if (e.radiusChangeAt <= 0) {
-        e.targetRadius = ENEMY_MIN_R + Math.random() * (ENEMY_MAX_R - ENEMY_MIN_R);
-        e.radiusChangeAt = 90 + Math.floor(Math.random()*150);
+      if (isDefenseMode) {
+        // 🏰 디펜스 모드 (TD): 경로 따라 셀→셀 이동
+        e.rotation = (e.rotation || 0) + (e.rotSpeed || 0) * slowMul;
+        const map = getActiveTDMap();
+        const totalSegments = map.path.length - 1;
+        if (e.pathIdx >= totalSegments) {
+          // 본진 도달
+          const armor = state.metaMods.towerArmor || 0;
+          const dmg = e.isBoss ? Math.max(5, Math.floor(e.maxHp / 8)) : 1;
+          const finalDmg = Math.max(1, Math.ceil(dmg * (1 - armor)));
+          state.towerHP -= finalDmg;
+          const last = map.path[map.path.length - 1];
+          const lc = cellCenter(last.col, last.row);
+          shake(e.isBoss ? 18 : 6, e.isBoss ? 12 : 4);
+          spawnParticles(lc.x, lc.y, '#ff5b6e', e.isBoss ? 20 : 6);
+          state.damageNumbers.push({
+            x: lc.x, y: lc.y - 22, vy: -1.2,
+            text: `-${finalDmg} HP`, color: '#ff5b6e', life: 40, size: e.isBoss ? 16 : 12,
+          });
+          e.hp = -1;
+          e._reachedTower = true;
+        } else {
+          // 다음 셀로 이동
+          const from = map.path[e.pathIdx];
+          const to = map.path[e.pathIdx + 1];
+          const fc = cellCenter(from.col, from.row);
+          const tc = cellCenter(to.col, to.row);
+          const segLen = Math.hypot(tc.x - fc.x, tc.y - fc.y);
+          const moveSpeed = e.speed * 60 * slowMul * defenseSlowMul;  // 셀/초 → 픽셀/프레임
+          e.pathT += moveSpeed / Math.max(1, segLen);
+          if (e.pathT >= 1) {
+            e.pathT = 0;
+            e.pathIdx++;
+          }
+          // 보간 위치
+          const t = Math.min(1, Math.max(0, e.pathT));
+          e.x = fc.x + (tc.x - fc.x) * t;
+          e.y = fc.y + (tc.y - fc.y) * t;
+        }
+      } else {
+        // 표준 모드: 원래 공전 동작 유지
+        e.angle += e.angularSpeed * slowMul;
+        const dr = e.targetRadius - e.radius;
+        if (Math.abs(dr) > 0.2) e.radius += Math.sign(dr) * 0.4 * slowMul;
+        e.radiusChangeAt--;
+        if (e.radiusChangeAt <= 0) {
+          e.targetRadius = ENEMY_MIN_R + Math.random() * (ENEMY_MAX_R - ENEMY_MIN_R);
+          e.radiusChangeAt = 90 + Math.floor(Math.random()*150);
+        }
       }
       // 재생형: 2초 동안 데미지 안 받으면 매 frame +0.5% maxHp 회복
       if (e.behavior === 'regen' && (state.t - e.lastDamageAt) > 120 && e.hp < e.maxHp) {
@@ -11867,24 +12401,89 @@
         }
       }
     }
+    // 🏰 디펜스 모드: 타워 HP 0 → 게임 오버
+    if (isDefenseMode && state.towerHP <= 0 && !state.gameOver) {
+      // 🌅 부활 (강화소 메타 또는 영원의 빛 유물)
+      const reviveAvailable = (state.metaMods.defenseRevive > 0 && !state.defenseReviveUsed) ||
+                              (state.relicEffects && state.relicEffects.deathDefiance > 0);
+      if (reviveAvailable) {
+        if (state.metaMods.defenseRevive > 0 && !state.defenseReviveUsed) {
+          state.defenseReviveUsed = true;
+        } else if (state.relicEffects.deathDefiance > 0) {
+          state.relicEffects.deathDefiance--;
+        }
+        state.towerHP = state.towerMaxHP;  // 풀회복
+        // 모든 적 2초 정지
+        for (const e of state.enemies) {
+          if (e.hp <= 0) continue;
+          e.slowFrames = Math.max(e.slowFrames || 0, 120);
+          e.timeStopped = state.t + 120;
+        }
+        shake(25, 30);
+        SFX.combo();
+        state.comboFlash = 60;
+        state.comboFlashColor = '#ffd479';
+        toast('🌅 부활! 타워 HP 풀회복');
+      } else {
+        endGame('타워가 파괴됨', false);
+      }
+    }
     // 보스 능력 패턴 처리
     updateBossPatterns();
 
-    // 능력 tick (각 능력이 독립적으로 작동) — 위계 보너스 적용을 위해 currentAbilityTier 추적
-    for (const ab of state.tower.abilities) {
-      const def = ABILITY_DEFS[ab.id];
-      state.currentAbilityTier = def.isTriple ? 'triple' : (def.isCombo ? 'combo' : 'basic');
-      state.currentAbilityId = ab.id;
-      def.tick(ab);
-      // 💎 흡혈의 망토 — 능력 발동 시 골드 (능력당 1번씩 매 frame이 아닌 주기적으로)
-      const re = state.relicEffects;
-      if (re && re.abilityUseGold > 0) {
-        re.abilityUseCounter = (re.abilityUseCounter || 0) + 1;
-        if (re.abilityUseCounter >= 120) { // 약 2초마다
-          re.abilityUseCounter = 0;
-          const gain = re.abilityUseGold * state.tower.abilities.length;
-          state.gold += gain;
-          re.goldEarnedTotal = (re.goldEarnedTotal || 0) + gain;
+    // 능력 tick — 모드별 분기
+    if (state.mode === 'defense') {
+      // 🏰 TD: 각 배치 타워별로 CX/CY 스왑 후 ability tick
+      // 적이 한 마리도 없으면 능력 발동 자체를 차단 (시각적으로도 깔끔 + 헛 발사 방지)
+      const anyEnemyAlive = (state.enemies || []).some(e => e.hp > 0);
+      for (const tower of (state.towers || [])) {
+        const def = ABILITY_DEFS[tower.ab.id];
+        if (!def) continue;
+        // 적 없음 → 능력 tick 스킵 (탄환/이펙트 발사 X). 단, 쿨다운 진행은 허용해도 무방하지만
+        // 발사 자체를 막으면 충분.
+        if (!anyEnemyAlive) continue;
+        state.currentAbilityTier = def.isTriple ? 'triple' : (def.isCombo ? 'combo' : 'basic');
+        state.currentAbilityId = tower.ab.id;
+        const oldCX = CX, oldCY = CY;
+        CX = tower.x; CY = tower.y;
+        try { def.tick(tower.ab); }
+        catch (e) { console.warn('tower tick error', tower.ab.id, e); }
+        CX = oldCX; CY = oldCY;
+        // 💎 흡혈의 망토 — 능력 발동 시 골드
+        const re = state.relicEffects;
+        if (re && re.abilityUseGold > 0) {
+          re.abilityUseCounter = (re.abilityUseCounter || 0) + 1;
+          if (re.abilityUseCounter >= 120) {
+            re.abilityUseCounter = 0;
+            const gain = re.abilityUseGold * state.towers.length;
+            state.gold += gain;
+            re.goldEarnedTotal = (re.goldEarnedTotal || 0) + gain;
+          }
+        }
+      }
+      // 패시브 능력은 중앙 타워에 (state.tower.abilities) — 패시브만 슬롯 차지
+      for (const ab of state.tower.abilities) {
+        const def = ABILITY_DEFS[ab.id];
+        if (!def || !def.isPassive) continue;
+        state.currentAbilityId = ab.id;
+        def.tick(ab);
+      }
+    } else {
+      // 표준 모드 — 기존 동작
+      for (const ab of state.tower.abilities) {
+        const def = ABILITY_DEFS[ab.id];
+        state.currentAbilityTier = def.isTriple ? 'triple' : (def.isCombo ? 'combo' : 'basic');
+        state.currentAbilityId = ab.id;
+        def.tick(ab);
+        const re = state.relicEffects;
+        if (re && re.abilityUseGold > 0) {
+          re.abilityUseCounter = (re.abilityUseCounter || 0) + 1;
+          if (re.abilityUseCounter >= 120) {
+            re.abilityUseCounter = 0;
+            const gain = re.abilityUseGold * state.tower.abilities.length;
+            state.gold += gain;
+            re.goldEarnedTotal = (re.goldEarnedTotal || 0) + gain;
+          }
         }
       }
     }
@@ -11897,7 +12496,8 @@
         let target = null, bestHp = -1;
         for (const e of state.enemies) {
           if (e.hp <= 0) continue;
-          if (e.hp > bestHp) { bestHp = e.hp; target = e; }
+          const _s = e.isBoss ? e.hp + 1e9 : e.hp;
+          if (_s > bestHp) { bestHp = _s; target = e; }
         }
         if (target) {
           const dmg = Math.ceil(target.maxHp * 0.12);
@@ -11943,9 +12543,16 @@
         b.vx = Math.cos(a) * sp;
         b.vy = Math.sin(a) * sp;
       }
+      const prevX = b.x, prevY = b.y;
       b.x += b.vx; b.y += b.vy; b.life--;
-      const dx = b.x - CX, dy = b.y - CY;
-      if (dx*dx + dy*dy > (ARENA_R+30)*(ARENA_R+30)) b.life = 0;
+      // 🏰 디펜스 모드 (TD): 캔버스 밖 나가면 죽음
+      if (state.mode === 'defense') {
+        if (b.x < -20 || b.x > W + 20 || b.y < -20 || b.y > H + 20) b.life = 0;
+      } else {
+        const dx = b.x - CX_BASE, dy = b.y - CY_BASE;
+        if (dx*dx + dy*dy > (ARENA_R+30)*(ARENA_R+30)) b.life = 0;
+      }
+      if (b.life <= 0) continue;
       for (const e of state.enemies) {
         if (e.hp <= 0) continue;
         const [ex, ey] = enemyXY(e);
@@ -12011,7 +12618,14 @@
   }
 
   // ===== 유틸 =====
-  function enemyXY(e){ return [CX + Math.cos(e.angle)*e.radius, CY + Math.sin(e.angle)*e.radius]; }
+  function enemyXY(e){
+    // 🏰 디펜스 모드: 직교좌표 직접 반환
+    if (e._cart) return [e.x, e.y];
+    return [CX + Math.cos(e.angle)*e.radius, CY + Math.sin(e.angle)*e.radius];
+  }
+  // 🏰 타워 발사 위치 — TD 모드는 "현재 ability 컨텍스트"의 타워 위치 (CX 자체가 swap됨)
+  function towerX() { return CX; }
+  function towerY() { return CY; }
   function spawnParticles(x, y, color, n=6){
     // 파티클 수 줄이고 수명 짧게 — 시각적 노이즈 감소
     n = Math.max(1, Math.floor(n * 0.6));
@@ -12185,22 +12799,146 @@
 
   // ===== 렌더 =====
   function drawArena() {
-    // 홀로그래픽 동심원 — 옅은 청록
+    // 🏰 디펜스 모드 — 완전히 다른 레이아웃 (3 레인 + 돌담 + 방벽)
+    if (state.mode === 'defense') {
+      drawDefenseArena();
+      return;
+    }
+    // 표준 모드 — 홀로그래픽 라디얼 아레나
     ctx.strokeStyle = 'rgba(80, 170, 220, 0.10)';
     ctx.lineWidth = 1;
     for (let r = 60; r <= ARENA_R; r += 40) {
       ctx.beginPath(); ctx.arc(CX, CY, r, 0, Math.PI*2); ctx.stroke();
     }
-    // 외곽 포스 필드 (옅은 글로우)
     ctx.strokeStyle = 'rgba(120, 220, 255, 0.10)';
     ctx.lineWidth = 8;
     ctx.beginPath(); ctx.arc(CX, CY, ARENA_R, 0, Math.PI*2); ctx.stroke();
-    // 외곽 포스 필드 본체
     ctx.strokeStyle = 'rgba(120, 220, 255, 0.45)';
     ctx.lineWidth = 2;
     ctx.beginPath(); ctx.arc(CX, CY, ARENA_R, 0, Math.PI*2); ctx.stroke();
   }
+  // 🏰 디펜스 모드 아레나 (TD): 우주 배경 + 미니멀 그리드
+  function drawDefenseArena() {
+    const map = getActiveTDMap();
+    // 1) 경로 — 옅은 라인으로만 표시 (셀 채우기 X)
+    ctx.strokeStyle = 'rgba(255, 100, 120, 0.18)';
+    ctx.lineWidth = TD.cellW * 0.55;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.beginPath();
+    for (let i = 0; i < map.path.length; i++) {
+      const c = cellCenter(map.path[i].col, map.path[i].row);
+      if (i === 0) ctx.moveTo(c.x, c.y); else ctx.lineTo(c.x, c.y);
+    }
+    ctx.stroke();
+    // 경로 내부 강조 라인 (얇게)
+    ctx.strokeStyle = 'rgba(255, 150, 170, 0.25)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    for (let i = 0; i < map.path.length; i++) {
+      const c = cellCenter(map.path[i].col, map.path[i].row);
+      if (i === 0) ctx.moveTo(c.x, c.y); else ctx.lineTo(c.x, c.y);
+    }
+    ctx.stroke();
+    ctx.lineCap = 'butt';
+    ctx.lineJoin = 'miter';
+    // 2) 진행 방향 점선 흐름 (애니메이션)
+    ctx.strokeStyle = 'rgba(255, 200, 200, 0.4)';
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([5, 12]);
+    ctx.lineDashOffset = -(state.t * 0.5) % 17;
+    ctx.beginPath();
+    for (let i = 0; i < map.path.length; i++) {
+      const c = cellCenter(map.path[i].col, map.path[i].row);
+      if (i === 0) ctx.moveTo(c.x, c.y); else ctx.lineTo(c.x, c.y);
+    }
+    ctx.stroke();
+    ctx.setLineDash([]);
+    // 3) 시작 셀 표시
+    const startC = cellCenter(map.path[0].col, map.path[0].row);
+    ctx.fillStyle = 'rgba(255, 100, 120, 0.8)';
+    ctx.font = 'bold 10px Jua, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('▼ ENEMY', startC.x, startC.y - 22);
+    // 4) 타워 슬롯 (빈 것만 — 작은 원형 마커)
+    const towers = state.towers || [];
+    for (const slot of map.slots) {
+      const occupied = towers.some(t => t.col === slot.col && t.row === slot.row);
+      if (occupied) continue;
+      const c = cellCenter(slot.col, slot.row);
+      // 외곽 펄스 원
+      const pulse = 0.4 + 0.25 * Math.sin(state.t * 0.06 + (slot.col + slot.row));
+      ctx.strokeStyle = `rgba(122, 215, 255, ${pulse})`;
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([3, 3]);
+      ctx.beginPath();
+      ctx.arc(c.x, c.y, TD.cellW * 0.32, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      // 가운데 + (희미하게)
+      ctx.fillStyle = `rgba(122, 215, 255, ${pulse * 0.7})`;
+      ctx.font = 'bold 18px Jua, sans-serif';
+      ctx.fillText('+', c.x, c.y + 6);
+    }
+    // 5) 본진 (path 끝 셀)
+    const coreCell = map.path[map.path.length - 1];
+    const coreC = cellCenter(coreCell.col, coreCell.row);
+    // 본진 외곽 글로우
+    const corePulse = 0.4 + 0.2 * Math.sin(state.t * 0.05);
+    ctx.strokeStyle = `rgba(255, 212, 121, ${corePulse})`;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(coreC.x, coreC.y, TD.cellW * 0.42, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.strokeStyle = `rgba(255, 212, 121, ${corePulse * 0.5})`;
+    ctx.lineWidth = 6;
+    ctx.beginPath();
+    ctx.arc(coreC.x, coreC.y, TD.cellW * 0.42, 0, Math.PI * 2);
+    ctx.stroke();
+    // 본진 본체 (핵)
+    ctx.fillStyle = '#1a2030';
+    ctx.beginPath();
+    ctx.arc(coreC.x, coreC.y, TD.cellW * 0.3, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#ffd479';
+    ctx.font = 'bold 22px Jua, sans-serif';
+    ctx.fillText('🏰', coreC.x, coreC.y + 8);
+    ctx.textAlign = 'start';
+    // 6) Prep Phase Start 버튼 — 첫 라운드 시작 전
+    if (state.tdPrepPhase) {
+      drawTDStartButton();
+    }
+  }
+
+  // 🏰 TD Prep Phase Start 버튼 — 상단에 배치 (하단 인라인 패널과 충돌 회피)
+  function drawTDStartButton() {
+    const bw = 220, bh = 50;
+    const bx = (W - bw) / 2;
+    const by = 16;   // 상단 16px 마진
+    state._tdStartBtn = { x: bx, y: by, w: bw, h: bh };
+    // 펄스 글로우
+    const pulse = 0.6 + 0.4 * Math.sin(state.t * 0.08);
+    ctx.save();
+    ctx.shadowColor = '#7ad7ff';
+    ctx.shadowBlur = 12 + 8 * pulse;
+    ctx.fillStyle = '#2a3850';
+    ctx.fillRect(bx, by, bw, bh);
+    ctx.restore();
+    ctx.strokeStyle = `rgba(122, 215, 255, ${0.6 + 0.4 * pulse})`;
+    ctx.lineWidth = 2;
+    ctx.strokeRect(bx, by, bw, bh);
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 18px Jua, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('▶ 웨이브 시작', bx + bw / 2, by + bh / 2 + 6);
+    ctx.font = '11px Jua, sans-serif';
+    ctx.fillStyle = '#cfe3ff';
+    ctx.fillText('타워를 배치한 뒤 눌러주세요', bx + bw / 2, by + bh + 16);
+    ctx.textAlign = 'start';
+  }
   function drawTower() {
+    // 🏰 TD 모드: 메인 캐릭터 타워는 안 그림 (본진은 drawArena에서, 배치 타워는 별도)
+    if (state.mode === 'defense') return;
     // 외곽 헥사 링 (천천히 회전) — 항상 그림 (캐릭터 이미지 있어도 분위기 유지)
     const ringRot = state.t * 0.004;
     ctx.strokeStyle = 'rgba(106, 196, 255, 0.22)';
@@ -12478,10 +13216,209 @@
     }
   }
   function drawAbilities() {
+    // 🏰 TD 모드: 각 배치 타워별로 CX/CY 스왑 후 draw 호출
+    if (state.mode === 'defense') {
+      for (const tower of (state.towers || [])) {
+        const oldCX = CX, oldCY = CY;
+        CX = tower.x; CY = tower.y;
+        try {
+          const def = ABILITY_DEFS[tower.ab.id];
+          if (def && def.draw) def.draw(tower.ab);
+        } catch (e) { console.warn('tower draw error', tower.ab.id, e); }
+        CX = oldCX; CY = oldCY;
+      }
+      drawDefenseTowers();
+      return;
+    }
+    // 표준 모드: 중앙 타워의 능력들 그리기
     for (const ab of state.tower.abilities) {
       const def = ABILITY_DEFS[ab.id];
       if (def.draw) def.draw(ab);
     }
+  }
+  // 🏰 TD 능력별 타워 이모지 — 직관적 시각 표현
+  // SR/SSR(isGachaUnique)은 별도 표시 (왕관 마크 + 무지개 테)
+  const TD_TOWER_GLYPH = {
+    // 기본 타워
+    multi:        '🎯',
+    nova:         '💫',
+    sword:        '⚔',
+    frost:        '❄',
+    starfall:     '☄',
+    fireball:     '🔥',
+    laser:        '🔆',
+    chain:        '⚡',
+    sniper:       '🎯',
+    rocket:       '🚀',
+    arrow:        '➤',
+    boomerang:    '↺',
+    shotgun:      '💢',
+    poison:       '☠',
+    bomb:         '💣',
+    blackhole:    '🌀',
+    lightning:    '⚡',
+    railgun:      '🔫',
+    drone:        '✈',
+    spear:        '🔱',
+    // 가챠 SR/SSR
+    floatorpedo:  '🌊',
+    sunspot:      '🌞',
+    gravity:      '🪐',
+    cherrysword:  '🌸',
+    moonshot:     '🌙',
+    starsong:     '✨',
+    timebutterfly:'🦋',
+  };
+
+  // 🏰 TD 배치 타워 본체 그리기 — 능력별 고유 외형
+  // 시각 규칙:
+  //   - 원본 능력이 SR/SSR(isGachaUnique)이면 진화 후에도 원본 능력의 외형 유지
+  //   - 원본이 일반 능력이면 현재 능력에 맞춰 외형 변경
+  function drawDefenseTowers() {
+    for (const tower of (state.towers || [])) {
+      const c = cellCenter(tower.col, tower.row);
+      const currDef = ABILITY_DEFS[tower.ab.id];
+      if (!currDef) continue;
+      // 원본 능력 (구버전 호환: originalAbilityId 없으면 현재 ID 사용)
+      const origId = tower.originalAbilityId || tower.ab.id;
+      const origDef = ABILITY_DEFS[origId] || currDef;
+      const isOriginalUnique = !!origDef.isGachaUnique;
+      // 시각 정의 — SR/SSR이면 원본 잠금, 아니면 현재 능력 사용
+      const def = isOriginalUnique ? origDef : currDef;
+      const visualId = isOriginalUnique ? origId : tower.ab.id;
+      const col = def.color || '#7ad7ff';
+      const isUnique = !!def.isGachaUnique;
+      const isCombo = !!def.isCombo || (!isOriginalUnique && !!currDef.isCombo);
+      const isTriple = !!def.isTriple || (!isOriginalUnique && !!currDef.isTriple);
+      const tier = isTriple ? 3 : (isCombo ? 2 : (isUnique ? 4 : 1));
+      const R = 21;
+
+      // ───── 1) 그림자 / 발판 글로우 ─────
+      ctx.save();
+      ctx.globalAlpha = 0.25;
+      ctx.fillStyle = col;
+      ctx.beginPath();
+      ctx.ellipse(c.x, c.y + 18, R * 0.85, 4, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+
+      // ───── 2) 펄스 외곽 링 (color tinted) ─────
+      const ringPulse = 0.35 + 0.25 * Math.sin(state.t * 0.06 + (tower.col + tower.row));
+      ctx.strokeStyle = `rgba(${hexToRgb(col)}, ${ringPulse})`;
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.arc(c.x, c.y, R + 2, 0, Math.PI * 2);
+      ctx.stroke();
+
+      // ───── 3) 펜타곤/헥사 베이스 (티어별 형태) ─────
+      const sides = tier === 1 ? 4 : (tier === 2 ? 6 : 8);
+      const baseRot = tier >= 3 ? state.t * 0.005 : Math.PI / sides;
+      ctx.fillStyle = '#1c2230';
+      ctx.beginPath();
+      for (let i = 0; i < sides; i++) {
+        const a = baseRot + (i * Math.PI * 2) / sides;
+        const px = c.x + Math.cos(a) * R;
+        const py = c.y + Math.sin(a) * R;
+        if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+      }
+      ctx.closePath();
+      ctx.fill();
+      // 베이스 림 (색상 강조)
+      ctx.strokeStyle = col;
+      ctx.lineWidth = tier >= 3 ? 2 : 1.5;
+      ctx.stroke();
+
+      // ───── 4) 내부 코어 (그라데이션) ─────
+      const coreGrad = ctx.createRadialGradient(c.x - 4, c.y - 4, 1, c.x, c.y, R - 4);
+      coreGrad.addColorStop(0, lightenHex(col, 0.4));
+      coreGrad.addColorStop(0.6, col);
+      coreGrad.addColorStop(1, darkenHex(col, 0.55));
+      ctx.fillStyle = coreGrad;
+      ctx.beginPath();
+      ctx.arc(c.x, c.y, R - 6, 0, Math.PI * 2);
+      ctx.fill();
+
+      // ───── 5) 회전 디테일 (티어 2+ 만) ─────
+      if (tier >= 2) {
+        const rot = state.t * (tier === 4 ? 0.025 : tier === 3 ? 0.018 : 0.012);
+        const orbits = tier === 4 ? 4 : tier === 3 ? 3 : 2;
+        for (let i = 0; i < orbits; i++) {
+          const a = rot + (i * Math.PI * 2) / orbits;
+          const ox = c.x + Math.cos(a) * (R - 4);
+          const oy = c.y + Math.sin(a) * (R - 4);
+          ctx.fillStyle = lightenHex(col, 0.5);
+          ctx.beginPath();
+          ctx.arc(ox, oy, tier === 4 ? 2.2 : 1.8, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+
+      // ───── 6) 중앙 능력 아이콘 (PNG) ─────
+      // visualId 의 PNG가 로드되어 있으면 그림 → 모든 능력에 ./icons/abilities/N.png 매핑됨
+      // 로드 실패/없으면 drawAbilityIcon이 자동 fallback (색 박스 + 첫글자)
+      const iconSize = (R - 5) * 2;   // 베이스 내부에 맞춤
+      const ix = c.x - iconSize / 2;
+      const iy = c.y - iconSize / 2;
+      drawAbilityIcon(visualId, ix, iy, iconSize);
+
+      // ───── 7) 유니크/콤보 티어 마커 ─────
+      if (isUnique || isTriple) {
+        // 왕관 (SR/SSR/Triple)
+        ctx.font = 'bold 10px Jua, sans-serif';
+        ctx.fillStyle = isTriple ? '#ffd060' : '#ffe070';
+        ctx.fillText(isTriple ? '👑' : '♛', c.x, c.y - R + 4);
+      } else if (isCombo) {
+        // 콤보 표식
+        ctx.font = 'bold 9px Jua, sans-serif';
+        ctx.fillStyle = '#c084ff';
+        ctx.fillText('⚙', c.x, c.y - R + 4);
+      }
+
+      // ───── 8) 레벨 핍 (점 N개) ─────
+      const lv = tower.ab.level;
+      const maxLv = maxLvFor(tower.ab.id);
+      const pipsN = Math.min(lv, maxLv);
+      const pipW = 3, pipGap = 1.5;
+      const totalW = pipsN * pipW + Math.max(0, pipsN - 1) * pipGap;
+      const startPx = c.x - totalW / 2;
+      const pipY = c.y + R - 2;
+      for (let i = 0; i < pipsN; i++) {
+        ctx.fillStyle = (lv >= maxLv) ? '#ffd060' : col;
+        ctx.fillRect(startPx + i * (pipW + pipGap), pipY, pipW, pipW);
+      }
+
+      // ───── 9) MAX 표시 ─────
+      if (lv >= maxLv) {
+        ctx.font = 'bold 8px Jua, sans-serif';
+        ctx.fillStyle = '#ffd060';
+        ctx.fillText('MAX', c.x, c.y + R + 8);
+      }
+
+      ctx.textAlign = 'start';
+    }
+  }
+
+  // hex → 'r, g, b'
+  function hexToRgb(hex) {
+    const h = hex.replace('#', '');
+    const r = parseInt(h.substr(0,2), 16);
+    const g = parseInt(h.substr(2,2), 16);
+    const b = parseInt(h.substr(4,2), 16);
+    return `${r}, ${g}, ${b}`;
+  }
+  function lightenHex(hex, amt) {
+    const h = hex.replace('#', '');
+    const r = Math.min(255, parseInt(h.substr(0,2), 16) + Math.floor(255 * amt));
+    const g = Math.min(255, parseInt(h.substr(2,2), 16) + Math.floor(255 * amt));
+    const b = Math.min(255, parseInt(h.substr(4,2), 16) + Math.floor(255 * amt));
+    return `rgb(${r}, ${g}, ${b})`;
+  }
+  function darkenHex(hex, amt) {
+    const h = hex.replace('#', '');
+    const r = Math.max(0, Math.floor(parseInt(h.substr(0,2), 16) * (1 - amt)));
+    const g = Math.max(0, Math.floor(parseInt(h.substr(2,2), 16) * (1 - amt)));
+    const b = Math.max(0, Math.floor(parseInt(h.substr(4,2), 16) * (1 - amt)));
+    return `rgb(${r}, ${g}, ${b})`;
   }
   function drawParticles() {
     for (const p of state.particles) {
@@ -12807,6 +13744,279 @@
   document.getElementById('dmgStatsModal').onclick = (e) => {
     if (e.target.id === 'dmgStatsModal') closeDamageStats();
   };
+
+  // ===== 🏰 TD 모드 타워 배치/강화 모달 =====
+  function openTowerPlaceModal(slot) {
+    state.selectedSlot = slot;
+    state.selectedTower = null;
+    document.getElementById('td-modal-title').textContent = `🏰 타워 배치 — (${slot.col}, ${slot.row})`;
+    renderTowerPlaceList();
+    document.getElementById('tdTowerModal').style.display = 'flex';
+  }
+  function openTowerUpgradeModal(tower) {
+    state.selectedTower = tower;
+    state.selectedSlot = null;
+    const def = ABILITY_DEFS[tower.ab.id];
+    document.getElementById('td-modal-title').textContent = `⚡ ${def.name} Lv${tower.ab.level}`;
+    renderTowerUpgradeList();
+    document.getElementById('tdTowerModal').style.display = 'flex';
+  }
+  function closeTowerModal() {
+    document.getElementById('tdTowerModal').style.display = 'none';
+    state.selectedSlot = null;
+    state.selectedTower = null;
+  }
+  // 배치 가능 타워 목록 — 해금된 액티브 능력
+  // 🏰 TD 모드 시작 시 무조건 해금된 5종 (기본 타워풀)
+  const TD_STARTER_TOWERS = ['multi', 'nova', 'sword', 'frost', 'starfall'];
+  function getPlaceableTowers() {
+    // 1) 시작 타워 (항상 해금)
+    const set = new Set(TD_STARTER_TOWERS);
+    // 2) 업적/도감으로 해금된 액티브 능력 추가
+    const haveIds = getUnlockedAbilityIds();
+    for (const id of haveIds) {
+      const d = ABILITY_DEFS[id];
+      if (d && !d.isPassive && !d.isCombo && id !== 'shot' && !d.isGachaUnique) {
+        set.add(id);
+      }
+    }
+    // 3) 가챠 보유 캐릭터의 고유 능력도 해금 (가챠 캐릭터 보유 시)
+    const unlockedChars = META.unlockedChars || {};
+    for (const charId in unlockedChars) {
+      const ch = CHARACTERS[charId];
+      if (ch && ch.startAbilities) {
+        for (const ab of ch.startAbilities) {
+          const d = ABILITY_DEFS[ab];
+          if (d && !d.isPassive) set.add(ab);
+        }
+      }
+    }
+    // 4) shot 제외 (기본 타워는 능력 X)
+    set.delete('shot');
+    // 등급 정렬: 베이직 → 가챠
+    return [...set].sort((a, b) => {
+      const da = ABILITY_DEFS[a], db = ABILITY_DEFS[b];
+      const ta = da.isGachaUnique ? 2 : 1;
+      const tb = db.isGachaUnique ? 2 : 1;
+      if (ta !== tb) return ta - tb;
+      return (da.baseCost || 0) - (db.baseCost || 0);
+    });
+  }
+  // 타워 등급별 비용 계산
+  function towerPlaceCost(abilityId) {
+    const d = ABILITY_DEFS[abilityId];
+    if (!d) return 999;
+    let base = d.baseCost || 60;
+    // 가챠 능력은 더 비싸게
+    if (d.isGachaUnique) base *= 2;
+    return Math.ceil(base * 0.9);  // 약간 할인된 가격
+  }
+  function renderTowerPlaceList() {
+    const list = document.getElementById('td-tower-list');
+    list.innerHTML = '';
+    const towers = getPlaceableTowers();
+    if (towers.length === 0) {
+      list.innerHTML = '<div style="text-align:center; color:#7a8090; padding:24px;">해금된 타워가 없습니다.</div>';
+      return;
+    }
+    const info = document.createElement('div');
+    info.style.cssText = 'font-size:11px; color:#9aa3b3; padding:2px 6px 6px; border-bottom:1px solid #2a2f3a; margin-bottom:6px;';
+    info.textContent = `💰 ${state.gold}G · 클릭하여 배치`;
+    list.appendChild(info);
+    // 등급별 그룹화
+    const starterSet = new Set(TD_STARTER_TOWERS);
+    const groups = {
+      starter: [],  // 기본 (시작 해금)
+      unlocked: [], // 업적 해금
+      gacha: [],    // 가챠 캐릭터 능력
+    };
+    for (const id of towers) {
+      const d = ABILITY_DEFS[id];
+      if (d.isGachaUnique) groups.gacha.push(id);
+      else if (starterSet.has(id)) groups.starter.push(id);
+      else groups.unlocked.push(id);
+    }
+    const sections = [
+      { key: 'starter',  label: '🏠 기본 타워',     color: '#9aa3b3' },
+      { key: 'unlocked', label: '🔓 해금된 타워',   color: '#88e0ff' },
+      { key: 'gacha',    label: '🎰 가챠 타워 (고급)', color: '#ffaa55' },
+    ];
+    for (const section of sections) {
+      if (groups[section.key].length === 0) continue;
+      const header = document.createElement('div');
+      header.style.cssText = `font-size:10px; color:${section.color}; font-weight:bold; padding:4px 6px 2px; margin-top:4px; border-left:3px solid ${section.color};`;
+      header.textContent = `${section.label} (${groups[section.key].length})`;
+      list.appendChild(header);
+      for (const id of groups[section.key]) {
+        const d = ABILITY_DEFS[id];
+        const cost = towerPlaceCost(id);
+        const canAfford = state.gold >= cost;
+        const btn = document.createElement('button');
+        btn.style.cssText = `display:flex; align-items:center; gap:8px; width:100%; padding:6px 8px; background:#141822; border:1px solid ${canAfford ? d.color : '#2a2f3a'}; border-left:3px solid ${d.color || '#7ad7ff'}; border-radius:5px; cursor:${canAfford ? 'pointer' : 'not-allowed'}; opacity:${canAfford ? 1 : 0.45}; color:inherit; text-align:left; font:inherit; margin-bottom:4px;`;
+        btn.innerHTML = `
+          <div style="font-size:18px; flex-shrink:0; color:${d.color || '#fff'};">${d.name.charAt(0)}</div>
+          <div style="flex:1; min-width:0;">
+            <div style="font-size:12px; font-weight:bold; color:${d.color || '#fff'};">${d.name}</div>
+            <div style="font-size:10px; color:#9aa3b3; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${d.desc(1)}</div>
+          </div>
+          <div style="font-size:12px; color:${canAfford ? '#ffd479' : '#666'}; font-weight:bold; white-space:nowrap;">${cost}G</div>
+        `;
+        btn.disabled = !canAfford;
+        btn.onclick = () => {
+          if (!canAfford) return;
+          placeTower(state.selectedSlot, id, cost);
+          closeTowerModal();
+        };
+        list.appendChild(btn);
+      }
+    }
+  }
+  function renderTowerUpgradeList() {
+    const list = document.getElementById('td-tower-list');
+    list.innerHTML = '';
+    const tower = state.selectedTower;
+    if (!tower) return;
+    const def = ABILITY_DEFS[tower.ab.id];
+    // 능력 설명
+    const info = document.createElement('div');
+    info.style.cssText = 'padding:6px 8px; background:#141822; border-left:3px solid ' + (def.color || '#7ad7ff') + '; border-radius:5px; margin-bottom:6px;';
+    info.innerHTML = `
+      <div style="font-size:12px; color:${def.color || '#fff'}; font-weight:bold;">${def.name} <span style="color:#cfd6e3;">Lv${tower.ab.level}</span> <span style="float:right; color:#7a8090; font-weight:normal;">💰 ${state.gold}G</span></div>
+      <div style="font-size:10px; color:#cfd6e3; margin-top:2px;">${def.desc(tower.ab.level)}</div>
+    `;
+    list.appendChild(info);
+    // 강화/진화/판매 버튼 — 가로로 배치
+    const atMax = isAtMax(tower.ab);
+    const btnRow = document.createElement('div');
+    btnRow.style.cssText = 'display:flex; gap:4px; margin-bottom:4px;';
+    if (!atMax) {
+      const cost = enhanceCost(tower.ab);
+      const canAfford = state.gold >= cost;
+      const upBtn = document.createElement('button');
+      upBtn.style.cssText = `flex:2; padding:8px; background:${canAfford ? '#2a3a18' : '#1a1f2b'}; border:1px solid ${canAfford ? '#88ff88' : '#2a2f3a'}; border-radius:5px; cursor:${canAfford ? 'pointer' : 'not-allowed'}; opacity:${canAfford ? 1 : 0.5}; color:${canAfford ? '#88ff88' : '#666'}; font:inherit; font-weight:bold; font-size:12px;`;
+      upBtn.textContent = `⬆ 강화 Lv${tower.ab.level + 1} (${cost}G)`;
+      upBtn.disabled = !canAfford;
+      upBtn.onclick = () => {
+        if (!canAfford) return;
+        upgradeTower(tower, cost);
+        renderTowerUpgradeList();
+      };
+      btnRow.appendChild(upBtn);
+    } else {
+      // MAX → 진화 버튼 (가로 인라인)
+      const evolveResults = getEvolutionResults(tower.ab.id);
+      if (evolveResults.length > 0) {
+        const curIsCombo = !!def.isCombo;
+        const curIsTriple = !!def.isTriple;
+        const tierMul = curIsTriple ? 9 : (curIsCombo ? 4 : 1.5);
+        const evolveCost = Math.ceil((tower.placedCost || 100) * tierMul);
+        const canAfford = state.gold >= evolveCost;
+        const evolveBtn = document.createElement('button');
+        evolveBtn.style.cssText = `flex:2; padding:8px; background:${canAfford ? '#2a2418' : '#141822'}; border:1px solid ${canAfford ? '#ffd479' : '#2a2f3a'}; border-radius:5px; cursor:${canAfford ? 'pointer' : 'not-allowed'}; opacity:${canAfford ? 1 : 0.5}; color:${canAfford ? '#ffd479' : '#666'}; font:inherit; font-weight:bold; font-size:12px;`;
+        evolveBtn.innerHTML = `🎲 진화 ${evolveCost}G <span style="font-size:9px; opacity:0.8;">(${evolveResults.length}종 랜덤)</span>`;
+        evolveBtn.disabled = !canAfford;
+        evolveBtn.onclick = () => {
+          if (!canAfford) return;
+          evolveTower(tower, evolveCost);
+          closeTowerModal();
+        };
+        btnRow.appendChild(evolveBtn);
+      } else {
+        const end = document.createElement('div');
+        end.style.cssText = 'flex:2; padding:8px; text-align:center; color:#ffd479; font-size:11px; background:#1a1f2b; border:1px solid #ffd479; border-radius:5px;';
+        end.textContent = '✨ MAX · 진화 종착점';
+        btnRow.appendChild(end);
+      }
+    }
+    // 판매 버튼 (가로 인라인)
+    const sellRefund = Math.ceil((tower.placedCost || 50) * 0.5);
+    const sellInlineBtn = document.createElement('button');
+    sellInlineBtn.style.cssText = 'flex:1; padding:8px; background:#2a1a1a; border:1px solid #ff8866; border-radius:5px; cursor:pointer; color:#ff8866; font:inherit; font-size:11px;';
+    sellInlineBtn.textContent = `🗑 판매 +${sellRefund}G`;
+    sellInlineBtn.onclick = () => {
+      sellTower(tower, sellRefund);
+      closeTowerModal();
+    };
+    btnRow.appendChild(sellInlineBtn);
+    list.appendChild(btnRow);
+    // MAX 시 진화 후보 칩 (좁게)
+    if (atMax) {
+      const evolveResults2 = getEvolutionResults(tower.ab.id);
+      if (evolveResults2.length > 0) {
+        const previewWrap = document.createElement('div');
+        previewWrap.style.cssText = 'display:flex; flex-wrap:wrap; gap:3px; padding:4px 2px 0;';
+        for (const resultId of evolveResults2) {
+          const rdef = ABILITY_DEFS[resultId];
+          if (!rdef) continue;
+          const chip = document.createElement('div');
+          chip.style.cssText = `font-size:9px; color:${rdef.color || '#cfd6e3'}; background:#141822; border:1px solid ${rdef.color || '#2a2f3a'}; border-radius:8px; padding:1px 6px;`;
+          chip.textContent = (rdef.isTriple ? '⚡' : '🔥') + ' ' + rdef.name;
+          previewWrap.appendChild(chip);
+        }
+        list.appendChild(previewWrap);
+      }
+    }
+    // 판매 버튼은 이미 가로 row에 포함됨 — 아래 추가 없음
+  }
+  // 🎲 TD 진화 후보 검색 — 능력 ID가 들어가는 모든 콤보 레시피의 결과 능력들
+  // (파트너 보유 여부와 무관 — 단순 가능한 결과 목록)
+  function getEvolutionResults(abilityId) {
+    const seen = new Set();
+    const results = [];
+    for (const recipe of COMBO_RECIPES) {
+      if (recipe.parts.indexOf(abilityId) >= 0 && !seen.has(recipe.combo)) {
+        seen.add(recipe.combo);
+        results.push(recipe.combo);
+      }
+    }
+    return results;
+  }
+  // 🎲 TD 진화 실행 — 가능한 결과 중 랜덤 하나로 변환
+  function evolveTower(tower, cost) {
+    const results = getEvolutionResults(tower.ab.id);
+    if (results.length === 0) return;
+    state.gold -= cost;
+    const pickedId = results[Math.floor(Math.random() * results.length)];
+    const def = ABILITY_DEFS[pickedId];
+    const newAb = { id: pickedId, level: 1 };
+    if (def && def.init) def.init(newAb);
+    tower.ab = newAb;
+    // 진화 시각 효과
+    state.comboFlash = 40;
+    state.comboFlashColor = def.color || '#ffd479';
+    state.comboReveal = { id: pickedId, level: 1, life: def.isTriple ? 90 : 60 };
+    shake(15, 18);
+    SFX.combo();
+    toast(`🎲 진화! → ${def.name}`);
+  }
+  function placeTower(slot, abilityId, cost) {
+    state.gold -= cost;
+    const def = ABILITY_DEFS[abilityId];
+    const ab = { id: abilityId, level: 1 };
+    if (def.init) def.init(ab);
+    const c = cellCenter(slot.col, slot.row);
+    state.towers.push({
+      col: slot.col, row: slot.row,
+      x: c.x, y: c.y,
+      ab,
+      originalAbilityId: abilityId,   // 시각 잠금용 — 가챠 SR/SSR은 진화 후에도 외형 유지
+      placedCost: cost,
+    });
+    SFX.combo();
+  }
+  function upgradeTower(tower, cost) {
+    state.gold -= cost;
+    tower.ab.level += 1;
+    SFX.click();
+  }
+  function sellTower(tower, refund) {
+    state.gold += refund;
+    const idx = state.towers.indexOf(tower);
+    if (idx >= 0) state.towers.splice(idx, 1);
+    SFX.click();
+  }
+  document.getElementById('tdTowerModalClose').onclick = closeTowerModal;
+  // 인라인 패널이므로 외부 클릭 닫기 불필요 — 캔버스 클릭으로 다른 슬롯/타워 선택하거나 ✕ 버튼
 
   // 💎 보유 유물 HUD — 좌하단 작은 아이콘 (시각 보조용)
   // 상세 확인은 패널의 "💎 유물 N개 보기" 버튼으로
@@ -13493,9 +14703,10 @@
       state._cancelBtn = { x: bx, y: btnY, w: bw, h: bh };
     }
 
-    // 자동 카드 선택 카운트다운 (모든 카드 보너스일 때만)
+    // 자동 카드 선택 카운트다운 (모든 카드 보너스일 때만) — 실시간 deadline 기반
     if (state.autoCardTimer > 0) {
-      const sec = Math.ceil(state.autoCardTimer / FPS);
+      const remainMs = Math.max(0, state.autoCardTimer - performance.now());
+      const sec = Math.ceil(remainMs / 1000);
       const countY = btnY + bh + 22;
       ctx.font = '12px Jua, sans-serif';
       ctx.textAlign = 'center';
@@ -13503,7 +14714,7 @@
       ctx.fillText('스타더스트 자동 선택', CX, countY);
       // 카운트다운 숫자 — 작게 강조
       ctx.font = 'bold 18px Jua, sans-serif';
-      ctx.fillStyle = sec === 1 ? '#ff8898' : (sec === 2 ? '#ffd479' : '#88dda8');
+      ctx.fillStyle = sec <= 1 ? '#ff8898' : (sec <= 2 ? '#ffd479' : '#88dda8');
       ctx.fillText(`${sec}S`, CX, countY + 22);
     }
 
@@ -13557,6 +14768,21 @@
     if (pl) pl.textContent = `Lv${state.playerLevel} (${state.kills}/${state.killsToNextLevel} kills)`;
     const tk = $('s-totalkills');
     if (tk) tk.textContent = (state.totalKills || 0).toLocaleString();
+    // 🏰 디펜스 모드 (TD): 본진 HP만
+    const defBlock = $('s-defense-block');
+    if (state.mode === 'defense') {
+      if (defBlock) defBlock.style.display = '';
+      const hpEl = $('s-towerhp');
+      if (hpEl) hpEl.textContent = `${state.towerHP} / ${state.towerMaxHP}`;
+      const hpBar = $('s-towerhp-bar');
+      const hpPct = Math.max(0, state.towerHP / Math.max(1, state.towerMaxHP)) * 100;
+      if (hpBar) {
+        hpBar.style.width = hpPct + '%';
+        hpBar.style.background = hpPct <= 20 ? '#ff3344' : (hpPct <= 50 ? '#ff8855' : '#ff5b6e');
+      }
+    } else {
+      if (defBlock) defBlock.style.display = 'none';
+    }
     const pct = state.enemies.length / _maxA;
     const bar = $('s-enemybar');
     bar.style.width = (pct*100) + '%';
@@ -13804,8 +15030,8 @@
     }
     if (state.gameOver) {
       if (e.code === 'KeyR') {
-        // 🔁 다시하기 → 캐릭터 선택 화면
-        buildCharacterList(); updateCharStartButton(); showScreen('character');
+        // 🔁 다시하기 → 모드 선택 화면
+        showScreen('mode');
       }
       if (e.code === 'Escape') { document.getElementById('menuBtn').click(); }
       return;
@@ -13829,16 +15055,45 @@
     const rect = canvas.getBoundingClientRect();
     const x = (ev.clientX - rect.left) * (W / rect.width);
     const y = (ev.clientY - rect.top) * (H / rect.height);
+    // 🏰 TD 모드: 셀 클릭 → 타워 배치/선택
+    if (state.mode === 'defense' && !state.gameOver && !state.levelUpChoices && !paused) {
+      // 0) Prep Phase Start 버튼 우선 처리
+      if (state.tdPrepPhase && state._tdStartBtn) {
+        const b = state._tdStartBtn;
+        if (x >= b.x && x <= b.x + b.w && y >= b.y && y <= b.y + b.h) {
+          state.tdPrepPhase = false;
+          state._tdStartBtn = null;
+          SFX.click && SFX.click();
+          toast(`▶ R${state.round} 시작!`);
+          return;
+        }
+      }
+      const col = Math.floor(x / TD.cellW);
+      const row = Math.floor(y / TD.cellW);
+      const map = getActiveTDMap();
+      // 1) 기존 타워 클릭 → 강화 모달
+      const existing = (state.towers || []).find(t => t.col === col && t.row === row);
+      if (existing) {
+        openTowerUpgradeModal(existing);
+        return;
+      }
+      // 2) 빈 슬롯 클릭 → 배치 모달
+      const slot = map.slots.find(s => s.col === col && s.row === row);
+      if (slot) {
+        openTowerPlaceModal(slot);
+        return;
+      }
+      // 외 영역 클릭 — 무시
+      return;
+    }
     // 게임오버 화면 — 다시 하기 / 메인 메뉴 버튼
     if (state.gameOver) {
       if (state._retryBtn) {
         const b = state._retryBtn;
         if (x >= b.x && x <= b.x + b.w && y >= b.y && y <= b.y + b.h) {
-          // 🔁 다시하기 → 캐릭터 선택 화면 (재시작 시 캐릭터 재선택 가능)
+          // 🔁 다시하기 → 모드 선택 화면 (모드/캐릭터 둘 다 재선택 가능)
           SFX.click();
-          buildCharacterList();
-          updateCharStartButton();
-          showScreen('character');
+          showScreen('mode');
           return;
         }
       }
@@ -14150,6 +15405,8 @@
     recordsEl.classList.toggle('show', name === 'records');
     recordDetailEl.classList.toggle('show', name === 'recordDetail');
     shopEl.classList.toggle('show', name === 'shop');
+    const modeScreenEl = document.getElementById('modeScreen');
+    if (modeScreenEl) modeScreenEl.classList.toggle('show', name === 'mode');
     characterScreenEl.classList.toggle('show', name === 'character');
     achievementsScreenEl.classList.toggle('show', name === 'achievements');
     difficultyScreenEl.classList.toggle('show', name === 'difficulty');
@@ -14159,26 +15416,39 @@
     if (globalRankEl) globalRankEl.classList.toggle('show', name === 'globalRank');
     gameEl.style.display = name === 'game' ? 'flex' : 'none';
     if (name === 'game') {
+      // 🏰 디펜스 모드는 캔버스 CSS 스타일 비율을 세로로 더 길게 — 시각적 가독성
+      // (논리적 크기 W,H는 그대로, CSS만 조정)
+      const isDefenseLayout = state && state.mode === 'defense';
+      if (isDefenseLayout) {
+        canvas.style.maxHeight = '85vh';
+        canvas.style.aspectRatio = '5 / 6';   // 세로로 약간 더 길게 (5:6)
+      } else {
+        canvas.style.maxHeight = '';
+        canvas.style.aspectRatio = '1 / 1';   // 정사각
+      }
       const usePortrait = window.innerHeight > window.innerWidth * 1.05;
       collapseAbilities(usePortrait, false);
       // rAF로 한 프레임 양보 후 측정 → 정확한 natural size 보장
       fitScaleSoon();
     }
     if (name === 'menu') {
-      // 진행 중 게임이 있으면 "이어하기", 없으면 "새 게임" — 단일 버튼만
-      const inProgress = state && !state.gameOver && state.tower &&
+      refreshMenuButtons();
+    }
+  }
+  // 🔄 메뉴 버튼 상태 갱신 — showScreen('menu') 진입 시 + 서버 pull 완료 후 호출
+  function refreshMenuButtons() {
+    const inProgress = state && !state.gameOver && state.tower &&
                        (state.round > 1 || (state.totalKills || 0) > 0 || (state.score || 0) > 0);
-      const startBtn = document.getElementById('startBtn');
-      startBtn.textContent = inProgress ? '▶ 이어하기' : '▶ 새 게임';
-      // 승천 해금된 경우 난이도 버튼 표시
-      const diffBtn = document.getElementById('difficultyBtn');
-      if (diffBtn) {
-        if (getMaxAscension() > 0) {
-          diffBtn.style.display = '';
-          diffBtn.textContent = `⚡ 난이도: ${ascensionLabel(getSelectedAscension())}`;
-        } else {
-          diffBtn.style.display = 'none';
-        }
+    const startBtn = document.getElementById('startBtn');
+    if (startBtn) startBtn.textContent = inProgress ? '▶ 이어하기' : '▶ 새 게임';
+    // 승천 해금된 경우 난이도 버튼 표시
+    const diffBtn = document.getElementById('difficultyBtn');
+    if (diffBtn) {
+      if (getMaxAscension() > 0) {
+        diffBtn.style.display = '';
+        diffBtn.textContent = `⚡ 난이도: ${ascensionLabel(getSelectedAscension())}`;
+      } else {
+        diffBtn.style.display = 'none';
       }
     }
   }
@@ -14308,12 +15578,37 @@
       renderPanel();
       showScreen('game');
     } else {
-      // 새 게임 — 먼저 캐릭터 선택 화면으로
+      // 새 게임 — 먼저 모드 선택 화면으로
+      showScreen('mode');
+    }
+  };
+  // 🏰 모드 선택 → 캐릭터 선택 (디펜스 모드는 캐릭터가 의미 없어 곧장 게임 시작)
+  document.querySelectorAll('.mode-card').forEach(card => {
+    card.onclick = () => {
+      const mode = card.dataset.mode;
+      META.lastSelectedMode = mode;   // 다음에도 같은 선택지 강조용
+      saveMeta();
+      SFX.click();
+      if (mode === 'defense') {
+        // 디펜스 모드: 캐릭터 선택 스킵 (타워 배치형이므로 캐릭터 패시브가 무의미)
+        // 유저의 평소 선호 캐릭터(META)는 보존, 이번 게임만 기본 캐릭터로 진행
+        const savedChar = selectedCharacter;
+        selectedCharacter = 'standard';
+        reset();
+        selectedCharacter = savedChar;  // 다음 표준 모드를 위해 복구
+        paused = false;
+        const pauseBtn = document.getElementById('pauseBtn');
+        if (pauseBtn) pauseBtn.textContent = '⏸ 일시정지';
+        renderPanel();
+        showScreen('game');
+        return;
+      }
       buildCharacterList();
       updateCharStartButton();
       showScreen('character');
-    }
-  };
+    };
+  });
+  document.getElementById('modeBack').onclick = () => showScreen('menu');
   document.getElementById('codexBtn').onclick = () => {
     buildCodex();
     showScreen('codex');
@@ -14322,6 +15617,10 @@
   // 🌐 글로벌 랭킹 메뉴 + 닉네임 변경 + 모달
   document.getElementById('globalRankBtn').onclick = () => {
     if (!getNickname()) { openNicknameModal(true); return; }
+    // 🏰 마지막 선택 모드(또는 standard) 탭 자동 활성화
+    _selectedRankMode = (META.lastSelectedMode === 'defense') ? 'defense' : 'standard';
+    document.querySelectorAll('#rank-mode-tabs .codex-tab').forEach(t =>
+      t.classList.toggle('active', t.dataset.rankmode === _selectedRankMode));
     showScreen('globalRank');
     loadGlobalRankings();
     startRankCountdown();
@@ -14332,6 +15631,18 @@
     showScreen('menu');
   };
   document.getElementById('globalRankRefresh').onclick = refreshRankingsInline;
+  // 🏰 랭킹 모드 탭 (클래식/디펜스)
+  document.querySelectorAll('#rank-mode-tabs .codex-tab').forEach(tab => {
+    tab.onclick = () => {
+      const mode = tab.dataset.rankmode;
+      if (mode === _selectedRankMode) return;
+      _selectedRankMode = mode;
+      document.querySelectorAll('#rank-mode-tabs .codex-tab').forEach(t =>
+        t.classList.toggle('active', t.dataset.rankmode === mode));
+      SFX.click();
+      loadGlobalRankings();
+    };
+  });
   // 인라인 새로고침 — statusEl 표시 안 함 (레이아웃 점프 방지)
   // 기존 리스트 유지 + 상단 작은 배너만 표시 + 백그라운드 fetch → 부드러운 교체
   function refreshRankingsInline() {
@@ -14588,7 +15899,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 137;
+  const APP_VERSION = 152;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
@@ -15238,6 +16549,7 @@
       if (ok) {
         // 가져온 데이터를 UI에 반영 (메뉴/패널/강화소 다시 그리기)
         if (typeof refreshMenuNickname === 'function') refreshMenuNickname();
+        if (typeof refreshMenuButtons === 'function') refreshMenuButtons();   // ⚡ 승천 버튼 등 다시 평가
         if (typeof renderPanel === 'function') renderPanel();
       }
     });
