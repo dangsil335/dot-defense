@@ -450,13 +450,13 @@
     touch-action: manipulation;
   }
   .update-cache-btn:hover { background: #143040; color: #aaeaff; }
-  /* 🎰 가챠 원형 버튼 — 우측 상단 캐릭터 이미지 */
+  /* 🎰 가챠 원형 버튼 — 우측 하단 캐릭터 이미지 (데이터 초기화 버튼과 겹치지 않게) */
   .gacha-circle-btn {
     position: absolute;
-    top: 16px;
-    right: 16px;
-    width: 72px;
-    height: 72px;
+    bottom: 24px;
+    right: 24px;
+    width: 84px;
+    height: 84px;
     border-radius: 50%;
     background: linear-gradient(135deg, #2a1c12 0%, #4a2820 50%, #2a1818 100%);
     border: 2px solid #ffaa55;
@@ -1825,9 +1825,30 @@
     <button class="codex-tab" data-shoptab="build">🎴 빌드</button>
     <button class="codex-tab" data-shoptab="survival">🛡️ 생존</button>
     <button class="codex-tab" data-shoptab="defense">🏰 디펜스</button>
-    <button class="codex-tab" data-shoptab="perma">🌟 능력 영구</button>
   </div>
   <div id="shop-list"></div>
+</div>
+
+<!-- ===== 🌟 능력 영구 강화 — 별도 화면 (강화소와 다른 색다른 디자인) ===== -->
+<div id="abilityPerma" class="screen">
+  <div class="codex-header" style="background:linear-gradient(135deg, #2a0c2a 0%, #1a0c2a 100%); border-bottom:2px solid #ff80ff;">
+    <h2 style="color:#ff80ff; text-shadow:0 0 12px rgba(255,128,255,0.5);">🌟 능력 영구 강화</h2>
+    <button id="abilityPermaBack" class="codex-back">← 메뉴로</button>
+  </div>
+  <div class="stardust-bar" style="background:linear-gradient(90deg, #1a0c2a 0%, #2a1428 100%); border-bottom:1px solid #ff80ff;">
+    <span style="color:#ff80ff;">⭐ 스타더스트:</span> <span id="perma-stardust-count" style="color:#ffd479; font-weight:bold;">0</span> ★
+  </div>
+  <div id="perma-intro" style="padding:10px 14px; font-size:12px; color:#cfd6e3; background:linear-gradient(135deg, rgba(255,128,255,0.08), rgba(122,215,255,0.05)); border-left:3px solid #ff80ff; margin:12px; border-radius:0 6px 6px 0; line-height:1.5;">
+    💫 게임 종료 후에도 유지되는 <b style="color:#ff80ff;">능력별 영구 강화</b>. lv당 +0.5%, 최대 lv 20 (+10%).<br/>
+    <span style="color:#9aa3b3; font-size:11px;">⚡ 액티브/콤보 → 데미지 · ⭐ 패시브 → 능력별 고유 효과 (흡혈 → 골드, 연구 → 강화 할인 등)</span>
+  </div>
+  <div class="codex-tabs" id="perma-tabs" style="margin:0 12px 6px; justify-content:center; max-width:600px; flex-wrap:wrap;">
+    <button class="codex-tab active" data-permatab="active">⚡ 액티브</button>
+    <button class="codex-tab" data-permatab="passive">⭐ 패시브</button>
+    <button class="codex-tab" data-permatab="combo">🔥 조합</button>
+    <button class="codex-tab" data-permatab="gacha">🎰 가챠</button>
+  </div>
+  <div id="perma-grid" style="padding:0 12px 20px;"></div>
 </div>
 
 <!-- ===== 기록 화면 ===== -->
@@ -3625,10 +3646,10 @@
       // 패시브 — 적 수에 비례 데미지 증가. damageEnemy에서 알아서 적용됨.
       init(ab) {},
       tick(ab) {
-        // 매 프레임 metaMods의 dmgMul에 보너스 적용 (영구는 아님, 매 프레임 갱신)
         if (!state.metaMods) return;
+        const perma = 1 + getAbilityPermaBonus('fury');   // 🌟 영구강화
         const enemyCount = state.enemies.length;
-        const bonus = Math.floor(enemyCount / 5) * (ab.level * 0.05);
+        const bonus = Math.floor(enemyCount / 5) * (ab.level * 0.05) * perma;
         state.metaMods.furyBonus = bonus;
       },
       draw(ab) {
@@ -3648,8 +3669,9 @@
       init(ab) { ab.cooldown = 0; },
       tick(ab) {
         if (--ab.cooldown > 0) return;
-        const threshold = (8 + ab.level * 3) / 100;
-        const bonusGold = 2 + ab.level;
+        const perma = 1 + getAbilityPermaBonus('reaper');   // 🌟 영구강화 (임계 + 골드 ↑)
+        const threshold = ((8 + ab.level * 3) / 100) * perma;
+        const bonusGold = Math.ceil((2 + ab.level) * perma);
         for (const e of state.enemies) {
           if (e.hp <= 0 || e.isBoss) continue;  // 보스는 즉사 면역
           if (e.hp / e.maxHp <= threshold) {
@@ -4112,16 +4134,20 @@
       name: '정확', isPassive: true, baseCost: 60, color: '#a0d8ff',
       desc: lv => `모든 데미지 +${lv*7}%`,
       init() {},
-      tick(ab) { if (state.metaMods) state.metaMods.precisionBonus = ab.level * 0.07; },
+      tick(ab) {
+        if (!state.metaMods) return;
+        const perma = 1 + getAbilityPermaBonus('precision');   // 🌟 영구강화
+        state.metaMods.precisionBonus = ab.level * 0.07 * perma;
+      },
     },
     haste: {
       name: '신속', isPassive: true, baseCost: 65, color: '#80ffd0',
       desc: lv => `액티브 능력 쿨다운 -${lv*4}%`,
       init() {},
       tick(ab) {
-        // 다른 액티브 능력의 쿨다운을 추가로 감소 — 매 프레임 비율로 감소 (% 효과)
-        // lv5 = 20% / 60프레임 = 매 프레임 0.333% 감소 → 1초 기준 약 20% 단축 효과
-        const mul = ab.level * 0.04 / 60;  // 초당 lv*4% 감소
+        // 다른 액티브 능력의 쿨다운을 추가로 감소
+        const perma = 1 + getAbilityPermaBonus('haste');   // 🌟 영구강화
+        const mul = ab.level * 0.04 * perma / 60;
         for (const a of state.tower.abilities) {
           if (a === ab) continue;
           const d = ABILITY_DEFS[a.id];
@@ -4136,9 +4162,10 @@
       init(ab) { ab.frames = 0; },
       tick(ab) {
         if (state.frenzyTrigger) { ab.frames = 180; state.frenzyTrigger = false; }
+        const perma = 1 + getAbilityPermaBonus('frenzy');   // 🌟 영구강화
         if (ab.frames > 0) {
           ab.frames--;
-          if (state.metaMods) state.metaMods.frenzyBonus = ab.level * 0.09;
+          if (state.metaMods) state.metaMods.frenzyBonus = ab.level * 0.09 * perma;
         } else {
           if (state.metaMods) state.metaMods.frenzyBonus = 0;
         }
@@ -4148,52 +4175,75 @@
       name: '흡혈', isPassive: true, baseCost: 65, color: '#cc6699',
       desc: lv => `처치 시 추가 골드 +${lv*8}%`,
       init() {},
-      tick(ab) { if (state.metaMods) state.metaMods.bonusGoldMul = ab.level * 0.08; },
+      tick(ab) {
+        if (!state.metaMods) return;
+        const perma = 1 + getAbilityPermaBonus('vampiric');   // 🌟 영구강화 (골드 +%)
+        state.metaMods.bonusGoldMul = ab.level * 0.08 * perma;
+      },
     },
     fortune: {
       name: '행운', isPassive: true, baseCost: 60, color: '#ffcc66',
       desc: lv => `처치 시 ${lv*5}% 확률 보너스 점수 (×5)`,
       init() {},
-      tick(ab) { if (state.metaMods) state.metaMods.fortuneChance = ab.level * 0.05; },
+      tick(ab) {
+        if (!state.metaMods) return;
+        const perma = 1 + getAbilityPermaBonus('fortune');   // 🌟 영구강화 (점수 확률 +%)
+        state.metaMods.fortuneChance = ab.level * 0.05 * perma;
+      },
     },
     mastery: {
       name: '숙련', isPassive: true, baseCost: 75, color: '#88aaff',
       desc: lv => `보유 액티브 수 × ${lv*4}% 데미지`,
       init() {},
       tick(ab) {
+        if (!state.metaMods) return;
+        const perma = 1 + getAbilityPermaBonus('mastery');   // 🌟 영구강화
         const n = state.tower.abilities.filter(a => !ABILITY_DEFS[a.id].isPassive).length;
-        if (state.metaMods) state.metaMods.masteryBonus = n * ab.level * 0.04;
+        state.metaMods.masteryBonus = n * ab.level * 0.04 * perma;
       },
     },
     scholar: {
       name: '연구', isPassive: true, baseCost: 60, color: '#bb99cc',
       desc: lv => `강화 비용 -${lv*4}%`,
       init() {},
-      tick(ab) { if (state.metaMods) state.metaMods.scholarMul = 1 - ab.level * 0.04; },
+      tick(ab) {
+        if (!state.metaMods) return;
+        const perma = 1 + getAbilityPermaBonus('scholar');   // 🌟 영구강화 (할인 +%)
+        const discount = ab.level * 0.04 * perma;
+        state.metaMods.scholarMul = 1 - Math.min(0.55, discount);   // 최대 -55%
+      },
     },
     ironwill: {
       name: '강철의지', isPassive: true, baseCost: 70, color: '#aaaaaa',
       desc: lv => `보스 추가 데미지 +${lv*15}%`,
       init() {},
-      tick(ab) { if (state.metaMods) state.metaMods.ironwillBonus = ab.level * 0.15; },
+      tick(ab) {
+        if (!state.metaMods) return;
+        const perma = 1 + getAbilityPermaBonus('ironwill');   // 🌟 영구강화
+        state.metaMods.ironwillBonus = ab.level * 0.15 * perma;
+      },
     },
     executioner: {
       name: '처형', isPassive: true, baseCost: 70, color: '#cc4466',
       desc: lv => `50% 이하 HP 적에게 데미지 +${lv*15}%`,
       init() {},
-      tick(ab) { if (state.metaMods) state.metaMods.executionerBonus = ab.level * 0.15; },
+      tick(ab) {
+        if (!state.metaMods) return;
+        const perma = 1 + getAbilityPermaBonus('executioner');   // 🌟 영구강화
+        state.metaMods.executionerBonus = ab.level * 0.15 * perma;
+      },
     },
     resilience: {
       name: '불굴', isPassive: true, baseCost: 65, color: '#88cc88',
       // 50처치당 1스택 (lv 1당 +1.5%, 최대 lv당 +50%)
-      // R100 게임 ~1500처치 = 30스택, lv 8 시 30 × 12% = 360% (cap 400%)
       desc: lv => `누적 50처치마다 데미지 +${(lv*1.5).toFixed(1)}% (최대 +${lv*50}%)`,
       init(ab) { ab.bonus = 0; },
       tick(ab) {
         if (!state.metaMods) return;
+        const perma = 1 + getAbilityPermaBonus('resilience');   // 🌟 영구강화
         const stacks = Math.floor((state.totalKills || 0) / 50);
-        const perStack = ab.level * 0.015;     // 50처치당 +1.5%/lv
-        const max = ab.level * 0.50;            // 최대 50%/lv
+        const perStack = ab.level * 0.015 * perma;
+        const max = ab.level * 0.50 * perma;
         ab.bonus = Math.min(max, stacks * perStack);
         state.metaMods.resilienceBonus = ab.bonus;
       },
@@ -8670,11 +8720,270 @@
         }
       },
     },
+
+    // ═══════════════════════════════════════════════════════════════
+    // ⭐ SR 캐릭터 별 등급 해금 능력 (SSR 보다 약하지만 쓸만함)
+    // ═══════════════════════════════════════════════════════════════
+
+    // 🌸 sakura 4★ — 꽃잎 폭풍 (Petal Storm) — 글로벌 회전 광역
+    petalStorm: {
+      name: '꽃잎폭풍', isGachaUnique: true, isStarUnlock: true, baseCost: 280, color: '#ff88bb',
+      desc: lv => `[4★히든-SR] 5s마다 화면 전체에 회전 꽃잎 · DMG ${30+lv*15}`,
+      init(ab) { ab.cooldown = 90; ab.fxLife = 0; ab.petals = []; },
+      tick(ab) {
+        if (ab.fxLife > 0) ab.fxLife--;
+        // 꽃잎 움직임
+        for (const p of ab.petals) {
+          p.x += p.vx; p.y += p.vy; p.rot += 0.12; p.life--;
+          for (const e of state.enemies) {
+            if (e.hp <= 0 || p.hit.has(e)) continue;
+            const [ex, ey] = enemyXY(e);
+            if ((p.x-ex)*(p.x-ex) + (p.y-ey)*(p.y-ey) < (e.size+10)*(e.size+10)) {
+              damageEnemy(e, 30 + ab.level * 15);
+              p.hit.add(e);
+              spawnParticles(ex, ey, '#ff88bb', 3);
+            }
+          }
+        }
+        ab.petals = ab.petals.filter(p => p.life > 0);
+        if (--ab.cooldown > 0) return;
+        // 12개 꽃잎이 중앙에서 방사형으로 발사
+        const count = 12;
+        for (let i = 0; i < count; i++) {
+          const ang = (i / count) * Math.PI * 2 + state.t * 0.02;
+          ab.petals.push({
+            x: W/2, y: H/2,
+            vx: Math.cos(ang) * 4.5, vy: Math.sin(ang) * 4.5,
+            rot: 0, life: 90, hit: new Set(),
+          });
+        }
+        ab.fxLife = 20;
+        ab.cooldown = Math.max(180, 300 - ab.level * 8);
+      },
+      draw(ab) {
+        for (const p of ab.petals) {
+          ctx.save();
+          ctx.translate(p.x, p.y); ctx.rotate(p.rot);
+          ctx.fillStyle = '#ff88bb';
+          // 꽃잎 모양 — 4개 작은 원으로 +
+          for (let i = 0; i < 4; i++) {
+            const a = i * Math.PI / 2;
+            ctx.beginPath();
+            ctx.arc(Math.cos(a) * 4, Math.sin(a) * 4, 3, 0, Math.PI * 2);
+            ctx.fill();
+          }
+          ctx.fillStyle = '#ffd0e0';
+          ctx.beginPath(); ctx.arc(0, 0, 2, 0, Math.PI * 2); ctx.fill();
+          ctx.restore();
+        }
+        if (ab.fxLife > 0) {
+          const a = ab.fxLife / 20;
+          ctx.save();
+          ctx.fillStyle = `rgba(255, 136, 187, ${a * 0.08})`;
+          ctx.fillRect(0, 0, W, H);
+          ctx.restore();
+        }
+      },
+    },
+
+    // 🌸 sakura 8★ — 벚꽃 특이점 (Cherry Singularity) — 영구 잔잔한 광역 DoT
+    cherrySingularity: {
+      name: '벚꽃특이점', isGachaUnique: true, isStarUnlock: true, baseCost: 480, color: '#ff60a0',
+      desc: lv => `[8★히든-SR] 영구 슬로우 15% · 1.5s마다 전체 ${(3+lv*0.5).toFixed(1)}% maxHP DoT`,
+      init(ab) { ab.dotT = 0; ab.petalSpin = 0; },
+      tick(ab) {
+        ab.petalSpin += 0.03;
+        // 영구 슬로우 (잔잔하게)
+        for (const e of state.enemies) {
+          if (e.hp <= 0) continue;
+          e.slowFrames = Math.max(e.slowFrames || 0, 8);   // 약한 슬로우 (15% 효과)
+        }
+        ab.dotT++;
+        if (ab.dotT < 90) return;   // 1.5s 마다
+        ab.dotT = 0;
+        const dotPct = 0.03 + ab.level * 0.005;
+        const bossPct = dotPct * 0.5;
+        for (const e of state.enemies) {
+          if (e.hp <= 0 || e.maxHp <= 0) continue;
+          const pct = e.isBoss ? bossPct : dotPct;
+          const dmg = Math.max(1, Math.ceil(e.maxHp * pct));
+          damageEnemy(e, dmg);
+        }
+      },
+      draw(ab) {
+        // 화면에 분홍 빛 잔잔히 + 회전 꽃잎 4개
+        ctx.save();
+        ctx.fillStyle = `rgba(255, 96, 160, ${0.04 + 0.02 * Math.sin(state.t * 0.04)})`;
+        ctx.fillRect(0, 0, W, H);
+        // 회전 꽃잎 (장식)
+        const cx = W/2, cy = H/2;
+        const r = Math.min(W, H) * 0.42;
+        for (let k = 0; k < 4; k++) {
+          const a = ab.petalSpin + k * Math.PI / 2;
+          const px = cx + Math.cos(a) * r;
+          const py = cy + Math.sin(a) * r;
+          ctx.fillStyle = `rgba(255, 136, 187, ${0.3 + 0.15 * Math.sin(state.t * 0.05 + k)})`;
+          ctx.beginPath(); ctx.arc(px, py, 8, 0, Math.PI * 2); ctx.fill();
+        }
+        ctx.restore();
+      },
+    },
+
+    // 🌙 luna 4★ — 월광 비 (Lunar Rain) — 주기 월광탄 낙하
+    lunarRain: {
+      name: '월광비', isGachaUnique: true, isStarUnlock: true, baseCost: 280, color: '#aaccff',
+      desc: lv => `[4★히든-SR] 4s마다 ${5+Math.floor(lv/2)}개 월광탄 낙하 · DMG ${25+lv*12} · 광역`,
+      init(ab) { ab.cooldown = 90; ab.shells = []; ab.craters = []; },
+      tick(ab) {
+        for (const c of ab.craters) c.life--;
+        ab.craters = ab.craters.filter(c => c.life > 0);
+        const dmg = 25 + ab.level * 12;
+        const exR = 55 + ab.level * 5;
+        const slowDur = 60;
+        for (const s of ab.shells) {
+          s.t++;
+          if (s.t >= 25) {
+            for (const e of state.enemies) {
+              if (e.hp <= 0) continue;
+              const [ex, ey] = enemyXY(e);
+              if ((s.x-ex)*(s.x-ex) + (s.y-ey)*(s.y-ey) < exR*exR) {
+                damageEnemy(e, dmg);
+                e.slowFrames = Math.max(e.slowFrames || 0, slowDur);
+                spawnParticles(ex, ey, '#aaccff', 4);
+              }
+            }
+            ab.craters.push({x: s.x, y: s.y, r: exR, life: 16});
+            s.done = true;
+          }
+        }
+        ab.shells = ab.shells.filter(s => !s.done);
+        if (--ab.cooldown > 0) return;
+        const strikes = 5 + Math.floor(ab.level / 2);
+        // 살아있는 적 위치 우선 낙하, 적 없으면 무작위
+        const pool = state.enemies.filter(e => e.hp > 0);
+        for (let i = 0; i < strikes; i++) {
+          let sx, sy;
+          if (pool.length > 0) {
+            const t = pool[Math.floor(Math.random() * pool.length)];
+            const [tx, ty] = enemyXY(t);
+            sx = tx + (Math.random() - 0.5) * 80;
+            sy = ty + (Math.random() - 0.5) * 80;
+          } else {
+            sx = Math.random() * W;
+            sy = Math.random() * H;
+          }
+          ab.shells.push({x: sx, y: sy, t: -i * 4});
+        }
+        ab.cooldown = Math.max(150, 240 - ab.level * 5);
+      },
+      draw(ab) {
+        for (const s of ab.shells) {
+          if (s.t < 0) continue;
+          const progress = s.t / 25;
+          const my = s.y - (1 - progress) * 200;
+          // 그림자
+          ctx.fillStyle = `rgba(170, 204, 255, ${0.3 + progress * 0.4})`;
+          ctx.beginPath(); ctx.arc(s.x, s.y, 10 + progress * 8, 0, Math.PI*2); ctx.fill();
+          // 월광탄 본체
+          ctx.fillStyle = '#aaccff';
+          ctx.beginPath(); ctx.arc(s.x, my, 7, 0, Math.PI*2); ctx.fill();
+          ctx.fillStyle = '#1a1f2b';
+          ctx.beginPath(); ctx.arc(s.x + 2, my, 5.5, 0, Math.PI*2); ctx.fill();
+        }
+        for (const c of ab.craters) {
+          const t = 1 - c.life / 16;
+          ctx.globalAlpha = c.life / 16;
+          ctx.fillStyle = '#aaccff';
+          ctx.beginPath(); ctx.arc(c.x, c.y, c.r * t, 0, Math.PI*2); ctx.fill();
+          ctx.globalAlpha = (c.life / 16) * 0.6;
+          ctx.fillStyle = '#ddeeff';
+          ctx.beginPath(); ctx.arc(c.x, c.y, c.r * t * 0.5, 0, Math.PI*2); ctx.fill();
+        }
+        ctx.globalAlpha = 1;
+      },
+    },
+
+    // 🌙 luna 8★ — 월식 관통 (Eclipse Piercer) — 거대 관통 월광탄
+    eclipsePiercer: {
+      name: '월식관통', isGachaUnique: true, isStarUnlock: true, baseCost: 480, color: '#6688ff',
+      desc: lv => `[8★히든-SR] 6s마다 거대 관통 월광탄 · DMG ${80+lv*40} · ${10+lv}회 관통`,
+      init(ab) { ab.cooldown = 100; ab.bullets = []; },
+      tick(ab) {
+        const dmg = 80 + ab.level * 40;
+        const pierceMax = 10 + ab.level;
+        const slowDur = 90;
+        for (const b of ab.bullets) {
+          if (b.life <= 0) continue;
+          b.life--;
+          // 직진 + 회전
+          b.x += b.vx; b.y += b.vy;
+          b.rot += 0.15;
+          for (const e of state.enemies) {
+            if (e.hp <= 0 || b.hit.has(e)) continue;
+            const [ex, ey] = enemyXY(e);
+            if ((b.x-ex)*(b.x-ex) + (b.y-ey)*(b.y-ey) < (e.size+18)*(e.size+18)) {
+              damageEnemy(e, dmg);
+              e.slowFrames = Math.max(e.slowFrames || 0, slowDur);
+              spawnParticles(ex, ey, '#6688ff', 6);
+              b.hit.add(e);
+              b.pierces++;
+              if (b.pierces >= pierceMax) b.life = 0;
+            }
+          }
+          // 화면 밖 이탈
+          if (b.x < -50 || b.x > W + 50 || b.y < -50 || b.y > H + 50) b.life = 0;
+        }
+        ab.bullets = ab.bullets.filter(b => b.life > 0);
+        if (--ab.cooldown > 0) return;
+        // 한 발 발사 — 가장 먼 적 방향 (관통 효율↑)
+        let tg = null, best = -1;
+        for (const e of state.enemies) {
+          if (e.hp <= 0) continue;
+          const [ex, ey] = enemyXY(e);
+          const d2 = (ex - W/2)*(ex - W/2) + (ey - H/2)*(ey - H/2);
+          if (d2 > best) { best = d2; tg = e; }
+        }
+        let ang;
+        if (tg) {
+          const [tx, ty] = enemyXY(tg);
+          ang = Math.atan2(ty - H/2, tx - W/2);
+        } else {
+          ang = Math.random() * Math.PI * 2;
+        }
+        ab.bullets.push({
+          x: W/2, y: H/2,
+          vx: Math.cos(ang) * 6, vy: Math.sin(ang) * 6,
+          rot: 0, life: 180, hit: new Set(), pierces: 0,
+        });
+        ab.cooldown = Math.max(240, 360 - ab.level * 8);
+      },
+      draw(ab) {
+        for (const b of ab.bullets) {
+          ctx.save();
+          ctx.translate(b.x, b.y); ctx.rotate(b.rot);
+          // 큰 초승달 모양 + 외곽 글로우
+          ctx.fillStyle = 'rgba(102, 136, 255, 0.4)';
+          ctx.beginPath(); ctx.arc(0, 0, 18, 0, Math.PI * 2); ctx.fill();
+          ctx.fillStyle = '#6688ff';
+          ctx.beginPath(); ctx.arc(0, 0, 12, 0, Math.PI * 2); ctx.fill();
+          ctx.fillStyle = '#1a1f2b';
+          ctx.beginPath(); ctx.arc(3, 0, 10, 0, Math.PI * 2); ctx.fill();
+          ctx.fillStyle = '#ddeeff';
+          ctx.fillRect(-4, -1, 8, 2);
+          ctx.fillRect(-1, -4, 2, 8);
+          ctx.restore();
+        }
+      },
+    },
   };
-  // ⭐ 별 해금 능력 매핑 — SSR 캐릭터 4★ / 8★ 도달 시 해금
+  // ⭐ 별 해금 능력 매핑 — 캐릭터 4★ / 8★ 도달 시 해금
   const CHAR_STAR_UNLOCKS = {
-    aria:   { 4: ['celestialEcho'], 8: ['sirensSong'] },
-    misaki: { 4: ['temporalLoop'],  8: ['paradoxFreeze'] },
+    // SSR
+    aria:   { 4: ['celestialEcho'],  8: ['sirensSong'] },
+    misaki: { 4: ['temporalLoop'],   8: ['paradoxFreeze'] },
+    // SR (SSR 보다 약하지만 쓸만함)
+    sakura: { 4: ['petalStorm'],     8: ['cherrySingularity'] },
+    luna:   { 4: ['lunarRain'],      8: ['eclipsePiercer'] },
   };
   // 별 등급으로 해금된 능력 목록
   function getStarUnlockedAbilities() {
@@ -11331,6 +11640,19 @@
     // 50 + lv*30 + lv²*5 → lv0:50, lv5:225, lv10:550, lv15:1025, lv19:1690 (총 ~10K)
     return Math.ceil(50 + lv * 30 + lv * lv * 5);
   }
+  // 🌟 능력별 영구 강화 효과 라벨 (능력 성격에 맞는 설명)
+  function getAbilityPermaEffectLabel(id) {
+    const d = ABILITY_DEFS[id];
+    if (!d) return 'DMG';
+    // 유틸리티 패시브 — 능력별 고유 효과
+    if (id === 'vampiric')    return '골드';
+    if (id === 'fortune')     return '점수 확률';
+    if (id === 'scholar')     return '강화 할인';
+    if (id === 'haste')       return '쿨다운 감소';
+    if (id === 'reaper')      return '즉사 임계 + 골드';
+    // 그 외 모든 능력 (액티브/콤보/트리플/가챠/별해금 + 데미지 패시브) → DMG
+    return 'DMG';
+  }
   function buyAbilityPerma(id) {
     const lv = getAbilityPermaLv(id);
     if (lv >= ABILITY_PERMA_MAX) return false;
@@ -11351,7 +11673,6 @@
     { id: 'build',    label: '🎴 빌드 / 카드', color: '#b890ff' },
     { id: 'survival', label: '🛡️ 생존 / 슬롯',  color: '#7ad7ff' },
     { id: 'defense',  label: '🏰 디펜스 모드', color: '#ddc080' },
-    { id: 'perma',    label: '🌟 능력 영구', color: '#ff80ff' },
   ];
   const META_UPGRADES = [
     // === 💰 자원 ===
@@ -14197,6 +14518,8 @@
     'timeButterfly',
     // ⭐ SSR 별 해금 히든 능력 (전 맵 효과)
     'celestialEcho', 'sirensSong', 'temporalLoop', 'paradoxFreeze',
+    // ⭐ SR 별 해금 히든 능력 (전 맵 효과)
+    'petalStorm', 'cherrySingularity', 'lunarRain', 'eclipsePiercer',
   ]);
   // 🎯 능력별 표적 사거리 — TD 모드 사거리 캡 + 시각 표시용
   // def.range(lv) 가 정의돼있으면 사용, 아니면 능력 타입/티어별 기본값
@@ -16801,15 +17124,12 @@
     // fallback — 🎰 이모지
     btn.innerHTML = `<span id="gachaCircleEmoji">🎰</span><div class="gacha-circle-label">가챠</div>`;
   }
-  // 🌟 능력 영구 강화 메뉴 버튼 → 강화소의 perma 탭으로 진입
+  // 🌟 능력 영구 강화 메뉴 버튼 → 별도 화면
   const _permaBtn = document.getElementById('abilityPermaBtn');
   if (_permaBtn) {
     _permaBtn.onclick = () => {
-      shopTab = 'perma';
-      document.querySelectorAll('#shop-tabs .codex-tab').forEach(x =>
-        x.classList.toggle('active', x.dataset.shoptab === 'perma'));
-      buildShop();
-      showScreen('shop');
+      buildPermaScreen();
+      showScreen('abilityPerma');
     };
   }
   document.getElementById('gachaBack').onclick = () => showScreen('menu');
@@ -16879,9 +17199,9 @@
         const stars = getCharStars(charId);
         const starText = hasIt ? '★'.repeat(stars) + '☆'.repeat(CHAR_MAX_STARS - stars) : '';
         const starColor = stars >= 8 ? '#ff80ff' : (stars >= 4 ? '#ffd060' : '#ffd479');
-        // SSR 별 해금 안내
+        // SR/SSR 별 해금 안내
         let starUnlockInfo = '';
-        if (hasIt && rarity === 'SSR') {
+        if (hasIt && (rarity === 'SSR' || rarity === 'SR')) {
           const unlocks = CHAR_STAR_UNLOCKS[charId];
           if (unlocks) {
             const u4 = unlocks[4] && unlocks[4][0];
@@ -17038,7 +17358,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 165;
+  const APP_VERSION = 167;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
@@ -17393,13 +17713,6 @@
     for (const cat of SHOP_CATEGORIES) {
       const btn = document.querySelector(`#shop-tabs .codex-tab[data-shoptab="${cat.id}"]`);
       if (!btn) continue;
-      if (cat.id === 'perma') {
-        // 영구 강화 탭 — 전체 능력의 평균 영구 강화 레벨 표시
-        const totalAbils = ALL_ABILITY_IDS.filter(id => !ABILITY_DEFS[id].isCombo).length;
-        const upgraded = ALL_ABILITY_IDS.filter(id => getAbilityPermaLv(id) > 0).length;
-        btn.textContent = `${cat.label} ${upgraded}/${totalAbils}`;
-        continue;
-      }
       const inCat = META_UPGRADES.filter(u => u.category === cat.id);
       const maxed = inCat.filter(u => metaLv(u.id) >= u.maxLv).length;
       btn.textContent = `${cat.label} ${maxed}/${inCat.length}`;
@@ -17407,13 +17720,6 @@
 
     // 활성 탭의 카테고리
     const cat = SHOP_CATEGORIES.find(c => c.id === shopTab) || SHOP_CATEGORIES[0];
-
-    // 🌟 영구 강화 탭 — 능력별 perma 카드 리스트
-    if (cat.id === 'perma') {
-      buildPermaShop(list, cat);
-      return;
-    }
-
     const inCat = META_UPGRADES.filter(u => u.category === cat.id);
 
     const grid = document.createElement('div');
@@ -17452,70 +17758,127 @@
       };
     });
   }
-  // 🌟 능력 영구 강화 — 모든 능력에 스타더스트로 lv당 +0.5% 데미지 부여 (max 20lv)
-  function buildPermaShop(list, cat) {
-    // 안내문
-    const info = document.createElement('div');
-    info.style.cssText = 'padding:10px 14px; font-size:12px; color:#cfd6e3; background:rgba(255,128,255,0.05); border-left:3px solid #ff80ff; margin-bottom:10px; border-radius:0 5px 5px 0;';
-    info.innerHTML = `🌟 <b>능력 영구 강화</b> — 게임 종료 후에도 유지되는 미세한 데미지 강화. lv당 +0.5%, 최대 lv ${ABILITY_PERMA_MAX} (+${(ABILITY_PERMA_MAX * ABILITY_PERMA_DMG_PER_LV * 100).toFixed(0)}%)`;
-    list.appendChild(info);
-    // 능력 분류 (콤보/트리플 제외)
+  // 🌟 능력 영구 강화 — 별도 화면 (색다른 디자인)
+  let permaTab = 'active';
+  function buildPermaScreen() {
+    const grid = document.getElementById('perma-grid');
+    const dustEl = document.getElementById('perma-stardust-count');
+    if (dustEl) dustEl.textContent = (META.stardust || 0).toLocaleString();
+    if (!grid) return;
+    grid.innerHTML = '';
+    // 능력 분류
     const groups = {
-      active:    { label: '⚡ 액티브', ids: [] },
-      passive:   { label: '⭐ 패시브', ids: [] },
-      gacha:     { label: '🎰 가챠 고유', ids: [] },
+      active:  [],
+      passive: [],
+      combo:   [],
+      gacha:   [],
     };
     for (const id of ALL_ABILITY_IDS) {
       const d = ABILITY_DEFS[id];
-      if (d.isCombo) continue;   // 조합/트리플은 영구 강화 X
-      if (id === 'shot') continue;
-      if (d.isGachaUnique) groups.gacha.ids.push(id);
-      else if (d.isPassive) groups.passive.ids.push(id);
-      else groups.active.ids.push(id);
+      if (!d || id === 'shot') continue;
+      if (d.isGachaUnique) groups.gacha.push(id);
+      else if (d.isCombo) groups.combo.push(id);
+      else if (d.isPassive) groups.passive.push(id);
+      else groups.active.push(id);
     }
-    for (const key of ['active', 'passive', 'gacha']) {
-      const g = groups[key];
-      if (g.ids.length === 0) continue;
-      const hdr = document.createElement('div');
-      hdr.style.cssText = 'font-size:13px; color:#ff80ff; font-weight:bold; padding:8px 4px 4px; margin-top:6px; border-bottom:1px solid #2a2f3a;';
-      hdr.textContent = `${g.label} (${g.ids.length})`;
-      list.appendChild(hdr);
-      const grid = document.createElement('div');
-      grid.style.cssText = 'display:grid; grid-template-columns:repeat(auto-fill, minmax(220px, 1fr)); gap:6px; padding:6px 0;';
-      for (const id of g.ids) {
-        const d = ABILITY_DEFS[id];
-        const lv = getAbilityPermaLv(id);
-        const maxed = lv >= ABILITY_PERMA_MAX;
-        const cost = maxed ? null : abilityPermaCost(id);
-        const canBuy = !maxed && (META.stardust || 0) >= cost;
-        const pct = (lv * ABILITY_PERMA_DMG_PER_LV * 100).toFixed(1);
-        const iconPath = getIconPath(id);
-        const iconHtml = iconPath
-          ? `<img src="${iconPath}" style="width:32px;height:32px;image-rendering:pixelated;flex-shrink:0;" onerror="this.style.display='none'">`
-          : `<div style="font-size:18px;color:${d.color};flex-shrink:0;width:32px;text-align:center;">${d.name.charAt(0)}</div>`;
-        const card = document.createElement('div');
-        card.style.cssText = `display:flex; gap:8px; align-items:center; padding:8px; background:#141822; border:1px solid ${maxed ? '#ffd060' : (d.color || '#3a4256')}; border-left:3px solid ${d.color || '#3a4256'}; border-radius:5px;`;
-        card.innerHTML = `
-          ${iconHtml}
-          <div style="flex:1; min-width:0;">
-            <div style="font-size:12px; font-weight:bold; color:${d.color || '#fff'}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${d.name}</div>
-            <div style="font-size:10px; color:${maxed ? '#ffd060' : '#9aa3b3'};">Lv ${lv}/${ABILITY_PERMA_MAX} · DMG +${pct}%</div>
-          </div>
-          <button data-id="${id}" class="perma-buy" ${maxed || !canBuy ? 'disabled' : ''}
-            style="background:${maxed ? '#1a1f2b' : (canBuy ? '#2a1a2a' : '#1a1f2b')}; border:1px solid ${maxed ? '#ffd060' : (canBuy ? '#ff80ff' : '#3a4256')}; color:${maxed ? '#ffd060' : (canBuy ? '#ff80ff' : '#666')}; padding:6px 10px; border-radius:5px; font-size:11px; font-weight:bold; cursor:${canBuy ? 'pointer' : 'not-allowed'}; flex-shrink:0;">
-            ${maxed ? 'MAX' : cost + ' ★'}
-          </button>
-        `;
-        grid.appendChild(card);
+    // 탭 카운트 갱신
+    document.querySelectorAll('#perma-tabs .codex-tab').forEach(btn => {
+      const t = btn.dataset.permatab;
+      if (!groups[t]) return;
+      const total = groups[t].length;
+      const upgraded = groups[t].filter(id => getAbilityPermaLv(id) > 0).length;
+      const label = btn.textContent.split(' ').slice(0, -1).join(' ') || btn.textContent;
+      btn.textContent = `${label.replace(/\s\d+\/\d+$/, '')} ${upgraded}/${total}`;
+    });
+    const ids = groups[permaTab] || [];
+    if (ids.length === 0) {
+      grid.innerHTML = '<div style="text-align:center; color:#7a8090; padding:30px; font-size:13px;">표시할 능력이 없습니다.</div>';
+      return;
+    }
+    // 그리드 — 카드형 (강화소와 다른 디자인: 큰 아이콘 + 진행 바)
+    const cardGrid = document.createElement('div');
+    cardGrid.style.cssText = 'display:grid; grid-template-columns:repeat(auto-fill, minmax(180px, 1fr)); gap:10px;';
+    for (const id of ids) {
+      const d = ABILITY_DEFS[id];
+      const lv = getAbilityPermaLv(id);
+      const maxed = lv >= ABILITY_PERMA_MAX;
+      const cost = maxed ? null : abilityPermaCost(id);
+      const canBuy = !maxed && (META.stardust || 0) >= cost;
+      const pct = (lv * ABILITY_PERMA_DMG_PER_LV * 100).toFixed(1);
+      const progressPct = (lv / ABILITY_PERMA_MAX) * 100;
+      // 아이콘: SR/SSR이면 캐릭터 이미지, 아니면 능력 PNG
+      const gachaTier = abilityGachaTier(id);
+      let iconHtml;
+      if (gachaTier === 'SR' || gachaTier === 'SSR') {
+        const charId = findCharByAbility(id);
+        const charSrc = charId ? getCharacterImageSrc(charId) : null;
+        if (charSrc) {
+          iconHtml = `<img src="${charSrc}" style="width:56px;height:56px;image-rendering:pixelated;object-fit:contain;background:transparent;" />`;
+        }
       }
-      list.appendChild(grid);
+      if (!iconHtml) {
+        const iconPath = getIconPath(id);
+        iconHtml = iconPath
+          ? `<img src="${iconPath}" style="width:48px;height:48px;image-rendering:pixelated;" onerror="this.style.display='none'">`
+          : `<div style="font-size:32px;color:${d.color};font-weight:bold;">${d.name.charAt(0)}</div>`;
+      }
+      // 카드
+      const card = document.createElement('div');
+      let bg = '#141822';
+      let glow = 'transparent';
+      if (gachaTier === 'SSR') { bg = 'linear-gradient(135deg, #220c2a 0%, #2a0c1c 100%)'; glow = 'rgba(255,128,255,0.4)'; }
+      else if (gachaTier === 'SR') { bg = 'linear-gradient(135deg, #2a1c12 0%, #1a1822 100%)'; glow = 'rgba(255,170,85,0.3)'; }
+      else if (gachaTier === 'R') { bg = 'linear-gradient(135deg, #0c1c2a 0%, #14181f 100%)'; glow = 'rgba(136,224,255,0.2)'; }
+      else if (d.isTriple) { bg = 'linear-gradient(135deg, #2a0c1c 0%, #1a1428 100%)'; glow = 'rgba(255,208,96,0.3)'; }
+      else if (d.isCombo) { bg = 'linear-gradient(135deg, #1a1428 0%, #14181f 100%)'; glow = 'rgba(192,132,255,0.2)'; }
+      card.style.cssText = `
+        position:relative; display:flex; flex-direction:column; align-items:center; gap:6px;
+        padding:12px 8px; background:${bg};
+        border:1px solid ${maxed ? '#ffd060' : (d.color || '#3a4256')};
+        border-radius:8px;
+        box-shadow:0 0 12px ${glow};
+        ${maxed ? 'border-width:2px;' : ''}
+      `;
+      const effectLabel = getAbilityPermaEffectLabel(id);
+      card.innerHTML = `
+        <div style="width:56px;height:56px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">${iconHtml}</div>
+        <div style="font-size:12px;font-weight:bold;color:${d.color || '#fff'};text-align:center;line-height:1.1;">${d.name}</div>
+        <div style="font-size:10px;color:${maxed ? '#ffd060' : '#9aa3b3'};font-weight:bold;">Lv ${lv}/${ABILITY_PERMA_MAX} · ${effectLabel} +${pct}%</div>
+        <div style="width:100%;height:6px;background:#0b0d14;border-radius:3px;overflow:hidden;border:1px solid #2a2f3a;">
+          <div style="height:100%;width:${progressPct}%;background:linear-gradient(90deg, #ff80ff 0%, #ffd479 100%);transition:width .3s;"></div>
+        </div>
+        <button data-id="${id}" class="perma-buy" ${maxed || !canBuy ? 'disabled' : ''}
+          style="width:100%;background:${maxed ? '#1a1f2b' : (canBuy ? 'linear-gradient(135deg, #4a1a4a 0%, #2a1a2a 100%)' : '#1a1f2b')};
+          border:1px solid ${maxed ? '#ffd060' : (canBuy ? '#ff80ff' : '#3a4256')};
+          color:${maxed ? '#ffd060' : (canBuy ? '#fff' : '#666')};
+          padding:8px;border-radius:5px;font-size:12px;font-weight:bold;
+          cursor:${canBuy ? 'pointer' : 'not-allowed'};font-family:inherit;
+          ${canBuy ? 'box-shadow:0 0 8px rgba(255,128,255,0.3);' : ''}">
+          ${maxed ? '✨ MAX' : `${cost} ★`}
+        </button>
+      `;
+      cardGrid.appendChild(card);
     }
-    list.querySelectorAll('.perma-buy').forEach(btn => {
+    grid.appendChild(cardGrid);
+    // 버튼 핸들러
+    grid.querySelectorAll('.perma-buy').forEach(btn => {
       btn.onclick = () => {
-        if (buyAbilityPerma(btn.dataset.id)) buildShop();
+        if (buyAbilityPerma(btn.dataset.id)) buildPermaScreen();
       };
     });
   }
+  // 탭 클릭 핸들러
+  document.querySelectorAll('#perma-tabs .codex-tab').forEach(btn => {
+    btn.onclick = () => {
+      permaTab = btn.dataset.permatab;
+      document.querySelectorAll('#perma-tabs .codex-tab').forEach(x =>
+        x.classList.toggle('active', x === btn));
+      buildPermaScreen();
+    };
+  });
+  // 뒤로 버튼
+  const _permaBackBtn = document.getElementById('abilityPermaBack');
+  if (_permaBackBtn) _permaBackBtn.onclick = () => showScreen('menu');
   // 탭 클릭 핸들러
   document.querySelectorAll('#shop-tabs .codex-tab').forEach(btn => {
     btn.onclick = () => {
