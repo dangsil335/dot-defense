@@ -16784,6 +16784,9 @@
     gachaResultScreenEl.classList.toggle('show', name === 'gachaResult');
     const globalRankEl = document.getElementById('globalRankScreen');
     if (globalRankEl) globalRankEl.classList.toggle('show', name === 'globalRank');
+    // 🌟 능력 영구 강화 화면
+    const abilityPermaEl = document.getElementById('abilityPerma');
+    if (abilityPermaEl) abilityPermaEl.classList.toggle('show', name === 'abilityPerma');
     gameEl.style.display = name === 'game' ? 'flex' : 'none';
     if (name === 'game') {
       // 🏰 캔버스 논리 크기 적용 — 모든 모드 640×640 (모바일 오른쪽 여백 제거)
@@ -17358,7 +17361,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 167;
+  const APP_VERSION = 168;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
