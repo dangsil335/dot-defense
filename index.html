@@ -1405,6 +1405,16 @@
 
 <!-- ===== 🎮 치트 모달 (123123123 입력 시) ===== -->
 <!-- ===== 💎 유물 상세 모달 (게임 중 보유 유물 확인) ===== -->
+<div id="dmgStatsModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:9991; align-items:center; justify-content:center; padding:10px; box-sizing:border-box;">
+  <div style="background:#0b0d14; border:2px solid #88e0ff; border-radius:10px; max-width:600px; width:100%; max-height:90vh; max-height:90dvh; display:flex; flex-direction:column; box-shadow:0 0 40px rgba(136,224,255,0.3); overflow:hidden;">
+    <div style="padding:14px 16px; flex-shrink:0; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #2a2f3a;">
+      <div style="font-size:18px; font-weight:bold; color:#88e0ff;">📊 능력별 데미지 통계</div>
+      <button id="dmgStatsClose" style="background:#2a2f3a; color:#fff; border:none; padding:6px 12px; border-radius:6px; cursor:pointer; font-size:12px;">✕ 닫기</button>
+    </div>
+    <div id="dmg-stats-list" style="padding:12px; flex:1; overflow-y:auto;"></div>
+  </div>
+</div>
+
 <div id="relicDetailModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:9990; align-items:center; justify-content:center; padding:10px; box-sizing:border-box;">
   <div style="background:#0b0d14; border:2px solid #ffd479; border-radius:10px; max-width:520px; width:100%; max-height:90vh; max-height:90dvh; display:flex; flex-direction:column; box-shadow:0 0 40px rgba(255,212,121,0.3); overflow:hidden;">
     <!-- 헤더 -->
@@ -2063,6 +2073,7 @@
               vx: Math.cos(ang)*7, vy: Math.sin(ang)*7,
               dmg: 1, life: 80, color: '#88aaff',
               target: null, leader: null, offsetAngle: 0,
+              sourceId: state.currentAbilityId || null,
             });
             ab.cooldowns[i] = Math.max(12, 30 - ab.level * 2);
           }
@@ -2277,6 +2288,7 @@
           vx: Math.cos(ang) * 14, vy: Math.sin(ang) * 14,
           dmg: 5 + ab.level * 3, life: 60, color: '#aaffaa',
           target, leader: null, offsetAngle: 0,
+          sourceId: state.currentAbilityId || null,
         });
         ab.cooldown = Math.max(40, 80 - ab.level * 3);
       },
@@ -2599,6 +2611,7 @@
                 vx: Math.cos(ang) * 7, vy: Math.sin(ang) * 7,
                 dmg, life: 80, color: '#9b88ff',
                 target: null, leader: null, offsetAngle: 0,
+                sourceId: state.currentAbilityId || null,
               });
               d.cooldown = Math.max(14, 28 - ab.level);
             }
@@ -2924,6 +2937,7 @@
                 vx: Math.cos(ang) * 7, vy: Math.sin(ang) * 7,
                 dmg: 2 + ab.level, life: 80, color: '#ffaaff',
                 target: t, leader: null, offsetAngle: 0,
+                sourceId: state.currentAbilityId || null,
               });
               c.fireCD = 22;
             }
@@ -3133,12 +3147,13 @@
 
     reaper: {
       name: '수확자', baseCost: 100, color: '#9966ff',
-      desc: lv => `HP ${5+lv*2}% 이하 적 즉사 · 처치 시 추가 보상`,
+      desc: lv => `HP ${8+lv*3}% 이하 적 즉사 · 처치 시 +${2+lv}G`,
       // 패시브 — 매 프레임 HP가 임계점 이하인 적 사망 처리
       init(ab) { ab.cooldown = 0; },
       tick(ab) {
         if (--ab.cooldown > 0) return;
-        const threshold = (5 + ab.level * 2) / 100;
+        const threshold = (8 + ab.level * 3) / 100;
+        const bonusGold = 2 + ab.level;
         for (const e of state.enemies) {
           if (e.hp <= 0 || e.isBoss) continue;  // 보스는 즉사 면역
           if (e.hp / e.maxHp <= threshold) {
@@ -3149,6 +3164,13 @@
               text: 'EXECUTE', color: '#9966ff', life: 30, size: 12,
             });
             spawnParticles(ex, ey, '#9966ff', 10);
+            // 💀 추가 보상 — 즉사 시 추가 골드
+            state.gold += bonusGold;
+            if (state.relicEffects) state.relicEffects.goldEarnedTotal = (state.relicEffects.goldEarnedTotal || 0) + bonusGold;
+            state.damageNumbers.push({
+              x: ex, y: ey - e.size - 14, vy: -1.2,
+              text: `+${bonusGold}G`, color: '#ffd479', life: 32, size: 11,
+            });
             damageEnemy(e, e.hp * 2);  // 확실히 죽임
           }
         }
@@ -3598,13 +3620,14 @@
       desc: lv => `액티브 능력 쿨다운 -${lv*4}%`,
       init() {},
       tick(ab) {
-        // 다른 액티브 능력의 쿨다운을 추가로 감소
-        const mul = ab.level * 0.04;
+        // 다른 액티브 능력의 쿨다운을 추가로 감소 — 매 프레임 비율로 감소 (% 효과)
+        // lv5 = 20% / 60프레임 = 매 프레임 0.333% 감소 → 1초 기준 약 20% 단축 효과
+        const mul = ab.level * 0.04 / 60;  // 초당 lv*4% 감소
         for (const a of state.tower.abilities) {
           if (a === ab) continue;
           const d = ABILITY_DEFS[a.id];
           if (d.isPassive) continue;
-          if (a.cooldown !== undefined && a.cooldown > 0) a.cooldown -= mul;
+          if (a.cooldown !== undefined && a.cooldown > 0) a.cooldown *= (1 - mul);
         }
       },
     },
@@ -3700,6 +3723,7 @@
             target: null, leader: null, offsetAngle: 0,
             explodeRadius: exR, explodeAb: ab,
             size: 3, glow: true, tier: 'combo',
+            sourceId: state.currentAbilityId || null,
           });
         }
         ab.cooldown = Math.max(14, 28 - ab.level * 2);
@@ -4583,6 +4607,7 @@
             target: target, leader: null, offsetAngle: 0,
             explodeRadius: exR, explodeAb: ab,
             size: 4, glow: true, tier: 'triple',
+            sourceId: state.currentAbilityId || null,
           });
         }
         ab.cooldown = Math.max(25, 45 - ab.level * 2);
@@ -4989,6 +5014,7 @@
           vx: Math.cos(ang) * 16, vy: Math.sin(ang) * 16,
           dmg, life: 60, color: '#bb99cc',
           target, leader: null, offsetAngle: 0, size: 3, glow: true, tier: 'combo',
+          sourceId: state.currentAbilityId || null,
         });
         ab.cooldown = Math.max(25, 65 - ab.level * 4);
         // 학자 효과: 처치 가능성 시 다른 액티브 쿨 감소
@@ -5063,29 +5089,26 @@
     // ========== 대체 조합 (자유도) — 다른 파트너 조합 ==========
     headshot: {
       name: '헤드샷', isCombo: true, baseCost: 110, color: '#ffd0d0',
-      desc: lv => `차징 단발 · DMG ${10+lv*6} → ${25+lv*15} (3배 강화)`,
-      // 변경: 즉발 → 차징 후 강력 단발 (대기 시간 동안 데미지 ↑)
+      desc: lv => `2.5초 풀차징 단발 · DMG ${25+lv*15}`,
+      // 차징 후 강력 단발 — 풀충전(150프레임) 강제 → 최대 데미지로만 발사
       init(ab) { ab.cooldown = 0; ab.chargeFrames = 0; },
       tick(ab) {
         if (ab.cooldown > 0) { ab.cooldown--; return; }
-        // 차징 진행
         ab.chargeFrames++;
-        if (ab.chargeFrames < 90) return;  // 1.5초 차징
+        if (ab.chargeFrames < 150) return;  // 2.5초 풀차징 강제
         const target = findNearestEnemy(ARENA_R + 50);
-        if (!target) return;
+        if (!target) return;  // 풀차징 유지하면서 적 대기
+        const ratio = 1;  // 풀차징 = 최대 데미지
         const [tx, ty] = enemyXY(target);
         const ang = Math.atan2(ty - CY, tx - CX);
-        // 90~150 프레임 사이 데미지 보정 (최대 3배)
-        const ratio = Math.min(1, (ab.chargeFrames - 90) / 60);
-        const baseDmg = 10 + ab.level * 6;
-        const maxDmg = 25 + ab.level * 15;
-        const dmg = baseDmg + (maxDmg - baseDmg) * ratio;
+        const dmg = 25 + ab.level * 15;
         state.bullets.push({
           x: CX, y: CY,
           vx: Math.cos(ang) * 20, vy: Math.sin(ang) * 20,
           dmg, life: 50, color: '#ffd0d0',
           target, leader: null, offsetAngle: 0,
           size: 3 + Math.floor(ratio * 3), glow: true, tier: 'combo',
+          sourceId: state.currentAbilityId || null,
         });
         ab.chargeFrames = 0;
         ab.cooldown = Math.max(15, 35 - ab.level * 2);
@@ -6734,8 +6757,12 @@
             const curAng = Math.atan2(b.vy, b.vx);
             const wantAng = Math.atan2(ty - b.y, tx - b.x);
             let diff = wantAng - curAng;
-            while (diff > Math.PI) diff -= Math.PI * 2;
-            while (diff < -Math.PI) diff += Math.PI * 2;
+            // NaN/무한 루프 방어
+            if (!isFinite(diff)) diff = 0;
+            else {
+              while (diff > Math.PI) diff -= Math.PI * 2;
+              while (diff < -Math.PI) diff += Math.PI * 2;
+            }
             const c = Math.max(-0.14, Math.min(0.14, diff));
             const a = curAng + c;
             b.vx = Math.cos(a) * 5; b.vy = Math.sin(a) * 5;
@@ -6760,6 +6787,7 @@
               ab.bursts.push({x: ex, y: ey, r: burstR, life: 14});
               b.hit.add(e);
               b.pierces++;
+              b.target = null;  // 🔧 타깃 즉시 해제 → 다음 적으로 진행 (고정 추적 방지)
               if (b.pierces >= pierceMax) b.life = 0;
               break;
             }
@@ -6768,6 +6796,8 @@
         }
         ab.bullets = ab.bullets.filter(b => b.life > 0);
         if (--ab.cooldown > 0) return;
+        // 🛡 동시 비행 탄환 상한 (프리징 방지) — 최대 5발
+        if (ab.bullets.length >= 5) { ab.cooldown = 8; return; }
         const ang = Math.random() * Math.PI * 2;
         ab.bullets.push({
           x: CX, y: CY,
@@ -7827,8 +7857,8 @@
       desc: '시작 골드 +200. 가난한 자가 가장 부유하다.',
       apply: (st) => { st.gold += 200; }, unlockBy: null },
     aoeBanner: { name: '광역의 깃발', icon: '🚩', rarity: 'common',
-      desc: '광역 능력 사거리 +15%',
-      apply: (st) => { st.relicEffects.aoeRangeMul *= 1.15; }, unlockBy: null },
+      desc: '광역 능력 데미지 +15%',
+      apply: (st) => { st.relicEffects.aoeDmgMul *= 1.15; }, unlockBy: null },
     forgeHammer: { name: '강화의 망치', icon: '🔨', rarity: 'common',
       desc: '강화 비용 -10%',
       apply: (st) => { st.metaMods.enhanceMul *= 0.90; }, unlockBy: null },
@@ -7842,8 +7872,8 @@
       desc: '라운드 시간 +6초',
       apply: (st) => { st.metaMods.roundTimeBonus = (st.metaMods.roundTimeBonus || 0) + 6; }, unlockBy: null },
     magnetHand: { name: '자석의 손', icon: '🧲', rarity: 'common',
-      desc: '골드 자동 흡수. 게으른 자의 친구.',
-      apply: (st) => { st.relicEffects.autoGold = true; }, unlockBy: null },
+      desc: '골드 획득량 +25%. 부르는 손길.',
+      apply: (st) => { st.metaMods.goldMul = (st.metaMods.goldMul || 1) * 1.25; }, unlockBy: null },
     angelMantle: { name: '자비의 망토', icon: '😇', rarity: 'common',
       desc: '보스 처치 시 모든 능력 쿨다운 초기화',
       apply: (st) => { st.relicEffects.bossKillResetCooldown = true; }, unlockBy: 'achievement:boss5' },
@@ -7852,22 +7882,22 @@
       desc: '라운드 클리어마다 데미지 +2% (영구 누적). 망자는 강해진다.',
       apply: (st) => { st.relicEffects.tombStackPerRound = 0.02; }, unlockBy: null },
     reaperHand: { name: '사신의 손', icon: '💀', rarity: 'common',
-      desc: '누적 처치 1,000마리당 데미지 +5%',
-      apply: (st) => { st.relicEffects.killCountDmgRate = 0.05; }, unlockBy: 'achievement:kills500' },
+      desc: '누적 처치 100마리당 데미지 +1%',
+      apply: (st) => { st.relicEffects.killCountDmgRate = 0.01; }, unlockBy: 'achievement:kills500' },
     seaEcho: { name: '바다의 메아리', icon: '🌊', rarity: 'common',
       desc: '광역 능력 데미지 +30%',
       apply: (st) => { st.relicEffects.aoeDmgMul *= 1.30; }, unlockBy: null },
     monkRosary: { name: '수도승의 묵주', icon: '📿', rarity: 'common',
-      desc: '모든 능력 쿨다운 -8%',
-      apply: (st) => { st.relicEffects.cooldownMul *= 0.92; }, unlockBy: null },
+      desc: '모든 데미지 +10%. 차분한 정진.',
+      apply: (st) => { st.metaMods.dmgMul *= 1.10; }, unlockBy: null },
     cosmicDust: { name: '우주 먼지', icon: '🌌', rarity: 'common',
-      desc: '패시브 효과 +20%. 우주의 먼지만큼 가볍지만 무겁다.',
-      apply: (st) => { st.relicEffects.passiveEffectMul *= 1.20; }, unlockBy: null },
+      desc: '모든 데미지 +12%. 우주의 먼지만큼 가볍지만 무겁다.',
+      apply: (st) => { st.metaMods.dmgMul *= 1.12; }, unlockBy: null },
     darkPact: { name: '어둠의 약속', icon: '💣', rarity: 'common',
-      desc: '한계 적 50% 미만일 때 데미지 +60%',
+      desc: '화면 적 수가 수용 한계의 절반 미만일 때 데미지 +60%',
       apply: (st) => { st.relicEffects.darkPactBonus = 0.60; }, unlockBy: null },
     deadCharm: { name: '망자의 부적', icon: '🪦', rarity: 'common',
-      desc: '획득한 누적 골드 1,000당 데미지 +1%',
+      desc: '이번 게임에서 모은 골드 500마다 데미지 +1% (영구 누적, 사용한 골드 포함)',
       apply: (st) => { st.relicEffects.goldEarnedDmgRate = 0.01; }, unlockBy: null },
     trainBanner: { name: '단련의 깃발', icon: '💪', rarity: 'common',
       desc: '모든 데미지 +15%. 단순하지만 확실하다.',
@@ -7912,7 +7942,7 @@
       desc: '능력 발동 시 골드 +2 (자동). 피로 만든 황금.',
       apply: (st) => { st.relicEffects.abilityUseGold = (st.relicEffects.abilityUseGold || 0) + 2; }, unlockBy: 'achievement:goldHold3k' },
     fateScale: { name: '운명의 저울', icon: '⚖️', rarity: 'rare',
-      desc: '한계 적 50% 이상 시 데미지 +75%. 절망이 힘이 된다.',
+      desc: '화면 적 수가 수용 한계의 절반 이상일 때 데미지 +75%. 절망이 힘이 된다.',
       apply: (st) => { st.relicEffects.fateScaleBonus = 0.75; }, unlockBy: 'achievement:lowSlot' },
     echoBell: { name: '메아리의 종', icon: '🔔', rarity: 'rare',
       desc: '모든 능력 데미지 +30%. 같은 소리가 두 번 들린다.',
@@ -7921,10 +7951,10 @@
       desc: '유물 등장 확률 +25%. 보물은 보물을 부른다.',
       apply: (st) => { st.relicEffects.relicChanceBonus = (st.relicEffects.relicChanceBonus || 0) + 0.25; }, unlockBy: 'achievement:kills3k' },
     timeWarp: { name: '시간 왜곡', icon: '🌀', rarity: 'rare',
-      desc: '적 속도 -25%, 능력 쿨다운 -25%',
+      desc: '적 속도 -25%, 모든 데미지 +20%',
       apply: (st) => {
         st.relicEffects.enemySpeedMul *= 0.75;
-        st.relicEffects.cooldownMul *= 0.75;
+        st.metaMods.dmgMul *= 1.20;
       }, unlockBy: 'achievement:speedrun' },
     gemHunter: { name: '보석 사냥꾼', icon: '💎', rarity: 'rare',
       desc: '처치 시 5% 확률로 골드 +15. 보석함이 쏟아진다.',
@@ -7947,21 +7977,17 @@
       apply: (st) => { st.relicEffects.chainLightning = true; }, unlockBy: 'achievement:kills5k' },
     // ↓↓↓ 신규 2개 (변환 효과) ↓↓↓
     starAvatar: { name: '별의 화신', icon: '🌟', rarity: 'epic',
-      desc: '모든 데미지 +50%, 모든 능력 사거리 ×1.4. 별의 가호.',
+      desc: '모든 데미지 +50%, 광역 능력 데미지 +40%. 별의 가호.',
       apply: (st) => {
         st.metaMods.dmgMul *= 1.50;
-        st.relicEffects.rangeMul *= 1.40;
+        st.relicEffects.aoeDmgMul *= 1.40;
       }, unlockBy: 'achievement:triple3' },
     deathPromise: { name: '죽음의 약속', icon: '💀', rarity: 'epic',
-      desc: '시작 R10 점프, 보스 HP -30%. 빠른 길에는 대가가 따른다.',
+      desc: '모든 보스 HP -40% · 단, 보스 골드 -50%. 황금보다 명예.',
       apply: (st) => {
-        // R10 으로 즉시 점프
-        if (st.round < 10) {
-          st.round = 10;
-          // 라운드 재플랜
-          if (typeof planRound === 'function') planRound();
-        }
-        st.relicEffects.bossHpMul = (st.relicEffects.bossHpMul || 1) * 0.70;
+        st.relicEffects.bossHpMul = (st.relicEffects.bossHpMul || 1) * 0.60;
+        // 보스 골드 절반 (다른 보너스와 합산되지만 음수 처리 가능하게 함수 클램프)
+        st.metaMods.bossGoldMul = (st.metaMods.bossGoldMul || 0) - 0.5;
       }, unlockBy: 'achievement:asc3' },
 
     // ============================== LEGENDARY (4개) — 게임 체인저 ==============================
@@ -7977,10 +8003,10 @@
         }
       }, unlockBy: 'achievement:asc7' },
     eternityLight: { name: '영원의 빛', icon: '🌅', rarity: 'legendary',
-      desc: '한 게임당 한 번, 한계 초과 시 무효 (자동 부활)',
+      desc: '적이 수용 한계를 넘어 패배할 때 자동 발동(게임당 1회): 화면 적의 절반 즉사 + 모든 적 2초 정지. 죽음을 한 번 거부한다.',
       apply: (st) => { st.relicEffects.deathDefiance = 1; }, unlockBy: 'achievement:asc10' },
     apocalypseClock: { name: '종말의 시계', icon: '⏳', rarity: 'legendary',
-      desc: '보스 5마리마다 다음 라운드 자동 클리어 (3회)',
+      desc: '보스 5마리 처치마다 다음 라운드 자동 클리어 (총 3회). 스킵된 라운드의 골드·점수·처치수는 클리어한 것과 동일하게 보상.',
       apply: (st) => { st.relicEffects.skipRoundCharges = 3; st.relicEffects.skipRoundBossCount = 0; },
       unlockBy: 'achievement:asc12' },
     // ↓↓↓ 신규 1개 (시간 누적형) ↓↓↓
@@ -8007,7 +8033,9 @@
   // 보스 처치 시 호출 — 확률적으로 3개 유물 제안
   function rollRelicOffering() {
     if (!state) return null;
-    if (Math.random() > RELIC_DROP_CHANCE) return null; // 드롭 X
+    // 💼 도굴꾼의 가방 — 유물 등장 확률 +25%
+    const bonus = (state.relicEffects && state.relicEffects.relicChanceBonus) || 0;
+    if (Math.random() > Math.min(0.95, RELIC_DROP_CHANCE + bonus)) return null; // 드롭 X
     const ownedSet = new Set((state.activeRelics || []).map(r => r.id));
     const pool = getDiscoveredRelics().filter(id => !ownedSet.has(id));
     if (pool.length === 0) return null;
@@ -8536,13 +8564,24 @@
   // 5라운드마다 보스 라운드: 잡몹 절반 + 보스 1마리.
   // 100라운드: 5라운드분 시간(150초) + 보스 3마리 + 잡몹 다수 (최종전).
   const MAX_ROUND = 100;
+  // ♾ 엔드리스 모드 HP 배수 — R100 클리어 후 한 라운드마다 ×1.5 (기하급수)
+  const ENDLESS_HP_MUL = 1.5;
   function enemyHpFor(n) {
     // R1~25 지수 성장, R26+ 선형 + 약한 2차 항 → 후반 가파르게
-    if (n <= 25) return Math.ceil(3 * Math.pow(1.35, n - 1));
-    const base = Math.ceil(3 * Math.pow(1.35, 24));
-    const d = n - 25;
-    // 선형 0.18 + 2차 0.0035 — R50: 5.7x, R75: 10.4x, R100: 17.5x
-    return Math.ceil(base * (1 + d * 0.18 + d * d * 0.0035));
+    let base;
+    if (n <= 25) base = Math.ceil(3 * Math.pow(1.35, n - 1));
+    else {
+      const baseR25 = Math.ceil(3 * Math.pow(1.35, 24));
+      const d = n - 25;
+      // 선형 0.18 + 2차 0.0035 — R50: 5.7x, R75: 10.4x, R100: 17.5x
+      base = Math.ceil(baseR25 * (1 + d * 0.18 + d * d * 0.0035));
+    }
+    // ♾ 엔드리스: R100 이후 매 라운드 ×ENDLESS_HP_MUL (R101 = R100 × 1.5, R102 = R100 × 2.25, ...)
+    if (n > MAX_ROUND) {
+      const r100 = enemyHpFor(MAX_ROUND);  // R100 기준값
+      base = Math.ceil(r100 * Math.pow(ENDLESS_HP_MUL, n - MAX_ROUND));
+    }
+    return base;
   }
   function roundConfig(n) {
     const baseHp = enemyHpFor(n);
@@ -8621,6 +8660,11 @@
       gameOverReason: '',
       gameWin: false,
       t: 0,
+      // ♾ 엔드리스 모드 (R100 클리어 후 사용자 선택)
+      endless: false,                // 엔드리스 진행 중 여부
+      endlessOfferPending: false,    // R100 클리어 시 "계속하시겠습니까?" 모달 활성화
+      // 📊 능력별 누적 데미지 (게임오버 후 통계용)
+      abilityDamageStats: {},   // { abilityId: totalDamage }
       // 💎 유물 시스템
       activeRelics: [],           // [{id, name, icon, rarity, ...}] — 이번 게임 보유 유물
       relicOffering: null,        // 보스 처치 후 제안 UI 활성화 (null = 닫힘)
@@ -8757,8 +8801,12 @@
       state.relicEffects.tombStackBonus += state.relicEffects.tombStackPerRound;
     }
     state.round++;
-    if (state.round > MAX_ROUND) {
-      endGame('🏆 100라운드 클리어!', true);
+    if (state.round > MAX_ROUND && !state.endless) {
+      // ♾ R100 클리어 — 우선 승리 확정 (업적/랭킹용), 그 다음 엔드리스 진입 여부 물어봄
+      state.gameWin = true;
+      state.endlessOfferPending = true;
+      paused = true;  // 선택 대기
+      SFX.victory();
       return;
     }
     planRound();
@@ -8785,9 +8833,23 @@
       }
       // (신탁의 책 제거됨 — 천둥의 신으로 대체, 자동 발동)
     }
-    // 💎 종말의 시계 — 다음 라운드 스킵 트리거
+    // 💎 종말의 시계 — 다음 라운드 스킵 트리거 (시뮬레이션 보상 지급)
     if (state.skipNextRound) {
       state.skipNextRound = false;
+      // 스킵되는 라운드의 자원을 시뮬레이션 — 실제 클리어 한 것과 동등한 보상
+      const cfg2 = roundConfig(state.round);
+      const mm = state.metaMods || { goldMul: 1, scoreMul: 1, bonusGoldMul: 0 };
+      const simKills = cfg2.spawnCount;
+      const goldEach = Math.ceil(cfg2.enemyGold * (mm.goldMul || 1) * (1 + (mm.bonusGoldMul || 0)));
+      const giveGold  = simKills * goldEach;
+      const giveScore = Math.ceil(simKills * 10 * state.round * (mm.scoreMul || 1) * ((state.asc && state.asc.scoreReward) || 1));
+      state.gold  += giveGold;
+      state.score += giveScore;
+      state.totalKills = (state.totalKills || 0) + simKills;
+      if (state.relicEffects) state.relicEffects.goldEarnedTotal = (state.relicEffects.goldEarnedTotal || 0) + giveGold;
+      // 능력 레벨업 트리거를 위해 kills도 같이 증가 (시뮬 처치 = 진짜 처치로 간주)
+      state.kills = (state.kills || 0) + simKills;
+      toast(`⏳ 자동 클리어 보상 — +${giveGold}G, +${giveScore.toLocaleString()}점`);
       setTimeout(() => advanceRound(), 1000);
     }
   }
@@ -8795,7 +8857,8 @@
     if (state.gameOver) return;
     state.gameOver = true;
     state.gameOverReason = reason;
-    state.gameWin = !!win;
+    // ♾ 엔드리스 중 사망해도 R100 클리어 기록은 유지
+    state.gameWin = !!win || !!state.gameWin;
     // 카드 모달이 떠있었다면 환불 + 클리어
     if (state.levelUpChoices) {
       if (state.cardCancelable && state.cardCostPaid > 0) {
@@ -10501,6 +10564,7 @@
       leader: leader || null,
       offsetAngle: offsetAngle || 0,
       tier: state.currentAbilityTier || 'basic',  // 위계 보너스 추적용
+      sourceId: state.currentAbilityId || null,   // 📊 데미지 통계 추적용
     };
     state.bullets.push(b);
     return b;
@@ -10535,14 +10599,14 @@
         if (re.tombStackBonus > 0) mul *= (1 + re.tombStackBonus);
         // 차원 용 (보스 처치 누적)
         if (re.dragonStackBonus > 0) mul *= (1 + re.dragonStackBonus);
-        // 사신의 손 (1000킬당)
+        // 사신의 손 (100킬당) — 게임당 ~2000킬 기준 최대 20스택
         if (re.killCountDmgRate > 0) {
-          const stacks = Math.floor((state.totalKills || 0) / 1000);
+          const stacks = Math.floor((state.totalKills || 0) / 100);
           mul *= (1 + stacks * re.killCountDmgRate);
         }
-        // 망자의 부적 (1000골드당)
+        // 망자의 부적 (500골드당) — 게임당 ~5~15k 골드 기준 10~30스택
         if (re.goldEarnedDmgRate > 0) {
-          const stacks = Math.floor((re.goldEarnedTotal || 0) / 1000);
+          const stacks = Math.floor((re.goldEarnedTotal || 0) / 500);
           mul *= (1 + stacks * re.goldEarnedDmgRate);
         }
         // 어둠의 약속 / 운명의 저울 — 한계 적 비율
@@ -10581,23 +10645,33 @@
       return;
     }
     e.lastDamageAt = state.t;
+    // 📊 능력별 데미지 통계 누적 (실제 적용된 데미지 = 적 hp 깎인 양 기준, 오버킬 제외)
+    const dmgApplied = Math.min(dmg, e.hp); // hp 이상은 오버킬 — 통계에서 제외
+    if (state.currentAbilityId && dmgApplied > 0) {
+      state.abilityDamageStats[state.currentAbilityId] =
+        (state.abilityDamageStats[state.currentAbilityId] || 0) + dmgApplied;
+    }
     e.hp -= dmg;
     const [ex, ey] = enemyXY(e);
     // 데미지 숫자 — 평소엔 흰색, 큰 데미지(크리티컬)만 골드로 강조
     const big = dmg >= 30;
-    state.damageNumbers.push({
-      x: ex + (Math.random() - 0.5) * 6,
-      y: ey - e.size - 4,
-      vy: -0.7,
-      text: String(Math.round(dmg)),
-      color: big ? '#ffd479' : '#dde2ec',
-      life: 26,
-      size: big ? 13 : 10,
-    });
+    // 🛡 데미지 숫자 캡 (작은 데미지는 80개 넘으면 스킵 — 슬로우 + 광역 동시 피격 시 FPS 보호)
+    if (big || state.damageNumbers.length < 80) {
+      state.damageNumbers.push({
+        x: ex + (Math.random() - 0.5) * 6,
+        y: ey - e.size - 4,
+        vy: -0.7,
+        text: String(Math.round(dmg)),
+        color: big ? '#ffd479' : '#dde2ec',
+        life: 26,
+        size: big ? 13 : 10,
+      });
+    }
     if (e.hp <= 0) {
       const mm = state.metaMods || { goldMul: 1, scoreMul: 1 };
       // 골드 — 흡혈 패시브 + 보스 골드 보너스 (메타)
-      const bossGold = e.isBoss ? (1 + (mm.bossGoldMul || 0)) : 1;
+      // 보스 골드 배수 — 0 이하로는 떨어지지 않게 클램프 (deathPromise -0.5 + 기타 음수 합산 방어)
+      const bossGold = e.isBoss ? Math.max(0, 1 + (mm.bossGoldMul || 0)) : 1;
       const goldDrop = Math.ceil(e.goldDrop * mm.goldMul * (1 + (mm.bonusGoldMul || 0)) * bossGold);
       state.gold += goldDrop;
       // 💎 망자의 부적용 누적 골드 추적
@@ -10620,6 +10694,26 @@
       if (e.isBoss) state.bossKills = (state.bossKills || 0) + 1;
       spawnParticles(ex, ey, '#ff5b6e', e.isBoss ? 20 : 8);
       SFX.kill();
+      // ⚡ 오딘의 창 — 처치 시 주변 3마리에 50% 연쇄 데미지
+      if (state.relicEffects && state.relicEffects.chainLightning && !e._chainSource) {
+        const chainR = 120;
+        const chainDmg = Math.max(1, Math.ceil((e.maxHp || 1) * 0.5));
+        let chained = 0;
+        for (const e2 of state.enemies) {
+          if (chained >= 3) break;
+          if (e2 === e || e2.hp <= 0) continue;
+          const [ex2, ey2] = enemyXY(e2);
+          if ((ex-ex2)*(ex-ex2) + (ey-ey2)*(ey-ey2) < chainR*chainR) {
+            e2._chainSource = true; // 무한 연쇄 방지
+            damageEnemy(e2, chainDmg);
+            e2._chainSource = false;
+            state.thunderStrikes = state.thunderStrikes || [];
+            state.thunderStrikes.push({ x: ex2, y: ey2, life: 10 });
+            spawnParticles(ex2, ey2, '#ffe070', 4);
+            chained++;
+          }
+        }
+      }
       // 💎 처치 시 골드 보너스 (거머리/정전기)
       if (state.relicEffects.killGoldBonus > 0) {
         state.gold += state.relicEffects.killGoldBonus;
@@ -10654,13 +10748,14 @@
           state.relicEffects.dragonStackBonus += state.relicEffects.dragonStackPerBoss;
         }
         state.relicEffects.bossesSlain = (state.relicEffects.bossesSlain || 0) + 1;
-        // 💎 종말의 시계 — 5마리당 다음 라운드 스킵 충전
+        // 💎 종말의 시계 — 5마리당 다음 라운드 스킵 충전 (총 3회 사용)
         if (state.relicEffects.skipRoundCharges > 0) {
           state.relicEffects.skipRoundBossCount++;
           if (state.relicEffects.skipRoundBossCount >= 5) {
             state.relicEffects.skipRoundBossCount = 0;
+            state.relicEffects.skipRoundCharges--;   // 충전 차감 — 진짜 3회 제한
             state.skipNextRound = true;
-            toast('⏳ 다음 라운드 자동 클리어!');
+            toast(`⏳ 다음 라운드 자동 클리어! (남은 충전: ${state.relicEffects.skipRoundCharges})`);
           }
         }
         // 💎 유물 제안 (확률적)
@@ -10918,9 +11013,12 @@
   }
   function applyLevelUpChoice(idx) {
     if (!state.levelUpChoices) return;
-    if (idx === -1) {  // 취소 — 이미 차감된 골드 환불
+    if (idx === -1) {  // 취소 — 이미 차감된 골드 환불 (대신 다음 카드 비용은 올라감)
       if (state.cardCancelable) {
-        if (state.cardCostPaid > 0) state.gold += state.cardCostPaid;
+        const hadPaid = state.cardCostPaid > 0;
+        if (hadPaid) state.gold += state.cardCostPaid;
+        // 🚫 무한 리롤 방지: 취소도 획득 횟수 증가 → 다음 랜덤 비용 상승
+        state.tower.acquireCount += 1;
         state.levelUpChoices = null;
         state.cardCost = 0;
         state.cardCostPaid = 0;
@@ -10928,6 +11026,7 @@
         state.rerollAvailable = false;
         state.autoCardTimer = 0;
         SFX.click();
+        toast(hadPaid ? '취소 · 골드 환불 (다음 카드 비용 ↑)' : '취소 (다음 카드 비용 ↑)');
       }
       return;
     }
@@ -11091,7 +11190,13 @@
     if (state.gold < cost) return toast('골드 부족');
     state.gold -= cost;
     a.level += 1;
-    toast(`${ABILITY_DEFS[a.id].name} Lv${a.level}${isAtMax(a) ? ' MAX!' : ''}`);
+    // 💎 복제기 (cloneEngine) — 강화 시 추가 +1 레벨
+    let cloneApplied = false;
+    if (state.relicEffects && state.relicEffects.doubleEnhance && !isAtMax(a)) {
+      a.level += 1;
+      cloneApplied = true;
+    }
+    toast(`${ABILITY_DEFS[a.id].name} Lv${a.level}${cloneApplied ? ' (🧬+1)' : ''}${isAtMax(a) ? ' MAX!' : ''}`);
     renderPanel();
   }
 
@@ -11197,6 +11302,14 @@
       shieldHp: 0,
       lastDamageAt: 0,
     });
+    // 🔮 예언자의 수정구 — 보스 등장 시 모든 적 정지
+    const re = state.relicEffects;
+    if (re && re.bossStartStop > 0) {
+      for (const en of state.enemies) {
+        en.slowFrames = Math.max(en.slowFrames || 0, re.bossStartStop);
+      }
+      toast(`🔮 시간이 멈춘다 — ${(re.bossStartStop/60).toFixed(1)}초`);
+    }
   }
   // 보스 능력 업데이트
   function updateBossPatterns() {
@@ -11311,12 +11424,38 @@
     // 게임오버 체크 (적 누적)
     const maxAlive = getMaxAlive();
     if (state.enemies.length >= maxAlive) {
-      endGame(`적이 ${maxAlive}마리를 넘김`, false);
+      // 🌅 영원의 빛 — 한 게임당 1회 자동 부활 (적 절반 학살 + 전체 정지 2초)
+      const re = state.relicEffects;
+      if (re && re.deathDefiance > 0) {
+        re.deathDefiance--;
+        // 비-보스 적 절반 즉사 (가장 가까운 것부터)
+        const toKill = Math.ceil(state.enemies.length * 0.5);
+        const sorted = state.enemies.filter(e => !e.isBoss).sort((a, b) => a.radius - b.radius);
+        for (let i = 0; i < toKill && i < sorted.length; i++) {
+          damageEnemy(sorted[i], sorted[i].hp * 2);
+        }
+        // 살아남은 모든 적 2초 완전 정지 (slowFrames + timeStopped)
+        const stopDur = 120;
+        for (const e of state.enemies) {
+          if (e.hp <= 0) continue;
+          e.slowFrames = Math.max(e.slowFrames || 0, stopDur);
+          e.timeStopped = state.t + stopDur;
+        }
+        shake(20, 30);
+        SFX.combo();
+        state.comboFlash = 60;
+        state.comboFlashColor = '#ffd479';
+        toast('🌅 영원의 빛 — 부활!');
+      } else {
+        endGame(`적이 ${maxAlive}마리를 넘김`, false);
+      }
     }
 
     // 적 이동 + 특수 행동 처리
     for (const e of state.enemies) {
-      const slowMul = e.slowFrames > 0 ? 0.35 : 1;
+      // 🛑 완전 정지 (timeStopped) — 8개 능력의 "정지" 효과 실제 적용
+      const fullyStopped = e.timeStopped && e.timeStopped > state.t;
+      const slowMul = fullyStopped ? 0 : (e.slowFrames > 0 ? 0.35 : 1);
       if (e.slowFrames > 0) e.slowFrames--;
       e.angle += e.angularSpeed * slowMul;
       const dr = e.targetRadius - e.radius;
@@ -11421,7 +11560,9 @@
         if ((b.x-ex)*(b.x-ex) + (b.y-ey)*(b.y-ey) < r*r) {
           // 탄환 위계 정보를 임시로 복원해서 데미지 적용 (콤보/트리플 보너스)
           const savedTier = state.currentAbilityTier;
+          const savedId   = state.currentAbilityId;
           if (b.tier && b.tier !== 'basic') state.currentAbilityTier = b.tier;
+          if (b.sourceId) state.currentAbilityId = b.sourceId;  // 📊 통계 귀속
           damageEnemy(e, b.dmg);
           spawnParticles(ex, ey, b.color || '#ffd479', 2);
           // 폭발탄: 추가 광역 데미지
@@ -11437,6 +11578,7 @@
             if (b.explodeAb) b.explodeAb.explosions.push({ x: b.x, y: b.y, r: b.explodeRadius, life: 12 });
           }
           state.currentAbilityTier = savedTier;
+          state.currentAbilityId   = savedId;
           // 슬로우 적용탄
           if (b.slow) e.slowFrames = Math.max(e.slowFrames || 0, b.slow);
           b.life = 0;
@@ -11480,6 +11622,11 @@
   function spawnParticles(x, y, color, n=6){
     // 파티클 수 줄이고 수명 짧게 — 시각적 노이즈 감소
     n = Math.max(1, Math.floor(n * 0.6));
+    // 🛡 글로벌 캡 — 많은 적 동시 피격 시 FPS 보호 (특히 슬로우/광역 동시 다발 시)
+    const cap = 350;
+    const room = cap - state.particles.length;
+    if (room <= 0) return;
+    if (n > room) n = room;
     for (let i=0; i<n; i++){
       const a = Math.random()*Math.PI*2;
       const s = 0.5 + Math.random()*1.3;
@@ -11975,7 +12122,7 @@
       ctx.fillStyle = 'rgba(0,0,0,0.75)'; ctx.fillRect(0,0,W,H);
       if (state.gameWin) {
         ctx.fillStyle = '#ffe070'; ctx.textAlign='center'; ctx.font='36px Jua, sans-serif';
-        ctx.fillText('VICTORY', CX, CY - 40);
+        ctx.fillText(state.endless ? '♾ ENDLESS END' : 'VICTORY', CX, CY - 40);
       } else {
         ctx.fillStyle = '#ff8a98'; ctx.textAlign='center'; ctx.font='36px Jua, sans-serif';
         ctx.fillText('GAME OVER', CX, CY - 40);
@@ -11986,8 +12133,10 @@
         ctx.fillText(state.gameOverReason, CX, CY - 12);
       }
       ctx.fillStyle = '#fff'; ctx.font='16px Jua, sans-serif';
-      const lastRound = state.gameWin ? MAX_ROUND : state.round;
-      ctx.fillText(`도달 라운드: ${lastRound}   점수: ${state.score.toLocaleString()}`, CX, CY + 14);
+      // 엔드리스에서 사망 시: 실제 도달 라운드 표시. R100 클리어 후 거부: R100 고정.
+      const lastRound = (state.endless || !state.gameWin) ? state.round : MAX_ROUND;
+      const roundTxt = state.endless ? `♾ 도달 R${lastRound}` : `도달 라운드: ${lastRound}`;
+      ctx.fillText(`${roundTxt}   점수: ${state.score.toLocaleString()}`, CX, CY + 14);
       let lineY = CY + 38;
       // 남은 골드 → 점수 환산 표시
       if (state.goldBonusScore && state.goldBonusScore > 0) {
@@ -12033,33 +12182,44 @@
         ctx.fillText(`🔁 반복 업적: +${state.repeatStardust} ★`, CX, lineY);
         lineY += 16;
       }
-      // 다시하기 / 메인메뉴 버튼 (캔버스 클릭 + R / ESC 단축키도 유지)
-      const btnW = 160, btnH = 44, btnGap = 16;
-      const totalBtnW = btnW * 2 + btnGap;
+      // 다시하기 / 딜량 통계 / 메인메뉴 버튼 (캔버스 클릭 + R / ESC 단축키도 유지)
+      const btnW = 124, btnH = 44, btnGap = 10;
+      const totalBtnW = btnW * 3 + btnGap * 2;
       const btnYg = Math.min(lineY + 24, H - btnH - 24);
       const btnX1 = CX - totalBtnW / 2;
       const btnX2 = btnX1 + btnW + btnGap;
-      // 다시하기 (강조)
+      const btnX3 = btnX2 + btnW + btnGap;
+      // 다시하기 (강조 — 골드)
       ctx.fillStyle = '#2a2418';
       ctx.fillRect(btnX1, btnYg, btnW, btnH);
       ctx.strokeStyle = '#ffd479';
       ctx.lineWidth = 2;
       ctx.strokeRect(btnX1, btnYg, btnW, btnH);
       ctx.fillStyle = '#ffd479';
-      ctx.font = 'bold 15px Jua, sans-serif';
+      ctx.font = 'bold 14px Jua, sans-serif';
       ctx.textAlign = 'center';
       ctx.fillText('↻ 다시 하기', btnX1 + btnW / 2, btnYg + 27);
-      // 메인메뉴
-      ctx.fillStyle = '#1a1f2b';
+      // 📊 딜량 통계
+      ctx.fillStyle = '#10202c';
       ctx.fillRect(btnX2, btnYg, btnW, btnH);
-      ctx.strokeStyle = '#5870a0';
+      ctx.strokeStyle = '#88e0ff';
       ctx.lineWidth = 2;
       ctx.strokeRect(btnX2, btnYg, btnW, btnH);
+      ctx.fillStyle = '#88e0ff';
+      ctx.font = 'bold 14px Jua, sans-serif';
+      ctx.fillText('📊 딜량 통계', btnX2 + btnW / 2, btnYg + 27);
+      // 메인메뉴
+      ctx.fillStyle = '#1a1f2b';
+      ctx.fillRect(btnX3, btnYg, btnW, btnH);
+      ctx.strokeStyle = '#5870a0';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(btnX3, btnYg, btnW, btnH);
       ctx.fillStyle = '#cfd6e3';
-      ctx.font = '15px Jua, sans-serif';
-      ctx.fillText('🏠 메인 메뉴', btnX2 + btnW / 2, btnYg + 27);
-      state._retryBtn = { x: btnX1, y: btnYg, w: btnW, h: btnH };
-      state._menuBtn  = { x: btnX2, y: btnYg, w: btnW, h: btnH };
+      ctx.font = '14px Jua, sans-serif';
+      ctx.fillText('🏠 메인 메뉴', btnX3 + btnW / 2, btnYg + 27);
+      state._retryBtn    = { x: btnX1, y: btnYg, w: btnW, h: btnH };
+      state._dmgStatsBtn = { x: btnX2, y: btnYg, w: btnW, h: btnH };
+      state._menuBtn     = { x: btnX3, y: btnYg, w: btnW, h: btnH };
       // 단축키 안내 (작게)
       ctx.fillStyle = '#5a6068';
       ctx.font = '10px Jua, sans-serif';
@@ -12068,6 +12228,7 @@
     } else {
       state._retryBtn = null;
       state._menuBtn = null;
+      state._dmgStatsBtn = null;
     }
   }
   function render() {
@@ -12100,6 +12261,7 @@
     drawOverlay();
     drawLevelUpModal();
     drawRelicOffering();
+    drawEndlessOffer();  // ♾ R100 클리어 후 엔드리스 선택
   }
   // ⚡ 천둥의 신 — 번개 줄기 시각 효과
   function drawThunderStrikes() {
@@ -12190,6 +12352,67 @@
   document.getElementById('relicDetailClose').onclick = closeRelicDetail;
   document.getElementById('relicDetailModal').onclick = (e) => {
     if (e.target.id === 'relicDetailModal') closeRelicDetail();
+  };
+
+  // ===== 📊 딜량 통계 모달 =====
+  function openDamageStats() {
+    renderDamageStats();
+    document.getElementById('dmgStatsModal').style.display = 'flex';
+  }
+  function closeDamageStats() {
+    document.getElementById('dmgStatsModal').style.display = 'none';
+  }
+  function renderDamageStats() {
+    const list = document.getElementById('dmg-stats-list');
+    list.innerHTML = '';
+    const stats = (state && state.abilityDamageStats) || {};
+    // 보유 능력 + 통계가 잡힌 모든 능력 합집합 (정렬: 데미지 내림차순)
+    const ownedIds = new Set((state && state.tower && state.tower.abilities || []).map(a => a.id));
+    const ids = new Set([...Object.keys(stats), ...ownedIds]);
+    const rows = [...ids].map(id => ({
+      id,
+      dmg: Math.floor(stats[id] || 0),
+      def: ABILITY_DEFS[id],
+      level: (state.tower.abilities.find(a => a.id === id) || {}).level || 0,
+    })).filter(r => r.def);
+    rows.sort((a, b) => b.dmg - a.dmg);
+    if (rows.length === 0) {
+      list.innerHTML = '<div style="text-align:center; color:#7a8090; padding:24px; font-size:13px;">기록된 데미지가 없습니다.</div>';
+      return;
+    }
+    const max = Math.max(1, ...rows.map(r => r.dmg));
+    const totalDmg = rows.reduce((s, r) => s + r.dmg, 0);
+    // 요약
+    const header = document.createElement('div');
+    header.style.cssText = 'font-size:12px; color:#9aa3b3; padding:4px 8px 10px; border-bottom:1px solid #2a2f3a; margin-bottom:8px;';
+    header.textContent = `총 누적 데미지: ${totalDmg.toLocaleString()} · 능력 ${rows.length}개`;
+    list.appendChild(header);
+    for (const r of rows) {
+      const def = r.def;
+      const color = def.color || '#88e0ff';
+      const pct = (r.dmg / max) * 100;
+      const sharePct = totalDmg > 0 ? ((r.dmg / totalDmg) * 100).toFixed(1) : '0';
+      const tierTag = def.isTriple ? '<span style="color:#ff66ee; font-size:10px; margin-left:4px;">[TRIPLE]</span>'
+                    : def.isCombo  ? '<span style="color:#ffaa55; font-size:10px; margin-left:4px;">[COMBO]</span>'
+                    : '';
+      const lvlTxt = r.level > 0 ? `Lv${r.level}` : '<span style="color:#666;">(잃음)</span>';
+      const row = document.createElement('div');
+      row.style.cssText = 'margin-bottom:8px;';
+      row.innerHTML = `
+        <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:3px;">
+          <div style="font-size:13px; color:${color};">${def.name} ${tierTag} <span style="color:#9aa3b3; font-size:11px; margin-left:4px;">${lvlTxt}</span></div>
+          <div style="font-size:12px; color:#cfd6e3;"><b>${r.dmg.toLocaleString()}</b> <span style="color:#7a8090;">(${sharePct}%)</span></div>
+        </div>
+        <div style="background:#141822; border-radius:3px; height:14px; overflow:hidden; position:relative;">
+          <div style="background:${color}; height:100%; width:${pct}%; transition:width 0.3s;"></div>
+        </div>
+      `;
+      list.appendChild(row);
+    }
+  }
+  document.getElementById('dmgStatsClose').onclick = closeDamageStats;
+  document.getElementById('dmgStatsModal').onclick = (e) => {
+    if (e.target.id === 'dmgStatsModal') closeDamageStats();
   };
 
   // 💎 보유 유물 HUD — 좌하단 작은 아이콘 (시각 보조용)
@@ -12321,6 +12544,84 @@
     ctx.fillText('(클릭으로 선택 — 스킵 불가)', CX, H - 28);
     ctx.textAlign = 'start';
   }
+
+  // ♾ R100 클리어 시 엔드리스 모드 선택 모달
+  function drawEndlessOffer() {
+    if (!state.endlessOfferPending) {
+      state._endlessYesBtn = null;
+      state._endlessNoBtn = null;
+      return;
+    }
+    // 배경 어둡게
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.78)';
+    ctx.fillRect(0, 0, W, H);
+    // 타이틀
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#ffd479';
+    ctx.font = 'bold 38px Jua, sans-serif';
+    ctx.fillText('🏆 VICTORY', CX, CY - 110);
+    ctx.fillStyle = '#fff';
+    ctx.font = '20px Jua, sans-serif';
+    ctx.fillText('R100 클리어!', CX, CY - 76);
+    // 안내
+    ctx.fillStyle = '#88e0ff';
+    ctx.font = 'bold 22px Jua, sans-serif';
+    ctx.fillText('♾ 엔드리스 모드로 계속하시겠습니까?', CX, CY - 28);
+    ctx.fillStyle = '#cfd6e3';
+    ctx.font = '13px Jua, sans-serif';
+    ctx.fillText('매 라운드마다 적 HP가 ×1.5 배수로 증가합니다.', CX, CY + 2);
+    ctx.fillStyle = '#9aa3b3';
+    ctx.font = '11px Jua, sans-serif';
+    ctx.fillText('현재 기록은 이미 R100 클리어로 저장되었습니다.', CX, CY + 22);
+    // 버튼
+    const btnW = 160, btnH = 48, btnGap = 16;
+    const totalW = btnW * 2 + btnGap;
+    const btnY = CY + 56;
+    const btnX1 = CX - totalW / 2;
+    const btnX2 = btnX1 + btnW + btnGap;
+    // YES (♾)
+    ctx.fillStyle = '#1a2a14';
+    ctx.fillRect(btnX1, btnY, btnW, btnH);
+    ctx.strokeStyle = '#88ff88';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(btnX1, btnY, btnW, btnH);
+    ctx.fillStyle = '#88ff88';
+    ctx.font = 'bold 16px Jua, sans-serif';
+    ctx.fillText('♾ 계속한다', btnX1 + btnW / 2, btnY + 30);
+    // NO (종료)
+    ctx.fillStyle = '#2a1414';
+    ctx.fillRect(btnX2, btnY, btnW, btnH);
+    ctx.strokeStyle = '#ff8888';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(btnX2, btnY, btnW, btnH);
+    ctx.fillStyle = '#ff8888';
+    ctx.font = 'bold 16px Jua, sans-serif';
+    ctx.fillText('🏁 종료', btnX2 + btnW / 2, btnY + 30);
+    state._endlessYesBtn = { x: btnX1, y: btnY, w: btnW, h: btnH };
+    state._endlessNoBtn  = { x: btnX2, y: btnY, w: btnW, h: btnH };
+    ctx.textAlign = 'start';
+  }
+
+  // ♾ 엔드리스 모드 시작 — pending 해제, 라운드 진행 재개
+  function startEndlessMode() {
+    if (!state.endlessOfferPending) return;
+    state.endless = true;
+    state.endlessOfferPending = false;
+    paused = false;
+    // 보유 유물 효과 일부 리셋 (영원의 빛 등은 유지)
+    planRound();
+    toast('♾ 엔드리스 모드 시작! 적 HP 매 라운드 ×1.5');
+    shake(20, 30);
+    state.comboFlash = 60;
+    state.comboFlashColor = '#88ff88';
+  }
+  // 엔드리스 거부 → 게임 종료
+  function declineEndless() {
+    if (!state.endlessOfferPending) return;
+    state.endlessOfferPending = false;
+    endGame('🏆 100라운드 클리어!', true);
+  }
+
   function drawDamageNumbers() {
     ctx.textAlign = 'center';
     for (const d of state.damageNumbers) {
@@ -12847,9 +13148,10 @@
   };
 
   function renderStats() {
-    // 라운드 + 승천 뱃지
+    // 라운드 + 승천 뱃지 + 엔드리스 표시
     const ascSuffix = (state.ascension && state.ascension > 0) ? ` ⚡${state.ascension}` : '';
-    $('s-round').textContent  = state.round + ascSuffix;
+    const endlessPrefix = state.endless ? '♾ ' : '';
+    $('s-round').textContent  = endlessPrefix + state.round + ascSuffix;
     const cfg = roundConfig(state.round);
     const remain = Math.max(0, cfg.duration - state.roundFrame) / FPS;
     $('s-time').textContent   = remain.toFixed(1) + 's';
@@ -13085,8 +13387,16 @@
       if (e.code === 'Escape') closeRelicDetail();
       return;
     }
+    // 📊 딜량 통계 모달 열려있으면 ESC로 닫기
+    if (document.getElementById('dmgStatsModal').style.display === 'flex') {
+      if (e.code === 'Escape') closeDamageStats();
+      return;
+    }
     if (state.gameOver) {
-      if (e.code === 'KeyR') { reset(); renderPanel(); document.getElementById('pauseBtn').textContent = '⏸ 일시정지'; }
+      if (e.code === 'KeyR') {
+        // 🔁 다시하기 → 캐릭터 선택 화면
+        buildCharacterList(); updateCharStartButton(); showScreen('character');
+      }
       if (e.code === 'Escape') { document.getElementById('menuBtn').click(); }
       return;
     }
@@ -13114,10 +13424,20 @@
       if (state._retryBtn) {
         const b = state._retryBtn;
         if (x >= b.x && x <= b.x + b.w && y >= b.y && y <= b.y + b.h) {
-          reset();
-          renderPanel();
-          document.getElementById('pauseBtn').textContent = '⏸ 일시정지';
+          // 🔁 다시하기 → 캐릭터 선택 화면 (재시작 시 캐릭터 재선택 가능)
           SFX.click();
+          buildCharacterList();
+          updateCharStartButton();
+          showScreen('character');
+          return;
+        }
+      }
+      if (state._dmgStatsBtn) {
+        const b = state._dmgStatsBtn;
+        if (x >= b.x && x <= b.x + b.w && y >= b.y && y <= b.y + b.h) {
+          // 📊 딜량 통계 모달 열기
+          SFX.click();
+          openDamageStats();
           return;
         }
       }
@@ -13130,6 +13450,26 @@
         }
       }
       return;
+    }
+    // ♾ 엔드리스 모드 선택 모달 — 다른 모든 클릭보다 우선
+    if (state.endlessOfferPending) {
+      if (state._endlessYesBtn) {
+        const b = state._endlessYesBtn;
+        if (x >= b.x && x <= b.x + b.w && y >= b.y && y <= b.y + b.h) {
+          SFX.combo();
+          startEndlessMode();
+          return;
+        }
+      }
+      if (state._endlessNoBtn) {
+        const b = state._endlessNoBtn;
+        if (x >= b.x && x <= b.x + b.w && y >= b.y && y <= b.y + b.h) {
+          SFX.click();
+          declineEndless();
+          return;
+        }
+      }
+      return;  // 다른 클릭 무시
     }
     // 💎 유물 제안 클릭 처리 — 카드보다 우선
     if (state.relicOffering && state._relicHitboxes) {
@@ -13838,7 +14178,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 114;
+  const APP_VERSION = 122;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
