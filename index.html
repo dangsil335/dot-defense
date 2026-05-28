@@ -1258,7 +1258,7 @@
     <div id="rank-countdown" style="color:#88ccff; font-weight:bold; font-family:monospace;">- - - - -</div>
   </div>
   <!-- 🏰 모드별 탭 -->
-  <div class="codex-tabs" id="rank-mode-tabs" style="margin:0 12px 8px;">
+  <div class="codex-tabs" id="rank-mode-tabs" style="margin:0 auto 8px; justify-content:center; max-width:520px;">
     <button class="codex-tab active" data-rankmode="standard">⚔️ 클래식</button>
     <button class="codex-tab" data-rankmode="defense">🏰 디펜스</button>
   </div>
@@ -1771,38 +1771,62 @@
   // ===== 상수 =====
   const canvas = document.getElementById('game');
   const ctx = canvas.getContext('2d');
-  // 논리적 크기는 640×640 유지. 내부 해상도는 DPR 만큼 키워 텍스트 선명도 확보.
-  const W = 640, H = 640;
+  // 논리적 크기 — 모드별로 가변 (표준 640×640, TD 540×800)
+  // 내부 해상도는 DPR 만큼 키워 텍스트 선명도 확보.
+  let W = 640, H = 640;
   const DPR = Math.max(1, Math.min(3, window.devicePixelRatio || 1));
-  canvas.width = W * DPR;
-  canvas.height = H * DPR;
-  canvas.style.width = W + 'px';
-  canvas.style.height = H + 'px';
-  ctx.scale(DPR, DPR);
-  ctx.imageSmoothingEnabled = false;
   // ⚠ CX, CY는 가변 — 타워별 컨텍스트 스왑 시 임시로 변경됨 (TD 모드)
   // 그래도 대부분의 시간엔 "캔버스 중앙"의 의미로 동작
   let CX = W/2, CY = H/2;
-  const CX_BASE = CX, CY_BASE = CY;  // 변경 불가 원본 (UI/그림 기준점)
+  let CX_BASE = CX, CY_BASE = CY;  // UI/그림 기준점 (가변 — 모드 전환 시 갱신)
+  function applyCanvasSize(targetMode) {
+    // 모든 모드 공통 — 640×640 정사각 (모바일 가로폭 통일, 오른쪽 여백 제거)
+    // TD는 10×10 셀(셀폭 64) = 640×640 그리드로 캔버스를 가득 채움
+    W = 640; H = 640;
+    canvas.width = W * DPR;
+    canvas.height = H * DPR;
+    canvas.style.width = W + 'px';
+    canvas.style.height = H + 'px';
+    // canvas.width 변경 시 ctx transform 이 초기화되므로 DPR 스케일 재적용
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.scale(DPR, DPR);
+    ctx.imageSmoothingEnabled = false;
+    // 중앙 좌표 갱신
+    CX = W/2; CY = H/2;
+    CX_BASE = CX; CY_BASE = CY;
+  }
+  // 초기값 — 표준 모드 기준으로 캔버스 셋업
+  applyCanvasSize('standard');
 
   const ARENA_R = 290;
   const CORE_R  = 22;
   // 🏰 디펜스 모드 — Tower Defense 클래식 (셀 그리드 미로)
-  // 캔버스 540×720 가정 (세로 비율). 셀 60×60. → 9×12 그리드
+  // 캔버스 640×640 (표준 모드와 동일). 셀 64×64 → 10×10 그리드 (정확히 캔버스 가득)
   const TD = {
-    cellW: 60,                         // 셀 한 변 픽셀
-    cols: 9,
-    rows: 12,
-    canvasW: 540,                      // TD 모드 캔버스 폭
-    canvasH: 720,                      // TD 모드 캔버스 높이
+    cellW: 64,
+    cols: 10,
+    rows: 10,
+    canvasW: 640,
+    canvasH: 640,
   };
+  // 그리드 오프셋 — 캔버스 중앙에 9×12 그리드(540×720) 배치
+  // W=540 → 가로 오프셋 0. H=800 → 세로 오프셋 (800-720)/2 = 40
+  function tdGridOffsetX() { return Math.max(0, (W - TD.cols * TD.cellW) / 2); }
+  function tdGridOffsetY() { return Math.max(0, (H - TD.rows * TD.cellW) / 2); }
   // 셀 (col, row) → 픽셀 (x, y) 중심
   function cellCenter(col, row) {
-    return { x: col * TD.cellW + TD.cellW / 2, y: row * TD.cellW + TD.cellW / 2 };
+    return {
+      x: tdGridOffsetX() + col * TD.cellW + TD.cellW / 2,
+      y: tdGridOffsetY() + row * TD.cellW + TD.cellW / 2,
+    };
   }
   // 셀 영역 (사각형)
   function cellRect(col, row) {
-    return { x: col * TD.cellW, y: row * TD.cellW, w: TD.cellW, h: TD.cellW };
+    return {
+      x: tdGridOffsetX() + col * TD.cellW,
+      y: tdGridOffsetY() + row * TD.cellW,
+      w: TD.cellW, h: TD.cellW,
+    };
   }
   // 두 셀 중심 간 거리 (path 진행용)
   function cellDist(a, b) {
@@ -1816,41 +1840,47 @@
   const TD_MAPS = {
     basic: {
       name: '기본 미로',
-      // 9x12 grid, S자 경로
+      // 10×10 grid, S자 경로 (3-단계 S + 마지막 코어 도착)
       path: [
-        {col:0, row:0}, {col:1, row:0}, {col:2, row:0}, {col:3, row:0},
-        {col:4, row:0}, {col:5, row:0}, {col:6, row:0}, {col:7, row:0},
-        {col:7, row:1}, {col:7, row:2}, {col:7, row:3},
-        {col:6, row:3}, {col:5, row:3}, {col:4, row:3}, {col:3, row:3},
-        {col:2, row:3}, {col:1, row:3},
-        {col:1, row:4}, {col:1, row:5}, {col:1, row:6},
-        {col:2, row:6}, {col:3, row:6}, {col:4, row:6},
-        {col:5, row:6}, {col:6, row:6}, {col:7, row:6},
-        {col:7, row:7}, {col:7, row:8}, {col:7, row:9},
-        {col:6, row:9}, {col:5, row:9}, {col:4, row:9}, {col:3, row:9},
-        {col:2, row:9}, {col:1, row:9},
-        {col:1, row:10}, {col:1, row:11},
-        {col:2, row:11}, {col:3, row:11}, {col:4, row:11},
+        // 1단계: Row 0 (왼→오)
+        {col:0, row:0}, {col:1, row:0}, {col:2, row:0}, {col:3, row:0}, {col:4, row:0},
+        {col:5, row:0}, {col:6, row:0}, {col:7, row:0}, {col:8, row:0}, {col:9, row:0},
+        // Row 1-2 (col 9 아래)
+        {col:9, row:1}, {col:9, row:2},
+        // 2단계: Row 3 (오→왼)
+        {col:9, row:3}, {col:8, row:3}, {col:7, row:3}, {col:6, row:3}, {col:5, row:3},
+        {col:4, row:3}, {col:3, row:3}, {col:2, row:3}, {col:1, row:3}, {col:0, row:3},
+        // Row 4-5 (col 0 아래)
+        {col:0, row:4}, {col:0, row:5},
+        // 3단계: Row 6 (왼→오)
+        {col:0, row:6}, {col:1, row:6}, {col:2, row:6}, {col:3, row:6}, {col:4, row:6},
+        {col:5, row:6}, {col:6, row:6}, {col:7, row:6}, {col:8, row:6}, {col:9, row:6},
+        // Row 7-8 (col 9 아래)
+        {col:9, row:7}, {col:9, row:8},
+        // 4단계: Row 9 (오→왼, 코어까지)
+        {col:9, row:9}, {col:8, row:9}, {col:7, row:9}, {col:6, row:9}, {col:5, row:9},
       ],
-      // 타워 설치 가능 셀 — 경로 사이 '주머니' 셀 전부 (42칸, 전략적 자유도 ↑)
+      // 타워 설치 가능 셀 — 경로 사이 '주머니' 셀
+      // Row 1-2 (path col 9): cols 0-8 가능 / Row 4-5 (path col 0): cols 1-9 가능 / Row 7-8 (path col 9): cols 0-8 가능
+      // Row 9 좌측(cols 0-4): 코어 이전 영역에 추가 슬롯
       slots: [
-        // Row 1 (path row 0 ↔ row 3 사이, 상단)
-        {col:1, row:1}, {col:2, row:1}, {col:3, row:1}, {col:4, row:1}, {col:5, row:1}, {col:6, row:1},
-        // Row 2 (path row 0 ↔ row 3 사이, 하단)
-        {col:1, row:2}, {col:2, row:2}, {col:3, row:2}, {col:4, row:2}, {col:5, row:2}, {col:6, row:2},
-        // Row 4 (path row 3 ↔ row 6 사이, 상단)
-        {col:2, row:4}, {col:3, row:4}, {col:4, row:4}, {col:5, row:4}, {col:6, row:4}, {col:7, row:4},
-        // Row 5 (path row 3 ↔ row 6 사이, 하단)
-        {col:2, row:5}, {col:3, row:5}, {col:4, row:5}, {col:5, row:5}, {col:6, row:5}, {col:7, row:5},
-        // Row 7 (path row 6 ↔ row 9 사이, 상단)
-        {col:1, row:7}, {col:2, row:7}, {col:3, row:7}, {col:4, row:7}, {col:5, row:7}, {col:6, row:7},
-        // Row 8 (path row 6 ↔ row 9 사이, 하단)
-        {col:1, row:8}, {col:2, row:8}, {col:3, row:8}, {col:4, row:8}, {col:5, row:8}, {col:6, row:8},
-        // Row 10 (path row 9 ↔ row 11 사이)
-        {col:2, row:10}, {col:3, row:10}, {col:4, row:10}, {col:5, row:10}, {col:6, row:10}, {col:7, row:10},
+        // Row 1 — 6 슬롯
+        {col:1, row:1}, {col:2, row:1}, {col:4, row:1}, {col:5, row:1}, {col:7, row:1}, {col:8, row:1},
+        // Row 2 — 6 슬롯
+        {col:0, row:2}, {col:2, row:2}, {col:3, row:2}, {col:5, row:2}, {col:6, row:2}, {col:8, row:2},
+        // Row 4 — 6 슬롯
+        {col:1, row:4}, {col:2, row:4}, {col:4, row:4}, {col:5, row:4}, {col:7, row:4}, {col:8, row:4},
+        // Row 5 — 6 슬롯
+        {col:2, row:5}, {col:3, row:5}, {col:5, row:5}, {col:6, row:5}, {col:8, row:5}, {col:9, row:5},
+        // Row 7 — 6 슬롯
+        {col:1, row:7}, {col:2, row:7}, {col:4, row:7}, {col:5, row:7}, {col:7, row:7}, {col:8, row:7},
+        // Row 8 — 6 슬롯
+        {col:0, row:8}, {col:2, row:8}, {col:3, row:8}, {col:5, row:8}, {col:6, row:8}, {col:8, row:8},
+        // Row 9 좌측 — 코어 앞 3 슬롯
+        {col:1, row:9}, {col:2, row:9}, {col:3, row:9},
       ],
       // 본진 (적 도달 = 타워 HP 감소)
-      core: {col:4, row:11},
+      core: {col:5, row:9},
       // 적 진입점
       spawn: {col:0, row:0},
     },
@@ -3001,16 +3031,19 @@
 
     starfall: {
       name: '별빛', baseCost: 55, color: '#ffe070',
-      desc: lv => `${4+lv}개 별 낙하 (적 추적) · DMG ${6+lv*3} · 반경 ${40+lv*5}`,
-      // 다수의 별이 적의 위치를 추적해 낙하. 적 없으면 무작위 위치.
+      // 사거리(targetRange): 타워 중심에서 이 거리 내의 적만 표적. 별 폭발 반경(radius)은 별도.
+      desc: lv => `사거리 ${160+lv*8} · ${3+Math.ceil(lv/2)}개 별 · DMG ${6+lv*3} · 폭발 ${30+lv*4}`,
+      range: lv => 160 + lv * 8,   // 표적 사거리
       init(ab) { ab.cooldown = 90; ab.stars = []; ab.flashes = []; },
       tick(ab) {
         for (const f of ab.flashes) f.life--;
         ab.flashes = ab.flashes.filter(f => f.life > 0);
+        // 낙하 진행 — 부드러운 50프레임 동안 강하 (이전 30 → 60 으로 늘려 끊김 완화)
+        const FALL_FRAMES = 50;
         for (const s of ab.stars) {
           s.t++;
-          if (s.t >= 30) {
-            const radius = 40 + ab.level * 5;
+          if (s.t >= FALL_FRAMES) {
+            const radius = 30 + ab.level * 4;
             const dmg = 6 + ab.level * 3;
             for (const e of state.enemies) {
               if (e.hp <= 0) continue;
@@ -3020,53 +3053,63 @@
                 spawnParticles(ex, ey, '#ffe070', 3);
               }
             }
-            ab.flashes.push({ x: s.x, y: s.y, r: radius, life: 12 });
+            ab.flashes.push({ x: s.x, y: s.y, r: radius, life: 14 });
             s.done = true;
           }
         }
         ab.stars = ab.stars.filter(s => !s.done);
         if (--ab.cooldown > 0) return;
-        const count = 4 + ab.level;
-        // 살아있는 적의 위치에 약간의 오프셋을 두고 떨어뜨림 (보스/강한 적 우선)
-        const pool = state.enemies.filter(e => e.hp > 0);
+        const count = 3 + Math.ceil(ab.level / 2);
+        const targetRange = 160 + ab.level * 8;
+        // 🎯 표적 — 타워 사거리 내의 적만 (전 맵을 때리던 문제 해결)
+        const pool = state.enemies.filter(e => {
+          if (e.hp <= 0) return false;
+          const [ex, ey] = enemyXY(e);
+          return (ex - CX) * (ex - CX) + (ey - CY) * (ey - CY) <= targetRange * targetRange;
+        });
+        if (pool.length === 0) {
+          ab.cooldown = 20;   // 적 없으면 짧게 대기 후 재시도
+          return;
+        }
         for (let i = 0; i < count; i++) {
-          let sx, sy;
-          if (pool.length > 0) {
-            // 무작위 적 위치에 ±25px 오프셋 (보스 추적 + 일반 적 분산)
-            const target = pool[Math.floor(Math.random() * pool.length)];
-            const [tx, ty] = enemyXY(target);
-            sx = tx + (Math.random() - 0.5) * 50;
-            sy = ty + (Math.random() - 0.5) * 50;
-          } else {
-            const a = Math.random() * Math.PI * 2;
-            const r = Math.random() * (ARENA_R - 30);
-            sx = CX + Math.cos(a) * r; sy = CY + Math.sin(a) * r;
-          }
-          ab.stars.push({ x: sx, y: sy, t: -i * 4 });
+          // 사거리 내 무작위 적에 ±20px 오프셋
+          const target = pool[Math.floor(Math.random() * pool.length)];
+          const [tx, ty] = enemyXY(target);
+          const sx = tx + (Math.random() - 0.5) * 40;
+          const sy = ty + (Math.random() - 0.5) * 40;
+          // 스타거 작게 (-i*2) — 시각적 연속성 ↑
+          ab.stars.push({ x: sx, y: sy, t: -i * 2 });
         }
         ab.cooldown = Math.max(45, 100 - ab.level * 5);
       },
       draw(ab) {
+        const FALL_FRAMES = 50;
         for (const s of ab.stars) {
           if (s.t < 0) continue;
-          const progress = s.t / 30;
-          const my = s.y - (1 - progress) * 150;
-          ctx.globalAlpha = 0.4;
-          ctx.fillStyle = '#ffe070'; ctx.fillRect(s.x - 2, my - 22, 4, 20);
-          ctx.globalAlpha = 1;
-          ctx.fillStyle = '#ffffff'; ctx.fillRect(s.x - 3, my - 3, 6, 6);
+          const progress = s.t / FALL_FRAMES;
+          const my = s.y - (1 - progress) * 160;
+          // 모션 트레일 — 5단 점진 페이드 (끊김 완화 — 이전 단일 사각형 → 여러 단)
           ctx.fillStyle = '#ffe070';
-          ctx.fillRect(s.x - 5, my, 10, 1);
-          ctx.fillRect(s.x, my - 5, 1, 10);
+          for (let k = 0; k < 5; k++) {
+            ctx.globalAlpha = 0.5 - k * 0.09;
+            ctx.fillRect(s.x - 2, my - 4 - k * 7, 4, 6);
+          }
+          // 헤드 — 좀 더 크게
+          ctx.globalAlpha = 1;
+          ctx.fillStyle = '#ffffff'; ctx.fillRect(s.x - 4, my - 4, 8, 8);
+          ctx.fillStyle = '#ffe070';
+          ctx.fillRect(s.x - 6, my - 1, 12, 2);
+          ctx.fillRect(s.x - 1, my - 6, 2, 12);
+          // 그림자
           ctx.fillStyle = `rgba(0, 0, 0, ${0.2 + progress * 0.3})`;
           ctx.beginPath(); ctx.arc(s.x, s.y, 4 + progress * 8, 0, Math.PI*2); ctx.fill();
         }
         for (const f of ab.flashes) {
-          const t = 1 - f.life / 12;
-          ctx.globalAlpha = f.life / 12;
+          const t = 1 - f.life / 14;
+          ctx.globalAlpha = f.life / 14;
           ctx.fillStyle = '#ffe070';
           ctx.beginPath(); ctx.arc(f.x, f.y, f.r * t, 0, Math.PI*2); ctx.fill();
-          ctx.globalAlpha = (f.life / 12) * 0.7;
+          ctx.globalAlpha = (f.life / 14) * 0.7;
           ctx.fillStyle = '#ffffff';
           ctx.beginPath(); ctx.arc(f.x, f.y, f.r * t * 0.5, 0, Math.PI*2); ctx.fill();
         }
@@ -10121,13 +10164,21 @@
   }
   async function _submitGlobalScoreImpl() {
     _lastSubmitError = null;
-    if (!isSupabaseEnabled()) { _lastSubmitError = 'Supabase 미설정'; return; }
+    if (!isSupabaseEnabled()) { _lastSubmitError = 'Supabase 미설정'; console.warn('점수 제출: Supabase 미설정'); return; }
     const sb = getSupabase();
-    if (!sb) { _lastSubmitError = 'Supabase 클라이언트 생성 실패'; return; }
+    if (!sb) { _lastSubmitError = 'Supabase 클라이언트 생성 실패'; console.warn('점수 제출: 클라이언트 생성 실패'); return; }
     const nickname = getNickname();
-    if (!nickname) { _lastSubmitError = '닉네임 없음'; return; }
+    if (!nickname) { _lastSubmitError = '닉네임 없음'; console.warn('점수 제출: 닉네임 미설정'); return; }
     const userId = ensureUserId();
-    const gameMode = state.mode || 'standard';  // 🏰 모드별 분리
+    // ⚠ 모든 state 값을 await 이전에 캡처 — endGame 후 state.score 가 초기화되거나
+    //    유저가 새 게임 시작 시 state.score = 0 으로 덮어쓰는 race 방어
+    const gameMode = state.mode || 'standard';
+    const newScore = state.score || 0;
+    const gameRound = state.gameWin ? MAX_ROUND : Math.max(1, state.round || 1);
+    const gameAsc = state.ascension || 0;
+    const gameChar = state.character || 'standard';
+    const titleVal = getSelectedTitle() || null;
+    if (newScore <= 0) { _lastSubmitError = '점수 0'; console.warn('점수 제출: 점수가 0'); return; }
     try {
       // 같은 모드의 최고 기록만 조회 (모드 컬럼 미생성 시 user_id 만으로 조회 → 전체 fallback)
       let existing = null;
@@ -10142,21 +10193,19 @@
       } else {
         existing = tryQuery.data;
       }
-      const newScore = state.score || 0;
       if (existing && existing.score >= newScore) {
-        console.log(`기존 점수(${existing.score})가 더 높아 제출 생략 (mode=${gameMode})`);
+        console.log(`기존 점수(${existing.score})가 더 높아 제출 생략 (mode=${gameMode}, new=${newScore})`);
         return;
       }
       const baseRow = {
         user_id: userId,
         nickname: nickname,
         score: newScore,
-        round: state.gameWin ? MAX_ROUND : Math.max(1, state.round),
-        ascension: state.ascension || 0,
-        character: state.character || 'standard',
+        round: gameRound,
+        ascension: gameAsc,
+        character: gameChar,
         updated_at: new Date().toISOString(),
       };
-      const titleVal = getSelectedTitle() || null;
       // 1차 시도: mode + title 포함
       let res = await sb.from('rankings').upsert(
         { ...baseRow, title: titleVal, mode: gameMode },
@@ -11193,7 +11242,16 @@
   }
 
   // ===== 능력용 헬퍼 =====
+  // 🎯 TD 사거리 캡 적용 — state.currentAbilityRange 가 설정돼있으면 그 값으로 캡
+  //    Infinity 면 캡 없음, null/undefined 면 표준 모드(원래 동작)
+  function tdCappedRange(range) {
+    const cap = state.currentAbilityRange;
+    if (cap === null || cap === undefined) return range;
+    if (cap === Infinity) return range;
+    return Math.min(range, cap);
+  }
   function findNearestEnemy(range) {
+    range = tdCappedRange(range);
     let target = null, best = Infinity;
     const r2 = range * range;
     for (const e of state.enemies) {
@@ -11205,6 +11263,7 @@
     return target;
   }
   function findFarthestEnemy(range) {
+    range = tdCappedRange(range);
     let target = null, best = -1;
     const r2 = range * range;
     for (const e of state.enemies) {
@@ -12444,11 +12503,14 @@
         if (!anyEnemyAlive) continue;
         state.currentAbilityTier = def.isTriple ? 'triple' : (def.isCombo ? 'combo' : 'basic');
         state.currentAbilityId = tower.ab.id;
+        // 🎯 TD 모드: 능력별 사거리 캡 — findNearestEnemy/findFarthestEnemy 에서 자동 적용됨
+        state.currentAbilityRange = getAbilityRange(tower.ab.id, tower.ab.level);
         const oldCX = CX, oldCY = CY;
         CX = tower.x; CY = tower.y;
         try { def.tick(tower.ab); }
         catch (e) { console.warn('tower tick error', tower.ab.id, e); }
         CX = oldCX; CY = oldCY;
+        state.currentAbilityRange = null;
         // 💎 흡혈의 망토 — 능력 발동 시 골드
         const re = state.relicEffects;
         if (re && re.abilityUseGold > 0) {
@@ -12910,17 +12972,17 @@
     }
   }
 
-  // 🏰 TD Prep Phase Start 버튼 — 상단에 배치 (하단 인라인 패널과 충돌 회피)
+  // 🏰 TD Prep Phase Start 버튼 — 상단 마진 영역에 배치 (40px 그리드 오프셋 활용)
   function drawTDStartButton() {
-    const bw = 220, bh = 50;
+    const bw = 260, bh = 32;
     const bx = (W - bw) / 2;
-    const by = 16;   // 상단 16px 마진
+    const by = 4;   // 상단 4px
     state._tdStartBtn = { x: bx, y: by, w: bw, h: bh };
     // 펄스 글로우
     const pulse = 0.6 + 0.4 * Math.sin(state.t * 0.08);
     ctx.save();
     ctx.shadowColor = '#7ad7ff';
-    ctx.shadowBlur = 12 + 8 * pulse;
+    ctx.shadowBlur = 10 + 6 * pulse;
     ctx.fillStyle = '#2a3850';
     ctx.fillRect(bx, by, bw, bh);
     ctx.restore();
@@ -12928,12 +12990,9 @@
     ctx.lineWidth = 2;
     ctx.strokeRect(bx, by, bw, bh);
     ctx.fillStyle = '#fff';
-    ctx.font = 'bold 18px Jua, sans-serif';
+    ctx.font = 'bold 14px Jua, sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('▶ 웨이브 시작', bx + bw / 2, by + bh / 2 + 6);
-    ctx.font = '11px Jua, sans-serif';
-    ctx.fillStyle = '#cfe3ff';
-    ctx.fillText('타워를 배치한 뒤 눌러주세요', bx + bw / 2, by + bh + 16);
+    ctx.fillText('▶ 웨이브 시작 (타워 배치 후 클릭)', bx + bw / 2, by + bh / 2 + 5);
     ctx.textAlign = 'start';
   }
   function drawTower() {
@@ -13396,6 +13455,87 @@
 
       ctx.textAlign = 'start';
     }
+    // 🎯 선택된 타워의 사거리 표시 (인라인 패널 열린 상태)
+    if (state.selectedTower) {
+      const t = state.selectedTower;
+      const range = getAbilityRange(t.ab.id, t.ab.level);
+      if (range === Infinity) {
+        // 무제한 사거리: 캔버스 가장자리 점선 + "전 맵" 라벨
+        ctx.save();
+        ctx.strokeStyle = 'rgba(255, 212, 121, 0.45)';
+        ctx.lineWidth = 2;
+        ctx.setLineDash([8, 6]);
+        ctx.strokeRect(2, 2, W - 4, H - 4);
+        ctx.setLineDash([]);
+        ctx.fillStyle = '#ffd479';
+        ctx.font = 'bold 11px Jua, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('∞ 전 맵 사거리', t.x, t.y - 28);
+        ctx.textAlign = 'start';
+        ctx.restore();
+      } else if (range > 0) {
+        ctx.save();
+        ctx.strokeStyle = 'rgba(122, 215, 255, 0.65)';
+        ctx.fillStyle = 'rgba(122, 215, 255, 0.07)';
+        ctx.lineWidth = 1.5;
+        ctx.setLineDash([6, 4]);
+        ctx.beginPath();
+        ctx.arc(t.x, t.y, range, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.restore();
+      }
+    }
+    // 🎯 선택된 슬롯 (배치 전): 사거리 미리보기는 생략 (능력 미정)
+    //    대신 슬롯 자체에 강조 표시
+    if (state.selectedSlot) {
+      const sc = cellCenter(state.selectedSlot.col, state.selectedSlot.row);
+      ctx.save();
+      ctx.strokeStyle = `rgba(255, 212, 121, ${0.5 + 0.3 * Math.sin(state.t * 0.15)})`;
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.arc(sc.x, sc.y, TD.cellW * 0.38, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+    }
+  }
+  // 🎯 무제한 사거리 능력 ID — 저격, 체인, 낙하, 시간/중력/번개 등 글로벌 또는 장거리 특수
+  const TD_UNLIMITED_RANGE_IDS = new Set([
+    // 저격류
+    'sniper', 'scholarSnipe', 'headshot', 'purgeShot',
+    // 장거리 광선
+    'railgun', 'siegeBeam', 'twinBeam', 'beam', 'laser', 'plasmaBeam',
+    // 체인 번개
+    'chain', 'chainStorm', 'luckyChain', 'plasmaCataclysm', 'absoluteThunder', 'thunder',
+    // 낙하 (전 맵)
+    'meteor', 'cosmicCollapse', 'stellarCollapse', 'swordRain',
+    // 시간 효과
+    'timeStop', 'timePrison', 'eternalMoment', 'voidStop',
+    // 중력/공허 (전 맵 끌어당김)
+    'blackhole', 'voidField', 'voidNova', 'voidIceVortex', 'gravityWell', 'pullField',
+    // 글로벌 폭풍
+    'solarStorm', 'echoStorm',
+    // 관통/돌격
+    'piercer', 'piercingChain',
+    // SSR 글로벌
+    'celestialSymphony', 'starSong', 'cosmicChorus',
+    // 시공나비 — 시간 능력
+    'timeButterfly',
+  ]);
+  // 🎯 능력별 표적 사거리 — TD 모드 사거리 캡 + 시각 표시용
+  // def.range(lv) 가 정의돼있으면 사용, 아니면 능력 타입/티어별 기본값
+  // 무제한 능력은 Infinity (캡 해제)
+  function getAbilityRange(abilityId, level) {
+    const def = ABILITY_DEFS[abilityId];
+    if (!def) return 0;
+    if (def.isPassive) return 0;
+    if (TD_UNLIMITED_RANGE_IDS.has(abilityId)) return Infinity;
+    if (typeof def.range === 'function') return def.range(level || 1);
+    // 티어별 기본
+    if (def.isTriple) return 320;
+    if (def.isCombo)  return 280;
+    return 240;  // 기본 액티브
   }
 
   // hex → 'r, g, b'
@@ -13853,8 +13993,12 @@
         const canAfford = state.gold >= cost;
         const btn = document.createElement('button');
         btn.style.cssText = `display:flex; align-items:center; gap:8px; width:100%; padding:6px 8px; background:#141822; border:1px solid ${canAfford ? d.color : '#2a2f3a'}; border-left:3px solid ${d.color || '#7ad7ff'}; border-radius:5px; cursor:${canAfford ? 'pointer' : 'not-allowed'}; opacity:${canAfford ? 1 : 0.45}; color:inherit; text-align:left; font:inherit; margin-bottom:4px;`;
+        const iconPath = getIconPath(id);
+        const iconHtml = iconPath
+          ? `<img src="${iconPath}" style="width:28px; height:28px; flex-shrink:0; image-rendering:pixelated;" onerror="this.outerHTML='<div style=\\'font-size:18px;color:${d.color || '#fff'};\\'>'+'${d.name.charAt(0)}'+'</div>'">`
+          : `<div style="font-size:18px; flex-shrink:0; color:${d.color || '#fff'};">${d.name.charAt(0)}</div>`;
         btn.innerHTML = `
-          <div style="font-size:18px; flex-shrink:0; color:${d.color || '#fff'};">${d.name.charAt(0)}</div>
+          ${iconHtml}
           <div style="flex:1; min-width:0;">
             <div style="font-size:12px; font-weight:bold; color:${d.color || '#fff'};">${d.name}</div>
             <div style="font-size:10px; color:#9aa3b3; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${d.desc(1)}</div>
@@ -15068,8 +15212,10 @@
           return;
         }
       }
-      const col = Math.floor(x / TD.cellW);
-      const row = Math.floor(y / TD.cellW);
+      // 그리드 오프셋 보정 (캔버스 중앙 정렬 대응)
+      const gx = tdGridOffsetX(), gy = tdGridOffsetY();
+      const col = Math.floor((x - gx) / TD.cellW);
+      const row = Math.floor((y - gy) / TD.cellW);
       const map = getActiveTDMap();
       // 1) 기존 타워 클릭 → 강화 모달
       const existing = (state.towers || []).find(t => t.col === col && t.row === row);
@@ -15416,16 +15562,12 @@
     if (globalRankEl) globalRankEl.classList.toggle('show', name === 'globalRank');
     gameEl.style.display = name === 'game' ? 'flex' : 'none';
     if (name === 'game') {
-      // 🏰 디펜스 모드는 캔버스 CSS 스타일 비율을 세로로 더 길게 — 시각적 가독성
-      // (논리적 크기 W,H는 그대로, CSS만 조정)
+      // 🏰 캔버스 논리 크기 적용 — 모든 모드 640×640 (모바일 오른쪽 여백 제거)
       const isDefenseLayout = state && state.mode === 'defense';
-      if (isDefenseLayout) {
-        canvas.style.maxHeight = '85vh';
-        canvas.style.aspectRatio = '5 / 6';   // 세로로 약간 더 길게 (5:6)
-      } else {
-        canvas.style.maxHeight = '';
-        canvas.style.aspectRatio = '1 / 1';   // 정사각
-      }
+      applyCanvasSize(isDefenseLayout ? 'defense' : 'standard');
+      // CSS aspect-ratio 는 canvas.style.width/height (W:H = 1:1) 그대로 사용 → 왜곡 없음
+      canvas.style.aspectRatio = '';
+      canvas.style.maxHeight = '';
       const usePortrait = window.innerHeight > window.innerWidth * 1.05;
       collapseAbilities(usePortrait, false);
       // rAF로 한 프레임 양보 후 측정 → 정확한 natural size 보장
@@ -15617,8 +15759,8 @@
   // 🌐 글로벌 랭킹 메뉴 + 닉네임 변경 + 모달
   document.getElementById('globalRankBtn').onclick = () => {
     if (!getNickname()) { openNicknameModal(true); return; }
-    // 🏰 마지막 선택 모드(또는 standard) 탭 자동 활성화
-    _selectedRankMode = (META.lastSelectedMode === 'defense') ? 'defense' : 'standard';
+    // 🏆 디폴트: 좌측 첫 탭(클래식) 고정 — 진입 시 항상 클래식부터 시작
+    _selectedRankMode = 'standard';
     document.querySelectorAll('#rank-mode-tabs .codex-tab').forEach(t =>
       t.classList.toggle('active', t.dataset.rankmode === _selectedRankMode));
     showScreen('globalRank');
@@ -15899,7 +16041,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 152;
+  const APP_VERSION = 156;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
