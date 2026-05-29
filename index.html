@@ -18,6 +18,15 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <title>Dot Defense</title>
 <style>
+  /* 🚫 스크롤바 전역 숨김 — PC/모바일 모두 시각적으로 깔끔하게 (스크롤 기능은 유지) */
+  * {
+    scrollbar-width: none;        /* Firefox */
+    -ms-overflow-style: none;     /* IE/구 Edge */
+  }
+  *::-webkit-scrollbar {
+    display: none;                /* Chrome, Safari, Edge (Webkit) */
+    width: 0; height: 0;
+  }
   html, body {
     margin: 0; padding: 0;
     height: 100vh;
@@ -1955,11 +1964,6 @@
       <div id="gacha-banner-pickup-info" class="gacha-banner-pickup-info">SSR 1.0% · SR 5% · R 94%</div>
     </div>
 
-    <!-- 상단 우측: 컬렉션 진행도 -->
-    <div class="gacha-banner-collection-pill">
-      📋 <span id="gacha-collected">0</span>/<span id="gacha-total">0</span>
-    </div>
-
     <!-- 하단 오버레이: 뽑기 버튼만 (일러스트 보존) -->
     <div class="gacha-banner-bottom-overlay">
       <!-- 픽업 캐릭터 — 숨김 (불필요한 가림 방지). 정보는 상단 칩 + 컬렉션에서 확인 -->
@@ -1984,11 +1988,6 @@
     <button id="gachaConvertStardust" class="gacha-secondary-btn">
       ⭐ 4,000 → 💎 1
     </button>
-    <details class="gacha-collection-details">
-      <summary>📋 컬렉션</summary>
-      <div id="gacha-collection" class="gacha-collection-grid"></div>
-      <div class="gacha-refund-info">중복 시 환불: R 150★ / SR 400★ / SSR 800★ (만렙)</div>
-    </details>
   </div>
 </div>
 
@@ -2030,26 +2029,20 @@
   <div id="shop-list"></div>
 </div>
 
-<!-- ===== 🌟 능력 영구 강화 — 별도 화면 (강화소와 다른 색다른 디자인) ===== -->
+<!-- ===== 🌟 능력 영구 강화 — 별도 화면 (강화소와 동일한 UI 구조로 통일) ===== -->
 <div id="abilityPerma" class="screen">
-  <div class="codex-header" style="background:linear-gradient(135deg, #2a0c2a 0%, #1a0c2a 100%); border-bottom:2px solid #ff80ff;">
-    <h2 style="color:#ff80ff; text-shadow:0 0 12px rgba(255,128,255,0.5);">🌟 능력 영구 강화</h2>
+  <div class="codex-header">
+    <h2>능력 영구 강화</h2>
     <button id="abilityPermaBack" class="codex-back">← 메뉴로</button>
   </div>
-  <div class="stardust-bar" style="background:linear-gradient(90deg, #1a0c2a 0%, #2a1428 100%); border-bottom:1px solid #ff80ff;">
-    <span style="color:#ff80ff;">⭐ 스타더스트:</span> <span id="perma-stardust-count" style="color:#ffd479; font-weight:bold;">0</span> ★
-  </div>
-  <div id="perma-intro" style="padding:10px 14px; font-size:12px; color:#cfd6e3; background:linear-gradient(135deg, rgba(255,128,255,0.08), rgba(122,215,255,0.05)); border-left:3px solid #ff80ff; margin:12px; border-radius:0 6px 6px 0; line-height:1.5;">
-    💫 게임 종료 후에도 유지되는 <b style="color:#ff80ff;">능력별 영구 강화</b>. lv당 +0.5%, 최대 lv 20 (+10%).<br/>
-    <span style="color:#9aa3b3; font-size:11px;">⚡ 액티브/콤보 → 데미지 · ⭐ 패시브 → 능력별 고유 효과 (흡혈 → 골드, 연구 → 강화 할인 등)</span>
-  </div>
-  <div class="codex-tabs" id="perma-tabs" style="margin:0 12px 6px; justify-content:center; max-width:600px; flex-wrap:wrap;">
+  <div class="stardust-bar">스타더스트: <span id="perma-stardust-count">0</span> ★</div>
+  <div class="codex-tabs" id="perma-tabs" style="overflow-x:auto; flex-wrap:nowrap;">
     <button class="codex-tab active" data-permatab="active">⚡ 액티브</button>
     <button class="codex-tab" data-permatab="passive">⭐ 패시브</button>
     <button class="codex-tab" data-permatab="combo">🔥 조합</button>
     <button class="codex-tab" data-permatab="gacha">🎰 가챠</button>
   </div>
-  <div id="perma-grid" style="padding:0 12px 20px;"></div>
+  <div id="perma-grid"></div>
 </div>
 
 <!-- ===== 기록 화면 ===== -->
@@ -17757,10 +17750,6 @@
     // 헤더 정보 갱신
     document.getElementById('crystal-count').textContent = (META.crystals || 0).toLocaleString();
     document.getElementById('gacha-stardust').textContent = (META.stardust || 0).toLocaleString();
-    const allGachaIds = [...GACHA_POOL.R, ...GACHA_POOL.SR, ...GACHA_POOL.SSR];
-    const owned = allGachaIds.filter(id => META.gachaUnlocked && META.gachaUnlocked[id] > 0).length;
-    document.getElementById('gacha-collected').textContent = owned;
-    document.getElementById('gacha-total').textContent = allGachaIds.length;
 
     // 🎴 배너 갱신 — 현재 배너 이미지 + 픽업 표시
     const banner = getCurrentBanner();
@@ -17782,7 +17771,10 @@
     const infoEl = document.getElementById('gacha-banner-pickup-info');
     if (infoEl) {
       const r = banner.rates;
-      infoEl.textContent = `SSR ${(r.SSR*100).toFixed(1)}% · SR ${(r.SR*100).toFixed(0)}% · R ${(r.R*100).toFixed(0)}%`;
+      // 픽업 캐릭터 이름 표시 — 어떤 SSR이 픽업인지 명확히
+      const featChar = banner.featured ? CHARACTERS[banner.featured] : null;
+      const featName = featChar ? featChar.name : 'SSR';
+      infoEl.textContent = `픽업: ${featName} ${(r.SSR*100).toFixed(1)}% · SR ${(r.SR*100).toFixed(0)}% · R ${(r.R*100).toFixed(0)}%`;
     }
     // 픽업 캐릭터 미니 아이콘 (SSR + SR)
     const pickupEl = document.getElementById('gacha-pickup-icons');
@@ -17824,79 +17816,7 @@
     document.getElementById('gachaPull1').disabled = (META.crystals || 0) < GACHA_COST;
     document.getElementById('gachaPull10').disabled = (META.crystals || 0) < GACHA_COST_10;
 
-    // 컬렉션
-    const colList = document.getElementById('gacha-collection');
-    colList.innerHTML = '';
-    for (const rarity of ['SSR', 'SR', 'R']) {
-      for (const charId of GACHA_POOL[rarity]) {
-        const c = CHARACTERS[charId];
-        if (!c) continue;
-        const cnt = (META.gachaUnlocked && META.gachaUnlocked[charId]) || 0;
-        const hasIt = cnt > 0;
-        const card = document.createElement('div');
-        const rarityColor = rarity === 'SSR' ? '#ffd479' : (rarity === 'SR' ? '#c084ff' : '#7ad7ff');
-        card.style.cssText = `
-          background:${hasIt ? '#141822' : '#0f1219'};
-          border:1px solid #2a2f3a; border-left:4px solid ${rarityColor};
-          padding:10px 12px; display:flex; flex-direction:column; position:relative;
-          ${hasIt ? '' : 'opacity:0.5;'}
-        `;
-        // 이미지 (있으면 우상단에 작게)
-        const charImgSrc = getCharacterImageSrc(charId);
-        const imgHTML = charImgSrc
-          ? `<img src="${charImgSrc}" style="position:absolute;top:8px;right:8px;width:44px;height:44px;object-fit:contain;image-rendering:pixelated;background:#000;border-radius:4px;${hasIt ? '' : 'filter:grayscale(1) brightness(0.4);'}" />`
-          : '';
-        const stars = getCharStars(charId);
-        const starText = hasIt ? '★'.repeat(stars) + '☆'.repeat(CHAR_MAX_STARS - stars) : '';
-        const starColor = stars >= 8 ? '#ff80ff' : (stars >= 4 ? '#ffd060' : '#ffd479');
-        // ⭐ 별 등급별 퍼크 표시 (모든 캐릭터 공통 + SSR 4★/8★ 해금)
-        let starUnlockInfo = '';
-        if (hasIt) {
-          const perks = [
-            { lv: 2, label: '쿨다운 -10%' },
-            { lv: 3, label: '발사 개수 +1' },
-            { lv: 4, label: '범위 +15%' },
-            { lv: 5, label: '효과 강도 +25%' },
-            { lv: 6, label: '발사 개수 +2 (누적 +3)' },
-            { lv: 7, label: '광역 반경 +25%' },
-          ];
-          const rows = perks.map(p => {
-            const has = stars >= p.lv ? '🔓' : '🔒';
-            const c = stars >= p.lv ? '#cfd6e3' : '#5a5f6a';
-            return `<div>${has} ${p.lv}★ <span style="color:${c};">${p.label}</span></div>`;
-          });
-          // SSR 별 해금 능력: 4★/8★ 자리를 능력 해금으로 강조 (퍼크 대체)
-          const unlocks = CHAR_STAR_UNLOCKS[charId];
-          if (unlocks) {
-            if (unlocks[4] && unlocks[4][0]) {
-              const d4 = ABILITY_DEFS[unlocks[4][0]];
-              if (d4) {
-                rows[2] = `<div>${stars >= 4 ? '🔓' : '🔒'} 4★ <span style="color:${stars >= 4 ? '#ffd060' : '#5a5f6a'};font-weight:bold;">⭐ ${d4.name} 해금 + 범위 +15%</span></div>`;
-              }
-            }
-            if (unlocks[8] && unlocks[8][0]) {
-              const d8 = ABILITY_DEFS[unlocks[8][0]];
-              if (d8) {
-                rows.push(`<div>${stars >= 8 ? '🔓' : '🔒'} 8★ <span style="color:${stars >= 8 ? '#ff80ff' : '#5a5f6a'};font-weight:bold;">💫 ${d8.name} 해금</span></div>`);
-              }
-            }
-          }
-          starUnlockInfo = `<div style="font-size:9px;color:#9aa3b3;margin-top:6px;line-height:1.4;border-top:1px solid #2a2f3a;padding-top:4px;${charImgSrc ? 'padding-right:54px;' : ''}">${rows.join('')}</div>`;
-        }
-        card.innerHTML = `
-          ${imgHTML}
-          <div style="display:flex;justify-content:space-between;align-items:center;${charImgSrc ? 'padding-right:54px;' : ''}">
-            <span style="color:${rarityColor};font-weight:bold;font-size:11px;">${rarity}</span>
-            ${hasIt ? `<span style="color:#9aa3b3;font-size:11px;">×${cnt}</span>` : `<span style="color:#5a5f6a;font-size:11px;">🔒</span>`}
-          </div>
-          <div style="font-size:15px;font-weight:bold;color:${hasIt ? c.color : '#5a5f6a'};margin-top:4px;${charImgSrc ? 'padding-right:54px;' : ''}">${hasIt ? c.name : '? ? ?'}</div>
-          ${hasIt ? `<div style="font-size:13px;color:${starColor};margin-top:2px;letter-spacing:1px;">${starText} <span style="font-size:10px;color:#9aa3b3;">+${Math.round(getCharStarDmgBonus(charId)*100)}%</span></div>` : ''}
-          <div style="font-size:11px;color:#7a8090;margin-top:4px;line-height:1.3;${charImgSrc ? 'padding-right:54px;' : ''}">${hasIt ? c.desc : '뽑기로 해금됩니다'}</div>
-          ${starUnlockInfo}
-        `;
-        colList.appendChild(card);
-      }
-    }
+    // 컬렉션은 캐릭터 선택 화면에서 확인 (가챠 화면에선 제거됨)
   }
 
   let lastGachaCount = 1;
@@ -18047,7 +17967,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 184;
+  const APP_VERSION = 187;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
