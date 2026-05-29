@@ -9482,9 +9482,14 @@
     'sakuraInferno', 'moonBombardment', 'celestialSymphony', 'eternalMoment',
     // ⭐ SSR 별 해금 히든 능력 (111-114) — 4★/8★ 도달 시 해금
     'celestialEcho',   // 111 — aria 4★
-    'sirensSong',      // 112 — aria 8★
-    'temporalLoop',    // 113 — misaki 4★
-    'paradoxFreeze',   // 114 — misaki 8★
+    'sirensSong',          // 112 — aria 8★
+    'temporalLoop',        // 113 — misaki 4★
+    'paradoxFreeze',       // 114 — misaki 8★
+    // ⭐ SR 별 해금 히든 능력 (115~118) — 4★/8★ 도달 시 해금
+    'petalStorm',          // 115 — sakura 4★ — 꽃잎 폭풍
+    'cherrySingularity',   // 116 — sakura 8★ — 벚꽃 특이점
+    'lunarRain',           // 117 — luna 4★ — 월광비
+    'eclipsePiercer',      // 118 — luna 8★ — 월식 관통
   ];
   const ABILITY_ICON_NUMBER = {};
   ABILITY_ICON_ORDER.forEach((id, i) => { ABILITY_ICON_NUMBER[id] = i + 1; });
@@ -11572,7 +11577,11 @@
   // ===== 승천(Ascension) 난이도 시스템 =====
   // 0 = 기본, 1~15 = 승천 1~15
   const MAX_ASCENSION = 15;
+  const MAX_HELL = 15;
+  const MAX_DIFFICULTY = MAX_ASCENSION + MAX_HELL;   // 30 — asc(0~15) + hell(1~15 = asc 16~30)
   function getMaxAscension() { return META.maxAscension || 0; }
+  function isHellMode(asc) { return asc > MAX_ASCENSION; }
+  function hellLevel(asc) { return Math.max(0, asc - MAX_ASCENSION); }
   function getSelectedAscension() {
     const a = META.selectedAscension || 0;
     return Math.max(0, Math.min(getMaxAscension(), a));
@@ -11581,38 +11590,54 @@
     META.selectedAscension = Math.max(0, Math.min(getMaxAscension(), a));
     saveMeta();
   }
-  // 승천 N 의 적용 효과 — 선형 + 2차 항을 강화해 단계별 체감이 확실하게
+  // 승천 / 초월 N 의 적용 효과
+  // 승천 (0~15): 선형 + 2차 — 점진적 상승
+  // 초월 (16~30 = trans 1~15): 승천 15 위에 두 번째 가파른 곡선 — 거의 불가능 수준
   function getAscensionMods(asc) {
+    // === 1) 승천 영역 (0~15) — 기존 곡선 그대로 ===
+    if (asc <= MAX_ASCENSION) {
+      return {
+        enemyHpMul:    1 + 0.30 * asc + 0.025 * asc * asc,
+        bossHpMul:     1 + 0.40 * asc + 0.030 * asc * asc,
+        maxAliveAdd:  -3 * asc,
+        scoreReward:   1 + 0.12 * asc,
+        stardustMul:   1 + 0.08 * asc,
+        enemySpeedMul: 1 + 0.05 * asc,
+        extraBossCount: asc >= 13 ? 3 : (asc >= 10 ? 2 : (asc >= 4 ? 1 : 0)),
+        eliteEscorts:  asc >= 14 ? 6 : (asc >= 11 ? 4 : (asc >= 8 ? 2 : 0)),
+        extraBossRounds: asc >= 10,
+        bossDmgMul:    1 + Math.max(0, asc - 2) * 0.20,
+        enemyCountAdd: 0,
+        roundTimeMul:  1,
+        enhanceMul:    1,
+        startGoldMul:  1,
+        startScoreMul: 1,
+      };
+    }
+    // === 2) 초월 영역 (asc 16~30, h = 1~15) — SSR/완벽 빌드 필수 ===
+    const h = asc - MAX_ASCENSION;   // 1~15
+    const base = getAscensionMods(MAX_ASCENSION);   // 승천 15 베이스
+    // 초월 가파른 추가 스케일링
+    //   적 HP: 승천15 × (1.8 + h*0.55 + h²*0.07)
+    //          → h1: ×2.42, h5: ×6.3, h10: ×14.3, h15: ×25.8 (승천15 위 multiplicative)
+    const hpHellMul   = 1.8 + h * 0.55 + h * h * 0.07;
+    const bossHellMul = 2.2 + h * 0.70 + h * h * 0.08;
     return {
-      // 적 HP: 선형 +30% + 2차 +2.5%/단계² (Asc1: 1.33x / Asc5: 3.13x / Asc10: 6.5x / Asc15: 11.13x)
-      enemyHpMul:    1 + 0.30 * asc + 0.025 * asc * asc,
-      // 보스 HP: 선형 +40% + 2차 +3%/단계² (Asc1: 1.43x / Asc5: 3.75x / Asc10: 8.0x / Asc15: 13.75x)
-      bossHpMul:     1 + 0.40 * asc + 0.030 * asc * asc,
-      // 적 수용 한계: -3/단계 (Asc5: 65 / Asc10: 50 / Asc15: 35) — HP/속도/보스 이미 강화됐으니 한계는 유지
-      maxAliveAdd:  -3 * asc,
-      // 보상도 비례 상승 (난이도 상승에 맞춰 더 후하게)
-      scoreReward:   1 + 0.12 * asc,            // Asc15 = +180%
-      stardustMul:   1 + 0.08 * asc,            // Asc15 = +120%
-      // === 단계별 추가 메커니즘 (더 일찍, 더 가파르게) ===
-      // 적 이동 속도: Asc1부터 +5%/단계 (Asc5: +25%, Asc10: +50%, Asc15: +75%)
-      enemySpeedMul: 1 + 0.05 * asc,
-      // 보스 추가 개수
-      //   Asc 4~6: +1 (보스 2마리)
-      //   Asc 7~9: +1 (보스 2마리)
-      //   Asc 10~12: +2 (보스 3마리)
-      //   Asc 13~15: +3 (보스 4마리) — 헬모드
-      extraBossCount: asc >= 13 ? 3 : (asc >= 10 ? 2 : (asc >= 4 ? 1 : 0)),
-      // 정예 호위 — Asc 8부터 일찍 등장
-      eliteEscorts:  asc >= 14 ? 6 : (asc >= 11 ? 4 : (asc >= 8 ? 2 : 0)),
-      // 추가 보스 라운드 발생 — Asc 10+에서 R10, 30, 50, 70, 90에도 보스
-      extraBossRounds: asc >= 10,
-      // 보스 데미지 출력(처치 보너스) — Asc 3+
-      bossDmgMul:    1 + Math.max(0, asc - 2) * 0.20,
-      // 기존 호환용
-      enemyCountAdd: 0,
-      roundTimeMul:  1,
-      enhanceMul:    1,
-      startGoldMul:  1,
+      enemyHpMul:    base.enemyHpMul * hpHellMul,
+      bossHpMul:     base.bossHpMul  * bossHellMul,
+      maxAliveAdd:   base.maxAliveAdd - h * 2,             // 적 수용 한계 더 깎임
+      // 보상도 미친 듯이 상승 (보너스가 아니면 시도할 가치 X)
+      scoreReward:   base.scoreReward + h * 0.5,           // Hell15 = +780% 점수
+      stardustMul:   base.stardustMul + h * 0.6,           // Hell15 = +1020% 스타더스트
+      enemySpeedMul: base.enemySpeedMul * (1 + h * 0.04),  // 더 빠른 적
+      extraBossCount: base.extraBossCount + Math.floor(h / 2),   // 보스 더 많이
+      eliteEscorts:  base.eliteEscorts + h,                // 정예 호위 +1/h
+      extraBossRounds: true,
+      bossDmgMul:    base.bossDmgMul + h * 0.10,
+      enemyCountAdd: h * 4,                                 // 한 라운드 적 +4/h
+      roundTimeMul:  Math.max(0.5, 1 - h * 0.025),         // 시간 단축 (h15: -37.5%)
+      enhanceMul:    1 + h * 0.08,                          // 강화 비용 ↑ (h15: +120%)
+      startGoldMul:  Math.max(0.3, 1 - h * 0.04),          // 시작 골드 ↓
       startScoreMul: 1,
     };
   }
@@ -11748,11 +11773,12 @@
 
   function ascensionLabel(asc) {
     if (asc === 0) return '기본';
-    return `승천 ${asc}`;
+    if (asc <= MAX_ASCENSION) return `승천 ${asc}`;
+    return `🌌 초월 ${asc - MAX_ASCENSION}`;
   }
   function ascensionDescriptions() {
     const descs = ['기본 — 표준 난이도'];
-    for (let a = 1; a <= MAX_ASCENSION; a++) {
+    for (let a = 1; a <= MAX_DIFFICULTY; a++) {
       const m = getAscensionMods(a);
       const hp = Math.round((m.enemyHpMul - 1) * 100);
       const bossHp = Math.round((m.bossHpMul - 1) * 100);
@@ -11760,6 +11786,9 @@
       const score = Math.round((m.scoreReward - 1) * 100);
       const dust = Math.round((m.stardustMul - 1) * 100);
       const spd = Math.round((m.enemySpeedMul - 1) * 100);
+      const isHell = a > MAX_ASCENSION;
+      const h = a - MAX_ASCENSION;
+      const labelPrefix = isHell ? `🌌 초월 ${h}` : `승천 ${a}`;
       // 단계별 특수 메커니즘 라벨
       const extras = [];
       if (a >= 1) extras.push(`적속도 +${spd}%`);
@@ -11770,8 +11799,14 @@
       }
       if (m.eliteEscorts > 0) extras.push(`⭐ 정예 ${m.eliteEscorts}`);
       if (m.extraBossRounds) extras.push(`☠️ R10/30/50/70/90 추가보스`);
+      if (isHell) {
+        if (m.enemyCountAdd > 0) extras.push(`👹 적 수 +${m.enemyCountAdd}`);
+        if (m.roundTimeMul < 1) extras.push(`⏱ 시간 -${Math.round((1-m.roundTimeMul)*100)}%`);
+        if (m.enhanceMul > 1)   extras.push(`💸 강화비 +${Math.round((m.enhanceMul-1)*100)}%`);
+        if (m.startGoldMul < 1) extras.push(`💰 시작골드 -${Math.round((1-m.startGoldMul)*100)}%`);
+      }
       const extraStr = extras.length > 0 ? ` · ${extras.join(' · ')}` : '';
-      descs.push(`승천 ${a}: HP +${hp}% / 보스HP +${bossHp}% / 한계 ${maxAlive}마리${extraStr} · 보상 +${score}%점 +${dust}%★`);
+      descs.push(`${labelPrefix}: HP +${hp}% / 보스HP +${bossHp}% / 한계 ${maxAlive}마리${extraStr} · 보상 +${score}%점 +${dust}%★`);
     }
     return descs;
   }
@@ -11927,8 +11962,8 @@
     const earned = Math.floor((Math.floor(state.score / 800) + state.round * 3 + (state.gameWin ? 300 : 0)) * ascMul);
     META.stardust = (META.stardust || 0) + earned;
     META.stardustEarned = (META.stardustEarned !== undefined ? META.stardustEarned : (META.stardust - earned)) + earned;
-    // 승천 클리어 시 다음 단계 해금
-    if (state.gameWin && state.ascension >= getMaxAscension() && state.ascension < MAX_ASCENSION) {
+    // 승천/초월 클리어 시 다음 단계 해금 — 초월 영역(16~30)까지 단계적 해금
+    if (state.gameWin && state.ascension >= getMaxAscension() && state.ascension < MAX_DIFFICULTY) {
       META.maxAscension = (META.maxAscension || 0) + 1;
       state.newAscensionUnlocked = META.maxAscension;
     }
@@ -17595,16 +17630,40 @@
     const sel = getSelectedAscension();
     cur.textContent = ascensionLabel(sel);
     const descs = ascensionDescriptions();
-    for (let a = 0; a <= MAX_ASCENSION; a++) {
-      const card = document.createElement('div');
+    // 초월 영역 헤더용 마커
+    let transHeaderInserted = false;
+    for (let a = 0; a <= MAX_DIFFICULTY; a++) {
       const unlocked = a <= maxA;
+      const isTrans = a > MAX_ASCENSION;
+      // 🌌 초월 첫 진입 시 구분 헤더 삽입 (해금된 경우만)
+      if (isTrans && !transHeaderInserted && maxA >= MAX_ASCENSION) {
+        const transHeader = document.createElement('div');
+        transHeader.style.cssText = `
+          margin:18px 0 8px;padding:10px 14px;
+          background:linear-gradient(90deg, #2a0c4a 0%, #1a0c2a 100%);
+          border-left:4px solid #9966ff;
+          border-radius:0 6px 6px 0;
+        `;
+        transHeader.innerHTML = `
+          <div style="color:#9966ff;font-size:15px;font-weight:bold;text-shadow:0 0 8px rgba(153,102,255,0.5);">🌌 초월 (Transcendence)</div>
+          <div style="color:#cfd6e3;font-size:11px;margin-top:4px;line-height:1.4;">승천 15 너머의 영역. SSR 캐릭터, 완벽한 빌드, 영구 강화 풀, 운까지 받쳐줘야 클리어 가능.</div>
+        `;
+        list.appendChild(transHeader);
+        transHeaderInserted = true;
+      }
+      const card = document.createElement('div');
       const isSel = a === sel;
       card.className = 'char-card' + (isSel ? ' selected' : '') + (!unlocked ? ' locked' : '');
       card.style.cursor = unlocked ? 'pointer' : 'not-allowed';
+      if (isTrans) card.style.borderColor = unlocked ? '#9966ff' : '#2a1a3a';
       const tag = isSel ? `<div class="char-selected-tag">✓ 선택됨</div>` : '';
       const lockTag = !unlocked ? `<div class="char-lock">🔒 이전 단계 R100 클리어로 해금</div>` : '';
+      // 색상 — 기본/승천/초월 구분
+      const nameColor = a === 0 ? '#7ad7ff'
+        : isTrans ? '#9966ff'                 // 초월: 코스믹 보라
+        : (a >= 10 ? '#ff66bb' : '#ffd479');
       card.innerHTML = `
-        <div class="char-name" style="color:${a === 0 ? '#7ad7ff' : (a >= 10 ? '#ff66bb' : '#ffd479')}">${ascensionLabel(a)}</div>
+        <div class="char-name" style="color:${nameColor};${isTrans ? 'text-shadow:0 0 8px rgba(153,102,255,0.6);' : ''}">${ascensionLabel(a)}</div>
         <div class="char-desc">${descs[a] || ''}</div>
         ${tag}${lockTag}
       `;
@@ -17639,7 +17698,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 175;
+  const APP_VERSION = 178;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
@@ -18047,7 +18106,9 @@
     if (dustEl) dustEl.textContent = (META.stardust || 0).toLocaleString();
     if (!grid) return;
     grid.innerHTML = '';
-    // 능력 분류
+    // 🎭 캐릭터 소유 능력 맵 구성 — startAbility + 별해금 + 조합/트리플 (재귀)
+    const charOwnerMap = buildCharOwnerMap();
+    // 능력 분류 — 캐릭터 소유 능력은 모두 가챠 탭으로 (조합/트리플 포함)
     const groups = {
       active:  [],
       passive: [],
@@ -18057,9 +18118,11 @@
     for (const id of ALL_ABILITY_IDS) {
       const d = ABILITY_DEFS[id];
       if (!d || id === 'shot') continue;
-      if (d.isGachaUnique) groups.gacha.push(id);
-      else if (d.isCombo) groups.combo.push(id);
+      // 🎰 캐릭터 소유 (startAbility, 별해금, 캐릭터 조합/트리플)
+      if (charOwnerMap[id]) groups.gacha.push(id);
+      else if (d.isCombo) groups.combo.push(id);   // 일반 조합/트리플
       else if (d.isPassive) groups.passive.push(id);
+      else if (d.isGachaUnique) groups.gacha.push(id);   // 안전망 (charOwnerMap에 안 잡힌 가챠)
       else groups.active.push(id);
     }
     // 탭 카운트 갱신
@@ -18076,97 +18139,263 @@
       grid.innerHTML = '<div style="text-align:center; color:#7a8090; padding:30px; font-size:13px;">표시할 능력이 없습니다.</div>';
       return;
     }
-    // 그리드 — 카드형 (강화소와 다른 디자인: 큰 아이콘 + 진행 바)
-    const cardGrid = document.createElement('div');
-    cardGrid.style.cssText = 'display:grid; grid-template-columns:repeat(auto-fill, minmax(180px, 1fr)); gap:10px;';
-    for (const id of ids) {
-      const d = ABILITY_DEFS[id];
-      const lv = getAbilityPermaLv(id);
-      const maxed = lv >= ABILITY_PERMA_MAX;
-      const cost = maxed ? null : abilityPermaCost(id);
-      const canBuy = !maxed && (META.stardust || 0) >= cost;
-      const pct = (lv * ABILITY_PERMA_DMG_PER_LV * 100).toFixed(1);
-      const progressPct = (lv / ABILITY_PERMA_MAX) * 100;
-      // 아이콘: SR/SSR이면 캐릭터 이미지, 아니면 능력 PNG
-      const gachaTier = abilityGachaTier(id);
-      let iconHtml;
-      if (gachaTier === 'SR' || gachaTier === 'SSR') {
-        const charId = findCharByAbility(id);
-        const charSrc = charId ? getCharacterImageSrc(charId) : null;
-        if (charSrc) {
-          iconHtml = `<img src="${charSrc}" style="width:56px;height:56px;image-rendering:pixelated;object-fit:contain;background:transparent;" />`;
-        }
-      }
-      if (!iconHtml) {
-        const iconPath = getIconPath(id);
-        iconHtml = iconPath
-          ? `<img src="${iconPath}" style="width:48px;height:48px;image-rendering:pixelated;" onerror="this.style.display='none'">`
-          : `<div style="font-size:32px;color:${d.color};font-weight:bold;">${d.name.charAt(0)}</div>`;
-      }
-      // 카드
-      const card = document.createElement('div');
-      let bg = '#141822';
-      let glow = 'transparent';
-      if (gachaTier === 'SSR') { bg = 'linear-gradient(135deg, #220c2a 0%, #2a0c1c 100%)'; glow = 'rgba(255,128,255,0.4)'; }
-      else if (gachaTier === 'SR') { bg = 'linear-gradient(135deg, #2a1c12 0%, #1a1822 100%)'; glow = 'rgba(255,170,85,0.3)'; }
-      else if (gachaTier === 'R') { bg = 'linear-gradient(135deg, #0c1c2a 0%, #14181f 100%)'; glow = 'rgba(136,224,255,0.2)'; }
-      else if (d.isTriple) { bg = 'linear-gradient(135deg, #2a0c1c 0%, #1a1428 100%)'; glow = 'rgba(255,208,96,0.3)'; }
-      else if (d.isCombo) { bg = 'linear-gradient(135deg, #1a1428 0%, #14181f 100%)'; glow = 'rgba(192,132,255,0.2)'; }
-      card.style.cssText = `
-        position:relative; display:flex; flex-direction:column; align-items:center; gap:6px;
-        padding:12px 8px; background:${bg};
-        border:1px solid ${maxed ? '#ffd060' : (d.color || '#3a4256')};
-        border-radius:8px;
-        box-shadow:0 0 12px ${glow};
-        ${maxed ? 'border-width:2px;' : ''}
+    // 📚 앨범 형식 — 가챠 탭은 캐릭터별 섹션, 나머지 탭은 티어별 섹션
+    const sections = buildPermaSections(permaTab, ids);
+    for (const sect of sections) {
+      const sectionEl = document.createElement('div');
+      sectionEl.style.cssText = `margin-bottom:16px;`;
+      // 섹션 헤더
+      const header = document.createElement('div');
+      header.style.cssText = `
+        display:flex;align-items:center;gap:8px;
+        padding:8px 12px;margin-bottom:8px;
+        background:linear-gradient(90deg, ${sect.color}22 0%, transparent 100%);
+        border-left:4px solid ${sect.color};
+        border-radius:0 6px 6px 0;
       `;
-      const effectLabel = getAbilityPermaEffectLabel(id);
-      // 🎭 캐릭터 묶음 표시 — 가챠 능력 / 별 해금 능력
-      let charLabel = '';
-      const ownerCharId = findCharByAbility(id);
-      if (ownerCharId) {
-        const ch = CHARACTERS[ownerCharId];
-        const isStarUnlock = !!(d.isStarUnlock);
-        if (ch) {
-          // 별 해금 능력은 어떤 별 단계에서 풀리는지도 표시
-          let starHint = '';
-          if (isStarUnlock) {
-            const unlocks = CHAR_STAR_UNLOCKS[ownerCharId];
-            if (unlocks) {
-              if (unlocks[4] && unlocks[4].includes(id)) starHint = ' · 4★ 해금';
-              else if (unlocks[8] && unlocks[8].includes(id)) starHint = ' · 8★ 해금';
-            }
-          }
-          charLabel = `<div style="font-size:9px;color:${ch.color || '#9aa3b3'};text-align:center;line-height:1;font-weight:bold;">🎭 ${ch.name}${starHint}</div>`;
-        }
-      }
-      card.innerHTML = `
-        <div style="width:56px;height:56px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">${iconHtml}</div>
-        <div style="font-size:12px;font-weight:bold;color:${d.color || '#fff'};text-align:center;line-height:1.1;">${d.name}</div>
-        ${charLabel}
-        <div style="font-size:10px;color:${maxed ? '#ffd060' : '#9aa3b3'};font-weight:bold;">Lv ${lv}/${ABILITY_PERMA_MAX} · ${effectLabel} +${pct}%</div>
-        <div style="width:100%;height:6px;background:#0b0d14;border-radius:3px;overflow:hidden;border:1px solid #2a2f3a;">
-          <div style="height:100%;width:${progressPct}%;background:linear-gradient(90deg, #ff80ff 0%, #ffd479 100%);transition:width .3s;"></div>
+      header.innerHTML = `
+        ${sect.iconHtml ? `<div style="width:32px;height:32px;flex-shrink:0;">${sect.iconHtml}</div>` : ''}
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:14px;font-weight:bold;color:${sect.color};line-height:1.1;">${sect.title}</div>
+          ${sect.subtitle ? `<div style="font-size:10px;color:#9aa3b3;line-height:1.1;margin-top:2px;">${sect.subtitle}</div>` : ''}
         </div>
-        <button data-id="${id}" class="perma-buy" ${maxed || !canBuy ? 'disabled' : ''}
-          style="width:100%;background:${maxed ? '#1a1f2b' : (canBuy ? 'linear-gradient(135deg, #4a1a4a 0%, #2a1a2a 100%)' : '#1a1f2b')};
-          border:1px solid ${maxed ? '#ffd060' : (canBuy ? '#ff80ff' : '#3a4256')};
-          color:${maxed ? '#ffd060' : (canBuy ? '#fff' : '#666')};
-          padding:8px;border-radius:5px;font-size:12px;font-weight:bold;
-          cursor:${canBuy ? 'pointer' : 'not-allowed'};font-family:inherit;
-          ${canBuy ? 'box-shadow:0 0 8px rgba(255,128,255,0.3);' : ''}">
-          ${maxed ? '✨ MAX' : `${cost} ★`}
-        </button>
+        <div style="font-size:11px;color:#9aa3b3;flex-shrink:0;">
+          <span style="color:${sect.color};font-weight:bold;">${sect.upgraded}</span>/${sect.items.length}
+        </div>
       `;
-      cardGrid.appendChild(card);
+      sectionEl.appendChild(header);
+      // 능력 리스트 (가로형 행)
+      const list = document.createElement('div');
+      list.style.cssText = `display:flex;flex-direction:column;gap:4px;`;
+      for (const id of sect.items) {
+        list.appendChild(buildPermaRow(id));
+      }
+      sectionEl.appendChild(list);
+      grid.appendChild(sectionEl);
     }
-    grid.appendChild(cardGrid);
     // 버튼 핸들러
     grid.querySelectorAll('.perma-buy').forEach(btn => {
-      btn.onclick = () => {
+      btn.onclick = (e) => {
+        e.stopPropagation();
         if (buyAbilityPerma(btn.dataset.id)) buildPermaScreen();
       };
     });
+  }
+
+  // 🎭 능력 ID → 소유 캐릭터 ID 맵 — startAbility + 별해금 + 조합/트리플 (재귀)
+  function buildCharOwnerMap() {
+    const owner = {};
+    // 1) 캐릭터 startAbility (직접 소유)
+    for (const charId in CHARACTERS) {
+      const ch = CHARACTERS[charId];
+      if (!ch || !ch.startAbilities) continue;
+      // 가챠 캐릭터만 (standard 등 기본 캐릭터는 제외)
+      const isGachaChar = GACHA_POOL.R.includes(charId) || GACHA_POOL.SR.includes(charId) || GACHA_POOL.SSR.includes(charId);
+      if (!isGachaChar) continue;
+      for (const abId of ch.startAbilities) owner[abId] = charId;
+    }
+    // 2) 별 해금 능력
+    for (const charId in CHAR_STAR_UNLOCKS) {
+      const u = CHAR_STAR_UNLOCKS[charId];
+      if (u[4]) for (const abId of u[4]) owner[abId] = charId;
+      if (u[8]) for (const abId of u[8]) owner[abId] = charId;
+    }
+    // 3) 조합/트리플 — 부분 능력 중 하나라도 캐릭터 소유면 콤보도 캐릭터 소유 (재귀 fix-point)
+    let changed = true;
+    while (changed) {
+      changed = false;
+      for (const recipe of COMBO_RECIPES) {
+        if (owner[recipe.combo]) continue;
+        for (const partId of recipe.parts) {
+          if (owner[partId]) {
+            owner[recipe.combo] = owner[partId];
+            changed = true;
+            break;
+          }
+        }
+      }
+    }
+    return owner;
+  }
+  // 📚 능력 영구 강화 — 섹션 구성 (탭별)
+  function buildPermaSections(tab, ids) {
+    const sections = [];
+    if (tab === 'gacha') {
+      // 가챠: 캐릭터별 그룹화 — startAbility + 조합 + 트리플 + 별해금 모두 캐릭터 아래로
+      const charOwnerMap = buildCharOwnerMap();
+      const byChar = {};
+      const noChar = [];
+      for (const id of ids) {
+        const charId = charOwnerMap[id] || findCharByAbility(id);
+        if (charId) {
+          if (!byChar[charId]) byChar[charId] = [];
+          byChar[charId].push(id);
+        } else {
+          noChar.push(id);
+        }
+      }
+      // 캐릭터 내부 정렬: 기본(startAbility) → 조합 → 트리플 → 별해금
+      for (const charId in byChar) {
+        byChar[charId].sort((a, b) => {
+          const da = ABILITY_DEFS[a], db = ABILITY_DEFS[b];
+          const score = (d) => {
+            if (d.isStarUnlock) return 4;     // 별 해금 마지막
+            if (d.isTriple) return 3;          // 트리플
+            if (d.isCombo) return 2;            // 조합
+            return 1;                            // startAbility
+          };
+          return score(da) - score(db);
+        });
+      }
+      // 등급 순 — SSR → SR → R
+      const tierOrder = { SSR: 0, SR: 1, R: 2 };
+      const sortedChars = Object.keys(byChar).sort((a, b) => {
+        const sa = (GACHA_POOL.SSR.includes(a) ? 'SSR' : GACHA_POOL.SR.includes(a) ? 'SR' : 'R');
+        const sb = (GACHA_POOL.SSR.includes(b) ? 'SSR' : GACHA_POOL.SR.includes(b) ? 'SR' : 'R');
+        return (tierOrder[sa] - tierOrder[sb]) || a.localeCompare(b);
+      });
+      for (const charId of sortedChars) {
+        const ch = CHARACTERS[charId];
+        const items = byChar[charId];
+        const tier = GACHA_POOL.SSR.includes(charId) ? 'SSR' : GACHA_POOL.SR.includes(charId) ? 'SR' : 'R';
+        const tierColor = tier === 'SSR' ? '#ff80ff' : tier === 'SR' ? '#ffaa55' : '#88e0ff';
+        const charSrc = getCharacterImageSrc(charId);
+        const iconHtml = charSrc
+          ? `<img src="${charSrc}" style="width:32px;height:32px;object-fit:contain;border-radius:50%;image-rendering:pixelated;" />`
+          : `<div style="font-size:22px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;">${ch && ch.name ? ch.name.charAt(0) : '🎭'}</div>`;
+        const stars = getCharStars(charId);
+        const starText = '★'.repeat(stars) + '☆'.repeat(CHAR_MAX_STARS - stars);
+        sections.push({
+          title: `🎰 ${tier} · ${ch ? ch.name : charId}`,
+          subtitle: `${starText} (${stars}/${CHAR_MAX_STARS})`,
+          color: tierColor,
+          iconHtml,
+          items,
+          upgraded: items.filter(id => getAbilityPermaLv(id) > 0).length,
+        });
+      }
+      if (noChar.length > 0) {
+        sections.push({
+          title: '🎰 기타 가챠',
+          subtitle: null, color: '#88e0ff', iconHtml: null,
+          items: noChar,
+          upgraded: noChar.filter(id => getAbilityPermaLv(id) > 0).length,
+        });
+      }
+    } else if (tab === 'combo') {
+      // 조합: 트리플/콤보로 분리
+      const triples = ids.filter(id => ABILITY_DEFS[id].isTriple);
+      const combos  = ids.filter(id => !ABILITY_DEFS[id].isTriple);
+      if (triples.length > 0) {
+        sections.push({
+          title: '⚡ 트리플 (히든)', subtitle: '3능력 합성 — 게임 최강 등급',
+          color: '#ffd060', iconHtml: null,
+          items: triples,
+          upgraded: triples.filter(id => getAbilityPermaLv(id) > 0).length,
+        });
+      }
+      if (combos.length > 0) {
+        sections.push({
+          title: '🔥 콤보', subtitle: '2능력 합성',
+          color: '#c084ff', iconHtml: null,
+          items: combos,
+          upgraded: combos.filter(id => getAbilityPermaLv(id) > 0).length,
+        });
+      }
+    } else {
+      // 액티브 / 패시브: 단일 섹션
+      const label = tab === 'active' ? '⚡ 액티브 능력' : '⭐ 패시브 능력';
+      const subtitle = tab === 'active' ? '직접 발사하는 공격 능력' : '상시 효과 부여 능력';
+      sections.push({
+        title: label, subtitle,
+        color: tab === 'active' ? '#7ad7ff' : '#88ddff',
+        iconHtml: null,
+        items: ids,
+        upgraded: ids.filter(id => getAbilityPermaLv(id) > 0).length,
+      });
+    }
+    return sections;
+  }
+
+  // 📚 능력 영구 강화 — 단일 능력 행 (앨범 트랙 형식)
+  function buildPermaRow(id) {
+    const d = ABILITY_DEFS[id];
+    const lv = getAbilityPermaLv(id);
+    const maxed = lv >= ABILITY_PERMA_MAX;
+    const cost = maxed ? null : abilityPermaCost(id);
+    const canBuy = !maxed && (META.stardust || 0) >= cost;
+    const pct = (lv * ABILITY_PERMA_DMG_PER_LV * 100).toFixed(1);
+    const progressPct = (lv / ABILITY_PERMA_MAX) * 100;
+    const gachaTier = abilityGachaTier(id);
+    // 아이콘
+    let iconHtml = '';
+    if (gachaTier === 'SR' || gachaTier === 'SSR') {
+      const charId = findCharByAbility(id);
+      const charSrc = charId ? getCharacterImageSrc(charId) : null;
+      if (charSrc) {
+        iconHtml = `<img src="${charSrc}" style="width:40px;height:40px;object-fit:contain;border-radius:6px;image-rendering:pixelated;" />`;
+      }
+    }
+    if (!iconHtml) {
+      const iconPath = getIconPath(id);
+      iconHtml = iconPath
+        ? `<img src="${iconPath}" style="width:40px;height:40px;image-rendering:pixelated;border-radius:4px;" onerror="this.style.display='none'">`
+        : `<div style="width:40px;height:40px;display:flex;align-items:center;justify-content:center;font-size:22px;color:${d.color};font-weight:bold;background:#141822;border-radius:4px;">${d.name.charAt(0)}</div>`;
+    }
+    const effectLabel = getAbilityPermaEffectLabel(id);
+    // 별 해금 능력 라벨
+    let starBadge = '';
+    if (d.isStarUnlock) {
+      const ownerCharId = findCharByAbility(id);
+      const unlocks = CHAR_STAR_UNLOCKS[ownerCharId];
+      if (unlocks) {
+        if (unlocks[4] && unlocks[4].includes(id)) starBadge = '<span style="font-size:9px;color:#ffd060;font-weight:bold;background:#2a2418;padding:1px 5px;border-radius:8px;border:1px solid #ffd060;">4★</span>';
+        else if (unlocks[8] && unlocks[8].includes(id)) starBadge = '<span style="font-size:9px;color:#ff80ff;font-weight:bold;background:#2a142a;padding:1px 5px;border-radius:8px;border:1px solid #ff80ff;">8★</span>';
+      }
+    }
+    // 행 배경 — 등급별 미세 그라데이션
+    let rowBg = '#141822';
+    if (gachaTier === 'SSR') rowBg = 'linear-gradient(90deg, rgba(255,128,255,0.05) 0%, #141822 30%)';
+    else if (gachaTier === 'SR') rowBg = 'linear-gradient(90deg, rgba(255,170,85,0.05) 0%, #141822 30%)';
+    else if (gachaTier === 'R') rowBg = 'linear-gradient(90deg, rgba(136,224,255,0.05) 0%, #141822 30%)';
+    else if (d.isTriple) rowBg = 'linear-gradient(90deg, rgba(255,208,96,0.05) 0%, #141822 30%)';
+    else if (d.isCombo) rowBg = 'linear-gradient(90deg, rgba(192,132,255,0.05) 0%, #141822 30%)';
+
+    const row = document.createElement('div');
+    row.style.cssText = `
+      display:flex;align-items:center;gap:10px;
+      padding:8px 10px;background:${rowBg};
+      border:1px solid ${maxed ? '#ffd060' : '#2a2f3a'};
+      border-left:3px solid ${d.color || '#3a4256'};
+      border-radius:6px;
+      ${maxed ? 'box-shadow:0 0 6px rgba(255,208,96,0.2);' : ''}
+    `;
+    row.innerHTML = `
+      <div style="flex-shrink:0;">${iconHtml}</div>
+      <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:3px;">
+        <div style="display:flex;align-items:center;gap:6px;">
+          <span style="font-size:13px;font-weight:bold;color:${d.color || '#fff'};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${d.name}</span>
+          ${starBadge}
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;">
+          <div style="flex:1;height:5px;background:#0b0d14;border-radius:3px;overflow:hidden;border:1px solid #2a2f3a;">
+            <div style="height:100%;width:${progressPct}%;background:linear-gradient(90deg, #ff80ff 0%, #ffd479 100%);"></div>
+          </div>
+          <span style="font-size:10px;color:${maxed ? '#ffd060' : '#9aa3b3'};white-space:nowrap;font-weight:bold;">Lv ${lv}/${ABILITY_PERMA_MAX}</span>
+        </div>
+        <div style="font-size:9px;color:#7a8090;line-height:1;">${effectLabel} +${pct}%</div>
+      </div>
+      <button data-id="${id}" class="perma-buy" ${maxed || !canBuy ? 'disabled' : ''}
+        style="flex-shrink:0;min-width:70px;background:${maxed ? '#1a1f2b' : (canBuy ? 'linear-gradient(135deg, #4a1a4a 0%, #2a1a2a 100%)' : '#1a1f2b')};
+        border:1px solid ${maxed ? '#ffd060' : (canBuy ? '#ff80ff' : '#3a4256')};
+        color:${maxed ? '#ffd060' : (canBuy ? '#fff' : '#666')};
+        padding:6px 10px;border-radius:5px;font-size:11px;font-weight:bold;
+        cursor:${canBuy ? 'pointer' : 'not-allowed'};font-family:inherit;
+        ${canBuy ? 'box-shadow:0 0 6px rgba(255,128,255,0.3);' : ''}">
+        ${maxed ? '✨ MAX' : `${cost}★`}
+      </button>
+    `;
+    return row;
   }
   // 탭 클릭 핸들러
   document.querySelectorAll('#perma-tabs .codex-tab').forEach(btn => {
