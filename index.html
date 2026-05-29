@@ -11885,6 +11885,16 @@
     META.selectedBanner = GACHA_BANNERS[i].id;
     saveMeta();
   }
+  // 🚀 모든 배너 이미지 사전 로드 — 전환 시 이전 이미지가 남아있지 않게
+  const _gachaBannerImgCache = {};
+  (function preloadGachaBanners() {
+    for (const b of GACHA_BANNERS) {
+      if (!b.bannerImg) continue;
+      const img = new Image();
+      img.src = b.bannerImg;
+      _gachaBannerImgCache[b.id] = img;
+    }
+  })();
 
   function getCrystals() { return META.crystals || 0; }
   function spendCrystals(n) {
@@ -17755,10 +17765,37 @@
     const banner = getCurrentBanner();
     const bannerImg = document.getElementById('gacha-banner-img');
     if (bannerImg) {
-      bannerImg.src = banner.bannerImg;
+      // 다른 배너 이미지로 바꿀 때만 깜빡임 방지 처리
+      const isSame = bannerImg.dataset.bannerId === banner.id;
+      if (!isSame) {
+        // 캐시 확인: 이미 로드된 이미지면 즉시 교체, 아니면 잠시 가린 뒤 로드
+        const cached = _gachaBannerImgCache[banner.id];
+        const isCached = cached && cached.complete && cached.naturalWidth > 0;
+        if (isCached) {
+          bannerImg.src = banner.bannerImg;
+          bannerImg.style.opacity = '1';
+        } else {
+          // 로드 전: 이전 이미지가 어색하게 남아 보이지 않게 잠깐 투명 처리
+          bannerImg.style.transition = 'opacity 0.2s';
+          bannerImg.style.opacity = '0';
+          const tmp = new Image();
+          tmp.onload = () => {
+            bannerImg.src = banner.bannerImg;
+            bannerImg.style.opacity = '1';
+            _gachaBannerImgCache[banner.id] = tmp;
+          };
+          tmp.onerror = () => {
+            bannerImg.src = './icons/gacha.png';
+            bannerImg.style.opacity = '1';
+          };
+          tmp.src = banner.bannerImg;
+        }
+        bannerImg.dataset.bannerId = banner.id;
+      }
       bannerImg.onerror = function() {
         // 배너 이미지 없으면 폴백
         this.src = './icons/gacha.png';
+        this.style.opacity = '1';
         this.onerror = function() {
           this.style.display = 'none';
           const fb = document.getElementById('gacha-banner-fallback');
@@ -17967,7 +18004,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 187;
+  const APP_VERSION = 189;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
@@ -18398,14 +18435,20 @@
       else if (d.isGachaUnique) groups.gacha.push(id);   // 안전망 (charOwnerMap에 안 잡힌 가챠)
       else groups.active.push(id);
     }
-    // 탭 카운트 갱신
+    // 탭 카운트 갱신 — 라벨은 고정 맵에서 가져오기 (기존 textContent 파싱 시 한국어 라벨 손실 버그 방지)
+    const PERMA_TAB_LABELS = {
+      active:  '⚡ 액티브',
+      passive: '⭐ 패시브',
+      combo:   '🔥 조합',
+      gacha:   '🎰 가챠',
+    };
     document.querySelectorAll('#perma-tabs .codex-tab').forEach(btn => {
       const t = btn.dataset.permatab;
       if (!groups[t]) return;
       const total = groups[t].length;
       const upgraded = groups[t].filter(id => getAbilityPermaLv(id) > 0).length;
-      const label = btn.textContent.split(' ').slice(0, -1).join(' ') || btn.textContent;
-      btn.textContent = `${label.replace(/\s\d+\/\d+$/, '')} ${upgraded}/${total}`;
+      const label = PERMA_TAB_LABELS[t] || btn.textContent;
+      btn.textContent = `${label} ${upgraded}/${total}`;
     });
     const ids = groups[permaTab] || [];
     if (ids.length === 0) {
