@@ -1224,6 +1224,8 @@
     text-align: left;
     font: inherit;
     transition: border-color 0.15s, transform 0.1s, box-shadow 0.15s;
+    box-sizing: border-box;
+    width: 100%;
   }
   .mode-card:hover {
     border-color: #7ad7ff;
@@ -1884,7 +1886,7 @@
     <h2>게임 모드 선택</h2>
     <button id="modeBack" class="codex-back">← 메뉴로</button>
   </div>
-  <div style="display:flex; flex-direction:column; gap:14px; padding:20px; max-width:600px; margin:0 auto; width:100%;">
+  <div style="display:flex; flex-direction:column; gap:14px; padding:20px; max-width:600px; margin:0 auto; width:100%; box-sizing:border-box;">
     <button class="mode-card" data-mode="standard">
       <div class="mode-icon">⚔️</div>
       <div class="mode-info">
@@ -18085,7 +18087,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 196;
+  const APP_VERSION = 197;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
