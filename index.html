@@ -2036,13 +2036,13 @@
     <button id="abilityPermaBack" class="codex-back">← 메뉴로</button>
   </div>
   <div class="stardust-bar">스타더스트: <span id="perma-stardust-count">0</span> ★</div>
-  <div class="codex-tabs" id="perma-tabs" style="overflow-x:auto; flex-wrap:nowrap;">
-    <button class="codex-tab active" data-permatab="active">⚡ 액티브</button>
-    <button class="codex-tab" data-permatab="passive">⭐ 패시브</button>
-    <button class="codex-tab" data-permatab="combo">🔥 조합</button>
-    <button class="codex-tab" data-permatab="gacha">🎰 가챠</button>
+  <div class="codex-tabs" id="perma-tabs" style="display:flex; gap:4px; width:100%; max-width:600px; padding:0 8px; position:sticky; top:0; background:#0b0d12; padding-top:4px; padding-bottom:4px; z-index:5;">
+    <button class="codex-tab active" data-permatab="active" style="flex:1 1 0; min-width:0; padding:8px 2px; font-size:12px; text-align:center; line-height:1.2;">⚡ 액티브</button>
+    <button class="codex-tab" data-permatab="passive" style="flex:1 1 0; min-width:0; padding:8px 2px; font-size:12px; text-align:center; line-height:1.2;">⭐ 패시브</button>
+    <button class="codex-tab" data-permatab="combo" style="flex:1 1 0; min-width:0; padding:8px 2px; font-size:12px; text-align:center; line-height:1.2;">🔥 조합</button>
+    <button class="codex-tab" data-permatab="gacha" style="flex:1 1 0; min-width:0; padding:8px 2px; font-size:12px; text-align:center; line-height:1.2;">🎰 가챠</button>
   </div>
-  <div id="perma-grid"></div>
+  <div id="perma-grid" style="width:100%; max-width:900px;"></div>
 </div>
 
 <!-- ===== 기록 화면 ===== -->
@@ -9245,10 +9245,10 @@
   const RELICS = {
     // ============================== COMMON (20개) — 위트 있는 이름, 흥미로운 조건 ==============================
     goldBag: { name: '구두쇠의 자루', icon: '💰', rarity: 'common',
-      desc: '시작 골드 +200. 가난한 자가 가장 부유하다.',
-      apply: (st) => { st.gold += 200; }, unlockBy: null },
+      desc: '획득 시 골드 +라운드×60. 가난한 자가 가장 부유하다.',
+      apply: (st) => { st.gold += Math.max(120, (st.round || 1) * 60); }, unlockBy: null },
     aoeBanner: { name: '광역의 깃발', icon: '🚩', rarity: 'common',
-      desc: '광역 능력 데미지 +15%',
+      desc: '광역 공격(여러 적 동시 타격) 데미지 +15%',
       apply: (st) => { st.relicEffects.aoeDmgMul *= 1.15; }, unlockBy: null },
     forgeHammer: { name: '강화의 망치', icon: '🔨', rarity: 'common',
       desc: '강화 비용 -10%',
@@ -9266,8 +9266,11 @@
       desc: '골드 획득량 +25%. 부르는 손길.',
       apply: (st) => { st.metaMods.goldMul = (st.metaMods.goldMul || 1) * 1.25; }, unlockBy: null },
     angelMantle: { name: '자비의 망토', icon: '😇', rarity: 'common',
-      desc: '보스 처치 시 모든 능력 쿨다운 초기화',
-      apply: (st) => { st.relicEffects.bossKillResetCooldown = true; }, unlockBy: 'achievement:boss5' },
+      desc: '보스 처치 시 모든 적 2초간 정지 + 골드 +라운드×25. 천사의 시간이 흐른다.',
+      apply: (st) => {
+        st.relicEffects.bossKillFreezeFrames = 120;   // 2초 정지
+        st.relicEffects.bossKillGoldPerRound = 25;
+      }, unlockBy: 'achievement:boss5' },
     // ↓↓↓ 신규 12개 (흥미로운 조건/트리거) ↓↓↓
     tombWreath: { name: '묘비의 화환', icon: '🪦', rarity: 'common',
       desc: '라운드 클리어마다 데미지 +2% (영구 누적). 망자는 강해진다.',
@@ -9276,7 +9279,7 @@
       desc: '누적 처치 100마리당 데미지 +1%',
       apply: (st) => { st.relicEffects.killCountDmgRate = 0.01; }, unlockBy: 'achievement:kills500' },
     seaEcho: { name: '바다의 메아리', icon: '🌊', rarity: 'common',
-      desc: '광역 능력 데미지 +30%',
+      desc: '광역 공격(여러 적 동시 타격) 데미지 +30%',
       apply: (st) => { st.relicEffects.aoeDmgMul *= 1.30; }, unlockBy: null },
     monkRosary: { name: '수도승의 묵주', icon: '📿', rarity: 'common',
       desc: '모든 데미지 +10%. 차분한 정진.',
@@ -9327,17 +9330,17 @@
       desc: '라운드 시작 시 무료 강화 1회',
       apply: (st) => { st.relicEffects.roundStartFreeUpgrade = true; }, unlockBy: 'achievement:round50' },
     flameEssence: { name: '화염의 정수', icon: '🔥', rarity: 'rare',
-      desc: '광역 능력 데미지 +50%. 불은 강력하지만 통제 불능.',
+      desc: '광역 공격(여러 적 동시 타격) 데미지 +50%. 불은 강력하지만 통제 불능.',
       apply: (st) => { st.relicEffects.aoeDmgMul *= 1.50; }, unlockBy: 'achievement:maxAbility' },
     // ↓↓↓ 신규 6개 (조건부 시너지) ↓↓↓
     vampireMantle: { name: '흡혈의 망토', icon: '🩸', rarity: 'rare',
-      desc: '능력 발동 시 골드 +2 (자동). 피로 만든 황금.',
+      desc: '내 능력이 한 번 발동될 때마다 자동으로 골드 +2. 피로 만든 황금.',
       apply: (st) => { st.relicEffects.abilityUseGold = (st.relicEffects.abilityUseGold || 0) + 2; }, unlockBy: 'achievement:goldHold3k' },
     fateScale: { name: '운명의 저울', icon: '⚖️', rarity: 'rare',
       desc: '화면 적 수가 수용 한계의 절반 이상일 때 데미지 +75%. 절망이 힘이 된다.',
       apply: (st) => { st.relicEffects.fateScaleBonus = 0.75; }, unlockBy: 'achievement:lowSlot' },
     echoBell: { name: '메아리의 종', icon: '🔔', rarity: 'rare',
-      desc: '모든 능력 데미지 +30%. 같은 소리가 두 번 들린다.',
+      desc: '모든 데미지 +30%. 같은 소리가 두 번 들린다.',
       apply: (st) => { st.metaMods.dmgMul *= 1.30; }, unlockBy: 'achievement:score500k' },
     looterBag: { name: '도굴꾼의 가방', icon: '💼', rarity: 'rare',
       desc: '유물 등장 확률 +25%. 보물은 보물을 부른다.',
@@ -9369,7 +9372,7 @@
       apply: (st) => { st.relicEffects.chainLightning = true; }, unlockBy: 'achievement:kills5k' },
     // ↓↓↓ 신규 2개 (변환 효과) ↓↓↓
     starAvatar: { name: '별의 화신', icon: '🌟', rarity: 'epic',
-      desc: '모든 데미지 +50%, 광역 능력 데미지 +40%. 별의 가호.',
+      desc: '모든 데미지 +50%, 광역 공격 데미지 +40%. 별의 가호.',
       apply: (st) => {
         st.metaMods.dmgMul *= 1.50;
         st.relicEffects.aoeDmgMul *= 1.40;
@@ -9384,15 +9387,16 @@
 
     // ============================== LEGENDARY (4개) — 게임 체인저 ==============================
     godsWill: { name: '신의 의지', icon: '✨', rarity: 'legendary',
-      desc: '획득 즉시 보유 능력 1개를 MAX 레벨로. 신은 변덕스럽다.',
+      desc: '획득 즉시 보유한 모든 능력 +3 레벨 (MAX 한계 적용). 신의 축복은 평등하다.',
       apply: (st) => {
-        const owned = st.tower.abilities.filter(a => !isAtMax(a));
-        if (owned.length > 0) {
-          owned.sort((a, b) => a.level - b.level);
-          const target = owned[0];
-          target.level = maxLvFor(target.id);
-          toast(`✨ 신의 의지: ${ABILITY_DEFS[target.id].name} MAX!`);
+        let boosted = 0;
+        for (const a of st.tower.abilities) {
+          if (isAtMax(a)) continue;
+          const before = a.level;
+          a.level = Math.min(maxLvFor(a.id), a.level + 3);
+          if (a.level > before) boosted++;
         }
+        if (boosted > 0) toast(`✨ 신의 의지: 능력 ${boosted}개 +3 레벨`);
       }, unlockBy: 'achievement:asc7' },
     eternityLight: { name: '영원의 빛', icon: '🌅', rarity: 'legendary',
       desc: '적이 수용 한계를 넘어 패배할 때 자동 발동(게임당 1회): 화면 적의 절반 즉사 + 모든 적 2초 정지. 죽음을 한 번 거부한다.',
@@ -10136,6 +10140,8 @@
         // 트리거
         autoGold:            false,
         bossKillResetCooldown: false,
+        bossKillFreezeFrames:  0,    // 자비의 망토 — 보스 처치 시 적 정지 프레임
+        bossKillGoldPerRound:  0,    // 자비의 망토 — 보스 처치 시 라운드×N 골드
         doubleEnhance:       false,
         doubleEnhanceCharges: 0,  // 복제기 충전 (5회 한정)
         bossStartStop:       0,
@@ -10545,6 +10551,24 @@
     asc5Title:  { name: '승천마스터', icon: '🌟', achId: 'asc5',      style: 'bold',   color: '#ffd479' },
     asc10Title: { name: '승천챔피언', icon: '💫', achId: 'asc10',     style: 'glow',   color: '#ff66bb' },
     asc15Title: { name: '승천정복자', icon: '👑', achId: 'asc15',     style: 'rainbow' },
+    // 🌌 초월(Transcendence) 칭호
+    trans1Title:  { name: '초월자',         icon: '🌌', achId: 'trans1',  style: 'bold',   color: '#9966ff' },
+    trans3Title:  { name: '초월도전자',     icon: '🌌', achId: 'trans3',  style: 'glow',   color: '#9966ff' },
+    trans5Title:  { name: '초월정복',       icon: '💫', achId: 'trans5',  style: 'glow',   color: '#c084ff' },
+    trans10Title: { name: '초월의정점',     icon: '👑', achId: 'trans10', style: 'rainbow' },
+    trans15Title: { name: '초월종결자',     icon: '🌠', achId: 'trans15', style: 'rainbow' },
+    // ⭐ 캐릭터 돌파 칭호 — 첫 별 (보편) + 캐릭터별 8★ 컨셉 칭호
+    starGazer:       { name: '별보는자',       icon: '⭐', achId: 'firstStar',     style: 'normal', color: '#ffd479' },
+    // R 캐릭터 칭호 — 소박한 톤 (R다움)
+    marineMaster:    { name: '어뢰병',           icon: '🌊', achId: 'char8_marine',  style: 'normal', color: '#5599cc' },
+    solarMaster:     { name: '햇살꾼',           icon: '☀️', achId: 'char8_solar',   style: 'normal', color: '#ffaa44' },
+    gravitasMaster:  { name: '인력자',           icon: '🌀', achId: 'char8_gravitas',style: 'normal', color: '#a070d0' },
+    // SR 캐릭터 칭호
+    sakuraMaster:    { name: '벚꽃의 검객',     icon: '🌸', achId: 'char8_sakura',  style: 'glow',   color: '#ff88bb' },
+    lunaMaster:      { name: '달빛의 사수',     icon: '🌙', achId: 'char8_luna',    style: 'glow',   color: '#aaccff' },
+    // SSR 캐릭터 칭호
+    ariaMaster:      { name: '천공의 노래꾼',   icon: '🌟', achId: 'char8_aria',    style: 'rainbow' },
+    misakiMaster:    { name: '시공의 여행자',   icon: '🦋', achId: 'char8_misaki',  style: 'rainbow' },
   };
   function getOwnedTitles() {
     const have = getUnlockedAchievements();
@@ -10757,9 +10781,10 @@
     if (_metaPullInFlight) return _metaPullInFlight;   // 진행 중이면 그것 대기
     _metaPullInFlight = (async () => {
       try {
-        // 🛡 먼저 이 기기의 미동기화 변경사항 푸시 (서버가 최신 상태 보유하도록)
-        try { await syncMetaToServer(); } catch {}
-        // 그 다음 서버 최신 데이터 풀
+        // 🐛 BUG FIX (v190): 기존엔 push → pull 이었으나,
+        //   다기기 시나리오에서 PC의 오래된 META가 서버(휴대폰 최신본)를 덮어쓰는 문제 발생.
+        //   pullMetaFromServer 내부에서 병합(Math.max) 후 자동으로 queueServerSync(true) 호출하므로
+        //   pull 우선 → 병합 → 자동 push 순서로 변경하면 양쪽 진행도가 모두 보존됨.
         const ok = await pullMetaFromServer();
         _lastMetaPullAt = Date.now();
         if (ok) {
@@ -10776,6 +10801,35 @@
     })();
     return _metaPullInFlight;
   }
+  // 🔄 서버 데이터를 그대로 로드 (병합 X) — 수동 동기화 버튼 전용
+  // "다른 기기에서 한 것 그대로 가져오기" 직관적 동작
+  async function forceLoadFromServer() {
+    if (!isAccountLoggedIn()) return false;
+    if (!isSupabaseEnabled()) return false;
+    const sb = getSupabase();
+    if (!sb) return false;
+    try {
+      const { data, error } = await sb.rpc('login_account', {
+        p_nickname: META.nickname,
+        p_password: META.accountPassword,
+      });
+      if (error || !data || data.length === 0) return false;
+      const server = data[0].data || {};
+      // 인증 정보 + 비밀번호는 로컬 유지, 나머지는 서버를 그대로 신뢰
+      const fresh = { ...server };
+      fresh.userId          = data[0].user_id || META.userId;
+      fresh.nickname        = data[0].nickname || META.nickname;
+      fresh.accountCreated  = true;
+      fresh.accountPassword = META.accountPassword;   // 비밀번호는 서버 저장 안 함
+      META = fresh;
+      saveMeta();
+      return true;
+    } catch (e) {
+      console.warn('서버 강제 로드 실패:', e);
+      return false;
+    }
+  }
+
   async function pullMetaFromServer() {
     if (!isAccountLoggedIn()) return false;
     if (!isSupabaseEnabled()) return false;
@@ -12469,27 +12523,28 @@
       check: s => !!s.gameWin && (s.ascension || 0) >= MAX_ASCENSION + 10 },
     { id: 'trans15',   name: '👑 초월 종결자', desc: '초월 15 클리어 (최종)', reward: 8000,
       check: s => !!s.gameWin && (s.ascension || 0) >= MAX_ASCENSION + 15 },
-    // === ⭐ 캐릭터 돌파 업적 — META.charStars 기반 ===
-    { id: 'firstStar', name: '⭐ 첫 별',         desc: '아무 캐릭터 1★ 달성', reward: 100,
+    // === ⭐ 캐릭터 돌파 업적 — 캐릭터별 8★ 달성 시 고유 칭호 해금 ===
+    //     일반 SR/SSR 그룹 업적은 신캐 추가 시 의미가 흐려져 제거.
+    //     캐릭터마다 자신만의 컨셉 칭호를 받는 구조로 변경.
+    { id: 'firstStar', name: '⭐ 첫 별', desc: '아무 캐릭터 1★ 달성', reward: 100,
       check: () => { const cs = META.charStars || {}; return Object.values(cs).some(v => v >= 1); } },
-    { id: 'srStar4',   name: '🌸 SR 4★',         desc: 'SR 캐릭터 1명 4★ 달성', reward: 300,
-      check: () => { const cs = META.charStars || {}; return (GACHA_POOL.SR || []).some(id => (cs[id] || 0) >= 4); } },
-    { id: 'srStar8',   name: '🌙 SR 8★',         desc: 'SR 캐릭터 1명 8★ 달성', reward: 800,
-      check: () => { const cs = META.charStars || {}; return (GACHA_POOL.SR || []).some(id => (cs[id] || 0) >= 8); } },
-    { id: 'ssrStar4',  name: '✨ SSR 4★',        desc: 'SSR 캐릭터 1명 4★ 달성', reward: 500,
-      check: () => { const cs = META.charStars || {}; return (GACHA_POOL.SSR || []).some(id => (cs[id] || 0) >= 4); } },
-    { id: 'ssrStar8',  name: '🌟 SSR 8★',        desc: 'SSR 캐릭터 1명 8★ 달성', reward: 1200,
-      check: () => { const cs = META.charStars || {}; return (GACHA_POOL.SSR || []).some(id => (cs[id] || 0) >= 8); } },
-    { id: 'allSR8',    name: '🌸 SR 완전 돌파',  desc: '모든 SR 캐릭터 8★ 달성', reward: 1500,
-      check: () => { const cs = META.charStars || {}; return (GACHA_POOL.SR || []).every(id => (cs[id] || 0) >= 8); } },
-    { id: 'allSSR8',   name: '🌟 SSR 완전 돌파', desc: '모든 SSR 캐릭터 8★ 달성', reward: 3000,
-      check: () => { const cs = META.charStars || {}; return (GACHA_POOL.SSR || []).every(id => (cs[id] || 0) >= 8); } },
-    { id: 'allMaxStar',name: '👑 완전한 별',     desc: '모든 가챠 캐릭터 8★ 달성 (R+SR+SSR)', reward: 10000,
-      check: () => {
-        const cs = META.charStars || {};
-        const all = [...(GACHA_POOL.R || []), ...(GACHA_POOL.SR || []), ...(GACHA_POOL.SSR || [])];
-        return all.every(id => (cs[id] || 0) >= 8);
-      } },
+    // R 캐릭터 8★ — 소박한 톤 (R 캐릭터답게 화려하지 않게)
+    { id: 'char8_marine',   name: '🌊 어뢰병',         desc: '🌊 마린 8★ 달성',     reward: 300,
+      check: () => ((META.charStars || {}).marine   || 0) >= 8 },
+    { id: 'char8_solar',    name: '☀️ 햇살꾼',         desc: '☀️ 솔라 8★ 달성',     reward: 300,
+      check: () => ((META.charStars || {}).solar    || 0) >= 8 },
+    { id: 'char8_gravitas', name: '🌀 인력자',         desc: '🌀 그래비타스 8★ 달성', reward: 300,
+      check: () => ((META.charStars || {}).gravitas || 0) >= 8 },
+    // SR 캐릭터 8★
+    { id: 'char8_sakura',   name: '🌸 벚꽃의 검객',    desc: '🌸 사쿠라 8★ 달성',   reward: 800,
+      check: () => ((META.charStars || {}).sakura   || 0) >= 8 },
+    { id: 'char8_luna',     name: '🌙 달빛의 사수',    desc: '🌙 루나 8★ 달성',     reward: 800,
+      check: () => ((META.charStars || {}).luna     || 0) >= 8 },
+    // SSR 캐릭터 8★
+    { id: 'char8_aria',     name: '🌟 천공의 노래꾼',  desc: '🌟 아리아 8★ 달성',   reward: 1500,
+      check: () => ((META.charStars || {}).aria     || 0) >= 8 },
+    { id: 'char8_misaki',   name: '🦋 시공의 여행자',  desc: '🦋 미사키 8★ 달성',   reward: 1500,
+      check: () => ((META.charStars || {}).misaki   || 0) >= 8 },
   ];
 
   // ===== 반복 업적 — 게임 종료마다 조건 충족 시 매번 보상 =====
@@ -12974,6 +13029,20 @@
         // 💎 유물 효과 — 보스 처치 시 발동
         if (state.relicEffects.bossKillResetCooldown) {
           for (const a of state.tower.abilities) { a.cooldown = 0; }
+        }
+        // 자비의 망토 — 보스 처치 시 적 정지 + 골드
+        if (state.relicEffects.bossKillFreezeFrames > 0) {
+          const fr = state.relicEffects.bossKillFreezeFrames;
+          for (const en of state.enemies) {
+            if (en.hp <= 0) continue;
+            en.slowFrames = Math.max(en.slowFrames || 0, fr);
+            if (!en.isBoss) en.timeStopped = state.t + fr;
+          }
+        }
+        if (state.relicEffects.bossKillGoldPerRound > 0) {
+          const bonus = (state.round || 1) * state.relicEffects.bossKillGoldPerRound;
+          state.gold += bonus;
+          toast(`😇 천사의 시간: +${bonus}골드`);
         }
         // 차원 용 누적
         if (state.relicEffects.dragonStackPerBoss > 0) {
@@ -17506,16 +17575,28 @@
   });
 
   // ▶ 새 게임 — 항상 모드 선택 화면으로 (진행 중인 게임이 있어도 새로 시작 가능)
-  // 🔄 다기기 수동 동기화 버튼 — 강제 push→pull
+  // 🔄 다기기 수동 동기화 버튼 — 서버 데이터로 강제 덮어쓰기 (병합 X)
+  // 사용자 기대: "다른 기기에서 한 거 그대로 가져오기"
   const _manualSyncBtn = document.getElementById('manualSyncBtn');
   if (_manualSyncBtn) {
     _manualSyncBtn.onclick = async () => {
       if (!isAccountLoggedIn()) { toast('⚠ 로그인 필요'); return; }
+      // 확인 — 로컬 미동기화 데이터가 있을 수 있으니 명시적 동의
+      if (!confirm('서버 데이터로 강제 동기화합니다.\n이 기기에서 오프라인으로 진행한 내용이 있다면 사라질 수 있습니다.\n계속하시겠습니까?')) return;
       _manualSyncBtn.disabled = true;
       _manualSyncBtn.textContent = '🔄 동기화 중...';
       try {
-        const ok = await refreshMetaFromServerIfStale(true);   // force=true 쿨다운 무시
-        toast(ok ? '✅ 동기화 완료' : '⚠ 동기화 실패');
+        const ok = await forceLoadFromServer();   // 서버 데이터로 그냥 덮어쓰기 (병합 없음)
+        if (ok) {
+          // UI 전체 갱신
+          if (typeof refreshMenuNickname === 'function') refreshMenuNickname();
+          if (typeof refreshMenuButtons === 'function') refreshMenuButtons();
+          if (typeof refreshGachaCircleBtn === 'function') refreshGachaCircleBtn();
+          if (typeof renderPanel === 'function') renderPanel();
+          toast('✅ 서버 데이터로 동기화 완료');
+        } else {
+          toast('⚠ 동기화 실패 — 로그인 상태 확인');
+        }
       } catch (e) {
         toast(`❌ ${(e.message || e).toString().substring(0, 60)}`);
       } finally {
@@ -18004,7 +18085,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 189;
+  const APP_VERSION = 195;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
@@ -18132,7 +18213,7 @@
     // 🌌 초월 — 승천 15 이후 단계적
     trans:    ['trans1', 'trans3', 'trans5', 'trans10', 'trans15'],
     // ⭐ 캐릭터 돌파 — 별 등급
-    chars:    ['firstStar', 'srStar4', 'srStar8', 'ssrStar4', 'ssrStar8', 'allSR8', 'allSSR8', 'allMaxStar'],
+    chars:    ['firstStar', 'char8_marine', 'char8_solar', 'char8_gravitas', 'char8_sakura', 'char8_luna', 'char8_aria', 'char8_misaki'],
     special:  ['codexHalf', 'codexFull', 'allChars', 'speedrun', 'lowSlot',
                'lucky5', 'goldHold3k', 'gold5kRun',
                'relicFirst', 'relic3', 'relic5', 'relicRare', 'relicEpic', 'relicLeg', 'relicAllRar'],
@@ -18435,7 +18516,8 @@
       else if (d.isGachaUnique) groups.gacha.push(id);   // 안전망 (charOwnerMap에 안 잡힌 가챠)
       else groups.active.push(id);
     }
-    // 탭 카운트 갱신 — 라벨은 고정 맵에서 가져오기 (기존 textContent 파싱 시 한국어 라벨 손실 버그 방지)
+    // 탭 카운트 갱신 — 라벨은 고정 맵에서 가져오기 (텍스트 파싱 X → 한국어 라벨 손실 버그 방지)
+    // 좁은 화면에서도 잘리지 않게 라벨과 카운트를 두 줄로 표시
     const PERMA_TAB_LABELS = {
       active:  '⚡ 액티브',
       passive: '⭐ 패시브',
@@ -18447,8 +18529,8 @@
       if (!groups[t]) return;
       const total = groups[t].length;
       const upgraded = groups[t].filter(id => getAbilityPermaLv(id) > 0).length;
-      const label = PERMA_TAB_LABELS[t] || btn.textContent;
-      btn.textContent = `${label} ${upgraded}/${total}`;
+      const label = PERMA_TAB_LABELS[t] || '';
+      btn.innerHTML = `<div>${label}</div><div style="font-size:10px; opacity:0.75; margin-top:2px;">${upgraded}/${total}</div>`;
     });
     const ids = groups[permaTab] || [];
     if (ids.length === 0) {
