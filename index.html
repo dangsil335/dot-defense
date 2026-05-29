@@ -673,7 +673,176 @@
     padding: 4px 8px; font-size: 12px;
     border-radius: 4px;
   }
-  /* 중앙 배너 */
+  /* 🎴 풀스크린 배너 (명조 스타일) */
+  .gacha-fullbanner {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16/9;
+    max-height: 75vh;
+    background: linear-gradient(135deg, #0a0c14, #050608);
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 12px;
+  }
+  .gacha-fullbanner-img {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  .gacha-fullbanner-fallback {
+    position: absolute; inset: 0;
+    display: none; flex-direction: column;
+    align-items: center; justify-content: center;
+    color: #5a6275; text-align: center; padding: 20px;
+  }
+  /* 좌/우 배너 전환 화살표 */
+  .gacha-banner-arrow {
+    position: absolute;
+    top: 50%; transform: translateY(-50%);
+    width: 44px; height: 44px;
+    background: rgba(20,24,34,0.65);
+    color: #fff;
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 50%;
+    font-size: 18px; cursor: pointer;
+    backdrop-filter: blur(6px);
+    transition: background .15s, transform .1s;
+    z-index: 5;
+    display: flex; align-items: center; justify-content: center;
+    font-family: inherit;
+  }
+  .gacha-banner-arrow:hover { background: rgba(122,215,255,0.4); transform: translateY(-50%) scale(1.08); }
+  .gacha-banner-arrow:active { transform: translateY(-50%) scale(0.95); }
+  .gacha-arrow-left  { left: 8px; }
+  .gacha-arrow-right { right: 8px; }
+  /* 상단 좌측: 배너 타이틀 */
+  .gacha-banner-top-overlay {
+    position: absolute;
+    top: 12px; left: 16px;
+    z-index: 4;
+    pointer-events: none;
+  }
+  .gacha-banner-name {
+    font-size: 18px; font-weight: bold;
+    color: #fff;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.85), 0 0 12px rgba(255,212,121,0.4);
+    margin-bottom: 4px;
+  }
+  .gacha-banner-pickup-info {
+    font-size: 11px; color: #cfd6e3;
+    text-shadow: 0 1px 4px rgba(0,0,0,0.85);
+    background: rgba(0,0,0,0.4);
+    padding: 2px 8px; border-radius: 10px;
+    display: inline-block;
+    backdrop-filter: blur(4px);
+  }
+  /* 상단 우측: 컬렉션 진행도 칩 */
+  .gacha-banner-collection-pill {
+    position: absolute;
+    top: 12px; right: 16px;
+    background: rgba(0,0,0,0.5);
+    color: #ffd479;
+    font-size: 12px; font-weight: bold;
+    padding: 5px 10px; border-radius: 12px;
+    border: 1px solid rgba(255,212,121,0.3);
+    backdrop-filter: blur(4px);
+    z-index: 4;
+  }
+  /* 하단 오버레이: 픽업 아이콘 + 뽑기 버튼 */
+  .gacha-banner-bottom-overlay {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    padding: 12px 16px 16px;
+    background: linear-gradient(transparent 0%, rgba(0,0,0,0.45) 30%, rgba(0,0,0,0.85) 100%);
+    z-index: 4;
+    display: flex; flex-direction: column; gap: 10px;
+  }
+  /* 픽업 캐릭터 미니 아이콘 */
+  .gacha-pickup-icons {
+    display: flex; gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .gacha-pickup-icon {
+    display: flex; align-items: center; gap: 6px;
+    background: rgba(0,0,0,0.5);
+    border: 1px solid rgba(255,255,255,0.15);
+    padding: 4px 8px 4px 4px;
+    border-radius: 14px;
+    font-size: 11px;
+    backdrop-filter: blur(4px);
+  }
+  .gacha-pickup-icon img {
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    object-fit: cover;
+  }
+  .gacha-pickup-icon.tier-ssr { border-color: #ff80ff; box-shadow: 0 0 8px rgba(255,128,255,0.4); }
+  .gacha-pickup-icon.tier-sr  { border-color: #ffaa55; }
+  .gacha-pickup-icon.tier-r   { border-color: #88e0ff; }
+  .gacha-pickup-icon.tier-ssr .gacha-pickup-rate { color: #ff80ff; font-weight: bold; }
+  .gacha-pickup-icon.tier-sr .gacha-pickup-rate  { color: #ffaa55; }
+  .gacha-pickup-icon.tier-r .gacha-pickup-rate   { color: #88e0ff; }
+  .gacha-pickup-rate { font-size: 10px; }
+  /* 뽑기 버튼 행 */
+  .gacha-pull-row {
+    display: flex; gap: 10px;
+  }
+  .gacha-pull-btn-overlay {
+    flex: 1;
+    padding: 14px 12px;
+    background: rgba(31,39,53,0.85);
+    color: #e8eaf0;
+    border: 2px solid rgba(122,134,160,0.5);
+    font-family: inherit;
+    cursor: pointer;
+    transition: background .12s, border-color .12s, transform .08s;
+    touch-action: manipulation;
+    display: flex; flex-direction: column;
+    align-items: center; gap: 4px;
+    border-radius: 8px;
+    backdrop-filter: blur(6px);
+  }
+  .gacha-pull-btn-overlay:hover:not(:disabled) {
+    background: rgba(42,53,80,0.95);
+    border-color: rgba(122,215,255,0.8);
+    transform: translateY(-2px);
+  }
+  .gacha-pull-btn-overlay:active { transform: scale(0.97); }
+  .gacha-pull-btn-overlay:disabled { opacity: 0.5; cursor: not-allowed; }
+  .gacha-pull-btn-overlay.primary {
+    border-color: rgba(255,212,121,0.8);
+    background: linear-gradient(135deg, rgba(74,52,18,0.9), rgba(42,30,10,0.9));
+    color: #ffe070;
+    box-shadow: 0 0 12px rgba(255,212,121,0.3);
+  }
+  .gacha-pull-btn-overlay.primary:hover:not(:disabled) {
+    background: linear-gradient(135deg, rgba(94,68,26,0.95), rgba(58,42,16,0.95));
+    box-shadow: 0 0 20px rgba(255,212,121,0.5);
+  }
+  /* 보조 액션 (배너 밖) */
+  .gacha-secondary-actions {
+    display: flex; flex-direction: column; gap: 8px;
+    padding: 0 12px 16px;
+  }
+  .gacha-secondary-btn {
+    width: 100%;
+    padding: 8px 12px;
+    background: #1a1f2a;
+    border: 1px solid #ffd479;
+    border-radius: 6px;
+    color: #ffd479;
+    font-family: inherit; font-size: 12px;
+    cursor: pointer;
+  }
+  .gacha-secondary-btn:hover { background: #2a241a; }
+  /* 모바일 — 작은 화면에서 화살표 더 작게 */
+  @media (max-width: 480px) {
+    .gacha-banner-arrow { width: 36px; height: 36px; font-size: 15px; }
+    .gacha-banner-name { font-size: 15px; }
+    .gacha-banner-pickup-info { font-size: 10px; }
+  }
+  /* (구) 중앙 배너 — 백워드 호환용 (사용 X) */
   .gacha-banner-wrap {
     position: relative;
     width: 100%;
@@ -1682,11 +1851,13 @@
     <button id="achievementsBack" class="codex-back">← 메뉴로</button>
   </div>
   <div class="achievement-summary" id="achievement-summary">달성 0/0</div>
-  <div class="codex-tabs" id="ach-tabs">
+  <div class="codex-tabs" id="ach-tabs" style="overflow-x:auto; flex-wrap:nowrap;">
     <button class="codex-tab active" data-achtab="progress">📈 진행</button>
     <button class="codex-tab" data-achtab="build">🎴 빌드</button>
     <button class="codex-tab" data-achtab="combat">⚔️ 처치</button>
     <button class="codex-tab" data-achtab="ascension">✨ 승천</button>
+    <button class="codex-tab" data-achtab="trans">🌌 초월</button>
+    <button class="codex-tab" data-achtab="chars">⭐ 캐릭터</button>
     <button class="codex-tab" data-achtab="special">📖 특수</button>
     <button class="codex-tab" data-achtab="repeat">🔁 반복</button>
   </div>
@@ -1758,41 +1929,62 @@
     </div>
   </div>
 
-  <div class="gacha-banner-wrap">
-    <img id="gacha-banner-img" class="gacha-banner-img" src="./icons/gacha.png"
-         onerror="this.style.display='none'; document.getElementById('gacha-banner-fallback').style.display='flex';" />
-    <div id="gacha-banner-fallback" class="gacha-banner-fallback" style="display:none;">
+  <!-- 🎴 풀스크린 배너 (명조 스타일) — 큰 이미지 + 내부 오버레이 UI -->
+  <div class="gacha-fullbanner">
+    <!-- 배경 이미지 (배너별 동적 전환) -->
+    <img id="gacha-banner-img" class="gacha-fullbanner-img" src="./icons/gacha-aria.png"
+         onerror="this.src='./icons/gacha.png'; this.onerror=null;" />
+    <div id="gacha-banner-fallback" class="gacha-fullbanner-fallback" style="display:none;">
       <div class="gacha-banner-sparkles">✨</div>
       <div class="gacha-banner-title">DOT DEFENSE</div>
       <div class="gacha-banner-sub">캐릭터 픽업 가챠</div>
-      <div class="gacha-banner-hint">icons/gacha.png 이미지 추가하면 여기에 표시됨</div>
     </div>
-    <div class="gacha-banner-overlay">
-      <div class="gacha-collection-mini">컬렉션 <span id="gacha-collected">0</span>/<span id="gacha-total">0</span></div>
-      <div class="gacha-rates-mini">🟦 R 94.3% · 🟪 SR 5% · 🟧 SSR 0.7%</div>
+
+    <!-- 배너 좌/우 전환 화살표 -->
+    <button id="gachaBannerPrev" class="gacha-banner-arrow gacha-arrow-left" title="이전 배너">◀</button>
+    <button id="gachaBannerNext" class="gacha-banner-arrow gacha-arrow-right" title="다음 배너">▶</button>
+
+    <!-- 상단 좌측: 배너 타이틀 + 픽업 표시 -->
+    <div class="gacha-banner-top-overlay">
+      <div id="gacha-banner-name" class="gacha-banner-name">🌟 아리아 픽업</div>
+      <div id="gacha-banner-pickup-info" class="gacha-banner-pickup-info">SSR 1.0% · SR 5% · R 94%</div>
+    </div>
+
+    <!-- 상단 우측: 컬렉션 진행도 -->
+    <div class="gacha-banner-collection-pill">
+      📋 <span id="gacha-collected">0</span>/<span id="gacha-total">0</span>
+    </div>
+
+    <!-- 하단 오버레이: 픽업 캐릭터 + 뽑기 버튼들 -->
+    <div class="gacha-banner-bottom-overlay">
+      <!-- 픽업 캐릭터 미니 아이콘 -->
+      <div id="gacha-pickup-icons" class="gacha-pickup-icons"></div>
+
+      <!-- 뽑기 버튼들 -->
+      <div class="gacha-pull-row">
+        <button id="gachaPull1" class="gacha-pull-btn-overlay">
+          <div class="gacha-pull-label">1회 뽑기</div>
+          <div class="gacha-pull-cost"><span style="color:#88ccff">💎</span> 1</div>
+        </button>
+        <button id="gachaPull10" class="gacha-pull-btn-overlay primary">
+          <div class="gacha-pull-label">10회 뽑기</div>
+          <div class="gacha-pull-cost"><span style="color:#88ccff">💎</span> 9</div>
+        </button>
+      </div>
     </div>
   </div>
 
-  <div class="gacha-buttons">
-    <button id="gachaPull1" class="gacha-pull-btn">
-      <div class="gacha-pull-label">1회 뽑기</div>
-      <div class="gacha-pull-cost"><span style="color:#88ccff">💎</span> 1</div>
+  <!-- 보조 액션 (배너 밖에 두기) -->
+  <div class="gacha-secondary-actions">
+    <button id="gachaConvertStardust" class="gacha-secondary-btn">
+      ⭐ 4,000 → 💎 1
     </button>
-    <button id="gachaPull10" class="gacha-pull-btn primary">
-      <div class="gacha-pull-label">10회 뽑기</div>
-      <div class="gacha-pull-cost"><span style="color:#88ccff">💎</span> 9</div>
-    </button>
+    <details class="gacha-collection-details">
+      <summary>📋 컬렉션</summary>
+      <div id="gacha-collection" class="gacha-collection-grid"></div>
+      <div class="gacha-refund-info">중복 시 환불: R 150★ / SR 400★ / SSR 800★ (만렙)</div>
+    </details>
   </div>
-  <!-- ⭐ 스타더스트 → 결정 변환 (2000 ★ : 1 💎) -->
-  <button id="gachaConvertStardust" style="display:block; width:calc(100% - 24px); margin:8px 12px; padding:10px; background:#1a1f2a; border:1px solid #ffd479; border-radius:6px; color:#ffd479; font-family:inherit; font-size:13px; cursor:pointer;">
-    ⭐ 스타더스트 2,000 → 💎 결정 1
-  </button>
-
-  <details class="gacha-collection-details">
-    <summary>📋 컬렉션 보기</summary>
-    <div id="gacha-collection" class="gacha-collection-grid"></div>
-    <div class="gacha-refund-info">중복 시 환불: R 150★ / SR 400★ / SSR 800★</div>
-  </details>
 </div>
 
 <!-- ===== 🎰 가챠 결과 화면 ===== -->
@@ -11648,10 +11840,53 @@
     SR:  ['sakura', 'luna'],
     SSR: ['aria', 'misaki'],
   };
-  const GACHA_RATES = { R: 0.943, SR: 0.05, SSR: 0.007 };
+  const GACHA_RATES = { R: 0.943, SR: 0.05, SSR: 0.007 };   // (구) 단일 배너 호환용
   const GACHA_REFUND = { R: 150, SR: 400, SSR: 800 };  // 중복 시 스타더스트 환불
   const GACHA_COST = 1;       // 1뽑기 = 결정 1개
   const GACHA_COST_10 = 9;    // 10뽑기 = 결정 9개 (1개 할인)
+
+  // 🎴 배너별 가챠 정의 — 픽업 캐릭터, 풀, 확률
+  // 각 배너는 자기 SSR만 픽업 (다른 SSR 제외), SR/R 풀은 동일
+  const GACHA_BANNERS = [
+    {
+      id: 'aria',
+      name: '🌟 아리아 픽업',
+      desc: '천공의 노래를 듣는 자',
+      bannerImg: './icons/gacha-aria.png',
+      pool: {
+        SSR: ['aria'],                              // 픽업 단독
+        SR:  ['sakura', 'luna'],
+        R:   ['marine', 'solar', 'gravitas'],
+      },
+      rates: { R: 0.94, SR: 0.05, SSR: 0.01 },     // SSR 픽업 1.0%
+      featured: 'aria',                            // 픽업 캐릭터 ID
+    },
+    {
+      id: 'misaki',
+      name: '🦋 미사키 픽업',
+      desc: '시간을 거니는 자',
+      bannerImg: './icons/gacha-misaki.png',
+      pool: {
+        SSR: ['misaki'],
+        SR:  ['sakura', 'luna'],
+        R:   ['marine', 'solar', 'gravitas'],
+      },
+      rates: { R: 0.94, SR: 0.05, SSR: 0.01 },
+      featured: 'misaki',
+    },
+  ];
+  // 현재 선택된 배너 인덱스 (META 에 저장)
+  function getCurrentBannerIdx() {
+    const id = META.selectedBanner || GACHA_BANNERS[0].id;
+    const idx = GACHA_BANNERS.findIndex(b => b.id === id);
+    return idx < 0 ? 0 : idx;
+  }
+  function getCurrentBanner() { return GACHA_BANNERS[getCurrentBannerIdx()]; }
+  function setBannerIdx(idx) {
+    const i = ((idx % GACHA_BANNERS.length) + GACHA_BANNERS.length) % GACHA_BANNERS.length;
+    META.selectedBanner = GACHA_BANNERS[i].id;
+    saveMeta();
+  }
 
   function getCrystals() { return META.crystals || 0; }
   function spendCrystals(n) {
@@ -11734,18 +11969,20 @@
   function permaRangeMul(abilityId) { const p = getCharStarPerks(abilityId); return p ? p.rangeMul : 1; }
   function permaEffMul(abilityId)   { const p = getCharStarPerks(abilityId); return p ? p.effectMul : 1; }
   function permaAoeMul(abilityId)   { const p = getCharStarPerks(abilityId); return p ? p.aoeMul : 1; }
-  // 한 번 뽑기
+  // 한 번 뽑기 — 현재 선택된 배너의 풀/확률 사용
   function gachaPullOne() {
+    const banner = getCurrentBanner();
+    const rates = banner.rates;
     const r = Math.random();
     let rarity;
-    if (r < GACHA_RATES.SSR) rarity = 'SSR';
-    else if (r < GACHA_RATES.SSR + GACHA_RATES.SR) rarity = 'SR';
+    if (r < rates.SSR) rarity = 'SSR';
+    else if (r < rates.SSR + rates.SR) rarity = 'SR';
     else rarity = 'R';
-    // 풀이 비어있으면 다른 등급으로 대체
-    let pool = GACHA_POOL[rarity];
-    if (pool.length === 0) {
+    // 풀이 비어있으면 다른 등급으로 대체 (안전망)
+    let pool = banner.pool[rarity];
+    if (!pool || pool.length === 0) {
       rarity = 'R';
-      pool = GACHA_POOL.R;
+      pool = banner.pool.R;
     }
     const charId = pool[Math.floor(Math.random() * pool.length)];
     META.gachaUnlocked = META.gachaUnlocked || {};
@@ -12212,7 +12449,39 @@
     { id: 'asc1',      name: '✨ 첫 승천',     desc: '승천 1 클리어', reward: 150, check: s => !!s.gameWin && (s.ascension || 0) >= 1 },
     { id: 'asc5',      name: '🌟 승천 마스터', desc: '승천 5 클리어', reward: 300, check: s => !!s.gameWin && (s.ascension || 0) >= 5 },
     { id: 'asc10',     name: '💫 승천 챔피언', desc: '승천 10 클리어', reward: 600, check: s => !!s.gameWin && (s.ascension || 0) >= 10 },
-    { id: 'asc15',     name: '👑 승천 정복자', desc: '승천 15 클리어 (최종)', reward: 1500, check: s => !!s.gameWin && (s.ascension || 0) >= 15 },
+    { id: 'asc15',     name: '👑 승천 정복자', desc: '승천 15 클리어', reward: 1500, check: s => !!s.gameWin && (s.ascension || 0) >= 15 },
+    // === 🌌 초월(Transcendence) 업적 — asc 16~30 ===
+    { id: 'trans1',    name: '🌌 초월의 문', desc: '초월 1 클리어', reward: 500,
+      check: s => !!s.gameWin && (s.ascension || 0) >= MAX_ASCENSION + 1 },
+    { id: 'trans3',    name: '🌌 초월 도전자', desc: '초월 3 클리어', reward: 1000,
+      check: s => !!s.gameWin && (s.ascension || 0) >= MAX_ASCENSION + 3 },
+    { id: 'trans5',    name: '🌌 초월 정복', desc: '초월 5 클리어', reward: 1500,
+      check: s => !!s.gameWin && (s.ascension || 0) >= MAX_ASCENSION + 5 },
+    { id: 'trans10',   name: '🌌 초월의 정점', desc: '초월 10 클리어', reward: 3000,
+      check: s => !!s.gameWin && (s.ascension || 0) >= MAX_ASCENSION + 10 },
+    { id: 'trans15',   name: '👑 초월 종결자', desc: '초월 15 클리어 (최종)', reward: 8000,
+      check: s => !!s.gameWin && (s.ascension || 0) >= MAX_ASCENSION + 15 },
+    // === ⭐ 캐릭터 돌파 업적 — META.charStars 기반 ===
+    { id: 'firstStar', name: '⭐ 첫 별',         desc: '아무 캐릭터 1★ 달성', reward: 100,
+      check: () => { const cs = META.charStars || {}; return Object.values(cs).some(v => v >= 1); } },
+    { id: 'srStar4',   name: '🌸 SR 4★',         desc: 'SR 캐릭터 1명 4★ 달성', reward: 300,
+      check: () => { const cs = META.charStars || {}; return (GACHA_POOL.SR || []).some(id => (cs[id] || 0) >= 4); } },
+    { id: 'srStar8',   name: '🌙 SR 8★',         desc: 'SR 캐릭터 1명 8★ 달성', reward: 800,
+      check: () => { const cs = META.charStars || {}; return (GACHA_POOL.SR || []).some(id => (cs[id] || 0) >= 8); } },
+    { id: 'ssrStar4',  name: '✨ SSR 4★',        desc: 'SSR 캐릭터 1명 4★ 달성', reward: 500,
+      check: () => { const cs = META.charStars || {}; return (GACHA_POOL.SSR || []).some(id => (cs[id] || 0) >= 4); } },
+    { id: 'ssrStar8',  name: '🌟 SSR 8★',        desc: 'SSR 캐릭터 1명 8★ 달성', reward: 1200,
+      check: () => { const cs = META.charStars || {}; return (GACHA_POOL.SSR || []).some(id => (cs[id] || 0) >= 8); } },
+    { id: 'allSR8',    name: '🌸 SR 완전 돌파',  desc: '모든 SR 캐릭터 8★ 달성', reward: 1500,
+      check: () => { const cs = META.charStars || {}; return (GACHA_POOL.SR || []).every(id => (cs[id] || 0) >= 8); } },
+    { id: 'allSSR8',   name: '🌟 SSR 완전 돌파', desc: '모든 SSR 캐릭터 8★ 달성', reward: 3000,
+      check: () => { const cs = META.charStars || {}; return (GACHA_POOL.SSR || []).every(id => (cs[id] || 0) >= 8); } },
+    { id: 'allMaxStar',name: '👑 완전한 별',     desc: '모든 가챠 캐릭터 8★ 달성 (R+SR+SSR)', reward: 10000,
+      check: () => {
+        const cs = META.charStars || {};
+        const all = [...(GACHA_POOL.R || []), ...(GACHA_POOL.SR || []), ...(GACHA_POOL.SSR || [])];
+        return all.every(id => (cs[id] || 0) >= 8);
+      } },
   ];
 
   // ===== 반복 업적 — 게임 종료마다 조건 충족 시 매번 보상 =====
@@ -12226,9 +12495,13 @@
     { id: 'rKills2k',  name: '대학살 (반복)',   desc: '한 게임 2000처치마다 +80★',       reward: 80,  check: s => (s.totalKills || 0) >= 2000 },
     { id: 'rTriple',   name: '히든 사냥 (반복)', desc: '게임에 트리플 조합 형성마다 +50★', reward: 50,  check: s => s.tower.abilities.some(a => ABILITY_DEFS[a.id].isTriple) },
     { id: 'rBoss5',    name: '보스 사냥 (반복)', desc: '보스 5마리 처치마다 +40★',        reward: 40,  check: s => (s.bossKills || 0) >= 5 },
-    { id: 'rAscClear', name: '승천 도전 (반복)', desc: '승천 클리어마다 +(승천 단계 × 50)★', reward: 50, check: s => !!s.gameWin && (s.ascension || 0) > 0,
+    { id: 'rAscClear', name: '승천 도전 (반복)', desc: '승천 클리어마다 +(승천 단계 × 50)★', reward: 50,
+      check: s => !!s.gameWin && (s.ascension || 0) > 0 && (s.ascension || 0) <= MAX_ASCENSION,
       // 보상은 ascension 단계에 따라 동적 계산 (checkAchievements에서 처리)
       dynamic: s => (s.ascension || 0) * 50 },
+    { id: 'rTransClear', name: '🌌 초월 도전 (반복)', desc: '초월 클리어마다 +(초월 단계 × 200)★', reward: 200,
+      check: s => !!s.gameWin && (s.ascension || 0) > MAX_ASCENSION,
+      dynamic: s => ((s.ascension || 0) - MAX_ASCENSION) * 200 },
   ];
   function getUnlockedAchievements() {
     // 🛠 데이터 복구: 이전 버그로 achievements가 객체로 손상된 경우 배열로 복원
@@ -17435,11 +17708,24 @@
   document.getElementById('gachaBack').onclick = () => showScreen('menu');
   document.getElementById('gachaPull1').onclick = () => doGachaPull(1);
   document.getElementById('gachaPull10').onclick = () => doGachaPull(10);
-  // ⭐ 스타더스트 → 결정 변환 (2000 : 1)
+  // 🎴 배너 전환 화살표
+  const _bannerPrev = document.getElementById('gachaBannerPrev');
+  const _bannerNext = document.getElementById('gachaBannerNext');
+  if (_bannerPrev) _bannerPrev.onclick = () => {
+    setBannerIdx(getCurrentBannerIdx() - 1);
+    SFX.click && SFX.click();
+    buildGacha();
+  };
+  if (_bannerNext) _bannerNext.onclick = () => {
+    setBannerIdx(getCurrentBannerIdx() + 1);
+    SFX.click && SFX.click();
+    buildGacha();
+  };
+  // ⭐ 스타더스트 → 결정 변환 (4000 : 1)
   const _convBtn = document.getElementById('gachaConvertStardust');
   if (_convBtn) {
     _convBtn.onclick = () => {
-      const cost = 2000;
+      const cost = 4000;
       if ((META.stardust || 0) < cost) {
         toast(`❌ 스타더스트 부족 (${cost.toLocaleString()}★ 필요)`);
         return;
@@ -17470,6 +17756,64 @@
     const owned = allGachaIds.filter(id => META.gachaUnlocked && META.gachaUnlocked[id] > 0).length;
     document.getElementById('gacha-collected').textContent = owned;
     document.getElementById('gacha-total').textContent = allGachaIds.length;
+
+    // 🎴 배너 갱신 — 현재 배너 이미지 + 픽업 표시
+    const banner = getCurrentBanner();
+    const bannerImg = document.getElementById('gacha-banner-img');
+    if (bannerImg) {
+      bannerImg.src = banner.bannerImg;
+      bannerImg.onerror = function() {
+        // 배너 이미지 없으면 폴백
+        this.src = './icons/gacha.png';
+        this.onerror = function() {
+          this.style.display = 'none';
+          const fb = document.getElementById('gacha-banner-fallback');
+          if (fb) { fb.style.display = 'flex'; fb.querySelector('.gacha-banner-title').textContent = banner.name; }
+        };
+      };
+    }
+    const nameEl = document.getElementById('gacha-banner-name');
+    if (nameEl) nameEl.textContent = banner.name;
+    const infoEl = document.getElementById('gacha-banner-pickup-info');
+    if (infoEl) {
+      const r = banner.rates;
+      infoEl.textContent = `SSR ${(r.SSR*100).toFixed(1)}% · SR ${(r.SR*100).toFixed(0)}% · R ${(r.R*100).toFixed(0)}%`;
+    }
+    // 픽업 캐릭터 미니 아이콘 (SSR + SR)
+    const pickupEl = document.getElementById('gacha-pickup-icons');
+    if (pickupEl) {
+      pickupEl.innerHTML = '';
+      const ssrIds = banner.pool.SSR || [];
+      const srIds  = banner.pool.SR  || [];
+      const ssrRate = (banner.rates.SSR * 100).toFixed(1);
+      const srRate  = (banner.rates.SR * 100).toFixed(0);
+      // 픽업 SSR
+      for (const id of ssrIds) {
+        const ch = CHARACTERS[id];
+        if (!ch) continue;
+        const src = getCharacterImageSrc(id);
+        const chip = document.createElement('div');
+        chip.className = 'gacha-pickup-icon tier-ssr';
+        chip.innerHTML = `
+          ${src ? `<img src="${src}" alt="${id}">` : `<span style="font-size:14px;">⭐</span>`}
+          <span style="color:#fff;">${ch.name}</span>
+          <span class="gacha-pickup-rate">SSR ${ssrRate}%</span>
+        `;
+        pickupEl.appendChild(chip);
+      }
+      // SR 캐릭터 (총합 표시)
+      if (srIds.length > 0) {
+        const chip = document.createElement('div');
+        chip.className = 'gacha-pickup-icon tier-sr';
+        const names = srIds.map(id => CHARACTERS[id] ? CHARACTERS[id].name : id).join(', ');
+        chip.innerHTML = `
+          <span style="font-size:13px;padding-left:4px;">🟧</span>
+          <span style="color:#fff;font-size:10px;">${names}</span>
+          <span class="gacha-pickup-rate">SR ${srRate}%</span>
+        `;
+        pickupEl.appendChild(chip);
+      }
+    }
 
     // 버튼 활성/비활성
     document.getElementById('gachaPull1').disabled = (META.crystals || 0) < GACHA_COST;
@@ -17698,7 +18042,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 178;
+  const APP_VERSION = 182;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
@@ -17823,6 +18167,10 @@
     build:    ['combo3', 'triple1', 'triple3', 'maxAbility', 'lvHigh'],
     combat:   ['boss5', 'bossRun10', 'kills500', 'kills1k', 'kills2k', 'kills3k', 'kills5k', 'score100k', 'score500k'],
     ascension:['asc1', 'asc3', 'asc5', 'asc7', 'asc10', 'asc12', 'asc15'],
+    // 🌌 초월 — 승천 15 이후 단계적
+    trans:    ['trans1', 'trans3', 'trans5', 'trans10', 'trans15'],
+    // ⭐ 캐릭터 돌파 — 별 등급
+    chars:    ['firstStar', 'srStar4', 'srStar8', 'ssrStar4', 'ssrStar8', 'allSR8', 'allSSR8', 'allMaxStar'],
     special:  ['codexHalf', 'codexFull', 'allChars', 'speedrun', 'lowSlot',
                'lucky5', 'goldHold3k', 'gold5kRun',
                'relicFirst', 'relic3', 'relic5', 'relicRare', 'relicEpic', 'relicLeg', 'relicAllRar'],
