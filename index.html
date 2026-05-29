@@ -748,77 +748,82 @@
     backdrop-filter: blur(4px);
     z-index: 4;
   }
-  /* 하단 오버레이: 픽업 아이콘 + 뽑기 버튼 */
+  /* 하단 오버레이: 뽑기 버튼만 (어두운 그라데이션 X — 일러스트 보존) */
   .gacha-banner-bottom-overlay {
     position: absolute;
-    bottom: 0; left: 0; right: 0;
-    padding: 12px 16px 16px;
-    background: linear-gradient(transparent 0%, rgba(0,0,0,0.45) 30%, rgba(0,0,0,0.85) 100%);
+    bottom: 12px; left: 12px; right: 12px;
     z-index: 4;
-    display: flex; flex-direction: column; gap: 10px;
+    display: flex; flex-direction: column; gap: 6px;
+    pointer-events: none;   /* 자식 요소만 클릭 가능 */
   }
-  /* 픽업 캐릭터 미니 아이콘 */
+  .gacha-banner-bottom-overlay > * { pointer-events: auto; }
+  /* 픽업 캐릭터 미니 아이콘 — 작게, 하단 오버레이 X (배너 우상단 작은 칩으로 통합) */
   .gacha-pickup-icons {
-    display: flex; gap: 8px;
+    display: flex; gap: 4px;
     align-items: center;
     flex-wrap: wrap;
+    justify-content: flex-end;
+    margin-bottom: 4px;
   }
   .gacha-pickup-icon {
-    display: flex; align-items: center; gap: 6px;
-    background: rgba(0,0,0,0.5);
+    display: flex; align-items: center; gap: 4px;
+    background: rgba(0,0,0,0.55);
     border: 1px solid rgba(255,255,255,0.15);
-    padding: 4px 8px 4px 4px;
-    border-radius: 14px;
-    font-size: 11px;
-    backdrop-filter: blur(4px);
+    padding: 3px 7px 3px 3px;
+    border-radius: 12px;
+    font-size: 10px;
+    backdrop-filter: blur(6px);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.5);
   }
   .gacha-pickup-icon img {
-    width: 22px; height: 22px;
+    width: 18px; height: 18px;
     border-radius: 50%;
     object-fit: cover;
   }
-  .gacha-pickup-icon.tier-ssr { border-color: #ff80ff; box-shadow: 0 0 8px rgba(255,128,255,0.4); }
+  .gacha-pickup-icon.tier-ssr { border-color: #ff80ff; box-shadow: 0 0 8px rgba(255,128,255,0.5); }
   .gacha-pickup-icon.tier-sr  { border-color: #ffaa55; }
   .gacha-pickup-icon.tier-r   { border-color: #88e0ff; }
   .gacha-pickup-icon.tier-ssr .gacha-pickup-rate { color: #ff80ff; font-weight: bold; }
   .gacha-pickup-icon.tier-sr .gacha-pickup-rate  { color: #ffaa55; }
   .gacha-pickup-icon.tier-r .gacha-pickup-rate   { color: #88e0ff; }
-  .gacha-pickup-rate { font-size: 10px; }
-  /* 뽑기 버튼 행 */
+  .gacha-pickup-rate { font-size: 9px; }
+  /* 뽑기 버튼 행 — 일러스트 가리지 않도록 본체에 backdrop-filter 적용 */
   .gacha-pull-row {
-    display: flex; gap: 10px;
+    display: flex; gap: 8px;
   }
   .gacha-pull-btn-overlay {
     flex: 1;
-    padding: 14px 12px;
-    background: rgba(31,39,53,0.85);
-    color: #e8eaf0;
-    border: 2px solid rgba(122,134,160,0.5);
+    padding: 12px 10px;
+    background: rgba(20,24,34,0.55);
+    color: #fff;
+    border: 1.5px solid rgba(255,255,255,0.25);
     font-family: inherit;
     cursor: pointer;
-    transition: background .12s, border-color .12s, transform .08s;
+    transition: background .12s, border-color .12s, transform .08s, box-shadow .15s;
     touch-action: manipulation;
     display: flex; flex-direction: column;
-    align-items: center; gap: 4px;
+    align-items: center; gap: 3px;
     border-radius: 8px;
-    backdrop-filter: blur(6px);
+    backdrop-filter: blur(10px);
+    box-shadow: 0 4px 14px rgba(0,0,0,0.5);
+    text-shadow: 0 1px 2px rgba(0,0,0,0.7);
   }
   .gacha-pull-btn-overlay:hover:not(:disabled) {
-    background: rgba(42,53,80,0.95);
+    background: rgba(42,53,80,0.75);
     border-color: rgba(122,215,255,0.8);
     transform: translateY(-2px);
   }
   .gacha-pull-btn-overlay:active { transform: scale(0.97); }
-  .gacha-pull-btn-overlay:disabled { opacity: 0.5; cursor: not-allowed; }
+  .gacha-pull-btn-overlay:disabled { opacity: 0.55; cursor: not-allowed; }
   .gacha-pull-btn-overlay.primary {
-    border-color: rgba(255,212,121,0.8);
-    background: linear-gradient(135deg, rgba(74,52,18,0.9), rgba(42,30,10,0.9));
+    border-color: rgba(255,212,121,0.85);
+    background: rgba(58,42,16,0.6);
     color: #ffe070;
-    box-shadow: 0 0 12px rgba(255,212,121,0.3);
+    box-shadow: 0 4px 14px rgba(0,0,0,0.5), 0 0 14px rgba(255,212,121,0.35);
   }
   .gacha-pull-btn-overlay.primary:hover:not(:disabled) {
-    background: linear-gradient(135deg, rgba(94,68,26,0.95), rgba(58,42,16,0.95));
-    box-shadow: 0 0 20px rgba(255,212,121,0.5);
+    background: rgba(78,56,22,0.75);
+    box-shadow: 0 4px 14px rgba(0,0,0,0.5), 0 0 22px rgba(255,212,121,0.6);
   }
   /* 보조 액션 (배너 밖) */
   .gacha-secondary-actions {
@@ -1955,12 +1960,12 @@
       📋 <span id="gacha-collected">0</span>/<span id="gacha-total">0</span>
     </div>
 
-    <!-- 하단 오버레이: 픽업 캐릭터 + 뽑기 버튼들 -->
+    <!-- 하단 오버레이: 뽑기 버튼만 (일러스트 보존) -->
     <div class="gacha-banner-bottom-overlay">
-      <!-- 픽업 캐릭터 미니 아이콘 -->
-      <div id="gacha-pickup-icons" class="gacha-pickup-icons"></div>
+      <!-- 픽업 캐릭터 — 숨김 (불필요한 가림 방지). 정보는 상단 칩 + 컬렉션에서 확인 -->
+      <div id="gacha-pickup-icons" class="gacha-pickup-icons" style="display:none;"></div>
 
-      <!-- 뽑기 버튼들 -->
+      <!-- 뽑기 버튼들 (반투명 + 블러로 일러스트 가리지 않음) -->
       <div class="gacha-pull-row">
         <button id="gachaPull1" class="gacha-pull-btn-overlay">
           <div class="gacha-pull-label">1회 뽑기</div>
@@ -18042,7 +18047,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 182;
+  const APP_VERSION = 184;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
@@ -18512,9 +18517,9 @@
         </div>
       `;
       sectionEl.appendChild(header);
-      // 능력 리스트 (가로형 행)
+      // 📋 능력 리스트 — 반응형 그리드 (화면 폭에 따라 1~3열)
       const list = document.createElement('div');
-      list.style.cssText = `display:flex;flex-direction:column;gap:4px;`;
+      list.style.cssText = `display:grid;grid-template-columns:repeat(auto-fill, minmax(280px, 1fr));gap:6px;`;
       for (const id of sect.items) {
         list.appendChild(buildPermaRow(id));
       }
