@@ -1264,6 +1264,10 @@
   <div class="nickname-display" id="nickname-display" style="margin-top:14px; font-size:13px; color:#9aa3b3; cursor:pointer;" title="클릭하여 닉네임 변경">
     닉네임: <span id="nickname-text" style="color:#7ad7ff; font-weight:bold;">-</span> ✏️
   </div>
+  <!-- 🔄 다기기 수동 동기화 (서버 ↔ 기기 강제 새로고침) -->
+  <button id="manualSyncBtn" style="display:none; margin-top:8px; padding:6px 14px; background:rgba(122,215,255,0.08); color:#7ad7ff; border:1px solid #2a5878; border-radius:5px; font-family:inherit; font-size:11px; cursor:pointer;" title="컴퓨터 ↔ 휴대폰 데이터 강제 동기화">
+    🔄 데이터 동기화
+  </button>
 </div>
 
 <!-- ===== 🔐 인증 모달 (회원가입 / 로그인) ===== -->
@@ -2446,18 +2450,17 @@
     scatter: {
       name: '산탄', baseCost: 40, color: '#ffb070',
       desc: lv => `${6+lv*2}방향 산탄 · DMG ${2+lv*2}`,
-      // 매 발사마다 360도로 균등 분산. 타겟 없이 사방으로.
+      // 클래식: 360° 균등 분산. TD: 가장 가까운 적 방향의 좁은 cone (효율 보정).
       init(ab) { ab.cooldown = 30; },
       tick(ab) {
         if (--ab.cooldown > 0) return;
         const n = 6 + ab.level * 2;
-        // 데미지 상향: 1+lv/2 → 2+lv*2 (lv8 = 18) — 분산 발사 보정
         const dmg = 2 + ab.level * 2;
-        const off = Math.random() * (Math.PI * 2 / n);
-        for (let i = 0; i < n; i++) {
-          const ang = (Math.PI * 2 / n) * i + off;
+        // 🏰 TD: 좁은 부채꼴 (0.45π ≈ 81°) · 클래식: 360°
+        const narrowSpread = Math.PI * 0.45;
+        tdDirectionalFan(n, narrowSpread, (ang) => {
           fireBullet(ang, dmg, '#ffb070', null);
-        }
+        });
         ab.cooldown = Math.max(35, 80 - ab.level * 5);
       },
     },
@@ -2790,16 +2793,17 @@
       desc: lv => `슬로우 충격파 · DMG ${2+lv*2} · ${((50+lv*15)/60).toFixed(1)}s 슬로우`,
       init(ab) { ab.cooldown = 60; ab.waves = []; },
       tick(ab) {
-        // 데미지 상향: 1+lv/2 → 2+lv*2 (lv8 = 18) — CC + 데미지 균형
         const dmg = 2 + ab.level * 2;
         const slowDur = 50 + ab.level * 15;
+        // 🏰 TD: 슬로우/펄스 반경을 사거리 캡으로 제한
+        const maxR = tdMaxEffectRadius(ARENA_R + 30);
         for (const w of ab.waves) {
           w.prevR = w.r; w.r += 4.5;
           for (const e of state.enemies) {
             if (w.hit.has(e) || e.hp <= 0) continue;
             const [ex, ey] = enemyXY(e);
             const d = Math.hypot(ex - CX, ey - CY);
-            if (d >= w.prevR - 10 && d <= w.r + 10) {
+            if (d >= w.prevR - 10 && d <= w.r + 10 && d <= maxR) {
               damageEnemy(e, dmg);
               e.slowFrames = Math.max(e.slowFrames || 0, slowDur);
               spawnParticles(ex, ey, '#88ddff', 3);
@@ -2807,7 +2811,7 @@
             }
           }
         }
-        ab.waves = ab.waves.filter(w => w.r < ARENA_R + 30);
+        ab.waves = ab.waves.filter(w => w.r < maxR);
         if (--ab.cooldown > 0) return;
         ab.waves.push({ r: CORE_R, prevR: CORE_R, hit: new Set() });
         ab.cooldown = Math.max(45, 100 - ab.level * 5);
@@ -4264,7 +4268,9 @@
         const [tx, ty] = enemyXY(target);
         const base = Math.atan2(ty - CY, tx - CX);
         const n = 8 + ab.level * 2;
-        const spread = Math.PI * 0.55;
+        // 🏰 TD: 좁은 spread (0.30π ≈ 54°) — 단일 줄 적 명중률 ↑
+        // 클래식: 기존 spread (0.55π ≈ 99°)
+        const spread = tdIsDefense() ? Math.PI * 0.30 : Math.PI * 0.55;
         const exR = 45 + ab.level * 8;
         for (let i = 0; i < n; i++) {
           const off = n === 1 ? 0 : (-spread/2 + spread * (i/(n-1)));
@@ -4394,13 +4400,15 @@
       tick(ab) {
         const dmg = 5 + ab.level * 3;
         const slowDur = 200 + ab.level * 40;
+        // 🏰 TD: 사거리 캡
+        const maxR = tdMaxEffectRadius(ARENA_R + 30);
         for (const w of ab.waves) {
           w.prevR = w.r; w.r += 6;
           for (const e of state.enemies) {
             if (w.hit.has(e) || e.hp <= 0) continue;
             const [ex, ey] = enemyXY(e);
             const d = Math.hypot(ex - CX, ey - CY);
-            if (d >= w.prevR - 12 && d <= w.r + 12) {
+            if (d >= w.prevR - 12 && d <= w.r + 12 && d <= maxR) {
               damageEnemy(e, dmg);
               e.slowFrames = Math.max(e.slowFrames || 0, slowDur);
               spawnParticles(ex, ey, '#aaccff', 6);
@@ -4408,7 +4416,7 @@
             }
           }
         }
-        ab.waves = ab.waves.filter(w => w.r < ARENA_R + 30);
+        ab.waves = ab.waves.filter(w => w.r < maxR);
         if (--ab.cooldown > 0) return;
         ab.waves.push({ r: CORE_R, prevR: CORE_R, hit: new Set() });
         ab.cooldown = Math.max(28, 60 - ab.level * 4);
@@ -5810,11 +5818,11 @@
         }
         ab.falling = ab.falling.filter(s => !s.done);
         if (--ab.cooldown > 0) return;
+        // TD: 적 위치 타격 / 클래식: 무작위
         const n = 4 + ab.level * 2;
-        for (let i = 0; i < n; i++) {
-          const a = Math.random() * Math.PI * 2;
-          const r = Math.random() * (ARENA_R - 30);
-          ab.falling.push({ x: CX + Math.cos(a) * r, y: CY + Math.sin(a) * r, t: -i * 3 });
+        const positions = tdDropPositions(n, { offset: 35 });
+        for (let i = 0; i < positions.length; i++) {
+          ab.falling.push({ x: positions[i].x, y: positions[i].y, t: -i * 3 });
         }
         ab.cooldown = Math.max(40, 90 - ab.level * 5);
       },
@@ -7247,12 +7255,11 @@
             spawnParticles(ex, ey, '#ffaa66', 3);
           }
         }
-        // 운석 낙하 예약
+        // 운석 낙하 예약 — TD: 적 위치 타격 / 클래식: 무작위
         const strikes = 3 + ab.level;
-        for (let i = 0; i < strikes; i++) {
-          const a = Math.random() * Math.PI * 2;
-          const r = Math.random() * (ARENA_R - 30);
-          ab.meteors.push({x: CX + Math.cos(a)*r, y: CY + Math.sin(a)*r, t: -i * 8, fall: 40});
+        const positions = tdDropPositions(strikes);
+        for (let i = 0; i < positions.length; i++) {
+          ab.meteors.push({x: positions[i].x, y: positions[i].y, t: -i * 8, fall: 40});
         }
         ab.fx = 20;
         ab.cooldown = Math.max(100, 180 - ab.level * 5);
@@ -7307,9 +7314,12 @@
         ab.petals = ab.petals.filter(p => p.life > 0);
         if (--ab.cooldown > 0) return;
         const dmg = 14 + ab.level * 8;
-        const range = 160 + ab.level * 18;
-        const halfArc = Math.PI / 3; // 120도 부채꼴
-        const swingAng = ab.ang = (ab.ang + Math.PI * 0.42) % (Math.PI * 2);
+        // ⭐ 별 퍼크: ★4 범위 +15%, ★7 범위 +추가 25%
+        const range = (160 + ab.level * 18) * permaRangeMul('sakuraSlash');
+        // ★2: 회전 속도 +10% (휘두름 각도 ↑)
+        const swingDelta = Math.PI * 0.42 * (permaCdMul('sakuraSlash') === 1 ? 1 : 1/permaCdMul('sakuraSlash'));
+        const halfArc = Math.PI / 3 * permaAoeMul('sakuraSlash');   // ★7: 부채꼴 각도 +25%
+        const swingAng = ab.ang = (ab.ang + swingDelta) % (Math.PI * 2);
         for (const e of state.enemies) {
           if (e.hp <= 0) continue;
           const [ex, ey] = enemyXY(e);
@@ -7325,9 +7335,10 @@
             spawnParticles(ex, ey, '#ff88bb', 4);
           }
         }
-        // 꽃잎 분사
-        for (let i = 0; i < 8; i++) {
-          const a = swingAng - halfArc + (halfArc * 2) * (i / 7);
+        // 꽃잎 분사 — ★3/★6: 꽃잎 개수 추가
+        const petalCount = 8 + permaCount('sakuraSlash');
+        for (let i = 0; i < petalCount; i++) {
+          const a = swingAng - halfArc + (halfArc * 2) * (i / Math.max(1, petalCount - 1));
           ab.petals.push({
             x: CX, y: CY,
             vx: Math.cos(a) * 3.5, vy: Math.sin(a) * 3.5,
@@ -7335,7 +7346,8 @@
           });
         }
         ab.fx = 14;
-        ab.cooldown = Math.max(20, 55 - ab.level * 3);
+        // ★2: 쿨다운 -10%
+        ab.cooldown = Math.max(20, Math.floor((55 - ab.level * 3) * permaCdMul('sakuraSlash')));
       },
       draw(ab) {
         if (ab.fx > 0) {
@@ -7372,8 +7384,9 @@
         for (const b of ab.bursts) b.life--;
         ab.bursts = ab.bursts.filter(b => b.life > 0);
         const dmg = 14 + ab.level * 8;
-        const pierceMax = 4 + ab.level;
-        const burstR = 42 + ab.level * 5;
+        // ⭐ 별 퍼크: ★3/★6 관통 +1/+3, ★7 폭발 반경 +25%
+        const pierceMax = 4 + ab.level + permaCount('moonShot');
+        const burstR = (42 + ab.level * 5) * permaAoeMul('moonShot');
         const burstR2 = burstR * burstR;
         // 🛡 탄환 처리 — 죽은 탄환 즉시 스킵 + 모든 루프에 명시적 break 조건
         for (const b of ab.bullets) {
@@ -7457,7 +7470,8 @@
           life: 180, target: initTarget || null, hit: new Set(), pierces: 0,
           sourceId: state.currentAbilityId || null,
         });
-        ab.cooldown = Math.max(25, 55 - ab.level * 3);
+        // ★2: 쿨다운 -10%
+        ab.cooldown = Math.max(25, Math.floor((55 - ab.level * 3) * permaCdMul('moonShot')));
       },
       draw(ab) {
         for (const b of ab.bullets) {
@@ -7507,7 +7521,8 @@
         }
         ab.stars = ab.stars.filter(s => s.life > 0);
         if (--ab.cooldown > 0) return;
-        const pulseR = 180 + ab.level * 18;
+        // ⭐ 별 퍼크: ★4 펄스 반경 +15%, ★7 펄스 반경 +25% 추가
+        const pulseR = (180 + ab.level * 18) * permaRangeMul('starSong');
         const pulseDmg = 20 + ab.level * 13;
         // 광역 펄스
         for (const e of state.enemies) {
@@ -7518,18 +7533,19 @@
             spawnParticles(ex, ey, '#ffe070', 3);
           }
         }
-        // 별 발사 — 더 많고 멀리 + 별이 한 적당 여러 번 타격 가능
-        const n = 8 + ab.level * 2;
-        for (let i = 0; i < n; i++) {
-          const a = (i / n) * Math.PI * 2;
+        // 별 발사 — ★3/★6: 별 개수 추가
+        const n = 8 + ab.level * 2 + permaCount('starSong');
+        const narrowSpread = Math.PI * 0.55;
+        tdDirectionalFan(n, narrowSpread, (a) => {
           ab.stars.push({
             x: CX, y: CY,
             vx: Math.cos(a) * 4.5, vy: Math.sin(a) * 4.5,
             life: 110, rot: 0, hit: new Set(),
           });
-        }
+        });
         ab.fx = 18;
-        ab.cooldown = Math.max(40, 80 - ab.level * 4);
+        // ★2: 쿨다운 -10%
+        ab.cooldown = Math.max(40, Math.floor((80 - ab.level * 4) * permaCdMul('starSong')));
       },
       draw(ab) {
         if (ab.fx > 0) {
@@ -7569,9 +7585,11 @@
       init(ab) { ab.butterflies = []; ab.spawnCD = 0; },
       tick(ab) {
         const dmg = 18 + ab.level * 10;
-        const slowDur = 110 + ab.level * 15;
-        const stopDur = 20 + ab.level * 3;
-        const targetCount = 4 + ab.level;
+        // ⭐ 별 퍼크: ★5 슬로우/정지 지속 +25%
+        const slowDur = Math.floor((110 + ab.level * 15) * permaEffMul('timeButterfly'));
+        const stopDur = Math.floor((20 + ab.level * 3) * permaEffMul('timeButterfly'));
+        // ★3/★6: 나비 마릿수 추가
+        const targetCount = 4 + ab.level + permaCount('timeButterfly');
         // 부족하면 생성 — 더 빨리
         if (ab.butterflies.length < targetCount && --ab.spawnCD <= 0) {
           const ang = Math.random() * Math.PI * 2;
@@ -7867,16 +7885,16 @@
           }
         }
         ab.rings.push({r: pulseR, life: 22});
-        // 별 발사
+        // 별 발사 — 클래식: 360°, TD: 적 방향 cone
         const n = 10 + ab.level * 2;
-        for (let i = 0; i < n; i++) {
-          const a = (i / n) * Math.PI * 2;
+        const narrowSpread = Math.PI * 0.55;
+        tdDirectionalFan(n, narrowSpread, (a) => {
           ab.stars.push({
             x: CX, y: CY,
             vx: Math.cos(a) * 4.5, vy: Math.sin(a) * 4.5,
             life: 110, rot: 0, hit: new Set(),
           });
-        }
+        });
         ab.fx = 22;
         ab.cooldown = Math.max(55, 100 - ab.level * 4);
       },
@@ -8112,11 +8130,11 @@
         }
         ab.shells = ab.shells.filter(s => !s.done);
         if (--ab.cooldown > 0) return;
+        // TD: 적 위치 타격 / 클래식: 무작위
         const strikes = 5 + ab.level;
-        for (let i = 0; i < strikes; i++) {
-          const a = Math.random() * Math.PI * 2;
-          const r = Math.random() * (ARENA_R - 30);
-          ab.shells.push({x: CX + Math.cos(a)*r, y: CY + Math.sin(a)*r, t: -i * 6, fall: 35});
+        const positions = tdDropPositions(strikes, { offset: 45 });
+        for (let i = 0; i < positions.length; i++) {
+          ab.shells.push({x: positions[i].x, y: positions[i].y, t: -i * 6, fall: 35});
         }
         ab.cooldown = Math.max(75, 140 - ab.level * 5);
       },
@@ -8204,22 +8222,43 @@
             spawnParticles(ex, ey, '#ffe070', 4);
           }
         }
-        // 별 폭사
+        // 별 폭사 — 클래식: 360°, TD: 적 방향 cone
         const n = 14;
-        for (let i = 0; i < n; i++) {
-          const a = (i / n) * Math.PI * 2;
+        const narrowSpread = Math.PI * 0.6;
+        tdDirectionalFan(n, narrowSpread, (a) => {
           ab.stars.push({
             x: CX, y: CY,
             vx: Math.cos(a) * 5, vy: Math.sin(a) * 5,
             life: 120, rot: 0, hit: new Set(),
           });
-        }
-        // 운석 낙하
+        });
+        // 운석 낙하 — 클래식: 아레나 내 무작위 / TD: 경로 위 적 위치에 정밀 타격
         const strikes = 4 + ab.level;
-        for (let i = 0; i < strikes; i++) {
-          const a = Math.random() * Math.PI * 2;
-          const r = Math.random() * (ARENA_R - 30);
-          ab.meteors.push({x: CX + Math.cos(a)*r, y: CY + Math.sin(a)*r, t: -i * 7, fall: 42});
+        if (tdIsDefense()) {
+          // 살아있는 적 위치 풀에서 무작위 선택 (보스 우선)
+          const pool = state.enemies.filter(e => e.hp > 0);
+          if (pool.length > 0) {
+            // 보스 가중치
+            const weighted = [];
+            for (const e of pool) {
+              const w = e.isBoss ? 5 : 1;
+              for (let k = 0; k < w; k++) weighted.push(e);
+            }
+            for (let i = 0; i < strikes; i++) {
+              const target = weighted[Math.floor(Math.random() * weighted.length)];
+              const [ex, ey] = enemyXY(target);
+              // ±25px 오프셋 (분산 효과)
+              const ox = (Math.random() - 0.5) * 50;
+              const oy = (Math.random() - 0.5) * 50;
+              ab.meteors.push({x: ex + ox, y: ey + oy, t: -i * 7, fall: 42});
+            }
+          }
+        } else {
+          for (let i = 0; i < strikes; i++) {
+            const a = Math.random() * Math.PI * 2;
+            const r = Math.random() * (ARENA_R - 30);
+            ab.meteors.push({x: CX + Math.cos(a)*r, y: CY + Math.sin(a)*r, t: -i * 7, fall: 42});
+          }
         }
         ab.fx = 24;
         ab.cooldown = Math.max(105, 180 - ab.level * 5);
@@ -9441,6 +9480,11 @@
     'sakuraSlash', 'moonShot', 'starSong', 'timeButterfly',
     'sakuraStorm', 'moonFrostArrow', 'cosmicChorus', 'timePrison',
     'sakuraInferno', 'moonBombardment', 'celestialSymphony', 'eternalMoment',
+    // ⭐ SSR 별 해금 히든 능력 (111-114) — 4★/8★ 도달 시 해금
+    'celestialEcho',   // 111 — aria 4★
+    'sirensSong',      // 112 — aria 8★
+    'temporalLoop',    // 113 — misaki 4★
+    'paradoxFreeze',   // 114 — misaki 8★
   ];
   const ABILITY_ICON_NUMBER = {};
   ABILITY_ICON_ORDER.forEach((id, i) => { ABILITY_ICON_NUMBER[id] = i + 1; });
@@ -10231,6 +10275,8 @@
     return {};
   })();
   function saveMeta() {
+    // 🕒 변경 시각 기록 — 다기기 동기화 시 "최근 변경" 판별용 (preferences 우선순위)
+    META.metaUpdatedAt = Date.now();
     try { localStorage.setItem(META_KEY, _packMeta(META)); } catch {}
     // 🔐 계정 로그인 상태면 서버에도 동기화
     if (typeof queueServerSync === 'function') queueServerSync();
@@ -10505,6 +10551,36 @@
 
   // 🔄 앱 시작 시 서버에서 최신 데이터 가져오기 (로컬과 병합)
   // 다기기 동기화 지원 — 어제 다른 기기에서 한 강화가 오늘 반영됨
+  // 🔄 다기기 동기화 — 마지막 pull 시점 + 안전 재-pull 헬퍼
+  let _lastMetaPullAt = 0;
+  const META_PULL_INTERVAL = 20 * 1000;   // 20s 쿨다운 (스팸 방지)
+  let _metaPullInFlight = null;
+  // 메뉴 진입 등에서 호출 — 쿨다운 내면 스킵, 아니면 push→pull 순차 실행
+  async function refreshMetaFromServerIfStale(force = false) {
+    if (!isAccountLoggedIn()) return false;
+    if (!force && Date.now() - _lastMetaPullAt < META_PULL_INTERVAL) return false;
+    if (_metaPullInFlight) return _metaPullInFlight;   // 진행 중이면 그것 대기
+    _metaPullInFlight = (async () => {
+      try {
+        // 🛡 먼저 이 기기의 미동기화 변경사항 푸시 (서버가 최신 상태 보유하도록)
+        try { await syncMetaToServer(); } catch {}
+        // 그 다음 서버 최신 데이터 풀
+        const ok = await pullMetaFromServer();
+        _lastMetaPullAt = Date.now();
+        if (ok) {
+          // UI 갱신
+          if (typeof refreshMenuNickname === 'function') refreshMenuNickname();
+          if (typeof refreshMenuButtons === 'function') refreshMenuButtons();
+          if (typeof refreshGachaCircleBtn === 'function') refreshGachaCircleBtn();
+          if (typeof renderPanel === 'function') renderPanel();
+        }
+        return ok;
+      } finally {
+        _metaPullInFlight = null;
+      }
+    })();
+    return _metaPullInFlight;
+  }
   async function pullMetaFromServer() {
     if (!isAccountLoggedIn()) return false;
     if (!isSupabaseEnabled()) return false;
@@ -10517,10 +10593,16 @@
       });
       if (error || !data || data.length === 0) return false;
       const server = data[0].data || {};
-      // 🤝 병합 — 로컬과 서버 중 더 많은 값을 채택 (오프라인 진행 손실 방지)
-      const merged = { ...META };
-      // 🛡 스타더스트/결정 — earned/spent 누적값으로 정확한 합산 (refund 버그 방어)
-      //   기존 데이터 마이그레이션: earned 가 없으면 현재값을 earned 로 간주, spent = 0
+      // 🤝 완전 병합 — 모든 META 필드를 명시적으로 처리하여 어떤 진행도도 손실되지 않게
+      //   기준:
+      //     • 시작점은 {...server, ...META} — 서버 신규 필드 보존 + 로컬 우선
+      //     • progress (강화/별/누적): max 또는 union
+      //     • spendable (스타더스트/결정): earned-spent 누적 차분
+      //     • preferences (selected*): 최근 변경된 쪽 (metaUpdatedAt 비교)
+      //     • boolean flags: OR (true 우선)
+      const merged = { ...server, ...META };
+
+      // ━━━ 1) 스타더스트 — earned/spent 누적 ━━━
       const localStarEarned = (META.stardustEarned !== undefined) ? META.stardustEarned : (META.stardust || 0);
       const localStarSpent  = META.stardustSpent || 0;
       const serverStarEarned = (server.stardustEarned !== undefined) ? server.stardustEarned : (server.stardust || 0);
@@ -10528,7 +10610,8 @@
       merged.stardustEarned = Math.max(localStarEarned, serverStarEarned);
       merged.stardustSpent  = Math.max(localStarSpent,  serverStarSpent);
       merged.stardust = Math.max(0, merged.stardustEarned - merged.stardustSpent);
-      // 결정도 동일 패턴
+
+      // ━━━ 2) 결정 — earned/spent 누적 ━━━
       const localCryEarned = (META.crystalsEarned !== undefined) ? META.crystalsEarned : (META.crystals || 0);
       const localCrySpent  = META.crystalsSpent || 0;
       const serverCryEarned = (server.crystalsEarned !== undefined) ? server.crystalsEarned : (server.crystals || 0);
@@ -10536,56 +10619,63 @@
       merged.crystalsEarned = Math.max(localCryEarned, serverCryEarned);
       merged.crystalsSpent  = Math.max(localCrySpent,  serverCrySpent);
       merged.crystals = Math.max(0, merged.crystalsEarned - merged.crystalsSpent);
-      // 강화 레벨: 각 항목별 max
-      merged.upgrades = { ...(server.upgrades || {}) };
-      const localUp = META.upgrades || {};
-      for (const k of new Set([...Object.keys(merged.upgrades), ...Object.keys(localUp)])) {
-        merged.upgrades[k] = Math.max(merged.upgrades[k] || 0, localUp[k] || 0);
-      }
-      // 능력 영구 강화 레벨: 각 항목별 max (양쪽에서 강화 가능)
-      merged.abilityPerma = { ...(server.abilityPerma || {}) };
-      const localPerma = META.abilityPerma || {};
-      for (const k of new Set([...Object.keys(merged.abilityPerma), ...Object.keys(localPerma)])) {
-        merged.abilityPerma[k] = Math.max(merged.abilityPerma[k] || 0, localPerma[k] || 0);
-      }
-      // 캐릭터 별 등급: 각 항목별 max
-      merged.charStars = { ...(server.charStars || {}) };
-      const localStars = META.charStars || {};
-      for (const k of new Set([...Object.keys(merged.charStars), ...Object.keys(localStars)])) {
-        merged.charStars[k] = Math.max(merged.charStars[k] || 0, localStars[k] || 0);
-      }
-      // 가챠 누적 카운트: max
-      merged.gachaUnlocked = { ...(server.gachaUnlocked || {}) };
-      const localGacha = META.gachaUnlocked || {};
-      for (const k of new Set([...Object.keys(merged.gachaUnlocked), ...Object.keys(localGacha)])) {
-        merged.gachaUnlocked[k] = Math.max(merged.gachaUnlocked[k] || 0, localGacha[k] || 0);
-      }
-      // 최대 승천 단계: max
+
+      // ━━━ 3) 진행도 객체들 — 키별 max ━━━
+      const mergeMaxObject = (localObj, serverObj) => {
+        const out = { ...(serverObj || {}) };
+        const loc = localObj || {};
+        for (const k of new Set([...Object.keys(out), ...Object.keys(loc)])) {
+          out[k] = Math.max(out[k] || 0, loc[k] || 0);
+        }
+        return out;
+      };
+      merged.upgrades       = mergeMaxObject(META.upgrades,       server.upgrades);        // 강화소
+      merged.abilityPerma   = mergeMaxObject(META.abilityPerma,   server.abilityPerma);    // 능력 영구
+      merged.charStars      = mergeMaxObject(META.charStars,      server.charStars);       // 캐릭터 별
+      merged.gachaUnlocked  = mergeMaxObject(META.gachaUnlocked,  server.gachaUnlocked);   // 가챠 누적
+      merged.charUsage      = mergeMaxObject(META.charUsage,      server.charUsage);       // 캐릭터 사용 기록 (구)
+      merged.charactersUsed = mergeMaxObject(META.charactersUsed, server.charactersUsed);  // 캐릭터 사용 기록 (신)
+      merged.repeatCounts   = mergeMaxObject(META.repeatCounts,   server.repeatCounts);    // 반복 업적 카운트
+
+      // ━━━ 4) 단일 수치 — max ━━━
       merged.maxAscension = Math.max(META.maxAscension || 0, server.maxAscension || 0);
-      // 가챠 보유 캐릭터: 합집합
-      const localUnlocks = META.unlockedChars || {};
-      const serverUnlocks = server.unlockedChars || {};
-      merged.unlockedChars = { ...serverUnlocks, ...localUnlocks };
-      // 업적: 합집합 (배열! getUnlockedAchievements가 new Set(META.achievements)로 사용)
-      const localAch = Array.isArray(META.achievements) ? META.achievements : [];
+
+      // ━━━ 5) 객체/배열 합집합 ━━━
+      merged.unlockedChars = { ...(server.unlockedChars || {}), ...(META.unlockedChars || {}) };
+      const localAch  = Array.isArray(META.achievements)   ? META.achievements   : [];
       const serverAch = Array.isArray(server.achievements) ? server.achievements : [];
       merged.achievements = [...new Set([...serverAch, ...localAch])];
-      // 캐릭터 사용 기록: 각각 max (최고 도달 라운드)
-      const localUsage = META.charUsage || {};
-      const serverUsage = server.charUsage || {};
-      merged.charUsage = { ...serverUsage };
-      for (const k of Object.keys(localUsage)) {
-        merged.charUsage[k] = Math.max(merged.charUsage[k] || 0, localUsage[k]);
-      }
-      // 시즌 칭호: 합집합
-      const localTitles = META.seasonTitles || [];
-      const serverTitles = server.seasonTitles || [];
+      const localTitles  = Array.isArray(META.seasonTitles)   ? META.seasonTitles   : [];
+      const serverTitles = Array.isArray(server.seasonTitles) ? server.seasonTitles : [];
       merged.seasonTitles = [...new Set([...serverTitles, ...localTitles])];
-      // 인증 정보는 로컬 유지 (서버에서 받은 nickname/userId는 신뢰)
-      merged.userId = data[0].user_id || META.userId;
-      merged.nickname = data[0].nickname || META.nickname;
-      merged.accountCreated = true;
-      merged.accountPassword = META.accountPassword;  // 비밀번호는 서버 응답 X
+
+      // ━━━ 6) 사용자 선호 (preferences) — 더 최근에 변경된 쪽 채택 ━━━
+      // 양쪽에 metaUpdatedAt 있으면 비교, 없으면 정의된 쪽 우선
+      const localTs  = META.metaUpdatedAt  || 0;
+      const serverTs = server.metaUpdatedAt || 0;
+      const serverNewer = serverTs > localTs;
+      const pickPref = (key) => {
+        const lv = META[key];
+        const sv = server[key];
+        if (lv === undefined || lv === null) return sv;
+        if (sv === undefined || sv === null) return lv;
+        return serverNewer ? sv : lv;
+      };
+      merged.selectedTitle     = pickPref('selectedTitle');
+      merged.selectedAscension = pickPref('selectedAscension');
+      merged.selectedCharacter = pickPref('selectedCharacter');
+      merged.lastSelectedMode  = pickPref('lastSelectedMode');
+      merged.metaUpdatedAt = Math.max(localTs, serverTs);
+
+      // ━━━ 7) Boolean flags — OR (true가 한 번이라도 있으면 true) ━━━
+      merged.skippedSignupPrompt = !!(META.skippedSignupPrompt || server.skippedSignupPrompt);
+
+      // ━━━ 8) 인증 정보 (서버 응답 신뢰, 비밀번호는 로컬 유지) ━━━
+      merged.userId          = data[0].user_id || META.userId;
+      merged.nickname        = data[0].nickname || META.nickname;
+      merged.accountCreated  = true;
+      merged.accountPassword = META.accountPassword;  // 비밀번호는 서버에 저장 X
+
       META = merged;
       saveMeta();
       // 병합한 결과를 서버에도 동기화 (서버가 로컬보다 뒤처져 있었을 수 있음)
@@ -11589,6 +11679,36 @@
     const charId = findCharByAbility(abilityId);
     return charId ? getCharStarDmgBonus(charId) : 0;
   }
+  // ⭐ 능력별 별 등급 퍼크 (★2, 3, 5, 6, 7 — 데미지 외 특별 효과)
+  // 사용처: 각 능력의 tick에서 perks(ability_id).cooldownMul / extraCount / rangeMul 등 조회
+  function getCharStarPerks(abilityId) {
+    const charId = findCharByAbility(abilityId);
+    if (!charId) return null;
+    const s = getCharStars(charId);
+    if (s <= 0) return null;
+    // 모든 가챠 캐릭터에 공통 — 능력별 보편 퍼크 (★2,3,5,6,7)
+    return {
+      stars:        s,
+      // ★2: 발사 쿨다운 -10% (발사 속도 ↑)
+      cooldownMul:  s >= 2 ? 0.90 : 1,
+      // ★3: 발사 개수 +1 (count 기반 능력)
+      extraCount:   s >= 3 ? 1 : 0,
+      // ★4: 사거리/범위 +15%
+      rangeMul:     s >= 4 ? 1.15 : 1,
+      // ★5: 효과 강도 +25% (슬로우 지속, 폭발 반경 등)
+      effectMul:    s >= 5 ? 1.25 : 1,
+      // ★6: 발사 개수 +2 (총 +3 with ★3)
+      bonusCount:   s >= 6 ? 2 : 0,
+      // ★7: 폭발/광역 반경 +25%
+      aoeMul:       s >= 7 ? 1.25 : 1,
+    };
+  }
+  // 헬퍼: 능력의 효과 모디파이어 모음 — 별 퍼크 적용 (없으면 1/0 반환)
+  function permaCount(abilityId)    { const p = getCharStarPerks(abilityId); return p ? (p.extraCount + p.bonusCount) : 0; }
+  function permaCdMul(abilityId)    { const p = getCharStarPerks(abilityId); return p ? p.cooldownMul : 1; }
+  function permaRangeMul(abilityId) { const p = getCharStarPerks(abilityId); return p ? p.rangeMul : 1; }
+  function permaEffMul(abilityId)   { const p = getCharStarPerks(abilityId); return p ? p.effectMul : 1; }
+  function permaAoeMul(abilityId)   { const p = getCharStarPerks(abilityId); return p ? p.aoeMul : 1; }
   // 한 번 뽑기
   function gachaPullOne() {
     const r = Math.random();
@@ -12244,6 +12364,81 @@
       if (d2 < r2 && d2 > best) { best = d2; target = e; }
     }
     return target;
+  }
+  // 🏰 TD 모드 — 적이 경로를 따라 한 줄로 이동하므로 360° 분산은 효율 X
+  //   현재 타워에서 가장 가까운 적 방향으로 펜을 좁혀 발사
+  function tdIsDefense() { return state.mode === 'defense'; }
+  // 🏰 TD 모드 효과 반경 캡 — 슬로우/광역 효과가 사거리를 벗어나지 않도록
+  //   - 클래식: fallback 그대로
+  //   - TD: state.currentAbilityRange 와 fallback 의 더 작은 값
+  //   - Infinity/None 시: fallback 그대로
+  function tdMaxEffectRadius(fallback) {
+    if (!tdIsDefense()) return fallback;
+    const cap = state.currentAbilityRange;
+    if (cap === null || cap === undefined) return fallback;
+    if (cap === Infinity) return fallback;
+    return Math.min(fallback, cap);
+  }
+  // 적이 현재 능력 사거리 내에 있는지 (효과 적용 가드)
+  function tdInRange(e) {
+    if (!tdIsDefense()) return true;
+    const cap = state.currentAbilityRange;
+    if (cap === null || cap === undefined) return true;
+    if (cap === Infinity) return true;
+    const [ex, ey] = enemyXY(e);
+    return (ex-CX)*(ex-CX) + (ey-CY)*(ey-CY) <= cap*cap;
+  }
+  // 🏰 TD: 하늘에서 떨어지는 능력 (운석/검비 등) — 적 위치를 타격하도록 위치 생성
+  // 클래식: 아레나 내 무작위 위치
+  // strikes: 떨어질 개수, returns: [{x, y}, ...]
+  function tdDropPositions(strikes, options = {}) {
+    const { bossWeight = 5, offset = 50 } = options;
+    if (tdIsDefense()) {
+      const pool = state.enemies.filter(e => e.hp > 0);
+      if (pool.length > 0) {
+        const weighted = [];
+        for (const e of pool) {
+          const w = e.isBoss ? bossWeight : 1;
+          for (let k = 0; k < w; k++) weighted.push(e);
+        }
+        const result = [];
+        for (let i = 0; i < strikes; i++) {
+          const target = weighted[Math.floor(Math.random() * weighted.length)];
+          const [ex, ey] = enemyXY(target);
+          const ox = (Math.random() - 0.5) * offset;
+          const oy = (Math.random() - 0.5) * offset;
+          result.push({ x: ex + ox, y: ey + oy });
+        }
+        return result;
+      }
+    }
+    // 표준 모드 (또는 TD 적 없을 때) — 아레나 내 무작위
+    const result = [];
+    for (let i = 0; i < strikes; i++) {
+      const a = Math.random() * Math.PI * 2;
+      const r = Math.random() * (ARENA_R - 30);
+      result.push({ x: CX + Math.cos(a) * r, y: CY + Math.sin(a) * r });
+    }
+    return result;
+  }
+  // n발 발사 — TD 모드면 타워→가장 가까운 적 방향의 좁은 cone, 아니면 360° 균등
+  // fireFn(angle, idx) 호출됨
+  function tdDirectionalFan(n, narrowSpread, fireFn) {
+    const target = tdIsDefense() ? findNearestEnemy(360) : null;   // 사거리 캡 적용
+    if (target) {
+      const [tx, ty] = enemyXY(target);
+      const base = Math.atan2(ty - CY, tx - CX);
+      for (let i = 0; i < n; i++) {
+        const off = n === 1 ? 0 : (-narrowSpread/2 + narrowSpread * (i/(n-1)));
+        fireFn(base + off, i);
+      }
+    } else {
+      // 360° 균등 (클래식 + 적 없을 때 TD)
+      const off0 = tdIsDefense() ? 0 : Math.random() * (Math.PI * 2 / n);
+      for (let i = 0; i < n; i++) {
+        fireFn((Math.PI * 2 / n) * i + off0, i);
+      }
+    }
   }
   // target: 유도 대상 (null이면 직진)
   // leader: 리더 탄환 (null이면 일반 탄환). 사이드 탄환은 리더 방향을 추종.
@@ -16843,6 +17038,10 @@
     }
     if (name === 'menu') {
       refreshMenuButtons();
+      // 🔄 다기기 동기화 — 메뉴 진입 시 서버 데이터 자동 새로고침 (20s 쿨다운)
+      if (typeof refreshMetaFromServerIfStale === 'function') {
+        refreshMetaFromServerIfStale().catch(() => {});
+      }
     }
   }
   // 🔄 메뉴 버튼 상태 갱신 — showScreen('menu') 진입 시 + 서버 pull 완료 후 호출
@@ -16857,6 +17056,9 @@
     if (startBtn) startBtn.textContent = '▶ 새 게임';
     // 🎰 가챠 원형 버튼 갱신
     if (typeof refreshGachaCircleBtn === 'function') refreshGachaCircleBtn();
+    // 🔄 다기기 동기화 버튼 — 로그인 상태에서만 노출
+    const syncBtn = document.getElementById('manualSyncBtn');
+    if (syncBtn) syncBtn.style.display = (typeof isAccountLoggedIn === 'function' && isAccountLoggedIn()) ? '' : 'none';
     // 승천 해금된 경우 난이도 버튼 표시
     const diffBtn = document.getElementById('difficultyBtn');
     if (diffBtn) {
@@ -16988,6 +17190,24 @@
   });
 
   // ▶ 새 게임 — 항상 모드 선택 화면으로 (진행 중인 게임이 있어도 새로 시작 가능)
+  // 🔄 다기기 수동 동기화 버튼 — 강제 push→pull
+  const _manualSyncBtn = document.getElementById('manualSyncBtn');
+  if (_manualSyncBtn) {
+    _manualSyncBtn.onclick = async () => {
+      if (!isAccountLoggedIn()) { toast('⚠ 로그인 필요'); return; }
+      _manualSyncBtn.disabled = true;
+      _manualSyncBtn.textContent = '🔄 동기화 중...';
+      try {
+        const ok = await refreshMetaFromServerIfStale(true);   // force=true 쿨다운 무시
+        toast(ok ? '✅ 동기화 완료' : '⚠ 동기화 실패');
+      } catch (e) {
+        toast(`❌ ${(e.message || e).toString().substring(0, 60)}`);
+      } finally {
+        _manualSyncBtn.disabled = false;
+        _manualSyncBtn.textContent = '🔄 데이터 동기화';
+      }
+    };
+  }
   document.getElementById('startBtn').onclick = () => {
     showScreen('mode');
   };
@@ -17245,24 +17465,39 @@
         const stars = getCharStars(charId);
         const starText = hasIt ? '★'.repeat(stars) + '☆'.repeat(CHAR_MAX_STARS - stars) : '';
         const starColor = stars >= 8 ? '#ff80ff' : (stars >= 4 ? '#ffd060' : '#ffd479');
-        // SR/SSR 별 해금 안내
+        // ⭐ 별 등급별 퍼크 표시 (모든 캐릭터 공통 + SSR 4★/8★ 해금)
         let starUnlockInfo = '';
-        if (hasIt && (rarity === 'SSR' || rarity === 'SR')) {
+        if (hasIt) {
+          const perks = [
+            { lv: 2, label: '쿨다운 -10%' },
+            { lv: 3, label: '발사 개수 +1' },
+            { lv: 4, label: '범위 +15%' },
+            { lv: 5, label: '효과 강도 +25%' },
+            { lv: 6, label: '발사 개수 +2 (누적 +3)' },
+            { lv: 7, label: '광역 반경 +25%' },
+          ];
+          const rows = perks.map(p => {
+            const has = stars >= p.lv ? '🔓' : '🔒';
+            const c = stars >= p.lv ? '#cfd6e3' : '#5a5f6a';
+            return `<div>${has} ${p.lv}★ <span style="color:${c};">${p.label}</span></div>`;
+          });
+          // SSR 별 해금 능력: 4★/8★ 자리를 능력 해금으로 강조 (퍼크 대체)
           const unlocks = CHAR_STAR_UNLOCKS[charId];
           if (unlocks) {
-            const u4 = unlocks[4] && unlocks[4][0];
-            const u8 = unlocks[8] && unlocks[8][0];
-            const has4 = stars >= 4 ? '🔓' : '🔒';
-            const has8 = stars >= 8 ? '🔓' : '🔒';
-            const d4 = u4 && ABILITY_DEFS[u4];
-            const d8 = u8 && ABILITY_DEFS[u8];
-            starUnlockInfo = `
-              <div style="font-size:10px;color:#9aa3b3;margin-top:4px;line-height:1.3;">
-                <div>${has4} 4★ <span style="color:${stars >= 4 ? '#ffd060' : '#5a5f6a'};">${d4 ? d4.name : ''}</span></div>
-                <div>${has8} 8★ <span style="color:${stars >= 8 ? '#ff80ff' : '#5a5f6a'};">${d8 ? d8.name : ''}</span></div>
-              </div>
-            `;
+            if (unlocks[4] && unlocks[4][0]) {
+              const d4 = ABILITY_DEFS[unlocks[4][0]];
+              if (d4) {
+                rows[2] = `<div>${stars >= 4 ? '🔓' : '🔒'} 4★ <span style="color:${stars >= 4 ? '#ffd060' : '#5a5f6a'};font-weight:bold;">⭐ ${d4.name} 해금 + 범위 +15%</span></div>`;
+              }
+            }
+            if (unlocks[8] && unlocks[8][0]) {
+              const d8 = ABILITY_DEFS[unlocks[8][0]];
+              if (d8) {
+                rows.push(`<div>${stars >= 8 ? '🔓' : '🔒'} 8★ <span style="color:${stars >= 8 ? '#ff80ff' : '#5a5f6a'};font-weight:bold;">💫 ${d8.name} 해금</span></div>`);
+              }
+            }
           }
+          starUnlockInfo = `<div style="font-size:9px;color:#9aa3b3;margin-top:6px;line-height:1.4;border-top:1px solid #2a2f3a;padding-top:4px;${charImgSrc ? 'padding-right:54px;' : ''}">${rows.join('')}</div>`;
         }
         card.innerHTML = `
           ${imgHTML}
@@ -17404,7 +17639,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 169;
+  const APP_VERSION = 175;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
@@ -17886,9 +18121,29 @@
         ${maxed ? 'border-width:2px;' : ''}
       `;
       const effectLabel = getAbilityPermaEffectLabel(id);
+      // 🎭 캐릭터 묶음 표시 — 가챠 능력 / 별 해금 능력
+      let charLabel = '';
+      const ownerCharId = findCharByAbility(id);
+      if (ownerCharId) {
+        const ch = CHARACTERS[ownerCharId];
+        const isStarUnlock = !!(d.isStarUnlock);
+        if (ch) {
+          // 별 해금 능력은 어떤 별 단계에서 풀리는지도 표시
+          let starHint = '';
+          if (isStarUnlock) {
+            const unlocks = CHAR_STAR_UNLOCKS[ownerCharId];
+            if (unlocks) {
+              if (unlocks[4] && unlocks[4].includes(id)) starHint = ' · 4★ 해금';
+              else if (unlocks[8] && unlocks[8].includes(id)) starHint = ' · 8★ 해금';
+            }
+          }
+          charLabel = `<div style="font-size:9px;color:${ch.color || '#9aa3b3'};text-align:center;line-height:1;font-weight:bold;">🎭 ${ch.name}${starHint}</div>`;
+        }
+      }
       card.innerHTML = `
         <div style="width:56px;height:56px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">${iconHtml}</div>
         <div style="font-size:12px;font-weight:bold;color:${d.color || '#fff'};text-align:center;line-height:1.1;">${d.name}</div>
+        ${charLabel}
         <div style="font-size:10px;color:${maxed ? '#ffd060' : '#9aa3b3'};font-weight:bold;">Lv ${lv}/${ABILITY_PERMA_MAX} · ${effectLabel} +${pct}%</div>
         <div style="width:100%;height:6px;background:#0b0d14;border-radius:3px;overflow:hidden;border:1px solid #2a2f3a;">
           <div style="height:100%;width:${progressPct}%;background:linear-gradient(90deg, #ff80ff 0%, #ffd479 100%);transition:width .3s;"></div>
