@@ -18237,14 +18237,22 @@
     document.getElementById('achievement-summary').innerHTML =
       `단발 <b>${have.size}/${ACHIEVEMENTS.length}</b> · 누적 <b>${singleDust + repeatDust}★</b>`;
 
-    // 탭 카운트 갱신
+    // 탭 카운트 갱신 — 모든 카테고리 라벨 포함 (trans/chars 누락 시 undefined 버그 방지)
+    const ACH_TAB_LABELS = {
+      progress:  '📈 진행',
+      build:     '🎴 빌드',
+      combat:    '⚔️ 처치',
+      ascension: '✨ 승천',
+      trans:     '🌌 초월',
+      chars:     '⭐ 캐릭터',
+      special:   '📖 특수',
+    };
     for (const cat in ACH_CAT_MAP) {
       const ids = ACH_CAT_MAP[cat];
       const done = ids.filter(id => have.has(id)).length;
       const btn = document.querySelector(`#ach-tabs .codex-tab[data-achtab="${cat}"]`);
-      if (btn) {
-        const labels = { progress:'📈 진행', build:'🎴 빌드', combat:'⚔️ 처치', ascension:'✨ 승천', special:'📖 특수' };
-        btn.textContent = `${labels[cat]} ${done}/${ids.length}`;
+      if (btn && ACH_TAB_LABELS[cat]) {
+        btn.textContent = `${ACH_TAB_LABELS[cat]} ${done}/${ids.length}`;
       }
     }
     // 반복 탭 카운트
