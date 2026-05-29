@@ -1,7 +1,7 @@
 // Dot Defense — 서비스워커
 // 업데이트 시: CACHE 이름의 v숫자만 올리면 자동으로 새 캐시 생성 + 기존 캐시 폐기.
 // HTML/메인페이지는 network-first 전략 → 인터넷 연결되어 있으면 항상 최신본 반영.
-const CACHE = 'dot-defense-v197';
+const CACHE = 'dot-defense-v203';
 const ASSETS = [
   './',
   './index.html',
@@ -9,6 +9,13 @@ const ASSETS = [
   './icons/icon-192.png',
   './icons/icon-512.png',
   './icons/icon-512-maskable.png',
+];
+// 🚀 큰 가챠 배너 이미지는 별도 배열 — SW 설치 후 백그라운드 캐싱 (블로킹 X)
+//    설치 자체는 위 ASSETS만 기다리므로 SW 활성화 지연 안 됨.
+//    이거 캐싱 끝나면 다음 로드부터 즉시 표시.
+const DEFERRED_ASSETS = [
+  './icons/gacha-aria.png',
+  './icons/gacha-misaki.png',
 ];
 
 self.addEventListener('install', e => {
@@ -22,7 +29,17 @@ self.addEventListener('activate', e => {
   e.waitUntil(
     caches.keys().then(keys =>
       Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))
-    )
+    ).then(() => {
+      // 🚀 큰 배너 이미지는 활성화 후 백그라운드에서 caching (SW 활성화 지연 X)
+      caches.open(CACHE).then(cache => {
+        // 이미 캐시된 건 skip, 없는 것만 다운로드
+        DEFERRED_ASSETS.forEach(url => {
+          cache.match(url).then(hit => {
+            if (!hit) cache.add(url).catch(() => {});
+          });
+        });
+      });
+    })
   );
   self.clients.claim(); // 현재 열려있는 페이지 즉시 새 SW가 제어
 });
