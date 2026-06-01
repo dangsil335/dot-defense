@@ -3483,7 +3483,7 @@
     },
     orbital: {
       name: '오비탈', baseCost: 60, color: '#52e07a',
-      desc: lv => `${1+lv}개 위성 · 적 거리 추적 궤도 · DMG ${1+lv}`,
+      desc: lv => `${1+lv}개 위성 · 적 거리 추적 궤도 · DMG ${3+lv*2}`,
       // 모든 위성이 같은 반경에서 회전. 그 반경이 "가장 가까운 적까지의 거리"를
       // 부드럽게 추종 → 궤도가 숨쉬듯 늘었다 줄었다 함.
       // 레벨업: +1 위성, +회전속도
@@ -3515,7 +3515,9 @@
         }
 
         const count = 1 + ab.level;
-        const dmg = 1 + ab.level;
+        // ⚖ v263 — 딜량 상향: DMG 1+lv → 3+lv*2 (회전검날 등 동급 회전 능력 수준)
+        //   + 히트 쿨다운 30 → 18 프레임 (같은 적 재타격 빈도 ↑)
+        const dmg = 3 + ab.level * 2;
         for (let i = 0; i < count; i++) {
           const a = ab.angle + (Math.PI * 2 / count) * i;
           const ox = CX + Math.cos(a) * ab.radius;
@@ -3526,7 +3528,7 @@
             const rr = e.size + 6;
             if ((ox-ex)*(ox-ex) + (oy-ey)*(oy-ey) < rr*rr) {
               damageEnemy(e, dmg);
-              ab.hits.set(e, 30);
+              ab.hits.set(e, 18);
               spawnParticles(ex, ey, '#52e07a', 3);
             }
           }
@@ -20738,7 +20740,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 262;
+  const APP_VERSION = 263;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
