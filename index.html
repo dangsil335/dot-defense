@@ -4716,7 +4716,8 @@
         const perma = 1 + getAbilityPermaBonus('fury');   // 🌟 영구강화
         const enemyCount = state.enemies.length;
         const bonus = Math.floor(enemyCount / 5) * (ab.level * 0.05) * perma;
-        state.metaMods.furyBonus = bonus;
+        // 🛡 v254 — defensive max-merge (다른 source 와 충돌 방지)
+        if (bonus > state.metaMods.furyBonus) state.metaMods.furyBonus = bonus;
       },
       draw(ab) {
         // 타워 주변 빨간 오라 (적 많을수록 진해짐)
@@ -5203,7 +5204,8 @@
       tick(ab) {
         if (!state.metaMods) return;
         const perma = 1 + getAbilityPermaBonus('precision');   // 🌟 영구강화
-        state.metaMods.precisionBonus = ab.level * 0.07 * perma;
+        const own = ab.level * 0.07 * perma;
+        if (own > state.metaMods.precisionBonus) state.metaMods.precisionBonus = own;
       },
     },
     haste: {
@@ -5231,10 +5233,11 @@
         const perma = 1 + getAbilityPermaBonus('frenzy');   // 🌟 영구강화
         if (ab.frames > 0) {
           ab.frames--;
-          if (state.metaMods) state.metaMods.frenzyBonus = ab.level * 0.09 * perma;
-        } else {
-          if (state.metaMods) state.metaMods.frenzyBonus = 0;
+          // 🛡 v254 — defensive max-merge (frame-reset 와 함께 동작 — 활성 시만 contribute)
+          const own = ab.level * 0.09 * perma;
+          if (state.metaMods && own > state.metaMods.frenzyBonus) state.metaMods.frenzyBonus = own;
         }
+        // frames 0 일 땐 contribute 안 함 → resetSharedPassiveSlots 에서 자동 0
       },
     },
     vampiric: {
@@ -5244,7 +5247,9 @@
       tick(ab) {
         if (!state.metaMods) return;
         const perma = 1 + getAbilityPermaBonus('vampiric');   // 🌟 영구강화 (골드 +%)
-        state.metaMods.bonusGoldMul = ab.level * 0.08 * perma;
+        // 🛡 v254 — defensive max-merge (약탈폭격 등 다른 source 와 충돌 방지)
+        const own = ab.level * 0.08 * perma;
+        if (own > state.metaMods.bonusGoldMul) state.metaMods.bonusGoldMul = own;
       },
     },
     fortune: {
@@ -5254,7 +5259,9 @@
       tick(ab) {
         if (!state.metaMods) return;
         const perma = 1 + getAbilityPermaBonus('fortune');   // 🌟 영구강화 (점수 확률 +%)
-        state.metaMods.fortuneChance = ab.level * 0.05 * perma;
+        // 🛡 v254 — defensive max-merge
+        const own = ab.level * 0.05 * perma;
+        if (own > state.metaMods.fortuneChance) state.metaMods.fortuneChance = own;
       },
     },
     mastery: {
@@ -5265,7 +5272,9 @@
         if (!state.metaMods) return;
         const perma = 1 + getAbilityPermaBonus('mastery');   // 🌟 영구강화
         const n = state.tower.abilities.filter(a => !ABILITY_DEFS[a.id].isPassive).length;
-        state.metaMods.masteryBonus = n * ab.level * 0.04 * perma;
+        // 🛡 v254 — defensive max-merge
+        const own = n * ab.level * 0.04 * perma;
+        if (own > state.metaMods.masteryBonus) state.metaMods.masteryBonus = own;
       },
     },
     scholar: {
@@ -5276,7 +5285,9 @@
         if (!state.metaMods) return;
         const perma = 1 + getAbilityPermaBonus('scholar');   // 🌟 영구강화 (할인 +%)
         const discount = ab.level * 0.04 * perma;
-        state.metaMods.scholarMul = 1 - Math.min(0.55, discount);   // 최대 -55%
+        // 🛡 v254 — defensive min-merge (할인은 작을수록 좋음)
+        const own = 1 - Math.min(0.55, discount);
+        if (own < state.metaMods.scholarMul) state.metaMods.scholarMul = own;
       },
     },
     ironwill: {
@@ -5286,7 +5297,9 @@
       tick(ab) {
         if (!state.metaMods) return;
         const perma = 1 + getAbilityPermaBonus('ironwill');   // 🌟 영구강화
-        state.metaMods.ironwillBonus = ab.level * 0.15 * perma;
+        // 🛡 v254 — defensive max-merge
+        const own = ab.level * 0.15 * perma;
+        if (own > state.metaMods.ironwillBonus) state.metaMods.ironwillBonus = own;
       },
     },
     executioner: {
@@ -5296,7 +5309,9 @@
       tick(ab) {
         if (!state.metaMods) return;
         const perma = 1 + getAbilityPermaBonus('executioner');   // 🌟 영구강화
-        state.metaMods.executionerBonus = ab.level * 0.15 * perma;
+        // 🛡 v254 — defensive max-merge
+        const own = ab.level * 0.15 * perma;
+        if (own > state.metaMods.executionerBonus) state.metaMods.executionerBonus = own;
       },
     },
     resilience: {
@@ -5311,7 +5326,8 @@
         const perStack = ab.level * 0.015 * perma;
         const max = ab.level * 0.50 * perma;
         ab.bonus = Math.min(max, stacks * perStack);
-        state.metaMods.resilienceBonus = ab.bonus;
+        // 🛡 v254 — defensive max-merge
+        if (ab.bonus > state.metaMods.resilienceBonus) state.metaMods.resilienceBonus = ab.bonus;
       },
     },
 
@@ -11405,7 +11421,13 @@
     // 시작 무료 레벨업 (메타 보너스) — 카드 모달로 선택 (각각 따로)
     state.pendingFreeRolls = state.metaMods.freeRolls || 0;
     if (state.pendingFreeRolls > 0) {
-      triggerFreeRollCard();
+      // 🎬 v253 — 화면 페이드 인 (180ms) 끝난 후 카드 등장 — "띡" 끊김 방지
+      setTimeout(() => {
+        // 게임 상태 유효 + 게임 화면 + 카드 안 떠있을 때만
+        if (state && !state.gameOver && currentScreen === 'game' && !state.levelUpChoices) {
+          triggerFreeRollCard();
+        }
+      }, 350);
     }
   }
 
@@ -15595,6 +15617,25 @@
   // 자주 쓰는 predicate 캐싱 (클로저 재할당 방지)
   const _alivePredEnemy   = e => e.hp > 0;
   const _alivePredLife    = x => x.life > 0;
+  // 🛡 v254 — 패시브 공유 metaMods 슬롯 — 매 프레임 리셋 후 능력별 max/min 머지
+  //          벡터: 같은 슬롯에 여러 능력이 쓰는 케이스 (vampiric + 약탈폭격 등)
+  //          능력 제거 시 stale 값 잔존 방지 + 능력 간 충돌 방지
+  function resetSharedPassiveSlots() {
+    if (!state || !state.metaMods) return;
+    const mm = state.metaMods;
+    // 0 으로 리셋되는 슬롯들 (기본값 0, max 머지)
+    mm.furyBonus       = 0;
+    mm.precisionBonus  = 0;
+    mm.frenzyBonus     = 0;
+    mm.bonusGoldMul    = 0;
+    mm.fortuneChance   = 0;
+    mm.masteryBonus    = 0;
+    mm.ironwillBonus   = 0;
+    mm.executionerBonus= 0;
+    mm.resilienceBonus = 0;
+    // 1 로 리셋되는 슬롯들 (기본값 1, min 머지 — scholarMul 은 할인이라 작을수록 좋음)
+    mm.scholarMul      = 1;
+  }
   function update() {
     // 자동 카드 선택 타이머 — 실시간 deadline 방식 (게임 속도 배율 영향 X)
     if (state.levelUpChoices && !paused && state.autoCardTimer > 0) {
@@ -15805,6 +15846,9 @@
     // 보스 능력 패턴 처리
     updateBossPatterns();
 
+    // 🛡 v254 — 패시브 공유 슬롯 프레임 리셋 (능력 제거 시 stale 값 잔존 방지)
+    //   여러 능력/조합이 같은 metaMods 슬롯에 쓸 때 안전한 max/min 머지 가능하게 함
+    resetSharedPassiveSlots();
     // 능력 tick — 모드별 분기
     if (state.mode === 'defense') {
       // 🏰 TD: 각 배치 타워별로 CX/CY 스왑 후 ability tick
@@ -18294,7 +18338,18 @@
   }
 
   function drawLevelUpModal() {
-    if (!state.levelUpChoices) return;
+    if (!state.levelUpChoices) {
+      state._cardModalStart = null;
+      return;
+    }
+    // 🎬 v253 — 카드 모달 페이드 인 (등장 시 부드럽게)
+    if (state._cardModalStart == null) state._cardModalStart = state.t;
+    const elapsed = state.t - state._cardModalStart;
+    const fadeFrames = 18;  // 0.3s @ 60fps
+    const fadeAlpha = Math.min(1, elapsed / fadeFrames);
+    const eased = 1 - Math.pow(1 - fadeAlpha, 2);  // ease-out
+    ctx.save();
+    ctx.globalAlpha = eased;
     ctx.fillStyle = 'rgba(0,0,0,0.80)';
     ctx.fillRect(0, 0, W, H);
     // 제목 (모바일 가독성 위해 폰트 ↑)
@@ -18675,6 +18730,8 @@
     }
 
     ctx.textAlign = 'start';
+    // 🎬 v253 — 페이드 인 ctx.save 해제
+    ctx.restore();
   }
 
   // 모달 버튼 한 개를 그리는 헬퍼
@@ -19701,12 +19758,18 @@
     const imgHTML = imgSrc
       ? `<div class="preview-img-wrap"><img src="${imgSrc}" alt="${char.name}" onerror="this.parentElement.style.display='none'"/></div>`
       : '';
+    // 🎴 v253 — 현재 선택된 모드도 같이 표시
+    const curMode = META.lastSelectedMode || 'standard';
+    const modeName  = curMode === 'defense' ? '🏰 디펜스' : '⚔️ 표준';
+    const modeColor = curMode === 'defense' ? '#88dda8' : '#7ad7ff';
+    const modeBadge = `<div class="preview-mode" style="color:${modeColor}; font-size:11px; margin-top:2px;">${modeName} 모드</div>`;
     el.innerHTML = `
       ${rarityTag}
       ${imgHTML}
       <div class="preview-info">
-        <div class="preview-label">선택된 캐릭터</div>
+        <div class="preview-label">선택된 설정</div>
         <div class="preview-name" style="color:${char.color || '#7ad7ff'};">${char.name}</div>
+        ${modeBadge}
         ${starsHTML}
       </div>
       <span class="preview-arrow">›</span>
@@ -20572,7 +20635,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 252;
+  const APP_VERSION = 254;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
