@@ -13163,11 +13163,62 @@
     if (!id) return 0;
     return getAbilityPermaLv(id) * ABILITY_PERMA_DMG_PER_LV;
   }
+  // 🌟 v235 — 능력 영구 강화 비용: 등급 + 조합 위계별 배수
+  //   기본 공식: 80 + lv·50 + lv²·8 (이전 50 + lv·30 + lv²·5 보다 ~60% ↑)
+  //   배수: 능력 등급/카테고리에 따라 1.0x ~ 5.0x
+  function abilityPermaCostMul(id) {
+    const def = ABILITY_DEFS[id];
+    if (!def) return 1.0;
+    // 별 해금 능력 (4★/8★ 캐릭터 능력 - 매우 희귀)
+    if (def.isStarUnlock) return 3.0;
+    // 가챠 고유 능력 (등급별 차등)
+    if (def.isGachaUnique) {
+      // 등급별 — 능력 자체에 rarity 없으므로 캐릭터에서 역추적 또는 색상 기반 추정
+      // 단순화: 능력 ID 가 SR/SSR 캐릭터의 starting/조합/트리플인지 체크
+      // SSR 능력 풀
+      const ssrAbilities = new Set([
+        'starSong', 'timeButterfly',                        // SSR start
+        'cosmicChorus', 'timePrison',                       // SSR combo
+        'celestialSymphony', 'eternalMoment',               // SSR triple
+        'celestialEcho', 'sirensSong',                      // aria 4/8★
+        'temporalLoop', 'paradoxFreeze',                    // misaki 4/8★
+      ]);
+      const srAbilities = new Set([
+        'sakuraSlash', 'moonShot',                          // SR start
+        'sakuraStorm', 'moonFrostArrow',                    // SR combo
+        'sakuraInferno', 'moonBombardment',                 // SR triple
+        'petalStorm', 'cherrySingularity',                  // sakura 4/8★
+        'lunarRain', 'eclipsePiercer',                      // luna 4/8★
+      ]);
+      if (ssrAbilities.has(id)) {
+        if (def.isTriple) return 5.0;
+        if (def.isCombo) return 5.0;
+        return 4.0;
+      }
+      if (srAbilities.has(id)) {
+        if (def.isTriple) return 3.5;
+        if (def.isCombo) return 3.5;
+        return 2.5;
+      }
+      // R 가챠
+      if (def.isTriple) return 2.0;
+      if (def.isCombo) return 2.0;
+      return 1.5;
+    }
+    // 기본 능력
+    if (def.isTriple) return 2.0;
+    if (def.isCombo) return 1.4;
+    return 1.0;
+  }
   function abilityPermaCost(id) {
     const lv = getAbilityPermaLv(id);
     if (lv >= ABILITY_PERMA_MAX) return Infinity;
-    // 50 + lv*30 + lv²*5 → lv0:50, lv5:225, lv10:550, lv15:1025, lv19:1690 (총 ~10K)
-    return Math.ceil(50 + lv * 30 + lv * lv * 5);
+    // 🌟 v236 — 세제곱 추가로 후반 레벨 가속 (lv 15+ 가 비용의 70%)
+    //   lv0:50, lv5:525, lv10:2,850, lv15:8,400, lv19:16,143
+    //   누적: 기본 ~91k, SSR 트리플 ×5 = ~456k
+    const base = 50 + lv * 30 + lv * lv * 5 + lv * lv * lv * 2;
+    const mul = abilityPermaCostMul(id);
+    return Math.ceil(base * mul);
   }
   // 🌟 능력별 영구 강화 효과 라벨 (능력 성격에 맞는 설명)
   function getAbilityPermaEffectLabel(id) {
@@ -19740,7 +19791,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 234;
+  const APP_VERSION = 236;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
@@ -20553,6 +20604,13 @@
         else if (unlocks[8] && unlocks[8].includes(id)) starBadge = '<span style="font-size:9px;color:#ff80ff;font-weight:bold;background:#2a142a;padding:1px 5px;border-radius:8px;border:1px solid #ff80ff;">8★</span>';
       }
     }
+    // 🌟 v235 — 등급 배수 뱃지 (×1 이상일 때만 표시)
+    let mulBadge = '';
+    const costMul = abilityPermaCostMul(id);
+    if (costMul > 1.0) {
+      const mulColor = costMul >= 4 ? '#ff80ff' : (costMul >= 2.5 ? '#ffd060' : (costMul >= 1.5 ? '#88ccff' : '#9aa3b3'));
+      mulBadge = `<span style="font-size:9px;color:${mulColor};font-weight:bold;background:rgba(20,24,34,0.7);padding:1px 5px;border-radius:8px;border:1px solid ${mulColor}55;">×${costMul.toFixed(1)}</span>`;
+    }
     // 행 배경 — 등급별 미세 그라데이션
     let rowBg = '#141822';
     if (gachaTier === 'SSR') rowBg = 'linear-gradient(90deg, rgba(255,128,255,0.05) 0%, #141822 30%)';
@@ -20575,7 +20633,7 @@
       <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:3px;">
         <div style="display:flex;align-items:center;gap:6px;">
           <span style="font-size:13px;font-weight:bold;color:${d.color || '#fff'};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${d.name}</span>
-          ${starBadge}
+          ${starBadge}${mulBadge}
         </div>
         <div style="display:flex;align-items:center;gap:6px;">
           <div style="flex:1;height:5px;background:#0b0d14;border-radius:3px;overflow:hidden;border:1px solid #2a2f3a;">
