@@ -11164,6 +11164,13 @@
   const MAX_ROUND = 100;
   // ♾ 엔드리스 모드 HP 배수 — R100 클리어 후 한 라운드마다 ×1.5 (기하급수)
   const ENDLESS_HP_MUL = 1.5;
+  // 🏆 v262 — A: 엔드리스(R100+) 점수 패널티 — 낮은 난이도일수록 강하게 감쇠
+  //   일반(승천0)으로 엔드리스 무한 파밍해도 승천/초월 정공법 점수를 못 넘게 함
+  //   승천 0: ×0.30 / 승천 5: ×0.70 / 승천 9+: ×1.0 (패널티 없음)
+  function endlessScorePenalty() {
+    if (!state || (state.round || 0) <= MAX_ROUND) return 1;
+    return Math.min(1, 0.30 + (state.ascension || 0) * 0.08);
+  }
   // 능력 상향 보정 — 평균 빌드 DPS +20~30% 만큼 적 HP +8% 보정 (전 구간)
   const ABILITY_BUFF_HP_COMP = 1.08;
   function enemyHpFor(n) {
@@ -11547,7 +11554,7 @@
       const goldBonus = Math.min(3.0, mm.bonusGoldMul || 0);
       const goldEach = Math.ceil(cfg2.enemyGold * (mm.goldMul || 1) * (1 + goldBonus));
       const giveGold  = simKills * goldEach;
-      const giveScore = Math.ceil(simKills * 10 * state.round * (mm.scoreMul || 1) * ((state.asc && state.asc.scoreReward) || 1));
+      const giveScore = Math.ceil(simKills * 10 * state.round * (mm.scoreMul || 1) * ((state.asc && state.asc.scoreReward) || 1) * endlessScorePenalty());
       state.gold  += giveGold;
       state.score += giveScore;
       state.totalKills = (state.totalKills || 0) + simKills;
@@ -11583,6 +11590,16 @@
     state.goldBonusScore = Math.floor(state.goldRemaining / 10);
     if (state.goldBonusScore > 0) {
       state.score += state.goldBonusScore;
+    }
+    // 🏆 v262 — D: 난이도 클리어 보너스 (최종 점수 × 난이도 곱)
+    //   scoreReward(처치당 곱)에 더해 최종 점수에도 난이도 곱 → 어려운 난이도가 항상 우위 보장
+    //   승천1 ×1.1 / 승천15 ×2.5 / 초월15(asc30) ×4.0
+    const _ascForBonus = state.ascension || 0;
+    if (_ascForBonus > 0 && !state._diffBonusApplied) {
+      state._diffBonusApplied = true;
+      state.diffBonusMul = 1 + _ascForBonus * 0.10;
+      state.scoreBeforeDiffBonus = state.score;
+      state.score = Math.ceil(state.score * state.diffBonusMul);
     }
     // 🏆 v225 — 신기록 감지 (saveRecord 전에 캡처) + 결과 화면 애니메이션 시작 시각
     const prevBestScore = (META.records && META.records.length > 0)
@@ -14632,7 +14649,7 @@
       // 💎 망자의 부적용 누적 골드 추적
       if (state.relicEffects) state.relicEffects.goldEarnedTotal = (state.relicEffects.goldEarnedTotal || 0) + goldDrop;
       // 점수 + 행운 보너스 (확률)
-      state.score += Math.ceil(10 * state.round * mm.scoreMul * ((state.asc && state.asc.scoreReward) || 1));
+      state.score += Math.ceil(10 * state.round * mm.scoreMul * ((state.asc && state.asc.scoreReward) || 1) * endlessScorePenalty());
       // 🛡 v257 — fortuneChance cap 0.95 (절대 100% 안 됨 — 약간의 랜덤성 보존)
       const fortuneP = Math.min(0.95, mm.fortuneChance || 0);
       if (fortuneP > 0 && Math.random() < fortuneP) {
@@ -17219,6 +17236,12 @@
         ctx.fillStyle = '#ffd479'; ctx.font='12px Jua, sans-serif';
         ctx.fillText(`💰 남은 골드 ${state.goldRemaining}G → +${state.goldBonusScore.toLocaleString()}점`, CX, lineY);
         lineY += 16;
+      }
+      // 🏆 v262 — 난이도 클리어 보너스 표시 (점수 뛴 이유 명확화)
+      if (state.diffBonusMul && state.diffBonusMul > 1) {
+        ctx.fillStyle = '#ff88ff'; ctx.font='bold 13px Jua, sans-serif';
+        ctx.fillText(`⚡ ${ascensionLabel(state.ascension)} 보너스 ×${state.diffBonusMul.toFixed(1)}`, CX, lineY);
+        lineY += 17;
       }
       if (state.stardustEarned) {
         ctx.fillStyle = '#ffd479'; ctx.font='14px Jua, sans-serif';
@@ -20715,7 +20738,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 261;
+  const APP_VERSION = 262;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
