@@ -123,7 +123,8 @@
     transform: translateY(0);
     pointer-events: auto;
   }
-  #wrap.portrait #randomBtn { padding: 16px; font-size: 15px; min-height: 52px; }
+  /* portrait — padding/높이만 키우고 font-size 동일하게 (텍스트 크기 변동 방지) */
+  #wrap.portrait #randomBtn { padding: 14px 10px; font-size: 14px; min-height: 52px; }
   #wrap.portrait .speed-btn { padding: 14px 0; font-size: 14px; min-height: 48px; }
   #wrap.portrait #stats { font-size: 14px; }
   button { touch-action: manipulation; }
@@ -196,7 +197,17 @@
   }
   button:hover:not(:disabled) { background: #2a3550; }
   button:disabled { opacity: 0.4; cursor: not-allowed; }
-  #randomBtn { width: 100%; padding: 10px; font-weight: bold; }
+  /* 🛡 v207 — font-size 고정 + min-height 고정 으로 텍스트 길이/portrait 전환 시 크기 변동 방지 */
+  #randomBtn {
+    width: 100%; padding: 10px; font-weight: bold;
+    font-size: 14px;
+    min-height: 44px;
+    line-height: 1.2;
+    white-space: nowrap;       /* 텍스트 줄바꿈 방지 → 버튼 높이 변동 X */
+    overflow: hidden;
+    text-overflow: ellipsis;
+    box-sizing: border-box;
+  }
   .relic-view-btn {
     width: 100%; padding: 10px;
     background: linear-gradient(135deg, #2a2010, #1a1408);
@@ -561,6 +572,9 @@
     display: flex; gap: 8px;
     max-width: 900px; width: 100%;
     margin: 0 auto 12px;
+    /* 🛡 v209 — 부모 .screen 의 touch-action: pan-y 로 인해 가로 터치 스크롤이 막혔던 문제 해결.
+       탭 컨테이너 자체는 가로 pan + 세로 pan(부모 스크롤로 위임) 모두 허용. */
+    touch-action: pan-x pan-y;
   }
   .codex-tab {
     padding: 10px 18px;
@@ -10303,9 +10317,9 @@
     // 메타 강화: 시작 점수 (승천 페널티 적용)
     if (mods.startScore) state.score = Math.floor(mods.startScore * asc.startScoreMul);
     state.character = selectedCharacter;
-    // 캐릭터 시작 능력 부여
+    // 캐릭터 시작 능력 부여 (R1 획득)
     for (const id of char.startAbilities) {
-      const ab = { id, level: 1 };
+      const ab = { id, level: 1, acquiredRound: 1 };
       ABILITY_DEFS[id].init(ab);
       state.tower.abilities.push(ab);
       unlockAbility(id);
@@ -10874,13 +10888,16 @@
     if (document.hidden) flushPendingSync();
   });
   // 🛡 syncMetaToServer — 성공/실패 boolean 반환 (v206)
-  //   logoutAccount 등이 sync 결과를 확인하고 의사결정할 수 있게.
-  //   반환값: true = 서버에 저장 성공 / false = 실패 (네트워크, auth, 세션 무효 등)
+  //   v212: 성공 시각 추적 + 진단 로그 + 콘솔에서 _lastSyncSuccessAt 확인 가능
+  let _lastSyncSuccessAt = 0;       // 마지막 성공 시각 (ms)
+  let _lastSyncAttemptAt = 0;       // 마지막 시도 시각 (ms)
+  let _lastSyncErrorMsg = '';       // 마지막 에러 메시지 (디버깅용)
   async function syncMetaToServer() {
-    if (!isAccountLoggedIn()) return false;
-    if (_sessionInvalidated) return false;
+    _lastSyncAttemptAt = Date.now();
+    if (!isAccountLoggedIn()) { _lastSyncErrorMsg = 'not-logged-in'; return false; }
+    if (_sessionInvalidated) { _lastSyncErrorMsg = 'session-invalidated'; return false; }
     const sb = getSupabase();
-    if (!sb) return false;
+    if (!sb) { _lastSyncErrorMsg = 'no-supabase'; return false; }
     try {
       const dataToSync = { ...META };
       delete dataToSync.accountPassword;
@@ -10892,24 +10909,43 @@
         p_session_id: META.sessionId || null,
       });
       if (error) {
-        console.warn('동기화 실패:', error.message);
+        _lastSyncErrorMsg = `rpc-error: ${error.message || error}`;
+        console.warn('[sync] RPC 에러:', error.message);
         return false;
       }
       if (data === 'invalid_session') {
+        _lastSyncErrorMsg = 'invalid_session';
         handleSessionInvalidation();
         return false;
       }
       if (data === 'auth_failed' || data === false) {
-        console.warn('동기화 인증 실패 — 비밀번호 변경됐을 가능성');
+        _lastSyncErrorMsg = 'auth_failed';
+        console.warn('[sync] 인증 실패 (비밀번호 변경?)');
         return false;
       }
       // 'ok' (신버전) 또는 true (구버전) → 성공
-      return data === 'ok' || data === true;
+      if (data === 'ok' || data === true) {
+        _lastSyncSuccessAt = Date.now();
+        _lastSyncErrorMsg = '';
+        return true;
+      }
+      _lastSyncErrorMsg = `unknown-response: ${JSON.stringify(data)}`;
+      console.warn('[sync] 알 수 없는 응답:', data);
+      return false;
     } catch (e) {
-      console.warn('동기화 통신 실패:', e);
+      _lastSyncErrorMsg = `exception: ${(e && e.message) || e}`;
+      console.warn('[sync] 통신 예외:', e);
       return false;
     }
   }
+  // 콘솔에서 동기화 상태 확인용 — F12 → window.__syncStatus()
+  window.__syncStatus = () => ({
+    lastSuccess: _lastSyncSuccessAt ? new Date(_lastSyncSuccessAt).toLocaleTimeString() : '없음',
+    lastAttempt: _lastSyncAttemptAt ? new Date(_lastSyncAttemptAt).toLocaleTimeString() : '없음',
+    lastError: _lastSyncErrorMsg || '없음',
+    metaUpdatedAt: META.metaUpdatedAt ? new Date(META.metaUpdatedAt).toLocaleTimeString() : '없음',
+    syncedAfterLastChange: _lastSyncSuccessAt >= (META.metaUpdatedAt || 0),
+  });
 
   // 🔄 앱 시작 시 서버에서 최신 데이터 가져오기 (로컬과 병합)
   // 다기기 동기화 지원 — 어제 다른 기기에서 한 강화가 오늘 반영됨
@@ -11166,37 +11202,54 @@
 
   async function logoutAccount() {
     if (!confirm('로그아웃하면 이 기기의 데이터는 초기화됩니다. (서버 데이터는 안전)\n\n계속하시겠어요?')) return;
-    // 🛡 v206 — 로그아웃 전에 미푸시 변경사항 강제 sync.
-    //   syncMetaToServer 가 이제 boolean 반환 → 실패 시 사용자에게 명확히 안내.
+    // 🛡 v212 — 효율적 로그아웃:
+    //   1) 최근 (60초 이내) 성공 sync 가 있고 그 뒤로 META 변경 없음 → 즉시 로그아웃 (sync 스킵)
+    //   2) 미푸시 변경 있음 → push 시도, 실패 시 자세한 에러 안내
     if (typeof _syncTimer !== 'undefined' && _syncTimer) { clearTimeout(_syncTimer); _syncTimer = null; }
     if (typeof _syncMaxTimer !== 'undefined' && _syncMaxTimer) { clearTimeout(_syncMaxTimer); _syncMaxTimer = null; }
-    let syncOk = true;   // 기본값: 로그인 안 된 상태면 sync 불필요
+
+    let syncOk = true;
     if (isAccountLoggedIn()) {
-      try {
-        // ⏱ 10초 타임아웃 — 네트워크 행 방지
-        syncOk = await Promise.race([
-          syncMetaToServer(),
-          new Promise(resolve => setTimeout(() => resolve(false), 10000)),
-        ]);
-      } catch (e) {
-        console.warn('로그아웃 전 sync 예외:', e);
-        syncOk = false;
+      // 🚀 빠른 경로 — 최근 sync 성공 시각이 META 변경 시각보다 더 최신이면 스킵
+      const lastChange = META.metaUpdatedAt || 0;
+      const needsSync = _lastSyncSuccessAt < lastChange;
+      if (!needsSync && _lastSyncSuccessAt > 0) {
+        console.log('[logout] 최근 sync 성공 + 변경 없음 → 즉시 로그아웃');
+        syncOk = true;
+      } else {
+        // 변경사항 있음 → push 시도 (20초 타임아웃 — 큰 페이로드 대비)
+        console.log('[logout] 미푸시 변경 감지 → 강제 sync 시작');
+        try {
+          syncOk = await Promise.race([
+            syncMetaToServer(),
+            new Promise(resolve => setTimeout(() => resolve('timeout'), 20000)),
+          ]);
+          if (syncOk === 'timeout') {
+            _lastSyncErrorMsg = 'logout-timeout-20s';
+            syncOk = false;
+          }
+        } catch (e) {
+          console.warn('[logout] sync 예외:', e);
+          syncOk = false;
+        }
       }
     }
+
     if (!syncOk) {
-      // 💥 sync 실패 시 명시적 경고 + 사용자 결정 받기
+      // 💥 sync 실패 — 구체적 사유 포함
+      const errorReason = _lastSyncErrorMsg || '알 수 없는 오류';
       const forceLogout = confirm(
         '⚠ 서버 동기화 실패!\n\n' +
+        `사유: ${errorReason}\n\n` +
         '이 기기의 진행도가 서버에 저장되지 않았습니다.\n' +
         '지금 로그아웃하면 마지막 동기화 이후의 진행도가 사라집니다.\n\n' +
         '[확인] = 어쨌든 로그아웃 (데이터 손실 감수)\n' +
-        '[취소] = 로그아웃 취소 (인터넷 확인 후 다시 시도)'
+        '[취소] = 로그아웃 취소 (인터넷 확인 후 다시 시도)\n\n' +
+        '🔍 더 자세히 보려면: F12 → 콘솔에서 __syncStatus() 입력'
       );
       if (!forceLogout) return;
-    } else if (isAccountLoggedIn()) {
-      console.log('✅ 로그아웃 전 sync 성공');
     }
-    // 로컬 META 초기화 (서버는 그대로)
+
     META = {};
     try {
       localStorage.removeItem(META_KEY);
@@ -12468,7 +12521,23 @@
   }
   function earnStardust() {
     const ascMul = (state.asc && state.asc.stardustMul) || 1;
-    const earned = Math.floor((Math.floor(state.score / 800) + state.round * 3 + (state.gameWin ? 300 : 0)) * ascMul);
+    // 💎 v210 — 점수 기반 스타더스트 소프트캡 (고점수 폭주 차단)
+    //   첫 100k 점수까지: 선형 (1/800) — 초/중반 보상 그대로
+    //   100k 이상: sqrt 소프트캡 — 후반 1억점도 합리적 보상
+    //   비교 (점수 → 점수분 스타더스트):
+    //     100k    →  125  (그대로)
+    //     1M      →  337  (이전 1,250)
+    //     10M     →  829  (이전 12,500)
+    //     100M    →  2,360 (이전 125,000)  ← ★ 53배 감소
+    //     1B      →  7,200 (이전 1,250,000) ← 173배 감소
+    const score = state.score || 0;
+    let scoreDust;
+    if (score <= 100000) {
+      scoreDust = Math.floor(score / 800);
+    } else {
+      scoreDust = 125 + Math.floor(Math.sqrt((score - 100000) / 20));
+    }
+    const earned = Math.floor((scoreDust + state.round * 3 + (state.gameWin ? 300 : 0)) * ascMul);
     META.stardust = (META.stardust || 0) + earned;
     // 🛡 stardustEarned가 stardust보다 작으면 (서버 직접 수정 등) catch-up 보장 → sync 시 데이터 손실 방지
     META.stardustEarned = Math.max(META.stardustEarned || 0, (META.stardust - earned) || 0) + earned;
@@ -13510,6 +13579,23 @@
     // RANDOM_POOL_IDS 사용 → 가챠 고유 능력 카드 풀에서 완전 차단 (belt-and-suspenders)
     const unownedActive  = RANDOM_POOL_IDS.filter(id => !owned.has(id) && allowed.has(id) && !ABILITY_DEFS[id].isPassive && abilityHasFutureUse(id));
     const unownedPassive = RANDOM_POOL_IDS.filter(id => !owned.has(id) && allowed.has(id) &&  ABILITY_DEFS[id].isPassive && abilityHasFutureUse(id));
+    // ⭐ v209 — 현재 캐릭터의 별 해금 능력 추가 (4★/8★ 히든)
+    //   getStarUnlockedAbilities() 는 모든 캐릭터의 별 해금을 반환하지만,
+    //   레벨업 카드에는 현재 플레이 중인 캐릭터의 것만 등장해야 함.
+    const myCharId = state.character;
+    if (myCharId && CHAR_STAR_UNLOCKS[myCharId]) {
+      const myStars = getCharStars(myCharId);
+      const myStarAbilities = [];
+      if (myStars >= 4 && CHAR_STAR_UNLOCKS[myCharId][4]) myStarAbilities.push(...CHAR_STAR_UNLOCKS[myCharId][4]);
+      if (myStars >= 8 && CHAR_STAR_UNLOCKS[myCharId][8]) myStarAbilities.push(...CHAR_STAR_UNLOCKS[myCharId][8]);
+      for (const id of myStarAbilities) {
+        if (owned.has(id)) continue;
+        const d = ABILITY_DEFS[id];
+        if (!d) continue;
+        if (d.isPassive) unownedPassive.push(id);
+        else unownedActive.push(id);
+      }
+    }
 
     // 첫 카드 — 액티브만 3장 강제
     if (forceActiveOnly) {
@@ -13684,7 +13770,8 @@
       state.tower.acquireCount += 1;
     }
     if (c.action === 'new') {
-      const ab = { id: c.id, level: 1 };
+      // 🎴 v207 — 획득 시점 라운드 기록 → enhanceCost가 라운드별로 비싸짐
+      const ab = { id: c.id, level: 1, acquiredRound: state.round || 1 };
       ABILITY_DEFS[c.id].init(ab);
       state.tower.abilities.push(ab);
       unlockAbility(c.id);
@@ -13734,7 +13821,8 @@
         if (i1 !== -1 && i2 !== -1) {
           state.tower.abilities.splice(Math.max(i1, i2), 1);
           state.tower.abilities.splice(Math.min(i1, i2), 1);
-          const newAb = { id: c.id, level: 1 };
+          // 🎴 v207 — 조합/트리플 생성 시점 라운드 기록
+          const newAb = { id: c.id, level: 1, acquiredRound: state.round || 1 };
           ABILITY_DEFS[c.id].init(newAb);
           state.tower.abilities.push(newAb);
           // 화려한 형성 연출
@@ -13782,7 +13870,7 @@
   function enhanceCost(ability) {
     const def = ABILITY_DEFS[ability.id];
     const mm = state.metaMods || { enhanceMul: 1 };
-    // 📚 scholar / scholarSnipe 패시브 실시간 계산 (tick이 아직 안 돈 직후에도 즉시 반영)
+    // 📚 scholar / scholarSnipe 패시브 실시간 계산
     let scholarMul = 1;
     if (state.tower && state.tower.abilities) {
       const sa = state.tower.abilities.find(a => a.id === 'scholar');
@@ -13790,13 +13878,16 @@
       const ss = state.tower.abilities.find(a => a.id === 'scholarSnipe');
       if (ss) scholarMul = Math.min(scholarMul, 1 - ss.level * 0.05);
     }
-    // 🛡 누적 할인 최저 한도 — 강화소 + 패시브 + 캐릭터 + 유물 무한 누적 방지
-    // 모든 곱연산의 최저값 0.45 (최대 -55% 누적 할인까지만 허용)
+    // 🛡 누적 할인 최저 한도 — 최대 -55% 누적 할인
     const totalMul = Math.max(0.45, mm.enhanceMul * scholarMul);
-    // 베이스 계수 0.7 → 1.0 — 후반 강화 가속화 차단 (강화 곡선 자체 강화)
-    // 추가로 lv*0.10 가속 → 후반 비싸지는 곡선 강화 (lv8 강화 = 8 + 0.7 = 8.7x base, 이전엔 5.6x)
+    // 능력 레벨 스케일 — 후반 비싸지는 곡선
     const lvScale = (ability.level + 1) + ability.level * 0.10;
-    return Math.ceil(def.baseCost * lvScale * 1.0 * totalMul);
+    // 🎴 v207 — 능력 획득 시점 라운드별 비용 가산
+    //   R1 획득(기본 캐릭터 능력) = 1.0x, R10 = 1.45x, R25 = 2.2x, R50 = 3.45x, R100 = 5.95x
+    //   후반에 새로 뽑은 능력 = 후반 골드 스케일에 맞춰 비싸짐
+    const acqRound = ability.acquiredRound || 1;
+    const roundMul = 1 + (acqRound - 1) * 0.05;
+    return Math.ceil(def.baseCost * lvScale * roundMul * totalMul);
   }
 
   // 랜덤 능력 획득 비용: 0, 25, 60, 110, 180, 270, ...
@@ -18431,7 +18522,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 207;
+  const APP_VERSION = 212;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
