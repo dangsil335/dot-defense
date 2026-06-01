@@ -246,6 +246,109 @@
   .codex-card, .char-card, .ability-row, .mode-card, .gacha-result-card, .gacha-pickup-icon {
     transition: transform .08s ease-out, box-shadow .12s, background .12s;
   }
+  /* 🎬 v243 — 범용 행 접힘 애니메이션 (능력 삭제 등 모든 리스트에서 재사용) */
+  .row-collapsing {
+    overflow: hidden !important;
+    transition:
+      max-height 220ms cubic-bezier(0.4, 0, 0.2, 1),
+      opacity 180ms ease-out,
+      margin 220ms cubic-bezier(0.4, 0, 0.2, 1),
+      padding 220ms cubic-bezier(0.4, 0, 0.2, 1),
+      border-width 220ms cubic-bezier(0.4, 0, 0.2, 1) !important;
+    pointer-events: none !important;
+  }
+  .row-collapsing.collapsed {
+    max-height: 0 !important;
+    opacity: 0 !important;
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+    border-top-width: 0 !important;
+    border-bottom-width: 0 !important;
+  }
+  /* 🎬 v243 — 신규 행 부드러운 등장 (fade-in + slide-down) */
+  @keyframes _row-fade-in {
+    0%   { opacity: 0; transform: translateY(-6px); }
+    100% { opacity: 1; transform: translateY(0); }
+  }
+  .row-fade-in { animation: _row-fade-in 200ms ease-out; }
+  /* 🎬 v243 — 모달 페이드 인/아웃 (모든 다이얼로그에서 재사용) */
+  @keyframes _modal-fade-in {
+    0%   { opacity: 0; }
+    100% { opacity: 1; }
+  }
+  @keyframes _modal-fade-out {
+    0%   { opacity: 1; }
+    100% { opacity: 0; }
+  }
+  .modal-anim-in  { animation: _modal-fade-in 160ms ease-out; }
+  .modal-anim-out { animation: _modal-fade-out 160ms ease-in forwards; }
+  /* 🎬 v243 — 화면 페이드 아웃 (전환 시 이전 화면이 부드럽게 사라짐) */
+  @keyframes _screen-fade-out {
+    0%   { opacity: 1; }
+    100% { opacity: 0; }
+  }
+  .screen.screen-fade-out {
+    animation: _screen-fade-out 150ms ease-in forwards;
+  }
+  /* 🌌 v245 — ANCIENT 유물 강조 펄스 (가챠 배너 + 결과 카드) */
+  @keyframes _ancient-pulse {
+    0%, 100% { box-shadow: 0 0 8px rgba(255,136,255,0.5); }
+    50%      { box-shadow: 0 0 18px rgba(255,136,255,0.9); }
+  }
+  /* 🌌 v249 — 가챠 배너 ANCIENT 유물 픽업 칩 (오른쪽 상단 부유) */
+  .gacha-banner-ancient-chip {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: linear-gradient(135deg, rgba(40,15,55,0.92), rgba(20,5,30,0.92));
+    border: 2px solid #ff88ff;
+    border-radius: 10px;
+    box-shadow: 0 0 14px rgba(255,136,255,0.6);
+    animation: _ancient-pulse 1.6s ease-in-out infinite;
+    z-index: 5;
+    pointer-events: none;
+  }
+  .gacha-banner-ancient-chip img {
+    width: 40px; height: 40px;
+    image-rendering: pixelated;
+    object-fit: contain;
+    flex-shrink: 0;
+  }
+  .ancient-chip-text {
+    display: flex; flex-direction: column;
+    gap: 1px;
+    color: #fff;
+    font-size: 11px;
+    line-height: 1.2;
+  }
+  .ancient-chip-label {
+    color: #ff88ff;
+    font-weight: bold;
+    font-size: 10px;
+    letter-spacing: 0.5px;
+  }
+  .ancient-chip-name {
+    color: #fff;
+    font-weight: bold;
+    font-size: 12px;
+  }
+  .ancient-chip-rate {
+    color: #ffaaee;
+    font-size: 10px;
+  }
+  @media (max-width: 480px) {
+    .gacha-banner-ancient-chip { top: 10px; right: 10px; padding: 6px 9px; gap: 6px; }
+    .gacha-banner-ancient-chip img { width: 32px; height: 32px; }
+    .ancient-chip-label { font-size: 9px; }
+    .ancient-chip-name  { font-size: 11px; }
+    .ancient-chip-rate  { font-size: 9px; }
+  }
   .codex-card:active, .char-card:not(.locked):active, .mode-card:active {
     transform: scale(0.98);
   }
@@ -475,12 +578,15 @@
     50% { box-shadow: 0 0 12px rgba(136, 255, 136, 0.5); }
   }
   .toast {
-    position:absolute; left:50%; top:20px; transform:translateX(-50%);
+    position:absolute; left:50%; top:20px;
+    /* 🎬 v243 — 위에서 살짝 내려오는 등장 / 위로 사라지는 효과 */
+    transform: translateX(-50%) translateY(-8px);
     background: rgba(20,24,34,0.95); color:#fff; padding:8px 14px;
     border:1px solid #3a4256; font-size:12px; pointer-events:none;
-    opacity:0; transition: opacity .2s;
+    opacity:0;
+    transition: opacity .22s ease-out, transform .22s cubic-bezier(0.2, 0.8, 0.2, 1);
   }
-  .toast.show { opacity: 1; }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
   #abilities { display:flex; flex-direction:column; gap:4px; }
   /* 가로 모드: abilities가 남은 공간을 차지하면서 내부 스크롤 → 배속/컨트롤 영역 안 가림 */
   #wrap:not(.portrait) #abilities {
@@ -1534,11 +1640,26 @@
     overflow: hidden;
     display: flex; flex-direction: column;
     opacity: 0;
-    transform: translateY(20px) scale(0.8);
-    animation: gacha-card-in 0.4s ease-out forwards;
+    transform: translateY(24px) scale(0.6) rotate(-4deg);
+    /* 🎬 v250 — 순차 등장: animation-delay 는 JS 에서 inline 으로 설정 (카드별 stagger) */
+    animation: _gacha-card-reveal 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
   }
-  @keyframes gacha-card-in {
-    to { opacity: 1; transform: translateY(0) scale(1); }
+  @keyframes _gacha-card-reveal {
+    0%   { opacity: 0; transform: translateY(24px) scale(0.6) rotate(-4deg); }
+    60%  { opacity: 1; transform: translateY(-4px) scale(1.05) rotate(1deg); }
+    100% { opacity: 1; transform: translateY(0) scale(1) rotate(0deg); }
+  }
+  /* 🎬 v250 — SSR/ANCIENT 강조 펄스 (등장 후 한 번 더 빛남) */
+  @keyframes _gacha-card-rarity-burst {
+    0%   { box-shadow: 0 0 0 0 var(--rarity-color); }
+    50%  { box-shadow: 0 0 24px 4px var(--rarity-color); }
+    100% { box-shadow: 0 0 0 0 var(--rarity-color); }
+  }
+  .gacha-result-card.rarity-ssr,
+  .gacha-result-card.rarity-ancient {
+    /* 등장 + 펄스 같이 (delay 는 inline) */
+    animation: _gacha-card-reveal 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) forwards,
+               _gacha-card-rarity-burst 0.8s ease-out;
   }
   .gacha-result-card .card-rarity-tag {
     text-align: center;
@@ -2664,6 +2785,15 @@
     <div class="gacha-banner-top-overlay">
       <div id="gacha-banner-name" class="gacha-banner-name">🌟 아리아 픽업</div>
       <div id="gacha-banner-pickup-info" class="gacha-banner-pickup-info">SSR 1.0% · SR 5% · R 94%</div>
+    </div>
+    <!-- 🌌 v249 — 고대 유물 픽업 칩 (배너에 동봉된 ANCIENT 유물 표시) -->
+    <div id="gacha-banner-ancient-chip" class="gacha-banner-ancient-chip" style="display:none;">
+      <img id="gacha-banner-ancient-img" src="" alt="ancient" />
+      <div class="ancient-chip-text">
+        <div class="ancient-chip-label">🌌 ANCIENT</div>
+        <div class="ancient-chip-name" id="gacha-banner-ancient-name">—</div>
+        <div class="ancient-chip-rate" id="gacha-banner-ancient-rate">—</div>
+      </div>
     </div>
 
     <!-- 하단 오버레이: 뽑기 버튼만 (일러스트 보존) -->
@@ -9984,10 +10114,12 @@
   // 보스 처치 시 확률적으로 등장. 한 게임 내 영구 효과. 등급 = common/rare/epic/legendary
   // 아이작/하데스/RoR 영감 — 등급 높을수록 참신하고 게임 체인저
   const RELIC_RARITY = {
-    common:    { color: '#9aa3b3', glow: 'rgba(154,163,179,0.4)', label: '일반', weight: 60 },
-    rare:      { color: '#88aaff', glow: 'rgba(136,170,255,0.5)', label: '희귀', weight: 28 },
-    epic:      { color: '#c084ff', glow: 'rgba(192,132,255,0.6)', label: '영웅', weight: 10 },
-    legendary: { color: '#ffd479', glow: 'rgba(255,212,121,0.7)', label: '전설', weight: 2 },
+    common:    { color: '#9aa3b3', glow: 'rgba(154,163,179,0.4)', label: '일반',  weight: 60 },
+    rare:      { color: '#88aaff', glow: 'rgba(136,170,255,0.5)', label: '희귀',  weight: 28 },
+    epic:      { color: '#c084ff', glow: 'rgba(192,132,255,0.6)', label: '영웅',  weight: 10 },
+    legendary: { color: '#ffd479', glow: 'rgba(255,212,121,0.7)', label: '전설',  weight: 2  },
+    // 🌌 v245 — ANCIENT: 가챠 전용 해금, 캐릭터 전용 인게임 드롭 (weight 0 → 일반 풀 제외)
+    ancient:   { color: '#ff88ff', glow: 'rgba(255,136,255,0.95)', label: '고대', weight: 0  },
   };
   const RELIC_DROP_CHANCE = 0.40; // 보스 한 마리당 40% 확률로 등장
   const RELICS = {
@@ -10157,8 +10289,182 @@
     dimensionDragon: { name: '차원 용', icon: '🐲', rarity: 'legendary',
       desc: '보스 처치마다 데미지 +25% (영구 누적). 용의 분노는 끝나지 않는다.',
       apply: (st) => { st.relicEffects.dragonStackPerBoss = 0.25; }, unlockBy: 'achievement:asc15' },
+
+    // ============================== 🌌 ANCIENT (2개) — 가챠 전용 해금, 캐릭터 전용 ==============================
+    // 🎵 Aria 전용 — 별·노래·벚꽃 계열 능력이 max 도달 시 각성
+    ariaHarp: {
+      name: '여신의 하프', icon: '🎵', rarity: 'ancient',
+      isAncient: true, characterId: 'aria',
+      // 관련 능력: starSong(시작) / celestialEcho(4★) / sirensSong(8★) / cosmicChorus(별의노래+노바 조합)
+      triggerAbilities: ['starSong', 'celestialEcho', 'sirensSong', 'cosmicChorus'],
+      desc: '🎵 Aria 전용 · ★별마다 강해짐.\n[기본] 데미지 +20% (Aria 시너지 +40%)\n[★4 각성 1] Aria 관련 능력 max 도달 시 — 데미지 +50%·적 슬로우 +10%\n[★8 각성 2] 관련 능력 2개 이상 max — 처치 시 음표 광역 폭발',
+      apply: (st) => { applyAncientRelic(st, 'ariaHarp'); },
+      unlockBy: 'ancient:ariaHarp',
+    },
+    // ⌛ Misaki 전용 — 시간·동결·차원 계열 능력이 max 도달 시 각성
+    misakiHourglass: {
+      name: '차원의 모래시계', icon: '⌛', rarity: 'ancient',
+      isAncient: true, characterId: 'misaki',
+      // 관련 능력: timeButterfly(시작) / temporalLoop(4★) / paradoxFreeze(8★) / timePrison(시공나비+시간정지 조합)
+      triggerAbilities: ['timeButterfly', 'temporalLoop', 'paradoxFreeze', 'timePrison'],
+      desc: '⌛ Misaki 전용 · ★별마다 강해짐.\n[기본] 적 속도 -15% (Misaki 시너지 -30%)\n[★4 각성 1] Misaki 관련 능력 max 도달 시 — 데미지 +40%·적 속도 -10%\n[★8 각성 2] 관련 능력 2개 이상 max — 30초마다 모든 적 3초 정지',
+      apply: (st) => { applyAncientRelic(st, 'misakiHourglass'); },
+      unlockBy: 'ancient:misakiHourglass',
+    },
   };
+  // 🌌 v245 — ANCIENT 매핑 & 헬퍼
+  const ANCIENT_RELIC_IDS = ['ariaHarp', 'misakiHourglass'];
+  const ANCIENT_RELIC_BY_CHAR = { aria: 'ariaHarp', misaki: 'misakiHourglass' };
+  const ANCIENT_MAX_STARS = 8;
+  function getAncientRelicStars(rid) {
+    return (META.ancientRelics && META.ancientRelics[rid] && META.ancientRelics[rid].stars) || 0;
+  }
+  function setAncientRelicStars(rid, n) {
+    META.ancientRelics = META.ancientRelics || {};
+    META.ancientRelics[rid] = META.ancientRelics[rid] || { stars: 0 };
+    META.ancientRelics[rid].stars = Math.min(ANCIENT_MAX_STARS, Math.max(0, n));
+  }
+  function isAncientUnlocked(rid) {
+    return getAncientRelicStars(rid) >= 1;
+  }
+  // 고대 유물 적용 함수 — apply 에서 호출됨. 별 단계 + 캐릭터 시너지 자동 반영
+  function applyAncientRelic(st, rid) {
+    const stars = getAncientRelicStars(rid);
+    const charId = st && st.selectedCharacter;
+    const synergy = (ANCIENT_RELIC_BY_CHAR[charId] === rid);
+    st.relicEffects.ancientStars = st.relicEffects.ancientStars || {};
+    st.relicEffects.ancientStars[rid] = stars;
+    st.relicEffects.ancientSynergy = st.relicEffects.ancientSynergy || {};
+    st.relicEffects.ancientSynergy[rid] = synergy;
+    st.relicEffects.ancientAwakened = st.relicEffects.ancientAwakened || {};
+    if (rid === 'ariaHarp') {
+      // 기본: 데미지 +20%/+40% (별마다 +5%/+8% 추가)
+      const baseDmg = synergy ? (1.40 + stars * 0.08) : (1.20 + stars * 0.05);
+      st.metaMods.dmgMul = (st.metaMods.dmgMul || 1) * baseDmg;
+      // 각성 1단계 ready 표시 (실제 발동은 능력 max 시)
+      st.relicEffects.ariaHarpReady1 = stars >= 4;
+      st.relicEffects.ariaHarpReady2 = stars >= 8;
+    } else if (rid === 'misakiHourglass') {
+      // 기본: 적 속도 감소 (별마다 추가)
+      const baseSpeedMul = synergy ? (0.70 - stars * 0.02) : (0.85 - stars * 0.01);
+      st.relicEffects.enemySpeedMul *= Math.max(0.40, baseSpeedMul);
+      st.relicEffects.misakiHourglassReady1 = stars >= 4;
+      st.relicEffects.misakiHourglassReady2 = stars >= 8;
+    }
+  }
+  // 각성 효과 발동 — 능력 max 도달 시 체크
+  function checkAncientAwakening(maxedAbilityId) {
+    if (!state || !state.activeRelics) return;
+    for (const r of state.activeRelics) {
+      if (!r.isAncient) continue;
+      const trig = RELICS[r.id] && RELICS[r.id].triggerAbilities;
+      if (!trig || !trig.includes(maxedAbilityId)) continue;
+      // 카운트 (이번 게임에서 이 유물 관련 max 도달한 능력 개수)
+      state.ancientMaxedCount = state.ancientMaxedCount || {};
+      state.ancientMaxedCount[r.id] = state.ancientMaxedCount[r.id] || new Set();
+      if (state.ancientMaxedCount[r.id].has(maxedAbilityId)) continue;
+      state.ancientMaxedCount[r.id].add(maxedAbilityId);
+      const count = state.ancientMaxedCount[r.id].size;
+      const aw = state.relicEffects.ancientAwakened[r.id] || 0;
+      // ★4 각성 1단계 — 첫 max 도달 시
+      const ready1 = (r.id === 'ariaHarp' ? state.relicEffects.ariaHarpReady1 : state.relicEffects.misakiHourglassReady1);
+      const ready2 = (r.id === 'ariaHarp' ? state.relicEffects.ariaHarpReady2 : state.relicEffects.misakiHourglassReady2);
+      if (count >= 1 && ready1 && aw < 1) {
+        activateAncientAwaken(r, 1);
+        state.relicEffects.ancientAwakened[r.id] = 1;
+      }
+      // ★8 각성 2단계 — 두 개 이상 max
+      if (count >= 2 && ready2 && aw < 2) {
+        activateAncientAwaken(r, 2);
+        state.relicEffects.ancientAwakened[r.id] = 2;
+      }
+    }
+  }
+  function activateAncientAwaken(relic, level) {
+    if (relic.id === 'ariaHarp') {
+      if (level === 1) {
+        // 데미지 +50% + 적 속도 -10%
+        state.metaMods.dmgMul *= 1.50;
+        state.relicEffects.enemySpeedMul *= 0.90;
+        toast(`🎵✨ 여신의 하프 · 천상의 화음 각성!`);
+      } else if (level === 2) {
+        // 처치 시 음표 폭발 (chainLightning + aoeDmgMul 추가)
+        state.relicEffects.chainLightning = true;
+        state.relicEffects.aoeDmgMul *= 1.30;
+        toast(`🎵🌟 여신의 하프 · 영원한 합창 각성!`);
+      }
+    } else if (relic.id === 'misakiHourglass') {
+      if (level === 1) {
+        // 데미지 +40% + 적 속도 추가 감소
+        state.metaMods.dmgMul *= 1.40;
+        state.relicEffects.enemySpeedMul *= 0.85;
+        toast(`⌛✨ 차원의 모래시계 · 시간의 정원 각성!`);
+      } else if (level === 2) {
+        // 30초마다 모든 적 3초 정지 (roundStartTimeStop 와 별개로 주기 작동)
+        state.relicEffects.ancientPeriodicStop = true;
+        state.relicEffects.ancientPeriodicStopTimer = 1800; // 60fps * 30s
+        toast(`⌛🌟 차원의 모래시계 · 종말의 모래 각성!`);
+      }
+    }
+    state.comboFlash = 60;
+    state.comboFlashColor = '#ff88ff';
+    if (typeof shake === 'function') shake(18, 24);
+    if (typeof SFX !== 'undefined' && SFX.combo) SFX.combo();
+  }
   const RELIC_IDS = Object.keys(RELICS);
+
+  // 🖼 v247 — 유물 이미지 로더 (lazy preload + emoji 폴백)
+  //   각 유물의 PNG 가 icons/relics/{rid}.png 에 있으면 자동 사용
+  //   없거나 로드 실패 시 emoji (RELICS[rid].icon) 폴백
+  const RELIC_IMG_CACHE = {};      // rid -> { img: Image, loaded: bool, failed: bool }
+  function getRelicImage(rid) {
+    if (RELIC_IMG_CACHE[rid]) return RELIC_IMG_CACHE[rid];
+    const entry = { img: new Image(), loaded: false, failed: false };
+    entry.img.onload  = () => { entry.loaded = true; };
+    entry.img.onerror = () => { entry.failed = true; };
+    entry.img.src = `./icons/relics/${rid}.png`;
+    RELIC_IMG_CACHE[rid] = entry;
+    return entry;
+  }
+  // 게임 시작 시 모든 유물 이미지 사전 로드 (백그라운드, 비동기)
+  (function preloadRelicImages() {
+    for (const rid of RELIC_IDS) getRelicImage(rid);
+  })();
+
+  // Canvas 용 헬퍼 — 이미지 로드됐으면 drawImage, 아니면 emoji 폴백
+  function drawRelicIcon(ctxArg, rid, x, y, size, opts) {
+    const entry = getRelicImage(rid);
+    const o = opts || {};
+    if (entry.loaded && !entry.failed) {
+      ctxArg.drawImage(entry.img, x, y, size, size);
+      return true;
+    }
+    // emoji 폴백
+    const r = RELICS[rid];
+    const emoji = (r && r.icon) || '?';
+    ctxArg.font = `${o.emojiFontSize || Math.floor(size * 0.7)}px sans-serif`;
+    const prevAlign = ctxArg.textAlign;
+    const prevBase = ctxArg.textBaseline;
+    ctxArg.textAlign = 'center';
+    ctxArg.textBaseline = 'middle';
+    if (o.color) ctxArg.fillStyle = o.color;
+    ctxArg.fillText(emoji, x + size/2, y + size/2 + 1);
+    ctxArg.textAlign = prevAlign;
+    ctxArg.textBaseline = prevBase;
+    return false;
+  }
+
+  // HTML 용 헬퍼 — <img> 태그 with emoji 폴백 (onerror)
+  function getRelicImageHtml(rid, sizePx) {
+    const r = RELICS[rid] || {};
+    const emoji = r.icon || '?';
+    const s = sizePx || 28;
+    // 이미지 로드 실패 시 emoji 로 자동 교체
+    return `<img src="./icons/relics/${rid}.png" alt="${rid}" `
+         + `style="width:${s}px;height:${s}px;image-rendering:pixelated;object-fit:contain;" `
+         + `onerror="this.outerHTML='<span style=&quot;font-size:${Math.floor(s*0.9)}px;&quot;>${emoji}</span>';" />`;
+  }
+
   function isRelicUnlocked(rid) {
     const r = RELICS[rid];
     if (!r) return false;
@@ -10168,10 +10474,16 @@
       const have = getUnlockedAchievements();
       return have.has(achId);
     }
+    // 🌌 v245 — 고대 유물: 가챠로 별 1+ 모은 경우 해금
+    if (r.unlockBy.startsWith('ancient:')) {
+      const ancientId = r.unlockBy.slice('ancient:'.length);
+      return isAncientUnlocked(ancientId);
+    }
     return false;
   }
   function getDiscoveredRelics() {
-    return RELIC_IDS.filter(isRelicUnlocked);
+    // 일반 유물 풀 — ancient 는 별도 시스템에서 처리되므로 항상 제외
+    return RELIC_IDS.filter(id => !RELICS[id].isAncient && isRelicUnlocked(id));
   }
 
   // 보스 처치 시 호출 — 확률적으로 3개 유물 제안
@@ -10182,7 +10494,21 @@
     if (Math.random() > Math.min(0.95, RELIC_DROP_CHANCE + bonus)) return null; // 드롭 X
     const ownedSet = new Set((state.activeRelics || []).map(r => r.id));
     const pool = getDiscoveredRelics().filter(id => !ownedSet.has(id));
-    if (pool.length === 0) return null;
+    // 🌟 v241 — 모든 유물 풀 컬렉션 → 스택 제안 (보유 유물 3개 중 1개 +1 스택)
+    if (pool.length === 0) {
+      if (!state.activeRelics || state.activeRelics.length === 0) return null;
+      const ownedPool = state.activeRelics.slice();
+      const offering = [];
+      while (offering.length < 3 && ownedPool.length > 0) {
+        const idx = Math.floor(Math.random() * ownedPool.length);
+        offering.push(ownedPool.splice(idx, 1)[0].id);
+      }
+      // 같은 유물 3개도 가능 (보유 < 3개일 때 채워 넣음)
+      while (offering.length < 3 && state.activeRelics.length > 0) {
+        offering.push(state.activeRelics[Math.floor(Math.random() * state.activeRelics.length)].id);
+      }
+      return offering.length > 0 ? offering : null;
+    }
     // 등급별 후보 분리
     const byRarity = { common: [], rare: [], epic: [], legendary: [] };
     for (const id of pool) byRarity[RELICS[id].rarity].push(id);
@@ -10201,6 +10527,20 @@
         break;
       }
       if (pick) offering.push(pick);
+    }
+    // 🌌 v245 — 고대 유물 주입 (극저 확률, 현재 캐릭터의 매칭 유물만)
+    if (offering.length > 0) {
+      const charId = state.selectedCharacter;
+      const ancientId = ANCIENT_RELIC_BY_CHAR[charId];
+      if (ancientId && isAncientUnlocked(ancientId) && !ownedSet.has(ancientId)) {
+        // 기본 0.3% + 라운드 보너스 (최대 0.5% 추가)
+        const roundBonus = Math.min(0.005, (state.round || 1) * 0.0001);
+        if (Math.random() < (0.003 + roundBonus)) {
+          // 3장 중 무작위 1장 교체 (운 좋으면 선택지에 등장)
+          const slot = Math.floor(Math.random() * offering.length);
+          offering[slot] = ancientId;
+        }
+      }
     }
     return offering.length > 0 ? offering : null;
   }
@@ -10225,9 +10565,21 @@
 
   function acquireRelic(rid) {
     if (!state || !RELICS[rid]) return;
-    const ownedSet = new Set((state.activeRelics || []).map(r => r.id));
-    if (ownedSet.has(rid)) return;
-    const r = { id: rid, ...RELICS[rid] };
+    const existing = (state.activeRelics || []).find(r => r.id === rid);
+    // 🌟 v241 — 유물 스택 모드: 이미 보유 시 스택 +1 (모든 유물 모은 후 보스 처치 보상)
+    if (existing) {
+      existing.stacks = (existing.stacks || 0) + 1;
+      // 글로벌 강화: 데미지 +3% + 골드 +3% (스택당)
+      state.relicEffects.aoeDmgMul *= 1.03;
+      state.metaMods.goldMul = (state.metaMods.goldMul || 1) * 1.03;
+      SFX.combo();
+      state.comboFlash = 36;
+      state.comboFlashColor = RELIC_RARITY[existing.rarity].color;
+      toast(`💎 ${existing.icon} ${existing.name} 강화 +${existing.stacks}`);
+      if (typeof renderPanel === 'function') renderPanel();
+      return;
+    }
+    const r = { id: rid, ...RELICS[rid], stacks: 0 };
     state.activeRelics.push(r);
     try { RELICS[rid].apply(state); } catch (e) { console.warn('유물 적용 실패:', e); }
     SFX.combo();
@@ -10236,6 +10588,49 @@
     toast(`💎 ${r.icon} ${r.name} 획득!`);
     // 💎 패널의 "유물 보기" 버튼 즉시 표시 갱신
     if (typeof renderPanel === 'function') renderPanel();
+  }
+
+  // ===== 🌟 v241 — 어센던트 카드 (Ascendant Cards) =====
+  // 모든 능력 max + 슬롯 풀일 때 레벨업 카드 풀로 등장 (엔드리스 정체 해소)
+  // 각각 무한 스택 — 같은 카드 반복 등장, 매번 +% 누적
+  // ⚠ 게임에 실제 적용되는 필드만 사용 — rangeMul/cooldownMul 등은 state 선언만 있고 dead code
+  const ASCENDANT_TYPES = [
+    { id: 'asc_damage',   icon: '⚔', name: '신성한 일격', desc: '모든 데미지 +5%',  color: '#ff6677', apply: (st) => { st.relicEffects.aoeDmgMul *= 1.05; } },
+    { id: 'asc_might',    icon: '💪', name: '거인의 권능', desc: '주요 데미지 +5%',  color: '#ff8800', apply: (st) => { st.metaMods.dmgMul = (st.metaMods.dmgMul || 1) * 1.05; } },
+    { id: 'asc_gold',     icon: '💰', name: '황금의 손길', desc: '획득 골드 +5%',    color: '#ffd479', apply: (st) => { st.metaMods.goldMul = (st.metaMods.goldMul || 1) * 1.05; } },
+    { id: 'asc_killGold', icon: '🪙', name: '풍요의 시혜', desc: '처치당 +1 골드',   color: '#ffe070', apply: (st) => { st.relicEffects.killGoldBonus = (st.relicEffects.killGoldBonus || 0) + 1; } },
+    { id: 'asc_score',    icon: '🏆', name: '영예의 인장', desc: '획득 점수 +5%',    color: '#88ffaa', apply: (st) => { st.metaMods.scoreMul = (st.metaMods.scoreMul || 1) * 1.05; } },
+    { id: 'asc_bossDmg',  icon: '👹', name: '거대 사냥꾼', desc: '보스 데미지 +8%',  color: '#aa88ff', apply: (st) => { st.metaMods.bossDmgMul = (st.metaMods.bossDmgMul || 1) * 1.08; } },
+  ];
+  const ASCENDANT_BY_ID = {};
+  for (const a of ASCENDANT_TYPES) ASCENDANT_BY_ID[a.id] = a;
+
+  // 모든 능력 max + 슬롯 풀 + 조합 없음 → 어센던트 카드 풀로 전환
+  function shouldOfferAscendant() {
+    if (!state || !state.tower) return false;
+    if (state.mode === 'defense') {
+      // TD: 새 패시브 없고 강화도 없으면 OK
+      const ownedIds = new Set(state.tower.abilities.map(a => a.id));
+      const allowed = getUnlockedAbilityIds();
+      const hasNewPassive = [...allowed].some(id => ABILITY_DEFS[id] && ABILITY_DEFS[id].isPassive && !ownedIds.has(id));
+      const hasUpgradable = state.tower.abilities.some(a => !isAtMax(a));
+      return !hasNewPassive && !hasUpgradable;
+    }
+    // 서바이벌
+    const aSlotsFree = activeCount() < maxActiveSlots();
+    const pSlotsFree = passiveCount() < maxPassiveSlots();
+    const hasUpgradable = state.tower.abilities.some(a => !isAtMax(a));
+    const hasCombo = findAvailableCombos().length > 0;
+    return !aSlotsFree && !pSlotsFree && !hasUpgradable && !hasCombo;
+  }
+  // 어센던트 카드 3장 생성 (중복 가능 — 무한 스택)
+  function generateAscendantChoices() {
+    const choices = [];
+    for (let i = 0; i < 3; i++) {
+      const t = ASCENDANT_TYPES[Math.floor(Math.random() * ASCENDANT_TYPES.length)];
+      choices.push({ action: 'ascendant', id: t.id });
+    }
+    return choices;
   }
 
   // ===== 능력 태그 시스템 — 다중 라벨 (한 능력이 여러 태그를 가질 수 있음) =====
@@ -10871,6 +11266,7 @@
       abilityDamageStats: {},   // { abilityId: totalDamage }
       // 💎 유물 시스템
       activeRelics: [],           // [{id, name, icon, rarity, ...}] — 이번 게임 보유 유물
+      selectedCharacter: selectedCharacter || 'standard',  // 🌌 v245 — 고대 유물 캐릭 매칭용
       relicOffering: null,        // 보스 처치 후 제안 UI 활성화 (null = 닫힘)
       relicEffects: {              // 유물이 작동시키는 효과들
         // 기본 스탯
@@ -11832,6 +12228,17 @@
       merged.abilityPerma   = mergeMaxObject(META.abilityPerma,   server.abilityPerma);    // 능력 영구
       merged.charStars      = mergeMaxObject(META.charStars,      server.charStars);       // 캐릭터 별
       merged.gachaUnlocked  = mergeMaxObject(META.gachaUnlocked,  server.gachaUnlocked);   // 가챠 누적
+      // 🌌 v245 — 고대 유물 별 동기화 (중첩 객체 구조 { rid: { stars: N } })
+      merged.ancientRelics = (() => {
+        const out = { ...(server.ancientRelics || {}) };
+        const loc = META.ancientRelics || {};
+        for (const k of new Set([...Object.keys(out), ...Object.keys(loc)])) {
+          const oS = (out[k] && out[k].stars) || 0;
+          const lS = (loc[k] && loc[k].stars) || 0;
+          out[k] = { stars: Math.max(oS, lS) };
+        }
+        return out;
+      })();
       merged.charUsage      = mergeMaxObject(META.charUsage,      server.charUsage);       // 캐릭터 사용 기록 (구)
       merged.charactersUsed = mergeMaxObject(META.charactersUsed, server.charactersUsed);  // 캐릭터 사용 기록 (신)
       merged.repeatCounts   = mergeMaxObject(META.repeatCounts,   server.repeatCounts);    // 반복 업적 카운트
@@ -12031,7 +12438,7 @@
   function openAuthModal(opts = {}) {
     const { tab = 'signup', closable = false } = opts;
     const modal = document.getElementById('authModal');
-    modal.style.display = 'flex';
+    openModalAnimated(modal);
     switchAuthTab(tab);
     const closeBtn = document.getElementById('authCloseBtn');
     closeBtn.style.display = closable ? '' : 'none';
@@ -12039,7 +12446,7 @@
     document.getElementById('loginError').textContent = '';
   }
   function closeAuthModal() {
-    document.getElementById('authModal').style.display = 'none';
+    closeModalAnimated(document.getElementById('authModal'));
   }
   function switchAuthTab(tab) {
     document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
@@ -12142,7 +12549,7 @@
 
   function openNicknameModal(forceRequired) {
     const modal = document.getElementById('nicknameModal');
-    modal.style.display = 'flex';
+    openModalAnimated(modal);
     const input = document.getElementById('nicknameInput');
     input.value = META.nickname || '';
     document.getElementById('nicknameError').textContent = '';
@@ -12332,7 +12739,7 @@
   function closeNicknameModal() {
     const modal = document.getElementById('nicknameModal');
     if (modal._forceRequired) return; // 첫 실행 시 닫기 금지
-    modal.style.display = 'none';
+    closeModalAnimated(modal);
   }
   async function submitNickname() {
     const input = document.getElementById('nicknameInput');
@@ -12384,7 +12791,7 @@
     ensureUserId();
     const modal = document.getElementById('nicknameModal');
     modal._forceRequired = false;
-    modal.style.display = 'none';
+    closeModalAnimated(modal);
     // 🌐 서버 측 프로필 즉시 갱신 (기존 랭킹 기록 있을 경우)
     updateProfileInRankings();
   }
@@ -12946,6 +13353,8 @@
       },
       rates: { R: 0.94, SR: 0.05, SSR: 0.01 },     // SSR 픽업 1.0%
       featured: 'aria',                            // 픽업 캐릭터 ID
+      ancientRelic: 'ariaHarp',                    // 🌌 v245 — 별도 뽑기 결과 (캐릭터 대신 출현)
+      ancientRelicRate: 0.005,                     // 0.5% — 이 확률 적중 시 캐릭터 풀 진입 X, 유물만 등장
     },
     {
       id: 'misaki',
@@ -12959,6 +13368,8 @@
       },
       rates: { R: 0.94, SR: 0.05, SSR: 0.01 },
       featured: 'misaki',
+      ancientRelic: 'misakiHourglass',             // 🌌 v245 — 별도 뽑기 결과 (캐릭터 대신 출현)
+      ancientRelicRate: 0.005,                     // 0.5% — 이 확률 적중 시 캐릭터 풀 진입 X, 유물만 등장
     },
   ];
   // 현재 선택된 배너 인덱스 (META 에 저장)
@@ -13077,9 +13488,47 @@
   function permaRangeMul(abilityId) { const p = getCharStarPerks(abilityId); return p ? p.rangeMul : 1; }
   function permaEffMul(abilityId)   { const p = getCharStarPerks(abilityId); return p ? p.effectMul : 1; }
   function permaAoeMul(abilityId)   { const p = getCharStarPerks(abilityId); return p ? p.aoeMul : 1; }
+  // 🌌 v245 — 고대 유물 가챠 처리 (캐릭터 별 시스템과 동일 패턴)
+  // 새로 획득 시 ★1 해금, 중복 시 ★+1 (최대 ★8), 만렙 후 중복은 스타더스트 환산
+  const ANCIENT_RELIC_REFUND = 50000; // 만렙 후 중복 시 스타더스트
+  function pullAncientRelic(rid) {
+    META.ancientRelics = META.ancientRelics || {};
+    META.ancientRelics[rid] = META.ancientRelics[rid] || { stars: 0 };
+    const oldStars = META.ancientRelics[rid].stars || 0;
+    const isNew = oldStars === 0;
+    let refund = 0;
+    let starUp = false;
+    if (isNew) {
+      META.ancientRelics[rid].stars = 1;
+    } else if (oldStars < ANCIENT_MAX_STARS) {
+      META.ancientRelics[rid].stars = oldStars + 1;
+      starUp = true;
+    } else {
+      // 만렙 후 중복 → 스타더스트 환산
+      refund = ANCIENT_RELIC_REFUND;
+      META.stardust = (META.stardust || 0) + refund;
+      META.stardustEarned = Math.max(META.stardustEarned || 0, (META.stardust - refund) || 0) + refund;
+    }
+    saveMeta();
+    return {
+      rarity: 'ancient',
+      isAncient: true,
+      ancientId: rid,
+      relicName: RELICS[rid].name,
+      relicIcon: RELICS[rid].icon,
+      isNew, starUp, refund,
+      newStars: META.ancientRelics[rid].stars,
+    };
+  }
   // 한 번 뽑기 — 현재 선택된 배너의 풀/확률 사용
   function gachaPullOne() {
     const banner = getCurrentBanner();
+    // 🌌 v245 — 고대 유물 별도 결과 (캐릭터와 동시 X)
+    // 0.5% 적중 → 유물만 반환하고 종료 (캐릭터 풀 진입 X)
+    // 빗나가면 → 캐릭터 풀로 진입 (R/SR/SSR 추첨)
+    if (banner.ancientRelic && Math.random() < (banner.ancientRelicRate || 0)) {
+      return pullAncientRelic(banner.ancientRelic);
+    }
     const rates = banner.rates;
     const r = Math.random();
     let rarity;
@@ -14281,6 +14730,17 @@
   }
 
   // ===== 레벨업 시스템 =====
+  // 🌟 v240 — 보너스 점수 카드 공식 통일 (이전엔 800×r / 600×r 두 종류, 초반 과대 지급)
+  //          다항식 스케일(150r + 4r²)로 초반은 부드럽게, 후반은 cap(80k)까지 비슷하게 유지.
+  //          라운드 10: 1,900 (이전 8,000) / 라운드 30: 8,100 / 라운드 80+: cap 도달.
+  //          scoreMul 적용 후 최종 cap → 풀스택(2.6x) 폭증도 차단.
+  function bonusScoreAmount() {
+    const round = Math.max(1, (state && state.round) || 1);
+    const scoreMul = (state && state.metaMods && state.metaMods.scoreMul) || 1;
+    const baseLine = 150 * round + 4 * round * round;
+    const variance = 0.92 + Math.random() * 0.16;
+    return Math.floor(Math.min(baseLine * scoreMul * variance, 80000));
+  }
   // 🏰 TD 모드 레벨업 카드 — 패시브 + 보너스 (액티브 X)
   function generateTDLevelUpChoices() {
     const choices = [];
@@ -14298,6 +14758,8 @@
     });
     // 🏰 초반(플레이어 레벨 ≤ 3)에는 보너스 카드(점수/스타더스트) 제외 — 초반 카드는 실질 강화로만
     const blockBonus = (state.playerLevel || 1) <= 3;
+    // 🌟 v242 — 어센던트 조건 캐시 (루프 안에서 findAvailableCombos 반복 호출 방지)
+    const ascMode = shouldOfferAscendant();
     // 카드 풀: 신규 패시브 60%, 강화 30%, 보너스 10% (초반은 보너스 차단 후 패시브로 대체)
     while (choices.length < 3) {
       const roll = Math.random();
@@ -14351,11 +14813,16 @@
         }
       }
       // 3) 보너스 (점수 / 스타더스트) — 초반(playerLevel ≤ 3)에는 차단
+      // 🌟 v241 — 모든 능력 max 시 어센던트 카드 70% (엔드리스 정체 해소)
+      if (!added && !blockBonus && ascMode && Math.random() < 0.7) {
+        const t = ASCENDANT_TYPES[Math.floor(Math.random() * ASCENDANT_TYPES.length)];
+        choices.push({ action: 'ascendant', id: t.id });
+        added = true;
+      }
       if (!added && !blockBonus) {
-        const scoreMul = (state.metaMods && state.metaMods.scoreMul) || 1;
         const ratio = Math.random();
         if (ratio < 0.6) {
-          choices.push({ action: 'bonusScore', amount: Math.floor(Math.min(800 * state.round, 80000) * scoreMul * (0.92 + Math.random() * 0.16)) });
+          choices.push({ action: 'bonusScore', amount: bonusScoreAmount() });
         } else {
           choices.push({ action: 'bonusStardust', amount: Math.max(1, Math.floor(state.round / 3)) });
         }
@@ -14455,9 +14922,7 @@
       }
       // 액티브 풀이 3개 미만이면 보너스 카드로 채움 (정말 극단적 케이스만)
       while (choices.length < 3) {
-        const scoreMul = (state.metaMods && state.metaMods.scoreMul) || 1;
-        const amount = Math.floor(Math.min(800 * state.round, 80000) * scoreMul * (0.92 + Math.random() * 0.16));
-        choices.push({ action: 'bonusScore', amount });
+        choices.push({ action: 'bonusScore', amount: bonusScoreAmount() });
       }
       return choices;
     }
@@ -14546,13 +15011,18 @@
       const id = pool[Math.floor(Math.random() * pool.length)];
       choices.push({ action: 'new', id, newLevel: 1 });
     }
-    // ===== 그래도 부족하면 보너스 카드 =====
+    // ===== 그래도 부족하면 보너스 카드 (또는 v241 어센던트) =====
+    // 🌟 v241 — 모든 능력 max + 슬롯 풀이면 어센던트 우선 (엔드리스 정체 해소)
+    const ascMode = shouldOfferAscendant();
     while (choices.length < 3) {
-      const scoreMul = (state.metaMods && state.metaMods.scoreMul) || 1;
-      if (Math.random() < 0.6) {
+      const r = Math.random();
+      if (ascMode && r < 0.7) {
+        // 어센던트 카드 (글로벌 +%)
+        const t = ASCENDANT_TYPES[Math.floor(Math.random() * ASCENDANT_TYPES.length)];
+        choices.push({ action: 'ascendant', id: t.id });
+      } else if (r < 0.6) {
         // 점수 보너스 (라운드에 비례)
-        const amount = Math.floor(Math.min(800 * state.round, 80000) * scoreMul * (0.92 + Math.random() * 0.16));
-        choices.push({ action: 'bonusScore', amount });
+        choices.push({ action: 'bonusScore', amount: bonusScoreAmount() });
       } else {
         // 스타더스트 (영구 통화 소량)
         const amount = 3 + Math.floor(Math.random() * 8);
@@ -14618,7 +15088,8 @@
     }
     if (c.action === 'new') {
       // 🎴 v207 — 획득 시점 라운드 기록 → enhanceCost가 라운드별로 비싸짐
-      const ab = { id: c.id, level: 1, acquiredRound: state.round || 1 };
+      // 🎬 v243 — _isNew 마크 → 다음 renderPanel 에서 fade-in
+      const ab = { id: c.id, level: 1, acquiredRound: state.round || 1, _isNew: true };
       ABILITY_DEFS[c.id].init(ab);
       state.tower.abilities.push(ab);
       unlockAbility(c.id);
@@ -14627,6 +15098,8 @@
       if (a) {
         const increment = 1 + (c.lucky || 0);
         a.level = Math.min(a.level + increment, maxLvFor(a.id));
+        // 🌌 v245 — 능력 max 도달 시 고대 유물 각성 트리거 체크
+        if (a.level >= maxLvFor(a.id)) checkAncientAwakening(a.id);
         // 럭키 효과 표시
         if (c.lucky > 0) state.luckyCount = (state.luckyCount || 0) + 1; // 업적 추적
         if (c.lucky === 1) {
@@ -14648,6 +15121,22 @@
         color: '#bcf0d2', life: 50, size: 16,
       });
       toast(`🎁 점수 +${c.amount.toLocaleString()}`);
+    } else if (c.action === 'ascendant') {
+      // 🌟 v241 — 어센던트 카드: 글로벌 +% 영구 적용 (무한 스택)
+      const t = ASCENDANT_BY_ID[c.id];
+      if (t) {
+        try { t.apply(state); } catch (e) { console.warn('어센던트 적용 실패:', e); }
+        if (!state.ascendantStacks) state.ascendantStacks = {};
+        state.ascendantStacks[c.id] = (state.ascendantStacks[c.id] || 0) + 1;
+        state.comboFlash = 30;
+        state.comboFlashColor = t.color;
+        state.damageNumbers.push({
+          x: CX, y: CY - 80, vy: -1.5,
+          text: `${t.icon} ${t.name}`,
+          color: t.color, life: 60, size: 16,
+        });
+        toast(`✨ ${t.icon} ${t.name} +${state.ascendantStacks[c.id]}`);
+      }
     } else if (c.action === 'bonusStardust') {
       META.stardust = (META.stardust || 0) + c.amount;
       // 🛡 stardustEarned catch-up
@@ -14669,7 +15158,8 @@
           state.tower.abilities.splice(Math.max(i1, i2), 1);
           state.tower.abilities.splice(Math.min(i1, i2), 1);
           // 🎴 v207 — 조합/트리플 생성 시점 라운드 기록
-          const newAb = { id: c.id, level: 1, acquiredRound: state.round || 1 };
+          // 🎬 v243 — _isNew 마크 → renderPanel 에서 fade-in
+          const newAb = { id: c.id, level: 1, acquiredRound: state.round || 1, _isNew: true };
           ABILITY_DEFS[c.id].init(newAb);
           state.tower.abilities.push(newAb);
           // 화려한 형성 연출
@@ -14757,21 +15247,14 @@
     const hasUpgradable = state.tower.abilities.some(a => !isAtMax(a));
     // 슬롯/조합/강화 전부 불가 → 보너스 카드 (점수/스타더스트) 만 제공
     const bonusOnly = !aSlotsFree && !pSlotsFree && !hasCombo && !hasUpgradable;
-    // 카드 생성 — bonusOnly 면 보너스 3장으로 채움, 아니면 정상 풀
+    // 카드 생성 — bonusOnly 면 어센던트 3장 (엔드리스), 아니면 정상 풀
     let choices;
     if (bonusOnly) {
-      choices = [];
-      const scoreMul = (state.metaMods && state.metaMods.scoreMul) || 1;
-      for (let i = 0; i < 3; i++) {
-        // 골고루 — 점수 2장 + 스타더스트 1장
-        if (i < 2) {
-          const amount = Math.floor(Math.min(600 * state.round, 60000) * scoreMul * (0.92 + Math.random() * 0.16));
-          choices.push({ action: 'bonusScore', amount });
-        } else {
-          const dustAmount = Math.max(1, Math.floor(state.round / 3));
-          choices.push({ action: 'bonusStardust', amount: dustAmount });
-        }
-      }
+      // 🌟 v241 — 어센던트 3장 (정체 해소). 단 스타더스트 1장은 유지 (영구 통화 획득 경로 보존)
+      choices = generateAscendantChoices();
+      // 마지막 슬롯을 스타더스트로 교체 (1/3 확률로 골고루 분배)
+      const dustAmount = Math.max(1, Math.floor(state.round / 3));
+      choices[2] = { action: 'bonusStardust', amount: dustAmount };
     } else {
       choices = generateLevelUpChoices();
     }
@@ -14815,15 +15298,38 @@
     if (state.levelUpChoices) return toast('카드 선택 후 가능');  // 카드 모달 중 삭제 차단
     const a = state.tower.abilities[idx];
     if (!a) return;
-    // 강화에 들인 골드의 40% 환불 (랜덤 획득 비용은 환불 없음)
-    let refund = 0;
-    for (let lv = 1; lv < a.level; lv++) {
-      refund += Math.ceil(enhanceCost({id:a.id, level:lv}) * 0.4);
+    // 🎬 v243 — 자연스러운 삭제 애니메이션
+    // DOM 행을 찾아 접힘 → 완료 후 실제 데이터 삭제 + 재렌더
+    // 현재 탭(액티브/패시브)에서의 visualIdx 계산 (filtered 배열 인덱스)
+    const isPassive = ABILITY_DEFS[a.id].isPassive;
+    const isPassiveTab = (typeof currentAbTab !== 'undefined' && currentAbTab === 'passive');
+    let rowEl = null;
+    if (isPassiveTab === isPassive) {
+      const visualIdx = state.tower.abilities
+        .slice(0, idx)
+        .filter(x => ABILITY_DEFS[x.id].isPassive === isPassive).length;
+      const rows = elAb ? elAb.querySelectorAll('.ability-row') : null;
+      if (rows && rows[visualIdx]) rowEl = rows[visualIdx];
     }
-    state.gold += refund;
-    state.tower.abilities.splice(idx, 1);
-    toast(refund > 0 ? `삭제 · ${refund}G 환불` : `삭제됨`);
-    renderPanel();
+    const commit = () => {
+      // 🛡 v243 — 동시 삭제 시 인덱스 드리프트 방지: 참조로 현재 인덱스 재계산
+      const curIdx = state.tower.abilities.indexOf(a);
+      if (curIdx < 0) return; // 이미 삭제됨
+      // 강화에 들인 골드의 40% 환불 (랜덤 획득 비용은 환불 없음)
+      let refund = 0;
+      for (let lv = 1; lv < a.level; lv++) {
+        refund += Math.ceil(enhanceCost({id:a.id, level:lv}) * 0.4);
+      }
+      state.gold += refund;
+      state.tower.abilities.splice(curIdx, 1);
+      toast(refund > 0 ? `삭제 · ${refund}G 환불` : `삭제됨`);
+      renderPanel();
+    };
+    if (rowEl) {
+      collapseElementThen(rowEl, commit);
+    } else {
+      commit();
+    }
   }
 
   // ===== 적 스폰 =====
@@ -15373,6 +15879,24 @@
           state.thunderStrikes.push({ x: tx, y: ty, life: 12 });
           shake(6, 5);
         }
+      }
+    }
+    // 🌌 v245 — 종말의 모래 (Misaki 모래시계 ★8 각성 2단계) — 30초마다 모든 적 3초 정지
+    if (state.relicEffects && state.relicEffects.ancientPeriodicStop) {
+      state.relicEffects.ancientPeriodicStopTimer = (state.relicEffects.ancientPeriodicStopTimer || 0) - 1;
+      if (state.relicEffects.ancientPeriodicStopTimer <= 0) {
+        state.relicEffects.ancientPeriodicStopTimer = 1800; // 30초
+        // 모든 적 3초 정지 (기존 자비의 망토 패턴 동일)
+        const fr = 180;
+        for (const en of state.enemies) {
+          if (en.hp <= 0) continue;
+          en.slowFrames = Math.max(en.slowFrames || 0, fr);
+          if (!en.isBoss) en.timeStopped = state.t + fr;
+        }
+        toast('⌛✨ 종말의 모래');
+        state.comboFlash = 30;
+        state.comboFlashColor = '#ff88ff';
+        shake(8, 12);
       }
     }
     // 번개 줄기 life 관리
@@ -16778,13 +17302,13 @@
   function openRelicDetail() {
     if (!state || !state.activeRelics || state.activeRelics.length === 0) return;
     buildRelicDetail();
-    document.getElementById('relicDetailModal').style.display = 'flex';
+    openModalAnimated(document.getElementById('relicDetailModal'));
     paused = true; // 읽는 동안 일시정지
     const pauseBtn = document.getElementById('pauseBtn');
     if (pauseBtn) pauseBtn.textContent = '▶ 재개';
   }
   function closeRelicDetail() {
-    document.getElementById('relicDetailModal').style.display = 'none';
+    closeModalAnimated(document.getElementById('relicDetailModal'));
     // paused는 유저가 명시적으로 일시정지한 게 아니므로 풀어줌
     paused = false;
     const pauseBtn = document.getElementById('pauseBtn');
@@ -16815,10 +17339,17 @@
       for (const r of group) {
         const card = document.createElement('div');
         card.style.cssText = `display:flex; gap:10px; padding:10px 12px; background:#141822; border-left:4px solid ${rarInfo.color}; border-radius:4px; margin-bottom:6px; align-items:center;`;
+        // 🌟 v241 — 유물 스택 표시
+        const stackBadge = (r.stacks && r.stacks > 0)
+          ? `<span style="background:linear-gradient(135deg,#aa88ff,#88ccff); color:#fff; font-size:11px; padding:2px 7px; border-radius:8px; margin-left:6px; font-weight:bold;">+${r.stacks}</span>`
+          : '';
+        // 🖼 v247 — 이미지 우선, 없으면 emoji 폴백
         card.innerHTML = `
-          <div style="font-size:28px; flex-shrink:0; width:36px; text-align:center;">${r.icon}</div>
+          <div style="flex-shrink:0; width:36px; height:36px; display:flex; align-items:center; justify-content:center;">
+            ${getRelicImageHtml(r.id, 36)}
+          </div>
           <div style="flex:1; min-width:0;">
-            <div style="font-size:14px; font-weight:bold; color:${rarInfo.color}; margin-bottom:2px;">${r.name}</div>
+            <div style="font-size:14px; font-weight:bold; color:${rarInfo.color}; margin-bottom:2px;">${r.name}${stackBadge}</div>
             <div style="font-size:12px; color:#c8cdd8; line-height:1.4;">${r.desc}</div>
           </div>
         `;
@@ -16834,10 +17365,10 @@
   // ===== 📊 딜량 통계 모달 =====
   function openDamageStats() {
     renderDamageStats();
-    document.getElementById('dmgStatsModal').style.display = 'flex';
+    openModalAnimated(document.getElementById('dmgStatsModal'));
   }
   function closeDamageStats() {
-    document.getElementById('dmgStatsModal').style.display = 'none';
+    closeModalAnimated(document.getElementById('dmgStatsModal'));
   }
   function renderDamageStats() {
     const list = document.getElementById('dmg-stats-list');
@@ -16905,7 +17436,7 @@
     }
     document.getElementById('td-modal-title').textContent = `🏰 타워 배치 — (${slot.col}, ${slot.row})`;
     renderTowerPlaceCards();
-    document.getElementById('tdTowerModal').style.display = 'flex';
+    openModalAnimated(document.getElementById('tdTowerModal'));
   }
   // 🎴 풀에서 N장의 카드를 중복 없이 무작위로 뽑기 (단순 균등)
   function tdRollCards(numCards) {
@@ -17023,10 +17554,10 @@
     const def = ABILITY_DEFS[tower.ab.id];
     document.getElementById('td-modal-title').textContent = `⚡ ${def.name} Lv${tower.ab.level}`;
     renderTowerUpgradeList();
-    document.getElementById('tdTowerModal').style.display = 'flex';
+    openModalAnimated(document.getElementById('tdTowerModal'));
   }
   function closeTowerModal() {
-    document.getElementById('tdTowerModal').style.display = 'none';
+    closeModalAnimated(document.getElementById('tdTowerModal'));
     state.selectedSlot = null;
     state.selectedTower = null;
   }
@@ -17373,7 +17904,7 @@
   // 상세 확인은 패널의 "💎 유물 N개 보기" 버튼으로
   function drawRelicHUD() {
     if (!state.activeRelics || state.activeRelics.length === 0) return;
-    const size = 18;
+    const size = 22;            // 🖼 v247 — 이미지 잘 보이게 약간 키움 (18→22)
     const gap = 3;
     const startX = 8;
     const startY = H - size - 8;
@@ -17382,16 +17913,14 @@
       const rar = RELIC_RARITY[r.rarity];
       const x = startX + (i % 14) * (size + gap);
       const y = startY - Math.floor(i / 14) * (size + gap);
+      // 배경 + 테두리
       ctx.fillStyle = '#0a0d14';
       ctx.fillRect(x, y, size, size);
       ctx.strokeStyle = rar.color;
       ctx.lineWidth = 1.5;
       ctx.strokeRect(x + 0.5, y + 0.5, size - 1, size - 1);
-      ctx.font = '13px sans-serif';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillStyle = '#fff';
-      ctx.fillText(r.icon, x + size/2, y + size/2 + 1);
+      // 🖼 v247 — 이미지 우선, 없으면 emoji
+      drawRelicIcon(ctx, r.id, x + 2, y + 2, size - 4);
     }
     ctx.textBaseline = 'alphabetic';
     ctx.textAlign = 'start';
@@ -17415,14 +17944,19 @@
       ctx.fillRect(px - 1, py - 1, 2, 2);
     }
     ctx.globalAlpha = 1;
+    // 🌟 v241 — 스택 모드 감지: 제안된 유물을 모두 이미 보유 중이면 스택 모드
+    const ownedSet = new Set((state.activeRelics || []).map(r => r.id));
+    const isStackMode = state.relicOffering.every(rid => ownedSet.has(rid));
     // 타이틀
-    ctx.fillStyle = '#ffd479';
+    ctx.fillStyle = isStackMode ? '#aaccff' : '#ffd479';
     ctx.font = 'bold 24px Jua, sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('보스의 유물', CX, 48);
+    ctx.fillText(isStackMode ? '✨ 유물 강화 ✨' : '보스의 유물', CX, 48);
     ctx.fillStyle = '#9aa3b3';
     ctx.font = '12px Jua, sans-serif';
-    ctx.fillText('하나를 선택하세요 (영원히 이번 게임에 적용)', CX, 68);
+    ctx.fillText(isStackMode
+      ? '강화할 유물을 선택 (스택 +1 · 데미지+3% · 골드+3%)'
+      : '하나를 선택하세요 (영원히 이번 게임에 적용)', CX, 68);
     // 유물 제단 — 수직 3개
     const altarW = 360, altarH = 100, gap = 14;
     const totalH = altarH * state.relicOffering.length + gap * (state.relicOffering.length - 1);
@@ -17458,18 +17992,35 @@
       ctx.font = 'bold 11px Jua, sans-serif';
       ctx.textAlign = 'left';
       ctx.fillText(`✦ ${rarInfo.label.toUpperCase()} ✦`, x + 16, y + 18);
-      // 아이콘 (좌측 큰 표시)
-      ctx.font = 'bold 48px sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillStyle = rarInfo.color;
+      // 🖼 v247 — 아이콘 (이미지 우선, 없으면 emoji 폴백)
+      // 좌측 큰 박스 영역 (~80x80) 안에 그리기
+      const iconBoxSize = 78;
+      const iconBoxX = x + 10;
+      const iconBoxY = y + (altarH - iconBoxSize) / 2;
       ctx.globalAlpha = 0.95;
-      ctx.fillText(r.icon, x + 50, y + 70);
+      const usedImage = drawRelicIcon(ctx, rid, iconBoxX, iconBoxY, iconBoxSize, { color: rarInfo.color, emojiFontSize: 56 });
       ctx.globalAlpha = 1;
       // 이름
       ctx.fillStyle = '#fff';
       ctx.font = 'bold 18px Jua, sans-serif';
       ctx.textAlign = 'left';
       ctx.fillText(r.name, x + 100, y + 40);
+      // 🌟 v241 — 스택 모드: 현재 누적 스택 표시 + 강화 후 표시
+      const existing = (state.activeRelics || []).find(rr => rr.id === rid);
+      if (isStackMode && existing) {
+        const curStack = existing.stacks || 0;
+        const nameW = ctx.measureText(r.name).width;
+        // 뱃지 배경
+        ctx.fillStyle = '#aa88ff';
+        const badgeX = x + 100 + nameW + 8;
+        const badgeY = y + 26;
+        const badgeText = `+${curStack} → +${curStack + 1}`;
+        ctx.font = 'bold 12px Jua, sans-serif';
+        const badgeW = ctx.measureText(badgeText).width + 10;
+        ctx.fillRect(badgeX, badgeY, badgeW, 18);
+        ctx.fillStyle = '#fff';
+        ctx.fillText(badgeText, badgeX + 5, y + 40);
+      }
       // 설명
       ctx.fillStyle = '#c8cdd8';
       ctx.font = '13px Jua, sans-serif';
@@ -17700,6 +18251,13 @@
       accent: '#ffd479', glow: 'rgba(255, 212, 121, 0.30)',
       label: '⭐ 스타더스트',
     },
+    ascendant: {
+      // 🌟 v241 — 어센던트 (엔드리스 +% 카드) 화려한 보라/시안 그라데이션
+      bg1: '#1f1840', bg2: '#0c0820',
+      border: '#aa88ff', name: '#d0c0ff',
+      accent: '#aaccff', glow: 'rgba(170, 136, 255, 0.55)',
+      label: '✨ ASCENDANT',
+    },
     lucky: {
       // LUCKY +2 — 행운의 녹색/금색
       bg1: '#1e3018', bg2: '#0f1808',
@@ -17724,6 +18282,7 @@
     if (c.action === 'combo') return c.tier === 3 ? 'triple' : 'combo';
     if (c.action === 'bonusScore') return 'bonusScore';
     if (c.action === 'bonusStardust') return 'bonusStardust';
+    if (c.action === 'ascendant') return 'ascendant';
     return 'new';
   }
 
@@ -17769,7 +18328,10 @@
       const p = CARD_TIERS[tier];
       const x = startX + i * (cardW + gap);
       const y = cardY;
-      const isBonus = c.action === 'bonusScore' || c.action === 'bonusStardust';
+      const isAscendant = c.action === 'ascendant';
+      const isBonus = c.action === 'bonusScore' || c.action === 'bonusStardust' || isAscendant;
+      const ascDef = isAscendant ? ASCENDANT_BY_ID[c.id] : null;
+      const ascStack = isAscendant && state.ascendantStacks ? (state.ascendantStacks[c.id] || 0) : 0;
 
       // 🎯 v227 — 카드 눌림 효과 (pointerdown 시 살짝 작게 + 글로우 강조)
       const isPressed = state.cardPressIdx === i;
@@ -17875,7 +18437,12 @@
 
       // 능력 종류 태그 (아이콘 아래)
       const kindY = isBonus ? y + 42 : y + 116;   // 102 → 116
-      if (isBonus) {
+      // 🌟 v242 — 어센던트는 '어센던트'로 표시 (이전엔 '보너스' 잘못 표시)
+      if (isAscendant) {
+        ctx.fillStyle = '#aaccff';
+        ctx.font = 'bold 11px Jua, sans-serif';
+        ctx.fillText('어센던트', x + cardW/2, kindY);
+      } else if (isBonus) {
         ctx.fillStyle = '#7a8090';
         ctx.font = '11px Jua, sans-serif';
         ctx.fillText('보너스', x + cardW/2, kindY);
@@ -17919,7 +18486,26 @@
       // 이름 (티어 색) — 보너스는 카드 윗부분 그대로, 능력은 아이콘 아래
       ctx.fillStyle = p.name;
       ctx.font = 'bold 20px Jua, sans-serif';
-      if (isBonus) {
+      if (isAscendant && ascDef) {
+        // 🌟 v241 — 어센던트 카드 렌더: 아이콘 + 이름 + 효과 + 누적 스택
+        ctx.fillStyle = ascDef.color;
+        ctx.font = 'bold 44px sans-serif';
+        ctx.fillText(ascDef.icon, x + cardW/2, y + 78);
+        ctx.fillStyle = p.name;
+        ctx.font = 'bold 17px Jua, sans-serif';
+        ctx.fillText(ascDef.name, x + cardW/2, y + 110);
+        ctx.fillStyle = ascDef.color;
+        ctx.font = 'bold 14px Jua, sans-serif';
+        ctx.fillText(ascDef.desc, x + cardW/2, y + 138);
+        if (ascStack > 0) {
+          ctx.fillStyle = '#aaccff';
+          ctx.font = 'bold 12px Jua, sans-serif';
+          ctx.fillText(`현재 누적 +${ascStack}`, x + cardW/2, y + 164);
+        }
+        ctx.fillStyle = '#9aa3b3';
+        ctx.font = '11px Jua, sans-serif';
+        ctx.fillText('영구 글로벌 강화', x + cardW/2, y + cardH - 60);
+      } else if (isBonus) {
         const isScore = c.action === 'bonusScore';
         const amountText = isScore
           ? `+${c.amount.toLocaleString()}`
@@ -18193,7 +18779,7 @@
     const bonusOnly = aFull && pFull && !hasCombo && !hasUpgradable;
     const costLabel = acqCost === 0 ? '무료' : `${acqCost}G`;
     const newText = bonusOnly
-      ? `🎁 보너스 카드 (${costLabel})`
+      ? `✨ 어센던트 카드 (${costLabel})`
       : `🎲 랜덤 능력 획득 (${costLabel})`;
     // 텍스트만 캐시 (성능) — 안전한 비교
     if (elRandom._lastText !== newText) { elRandom.textContent = newText; elRandom._lastText = newText; }
@@ -18235,6 +18821,46 @@
       btn.style.opacity = modalOpen ? '0.4' : '';
     }
     // 랜덤 버튼 처리는 renderStats 에서 이미 함 (modal + gold 조건 둘 다 반영) — 여기선 중복 X
+  }
+
+  // 🎬 v243 — 범용 행 접힘 헬퍼 (능력 삭제, 리스트 항목 제거 등 모든 UI 재사용 가능)
+  // 사용법: collapseElementThen(rowEl, () => { 실제 데이터 삭제 + 재렌더 })
+  // 행 자체를 max-height 0 로 접고 → 아래 행들은 자연스러운 flow로 위로 올라옴
+  function collapseElementThen(el, done, durationMs) {
+    if (!el || !el.isConnected) { if (done) done(); return; }
+    const ms = durationMs || 220;
+    const h = el.offsetHeight;
+    el.style.maxHeight = h + 'px';
+    el.classList.add('row-collapsing');
+    // 강제 reflow — max-height 적용 후 다음 프레임에 collapsed 클래스 추가
+    void el.offsetHeight;
+    requestAnimationFrame(() => {
+      el.classList.add('collapsed');
+    });
+    setTimeout(() => {
+      if (done) done();
+    }, ms + 30); // 약간 버퍼
+  }
+  // 🎬 v243 — 모달 열기/닫기 페이드 (display=flex/none 띡 끊김 방지)
+  function openModalAnimated(el, display) {
+    if (!el) return;
+    const d = display || 'flex';
+    el.classList.remove('modal-anim-out');
+    el.style.display = d;
+    void el.offsetHeight;
+    el.classList.add('modal-anim-in');
+  }
+  function closeModalAnimated(el) {
+    if (!el || el.style.display === 'none') return;
+    el.classList.remove('modal-anim-in');
+    el.classList.add('modal-anim-out');
+    // 같은 setTimeout 묶음 안에서 또 닫기 호출이 들어와도 안전하게 한 번만 정리
+    if (el._closeAnimTimer) clearTimeout(el._closeAnimTimer);
+    el._closeAnimTimer = setTimeout(() => {
+      el.style.display = 'none';
+      el.classList.remove('modal-anim-out');
+      el._closeAnimTimer = null;
+    }, 170);
   }
 
   let currentAbTab = 'active';
@@ -18299,6 +18925,9 @@
         elAb.appendChild(row);
         continue;
       }
+      // 🎬 v243 — 신규 능력 fade-in 플래그 (className 재설정 이후 적용)
+      const isNewRow = a._isNew;
+      if (isNewRow) delete a._isNew;
       const def = ABILITY_DEFS[a.id];
       // 조합 힌트 (다중 파트너 지원)
       let comboHint = '';
@@ -18341,6 +18970,7 @@
       row.className = 'ability-row';
       if (max) row.classList.add('maxed');
       else if (canAfford) row.classList.add('affordable');
+      if (isNewRow) row.classList.add('row-fade-in');
       const tags = getAbilityTags(a.id);
       const tagsHtml = tags.length > 0
         ? `<div class="ability-tag-row">${tags.map(tagChipHtml).join('')}</div>`
@@ -18900,24 +19530,44 @@
   const gachaResultScreenEl = document.getElementById('gachaResultScreen');
   const gameEl = document.getElementById('wrap');
   function showScreen(name) {
+    // 🎬 v243 — 화면 전환 페이드 아웃 (이전 화면이 부드럽게 사라짐)
+    // 새 화면은 기존 _screen-fade-in 으로 자동 등장, 이전 화면은 inline display 로 잠시 유지하며 페이드 아웃
+    const prevScreen = currentScreen;
+    const modeScreenEl = document.getElementById('modeScreen');
+    const globalRankEl = document.getElementById('globalRankScreen');
+    const abilityPermaEl = document.getElementById('abilityPerma');
+    const allScreens = [menuEl, codexEl, recordsEl, recordDetailEl, shopEl,
+      modeScreenEl, characterScreenEl, achievementsScreenEl, difficultyScreenEl,
+      gachaScreenEl, gachaResultScreenEl, globalRankEl, abilityPermaEl].filter(Boolean);
+    const outgoing = (prevScreen && prevScreen !== name)
+      ? allScreens.find(s => s.classList.contains('show'))
+      : null;
     currentScreen = name;
     menuEl.classList.toggle('show', name === 'menu');
     codexEl.classList.toggle('show', name === 'codex');
     recordsEl.classList.toggle('show', name === 'records');
     recordDetailEl.classList.toggle('show', name === 'recordDetail');
     shopEl.classList.toggle('show', name === 'shop');
-    const modeScreenEl = document.getElementById('modeScreen');
     if (modeScreenEl) modeScreenEl.classList.toggle('show', name === 'mode');
     characterScreenEl.classList.toggle('show', name === 'character');
     achievementsScreenEl.classList.toggle('show', name === 'achievements');
     difficultyScreenEl.classList.toggle('show', name === 'difficulty');
     gachaScreenEl.classList.toggle('show', name === 'gacha');
     gachaResultScreenEl.classList.toggle('show', name === 'gachaResult');
-    const globalRankEl = document.getElementById('globalRankScreen');
     if (globalRankEl) globalRankEl.classList.toggle('show', name === 'globalRank');
     // 🌟 능력 영구 강화 화면
-    const abilityPermaEl = document.getElementById('abilityPerma');
     if (abilityPermaEl) abilityPermaEl.classList.toggle('show', name === 'abilityPerma');
+    // 🎬 이전 화면 페이드 아웃 — .show 가 막 제거된 outgoing 을 inline display 로 잠시 유지
+    if (outgoing && !outgoing.classList.contains('show')) {
+      if (outgoing._fadeOutTimer) clearTimeout(outgoing._fadeOutTimer);
+      outgoing.style.display = 'flex';
+      outgoing.classList.add('screen-fade-out');
+      outgoing._fadeOutTimer = setTimeout(() => {
+        outgoing.classList.remove('screen-fade-out');
+        outgoing.style.display = '';
+        outgoing._fadeOutTimer = null;
+      }, 160);
+    }
     gameEl.style.display = name === 'game' ? 'flex' : 'none';
     if (name === 'game') {
       // 🏰 캔버스 논리 크기 적용 — 모든 모드 640×640 (모바일 오른쪽 여백 제거)
@@ -18959,27 +19609,25 @@
     const startBtn = document.getElementById('startBtn');
     const qsPreview = document.getElementById('quickStartPreview');
     const changeBtn = document.getElementById('changeSettingsBtn');
-    const hasLastSettings = !!(META.lastSelectedMode && selectedCharacter);
+    // 🚀 v248 — 모드 디폴트 'standard' 자동 적용 → 첫 플레이부터 빠른 시작 가능
+    //          selectedCharacter 도 'standard' 디폴트 있으므로 항상 빠른 시작 활성
+    const effectiveMode = META.lastSelectedMode || 'standard';
+    const hasLastSettings = !!selectedCharacter;   // 캐릭터 디폴트 있으니 사실상 항상 true
     if (startBtn) {
       if (inProgress) {
         // 게임 진행 중 — "처음부터 다시" 명확히 (이어하기와 시각적 구분)
         startBtn.textContent = '🔄 처음부터 다시';
-        startBtn.dataset.quickStart = hasLastSettings ? '1' : '0';
+        startBtn.dataset.quickStart = '1';
         startBtn.classList.add('menu-btn-restart');   // 보조 스타일
       } else {
         startBtn.classList.remove('menu-btn-restart');
-        if (hasLastSettings) {
-          startBtn.textContent = '▶ 빠른 시작';
-          startBtn.dataset.quickStart = '1';
-        } else {
-          startBtn.textContent = '▶ 새 게임';
-          startBtn.dataset.quickStart = '0';
-        }
+        startBtn.textContent = '▶ 빠른 시작';
+        startBtn.dataset.quickStart = '1';
       }
     }
     if (qsPreview) {
-      if (hasLastSettings && !inProgress) {   // 진행 중일 땐 미리보기 숨김
-        const modeLabel = META.lastSelectedMode === 'defense' ? '🏰 디펜스' : '⚔️ 표준';
+      if (!inProgress) {   // 진행 중일 땐 미리보기 숨김
+        const modeLabel = effectiveMode === 'defense' ? '🏰 디펜스' : '⚔️ 표준';
         const char = CHARACTERS[selectedCharacter] || CHARACTERS.standard;
         const ascLabel = (typeof ascensionLabel === 'function')
           ? ascensionLabel(getSelectedAscension())
@@ -18990,8 +19638,8 @@
         qsPreview.style.display = 'none';
       }
     }
-    // 설정 변경 버튼도 진행 중일 땐 숨김 (이어하기 우선)
-    if (changeBtn) changeBtn.style.display = (hasLastSettings && !inProgress) ? '' : 'none';
+    // 🚀 v248 — 설정 변경 버튼: 진행 중이 아니면 항상 노출 (모드 언제든 변경 가능)
+    if (changeBtn) changeBtn.style.display = inProgress ? 'none' : '';
     // 🎰 가챠 원형 버튼 갱신
     if (typeof refreshGachaCircleBtn === 'function') refreshGachaCircleBtn();
     // 🔄 다기기 동기화 섹션 — 로그인 상태에서만 노출 (설정 모달 안)
@@ -19085,13 +19733,13 @@
   let cheatBufferTimer = null;
   function openCheatModal() {
     const modal = document.getElementById('cheatModal');
-    modal.style.display = 'flex';
+    openModalAnimated(modal);
     document.getElementById('cheatFeedback').textContent = '';
     document.getElementById('cheatInput').value = '';
     setTimeout(() => document.getElementById('cheatInput').focus(), 50);
   }
   function closeCheatModal() {
-    document.getElementById('cheatModal').style.display = 'none';
+    closeModalAnimated(document.getElementById('cheatModal'));
   }
   function cheatFeedback(msg, isError = false) {
     const el = document.getElementById('cheatFeedback');
@@ -19240,11 +19888,19 @@
     if (isInProgress) {
       if (!confirm('현재 진행 중인 게임이 사라집니다.\n정말 처음부터 다시 시작할까요?')) return;
     }
-    if (quickMode && META.lastSelectedMode && selectedCharacter && isCharUnlocked(selectedCharacter)) {
-      // 마지막 설정 그대로 즉시 게임 시작
+    // 🚀 v248 — 모드 디폴트 'standard' 적용 → lastSelectedMode 없어도 빠른 시작 가능
+    const charOk = selectedCharacter && isCharUnlocked(selectedCharacter);
+    if (quickMode && charOk) {
+      // 마지막 설정 그대로 즉시 게임 시작 (모드 없으면 standard 디폴트)
       SFX.click();
+      const useMode = META.lastSelectedMode || 'standard';
+      // 첫 플레이로 lastSelectedMode 비어있으면 standard 로 저장
+      if (!META.lastSelectedMode) {
+        META.lastSelectedMode = 'standard';
+        saveMeta();
+      }
       // 디펜스 모드는 캐릭터 무관 → 빈 값으로 진행
-      if (META.lastSelectedMode === 'defense') {
+      if (useMode === 'defense') {
         const savedChar = selectedCharacter;
         selectedCharacter = 'standard';
         reset();
@@ -19258,7 +19914,7 @@
       renderPanel();
       showScreen('game');
     } else {
-      // 첫 플레이 또는 잠긴 캐릭터 → 모드 선택부터
+      // 잠긴 캐릭터 → 모드 선택부터
       showScreen('mode');
     }
   };
@@ -19430,16 +20086,16 @@
       // 동기화 섹션은 로그인 시에만 노출
       const syncSec = document.getElementById('settingsSyncSection');
       if (syncSec) syncSec.style.display = (typeof isAccountLoggedIn === 'function' && isAccountLoggedIn()) ? '' : 'none';
-      _settingsModal.style.display = 'flex';
+      openModalAnimated(_settingsModal);
     };
   }
   if (_settingsClose && _settingsModal) {
-    _settingsClose.onclick = () => { _settingsModal.style.display = 'none'; };
+    _settingsClose.onclick = () => { closeModalAnimated(_settingsModal); };
   }
   // 오버레이 바깥 클릭 시 닫기
   if (_settingsModal) {
     _settingsModal.addEventListener('click', (e) => {
-      if (e.target === _settingsModal) _settingsModal.style.display = 'none';
+      if (e.target === _settingsModal) closeModalAnimated(_settingsModal);
     });
   }
   // 캐릭터 선택 버튼 제거됨 — "새 게임" 클릭 시 자동으로 캐릭터 선택 화면으로
@@ -19599,7 +20255,41 @@
       // 픽업 캐릭터 이름 표시 — 어떤 SSR이 픽업인지 명확히
       const featChar = banner.featured ? CHARACTERS[banner.featured] : null;
       const featName = featChar ? featChar.name : 'SSR';
-      infoEl.textContent = `픽업: ${featName} ${(r.SSR*100).toFixed(1)}% · SR ${(r.SR*100).toFixed(0)}% · R ${(r.R*100).toFixed(0)}%`;
+      let infoText = `픽업: ${featName} ${(r.SSR*100).toFixed(1)}% · SR ${(r.SR*100).toFixed(0)}% · R ${(r.R*100).toFixed(0)}%`;
+      // 🌌 v249 — 고대 유물 동봉 정보 추가
+      if (banner.ancientRelic) {
+        const rate = ((banner.ancientRelicRate || 0) * 100).toFixed(2);
+        infoText += ` · 🌌 ANCIENT ${rate}%`;
+      }
+      infoEl.textContent = infoText;
+    }
+    // 🌌 v249 — 고대 유물 픽업 칩 (우상단 부유) — 별도 시각 표시
+    const ancientChip = document.getElementById('gacha-banner-ancient-chip');
+    if (ancientChip) {
+      if (banner.ancientRelic) {
+        const rid = banner.ancientRelic;
+        const relic = RELICS[rid];
+        const ancientRate = ((banner.ancientRelicRate || 0) * 100).toFixed(2);
+        const curStars = getAncientRelicStars(rid);
+        const starsLabel = curStars >= 1 ? ` ${curStars}★/${ANCIENT_MAX_STARS}` : '';
+        const imgEl = document.getElementById('gacha-banner-ancient-img');
+        const nmEl = document.getElementById('gacha-banner-ancient-name');
+        const rtEl = document.getElementById('gacha-banner-ancient-rate');
+        if (imgEl) {
+          imgEl.src = `./icons/relics/${rid}.png`;
+          imgEl.onerror = function() {
+            this.style.display = 'none';
+            // emoji 폴백을 이미지 자리에 그대로
+            this.outerHTML = `<span style="font-size:36px; width:40px; height:40px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">${relic.icon}</span>`;
+          };
+          imgEl.style.display = '';   // 다시 보임 (이전 폴백 후 재방문 대비)
+        }
+        if (nmEl) nmEl.textContent = relic.name + starsLabel;
+        if (rtEl) rtEl.textContent = `${ancientRate}% · 캐릭터 대신 등장`;
+        ancientChip.style.display = 'flex';
+      } else {
+        ancientChip.style.display = 'none';
+      }
     }
     // 픽업 캐릭터 미니 아이콘 (SSR + SR)
     const pickupEl = document.getElementById('gacha-pickup-icons');
@@ -19635,6 +20325,27 @@
         `;
         pickupEl.appendChild(chip);
       }
+      // 🌌 v245 — 고대 유물 (별도 뽑기 결과 — 캐릭터와 동시 X)
+      if (banner.ancientRelic) {
+        const rid = banner.ancientRelic;
+        const relic = RELICS[rid];
+        const ancientRate = ((banner.ancientRelicRate || 0) * 100).toFixed(2);
+        const curStars = getAncientRelicStars(rid);
+        const starsLabel = curStars >= 1 ? ` · ${curStars}★/${ANCIENT_MAX_STARS}` : '';
+        const chip = document.createElement('div');
+        chip.className = 'gacha-pickup-icon';
+        chip.style.cssText = 'border-color:#ff88ff; box-shadow:0 0 10px rgba(255,136,255,0.6); animation: _ancient-pulse 1.6s ease-in-out infinite;';
+        chip.title = '캐릭터 대신 등장하는 별도 뽑기 결과';
+        // 유물 이미지 (있으면) / 없으면 이모지
+        const imgSrc = `./icons/relics/${rid}.png`;
+        chip.innerHTML = `
+          <img src="${imgSrc}" alt="${rid}" style="image-rendering:pixelated;"
+               onerror="this.style.display='none';this.insertAdjacentHTML('beforebegin','<span style=&quot;font-size:14px;padding-left:4px;&quot;>${relic.icon}</span>');" />
+          <span style="color:#fff;font-size:10px;">${relic.name}${starsLabel}</span>
+          <span class="gacha-pickup-rate" style="color:#ff88ff;font-weight:bold;">🌌 ANCIENT ${ancientRate}%</span>
+        `;
+        pickupEl.appendChild(chip);
+      }
     }
 
     // 버튼 활성/비활성
@@ -19667,10 +20378,40 @@
     let newCount = 0;
     let starUpCount = 0;
     let bestRarity = 'R';
-    const rarityRank = { R: 0, SR: 1, SSR: 2 };
+    let ancientCount = 0;
+    const rarityRank = { R: 0, SR: 1, SSR: 2, ancient: 3 };
     for (const r of results) {
-      const c = CHARACTERS[r.charId];
       const card = document.createElement('div');
+      // 🌌 v245 — 고대 유물 결과 카드 (캐릭터와 다른 렌더링)
+      if (r.isAncient) {
+        ancientCount++;
+        card.className = `gacha-result-card rarity-ancient`;
+        card.style.setProperty('--rarity-color', '#ff88ff');
+        card.style.boxShadow = '0 0 24px rgba(255,136,255,0.7)';
+        let status;
+        if (r.isNew) status = `<div class="card-status new" style="color:#ff88ff;">🌌 ANCIENT NEW!</div>`;
+        else if (r.starUp) status = `<div class="card-status" style="color:#ff88ff;">${r.newStars}★ 강화!</div>`;
+        else status = `<div class="card-status">MAX · +${r.refund}★ 환급</div>`;
+        // 유물 이미지 (있으면) / 없으면 이모지
+        const relicImgSrc = `./icons/relics/${r.ancientId}.png`;
+        const portraitHTML = `<div class="card-portrait" style="background:#1a0a1f;padding:8px;overflow:hidden;">
+          <img src="${relicImgSrc}" style="width:100%;height:100%;object-fit:contain;image-rendering:pixelated;"
+               onerror="this.style.display='none';this.parentElement.innerHTML='<span style=&quot;font-size:64px&quot;>${r.relicIcon}</span>';" />
+        </div>`;
+        card.innerHTML = `
+          <div class="card-rarity-tag" style="background:#ff88ff;color:#1a0a1f;">ANCIENT</div>
+          ${portraitHTML}
+          <div class="card-name" style="color:#ff88ff;">${r.relicName}</div>
+          ${status}
+        `;
+        cards.appendChild(card);
+        if (r.isNew) newCount++;
+        else if (r.starUp) starUpCount++;
+        else totalRefund += r.refund;
+        if (rarityRank.ancient > rarityRank[bestRarity]) bestRarity = 'ancient';
+        continue;
+      }
+      const c = CHARACTERS[r.charId];
       card.className = `gacha-result-card rarity-${r.rarity.toLowerCase()}`;
       const rarityColor = r.rarity === 'SSR' ? '#ffd479' : (r.rarity === 'SR' ? '#c084ff' : '#7ad7ff');
       card.style.setProperty('--rarity-color', rarityColor);
@@ -19713,9 +20454,36 @@
     if (newCount > 0) parts.push(`<span style="color:#88ff88">NEW ×${newCount}</span>`);
     if (starUpCount > 0) parts.push(`<span style="color:#ffd060">강화 ×${starUpCount}</span>`);
     if (totalRefund > 0) parts.push(`<span style="color:#ffd479">★ +${totalRefund}</span>`);
-    if (bestRarity === 'SSR') parts.unshift('<span style="color:#ffd479;font-weight:bold;">SSR 등장!</span>');
+    if (bestRarity === 'ancient') parts.unshift('<span style="color:#ff88ff;font-weight:bold;text-shadow:0 0 8px rgba(255,136,255,0.7);">🌌 ANCIENT 등장!</span>');
+    else if (bestRarity === 'SSR') parts.unshift('<span style="color:#ffd479;font-weight:bold;">SSR 등장!</span>');
     else if (bestRarity === 'SR') parts.unshift('<span style="color:#c084ff;">SR 등장!</span>');
+    if (ancientCount > 0 && bestRarity !== 'ancient') parts.push(`<span style="color:#ff88ff">🌌 ×${ancientCount}</span>`);
     summary.innerHTML = parts.join('  ·  ');
+    // 🎬 v250 — 카드 순차 등장 (stagger). 10뽑은 빠르게, 1뽑은 즉시 (단일 = 지연 X)
+    const cardEls = cards.querySelectorAll('.gacha-result-card');
+    const isSingle = cardEls.length === 1;
+    const stagger = isSingle ? 0 : (cardEls.length >= 10 ? 90 : 130);
+    cardEls.forEach((el, i) => {
+      const d = i * stagger;
+      // SSR/ANCIENT 는 reveal + burst 두 애니메이션 → 각각 delay 지정 (burst 는 reveal 후 0.4s)
+      if (el.classList.contains('rarity-ssr') || el.classList.contains('rarity-ancient')) {
+        el.style.animationDelay = `${d}ms, ${d + 400}ms`;
+      } else {
+        el.style.animationDelay = `${d}ms`;
+      }
+    });
+    // 클릭으로 스킵 — 모든 카드 즉시 표시 + SFX 한 번
+    if (!isSingle && cardEls.length > 0) {
+      const skipAll = () => {
+        cardEls.forEach(el => {
+          el.style.animation = 'none';
+          el.style.opacity = '1';
+          el.style.transform = 'none';
+        });
+        cards.removeEventListener('click', skipAll);
+      };
+      cards.addEventListener('click', skipAll);
+    }
   }
 
   function buildDifficultyList() {
@@ -19794,7 +20562,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 239;
+  const APP_VERSION = 250;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
@@ -20955,14 +21723,20 @@
             const achId = r.unlockBy.slice('achievement:'.length);
             const ach = ACHIEVEMENTS.find(a => a.id === achId);
             if (ach) cond = `🔒 업적: ${ach.name} (${ach.desc})`;
+          } else if (r.unlockBy && r.unlockBy.startsWith('ancient:')) {
+            cond = `🔒 가챠 전용 (캐릭터 픽업 배너)`;
           }
           card.innerHTML = `
             <div class="name" style="color:${rar.color}">🔒 ? ? ? <span style="font-size:10px; color:#6a7080;">[${rar.label}]</span></div>
             <div class="desc">${cond}</div>
           `;
         } else {
+          // 🖼 v249 — 도감 유물 이미지 사용 (emoji 폴백 자동)
           card.innerHTML = `
-            <div class="name" style="color:${rar.color}">${r.icon} ${r.name} <span style="font-size:10px; opacity:0.7;">[${rar.label}]</span></div>
+            <div class="name" style="color:${rar.color}; display:flex; align-items:center; gap:8px;">
+              <span style="width:28px; height:28px; display:inline-flex; align-items:center; justify-content:center; flex-shrink:0;">${getRelicImageHtml(rid, 28)}</span>
+              <span style="flex:1; min-width:0;">${r.name} <span style="font-size:10px; opacity:0.7;">[${rar.label}]</span></span>
+            </div>
             <div class="desc">${r.desc}</div>
           `;
         }
