@@ -488,6 +488,48 @@
     color: #9aa3b3;
   }
   .ability-row.maxed { border-left: 3px solid #52e07a; }
+  /* 🗑 v261 — rm 버튼 폭 고정: ✕ ↔ ❗ 콘텐츠가 바뀌어도 폭 불변 → 강화 버튼과 절대 안 겹침 */
+  .ability-row button[data-act="rm"] {
+    width: 40px;
+    min-width: 40px;
+    max-width: 40px;
+    padding-left: 2px;
+    padding-right: 2px;
+    text-align: center;
+    flex-shrink: 0;
+    box-sizing: border-box;
+  }
+  #wrap.portrait .ability-row button[data-act="rm"] {
+    width: 46px; min-width: 46px; max-width: 46px;
+  }
+  /* 🗑 v260 — 2단계 삭제: 첫 클릭 후 "다시 누르면 삭제" 무장 상태 */
+  .ability-row button[data-act="rm"].rm-armed {
+    background: #c0392b !important;
+    color: #fff !important;
+    border-color: #ff6b5b !important;
+    font-weight: bold;
+    animation: _rm-armed-pulse 0.8s ease-in-out infinite;
+    position: relative;
+    overflow: hidden;
+  }
+  @keyframes _rm-armed-pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(255,107,91,0.0); }
+    50%      { box-shadow: 0 0 8px 1px rgba(255,107,91,0.7); }
+  }
+  /* 무장 해제까지 남은 시간 바 (하단) */
+  .ability-row button[data-act="rm"].rm-armed::after {
+    content: '';
+    position: absolute;
+    left: 0; bottom: 0; height: 2px;
+    width: 100%;
+    background: #ffd479;
+    transform-origin: left center;
+    animation: _rm-armed-bar 2s linear forwards;
+  }
+  @keyframes _rm-armed-bar {
+    0%   { transform: scaleX(1); }
+    100% { transform: scaleX(0); }
+  }
   /* 랜덤 능력 획득 버튼 — 살 수 있을 때 강조 */
   #randomBtn:not(:disabled) {
     border-color: #ffd479;
@@ -15326,11 +15368,42 @@
     renderPanel();
   }
 
-  function actDelete(idx) {
+  // 🗑 v260 — 삭제 버튼 무장 (첫 클릭) — 2초 내 재클릭해야 실제 삭제
+  function armDeleteButton(btnEl, a) {
+    SFX.click();
+    if (btnEl) {
+      btnEl.textContent = '❗';
+      btnEl.title = '다시 누르면 삭제';
+      btnEl.classList.add('rm-armed');
+    }
+    if (a._deleteArmTimer) clearTimeout(a._deleteArmTimer);
+    a._deleteArmTimer = setTimeout(() => {
+      // 2초 경과 — 아직 삭제 안 됐으면 무장 해제
+      if (a._deleteArmedUntil && performance.now() >= a._deleteArmedUntil) {
+        a._deleteArmedUntil = 0;
+        if (btnEl && btnEl.isConnected) {
+          btnEl.textContent = '✕';
+          btnEl.title = '삭제';
+          btnEl.classList.remove('rm-armed');
+        }
+      }
+    }, 2050);
+  }
+  function actDelete(idx, btnEl) {
     if (state.gameOver) return;
     if (state.levelUpChoices) return toast('카드 선택 후 가능');  // 카드 모달 중 삭제 차단
     const a = state.tower.abilities[idx];
     if (!a) return;
+    // 🗑 v260 — 2단계 삭제: 첫 클릭은 "무장"만, 2초 내 재클릭해야 실제 삭제 (실수 방지)
+    const now = performance.now();
+    if (!a._deleteArmedUntil || now > a._deleteArmedUntil) {
+      a._deleteArmedUntil = now + 2000;
+      armDeleteButton(btnEl, a);
+      return;
+    }
+    // 무장 상태 + 2초 이내 재클릭 → 실제 삭제 진행
+    a._deleteArmedUntil = 0;
+    if (a._deleteArmTimer) { clearTimeout(a._deleteArmTimer); a._deleteArmTimer = null; }
     // 🎬 v243 — 자연스러운 삭제 애니메이션
     // DOM 행을 찾아 접힘 → 완료 후 실제 데이터 삭제 + 재렌더
     // 현재 탭(액티브/패시브)에서의 visualIdx 계산 (filtered 배열 인덱스)
@@ -19056,7 +19129,9 @@
           ${comboHint}
         </div>
         ${upBtn}
-        <button data-act="rm" data-i="${origIdx[i]}" title="삭제">✕</button>
+        ${(a._deleteArmedUntil && performance.now() < a._deleteArmedUntil)
+          ? `<button data-act="rm" data-i="${origIdx[i]}" class="rm-armed" title="다시 누르면 삭제">❗</button>`
+          : `<button data-act="rm" data-i="${origIdx[i]}" title="삭제">✕</button>`}
       `;
       elAb.appendChild(row);
     }
@@ -19064,7 +19139,7 @@
       btn.onclick = () => {
         const i = +btn.dataset.i;
         if (btn.dataset.act === 'up') actEnhance(i);
-        else actDelete(i);
+        else actDelete(i, btn);   // 🗑 v260 — 버튼 참조 전달 (2단계 삭제 무장 표시용)
       };
     });
   }
@@ -20640,7 +20715,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 259;
+  const APP_VERSION = 261;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
