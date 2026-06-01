@@ -9970,6 +9970,12 @@
   }
   const ALL_ABILITY_IDS = Object.keys(ABILITY_DEFS);
   const BASIC_ABILITY_IDS = ALL_ABILITY_IDS.filter(id => !ABILITY_DEFS[id].isCombo);
+  // 🛡 v239 — 도감 업적용 "진짜 기본 능력만" (가챠/별해금 제외)
+  //   기존 BASIC_ABILITY_IDS 는 isCombo만 제외해서 SR/SSR/별해금 능력까지 포함됨 → 도감 업적이 사실상 불가능
+  const PURE_BASIC_ABILITY_IDS = ALL_ABILITY_IDS.filter(id => {
+    const d = ABILITY_DEFS[id];
+    return !d.isCombo && !d.isGachaUnique && !d.isStarUnlock;
+  });
   // 🎰 카드 풀용 ID — 가챠 고유 능력 제외 (해당 캐릭터 startAbilities로만 획득 가능)
   // 도감/업적용 BASIC_ABILITY_IDS 와는 분리
   const RANDOM_POOL_IDS = BASIC_ABILITY_IDS.filter(id => !ABILITY_DEFS[id].isGachaUnique);
@@ -13568,12 +13574,14 @@
     // 보스
     { id: 'boss5',     name: '보스킬러',  desc: '한 게임 보스 5마리 처치', reward: 150, check: s => (s.bossKills || 0) >= 5,
       unlocks: { ability: 'thunder' } },
-    // 도감
-    { id: 'codexHalf', name: '도감 절반', desc: '기본 능력 10개 해금', reward: 100, check: () => BASIC_ABILITY_IDS.filter(id => unlockedAbilities.has(id)).length >= 10,
+    // 도감 — 진짜 기본 능력만 (가챠/별해금 제외 — v239)
+    { id: 'codexHalf', name: '도감 절반', desc: '기본 능력 10개 해금', reward: 100,
+      check: () => PURE_BASIC_ABILITY_IDS.filter(id => unlockedAbilities.has(id)).length >= 10,
       unlocks: { ability: 'sword' } },
-    { id: 'codexFull', name: '도감 마스터', desc: '거의 모든 기본 능력 해금 (보상 제외)', reward: 400,
+    { id: 'codexFull', name: '도감 마스터', desc: '기본 능력 모두 해금 (부메랑 제외)', reward: 400,
       // ⚠️ 순환 의존 방지 — 'boomerang' 은 이 업적의 보상이라 체크에서 제외
-      check: () => BASIC_ABILITY_IDS.every(id => id === 'boomerang' || unlockedAbilities.has(id)),
+      // ⚠️ v239 — PURE_BASIC_ABILITY_IDS 사용: 가챠/별해금 능력은 가챠로만 얻으니 체크 X
+      check: () => PURE_BASIC_ABILITY_IDS.every(id => id === 'boomerang' || unlockedAbilities.has(id)),
       unlocks: { ability: 'boomerang' } },
     // 캐릭터 사용
     { id: 'allChars',  name: '모든 영웅',  desc: '모든 캐릭터로 R5 도달',
@@ -16690,27 +16698,16 @@
 
   // 🎬 v220 — 절제된 시각 효과 (눈 안 아프게 부드럽게)
   function drawEffects() {
-    // 1) 라운드 클리어 — 골드 가로 sweep (한 번만 흐름)
-    if (state.roundClearSweep) {
-      const t = 1 - state.roundClearSweep.life / 36;   // 0 → 1
-      const sweepX = -W * 0.3 + t * (W * 1.6);          // 좌측 밖 → 우측 밖
-      const alpha = Math.sin(t * Math.PI) * 0.25;       // 부드러운 산 모양
-      const grad = ctx.createLinearGradient(sweepX - 80, 0, sweepX + 80, 0);
-      grad.addColorStop(0, 'rgba(255, 212, 121, 0)');
-      grad.addColorStop(0.5, `rgba(255, 212, 121, ${alpha})`);
-      grad.addColorStop(1, 'rgba(255, 212, 121, 0)');
-      ctx.fillStyle = grad;
-      ctx.fillRect(0, 0, W, H);
-    }
-    // 2) 본진 HP 위급 — 가장자리 빨간 vignette pulse (디펜스 모드)
+    // 🛡 v238 — 라운드 클리어 골드 sweep 제거 (눈 피로 원인).
+    //   클리어 알림은 drawWaveClear() 의 "R5 CLEAR!" 텍스트로 충분.
+
+    // 1) 본진 HP 위급 — 가장자리 빨간 vignette pulse (디펜스 모드)
     if (state.mode === 'defense' && state.towerHP > 0 && state.towerMaxHP > 0) {
       const hpPct = state.towerHP / state.towerMaxHP;
       if (hpPct < 0.30) {
-        // HP 30% 미만 → 가장자리 빨간 펄스 (느린 sine)
         const phase = (state.t || 0) * 0.04;
-        const baseAlpha = hpPct < 0.10 ? 0.35 : 0.20;
+        const baseAlpha = hpPct < 0.10 ? 0.30 : 0.18;
         const alpha = baseAlpha * (0.6 + 0.4 * Math.sin(phase));
-        // 가장자리 vignette (라디얼 그라데이션)
         const grad = ctx.createRadialGradient(CX, CY, Math.min(W, H) * 0.35, CX, CY, Math.max(W, H) * 0.7);
         grad.addColorStop(0, 'rgba(255, 80, 100, 0)');
         grad.addColorStop(1, `rgba(255, 50, 80, ${alpha})`);
@@ -16718,31 +16715,27 @@
         ctx.fillRect(0, 0, W, H);
       }
     }
-    // 3) 보스 등장 워닝 — "BOSS" 텍스트 fade in/out
+    // 2) 보스 등장 워닝 — 텍스트만 (어두워지는 vignette 제거 — 시야 방해)
     if (state.bossWarning) {
-      const t = 1 - state.bossWarning.life / 50;     // 0 → 1
-      // 0~0.4: fade in, 0.4~0.7: hold, 0.7~1.0: fade out
+      const t = 1 - state.bossWarning.life / 50;
       let alpha;
       if (t < 0.4) alpha = t / 0.4;
       else if (t < 0.7) alpha = 1;
       else alpha = (1 - t) / 0.3;
       alpha = Math.max(0, Math.min(1, alpha));
-      // 살짝 어두워지는 vignette
-      ctx.fillStyle = `rgba(0, 0, 0, ${alpha * 0.25})`;
-      ctx.fillRect(0, 0, W, H);
-      // 텍스트
+      // 텍스트만 (vignette 제거)
       ctx.save();
       ctx.globalAlpha = alpha;
       ctx.textAlign = 'center';
-      ctx.font = 'bold 36px Jua, sans-serif';
+      ctx.font = 'bold 32px Jua, sans-serif';
       ctx.fillStyle = '#ff5b6e';
-      ctx.shadowColor = 'rgba(255, 91, 110, 0.8)';
-      ctx.shadowBlur = 20;
-      ctx.fillText('⚠ BOSS', CX, CY - 20);
+      ctx.shadowColor = 'rgba(255, 91, 110, 0.6)';
+      ctx.shadowBlur = 12;
+      ctx.fillText('⚠ BOSS', CX, CY - 14);
       ctx.shadowBlur = 0;
-      ctx.font = '14px Jua, sans-serif';
+      ctx.font = '12px Jua, sans-serif';
       ctx.fillStyle = '#ffaaaa';
-      ctx.fillText('보스 등장', CX, CY + 14);
+      ctx.fillText('보스 등장', CX, CY + 10);
       ctx.restore();
       ctx.textAlign = 'start';
     }
@@ -19801,7 +19794,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 237;
+  const APP_VERSION = 239;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
