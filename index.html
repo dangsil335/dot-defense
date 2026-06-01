@@ -18339,14 +18339,15 @@
 
   function drawLevelUpModal() {
     if (!state.levelUpChoices) {
-      state._cardModalStart = null;
+      state._cardModalStartMs = null;
       return;
     }
-    // 🎬 v253 — 카드 모달 페이드 인 (등장 시 부드럽게)
-    if (state._cardModalStart == null) state._cardModalStart = state.t;
-    const elapsed = state.t - state._cardModalStart;
-    const fadeFrames = 18;  // 0.3s @ 60fps
-    const fadeAlpha = Math.min(1, elapsed / fadeFrames);
+    // 🎬 v255 — 카드 모달 페이드 인 (실시간 ms 기준 — paused 상태에서도 동작)
+    //   ⚠ state.t 는 paused 시 정지하므로 사용 X → performance.now() 로 측정
+    if (state._cardModalStartMs == null) state._cardModalStartMs = performance.now();
+    const elapsedMs = performance.now() - state._cardModalStartMs;
+    const fadeMs = 300;
+    const fadeAlpha = Math.min(1, elapsedMs / fadeMs);
     const eased = 1 - Math.pow(1 - fadeAlpha, 2);  // ease-out
     ctx.save();
     ctx.globalAlpha = eased;
@@ -20635,7 +20636,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 254;
+  const APP_VERSION = 255;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
