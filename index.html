@@ -10892,49 +10892,97 @@
   let _lastSyncSuccessAt = 0;       // 마지막 성공 시각 (ms)
   let _lastSyncAttemptAt = 0;       // 마지막 시도 시각 (ms)
   let _lastSyncErrorMsg = '';       // 마지막 에러 메시지 (디버깅용)
+  // 🛡 v213 — 서버 함수 시그니처 자동 감지 + fallback
+  //   'invalid_session' 응답에서 강퇴 처리는 새 시그니처 필요. 구버전 호출로 폴백 시엔 다중접속 차단 비활성.
+  let _serverSupportsSession = null;   // null=미확인, true=신버전, false=구버전
   async function syncMetaToServer() {
     _lastSyncAttemptAt = Date.now();
     if (!isAccountLoggedIn()) { _lastSyncErrorMsg = 'not-logged-in'; return false; }
     if (_sessionInvalidated) { _lastSyncErrorMsg = 'session-invalidated'; return false; }
     const sb = getSupabase();
     if (!sb) { _lastSyncErrorMsg = 'no-supabase'; return false; }
+    const dataToSync = { ...META };
+    delete dataToSync.accountPassword;
+    delete dataToSync.sessionId;
+
+    // 1) 신버전 시그니처 (4-param, 세션 토큰 검증)
+    if (_serverSupportsSession !== false) {
+      try {
+        const { data, error } = await sb.rpc('sync_account_data', {
+          p_user_id: META.userId,
+          p_password: META.accountPassword,
+          p_data: dataToSync,
+          p_session_id: META.sessionId || null,
+        });
+        if (error) {
+          // "function does not exist" 류 에러면 구버전으로 폴백 시도
+          const msg = (error.message || '').toLowerCase();
+          if (msg.includes('does not exist') || msg.includes('no function') || msg.includes('could not find')) {
+            console.warn('[sync] 신버전 함수 없음 — 구버전으로 폴백');
+            _serverSupportsSession = false;
+            // 폴백으로 진행 (아래)
+          } else {
+            _lastSyncErrorMsg = `rpc-error: ${error.message}`;
+            console.warn('[sync] RPC 에러:', error.message);
+            return false;
+          }
+        } else {
+          // 신버전 응답 처리
+          if (data === 'invalid_session') {
+            _lastSyncErrorMsg = 'invalid_session';
+            handleSessionInvalidation();
+            return false;
+          }
+          if (data === 'auth_failed' || data === false) {
+            _lastSyncErrorMsg = 'auth_failed';
+            console.warn('[sync] 인증 실패');
+            return false;
+          }
+          if (data === 'ok' || data === true) {
+            _lastSyncSuccessAt = Date.now();
+            _lastSyncErrorMsg = '';
+            _serverSupportsSession = true;
+            return true;
+          }
+          _lastSyncErrorMsg = `unknown-response: ${JSON.stringify(data)}`;
+          return false;
+        }
+      } catch (e) {
+        const msg = ((e && e.message) || '').toLowerCase();
+        if (msg.includes('does not exist') || msg.includes('no function')) {
+          _serverSupportsSession = false;
+          // 폴백으로 진행
+        } else {
+          _lastSyncErrorMsg = `exception: ${e.message || e}`;
+          console.warn('[sync] 통신 예외:', e);
+          return false;
+        }
+      }
+    }
+
+    // 2) 구버전 폴백 (3-param) — 신버전 함수 없을 때만
     try {
-      const dataToSync = { ...META };
-      delete dataToSync.accountPassword;
-      delete dataToSync.sessionId;
       const { data, error } = await sb.rpc('sync_account_data', {
         p_user_id: META.userId,
         p_password: META.accountPassword,
         p_data: dataToSync,
-        p_session_id: META.sessionId || null,
       });
       if (error) {
-        _lastSyncErrorMsg = `rpc-error: ${error.message || error}`;
-        console.warn('[sync] RPC 에러:', error.message);
+        _lastSyncErrorMsg = `rpc-error (3-param): ${error.message}`;
+        console.warn('[sync] 구버전 RPC 에러:', error.message);
         return false;
       }
-      if (data === 'invalid_session') {
-        _lastSyncErrorMsg = 'invalid_session';
-        handleSessionInvalidation();
-        return false;
-      }
-      if (data === 'auth_failed' || data === false) {
+      if (data === false) {
         _lastSyncErrorMsg = 'auth_failed';
-        console.warn('[sync] 인증 실패 (비밀번호 변경?)');
         return false;
       }
-      // 'ok' (신버전) 또는 true (구버전) → 성공
-      if (data === 'ok' || data === true) {
-        _lastSyncSuccessAt = Date.now();
-        _lastSyncErrorMsg = '';
-        return true;
-      }
-      _lastSyncErrorMsg = `unknown-response: ${JSON.stringify(data)}`;
-      console.warn('[sync] 알 수 없는 응답:', data);
-      return false;
+      // 구버전은 true 반환
+      _lastSyncSuccessAt = Date.now();
+      _lastSyncErrorMsg = '';
+      return true;
     } catch (e) {
-      _lastSyncErrorMsg = `exception: ${(e && e.message) || e}`;
-      console.warn('[sync] 통신 예외:', e);
+      _lastSyncErrorMsg = `exception (3-param): ${e.message || e}`;
+      console.warn('[sync] 구버전 예외:', e);
       return false;
     }
   }
@@ -18522,7 +18570,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 212;
+  const APP_VERSION = 213;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
