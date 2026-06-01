@@ -10179,8 +10179,8 @@
       desc: '획득 시 골드 +라운드×60. 가난한 자가 가장 부유하다.',
       apply: (st) => { st.gold += Math.max(120, (st.round || 1) * 60); }, unlockBy: null },
     aoeBanner: { name: '광역의 깃발', icon: '🚩', rarity: 'common',
-      desc: '광역 공격(여러 적 동시 타격) 데미지 +15%',
-      apply: (st) => { st.relicEffects.aoeDmgMul *= 1.15; }, unlockBy: null },
+      desc: '광역 공격(여러 적 동시 타격) 데미지 +25%. 깃발 아래 모여라.',
+      apply: (st) => { st.relicEffects.aoeDmgMul *= 1.25; }, unlockBy: null },
     forgeHammer: { name: '강화의 망치', icon: '🔨', rarity: 'common',
       desc: '강화 비용 -10%',
       apply: (st) => { st.metaMods.enhanceMul *= 0.90; }, unlockBy: null },
@@ -10210,35 +10210,35 @@
       desc: '누적 처치 100마리당 데미지 +1%',
       apply: (st) => { st.relicEffects.killCountDmgRate = 0.01; }, unlockBy: 'achievement:kills500' },
     seaEcho: { name: '바다의 메아리', icon: '🌊', rarity: 'common',
-      desc: '광역 공격(여러 적 동시 타격) 데미지 +30%',
-      apply: (st) => { st.relicEffects.aoeDmgMul *= 1.30; }, unlockBy: null },
+      desc: '적 이동 속도 -20%. 밀려오는 파도가 발목을 잡는다.',
+      apply: (st) => { st.relicEffects.enemySpeedMul *= 0.80; }, unlockBy: null },
     monkRosary: { name: '수도승의 묵주', icon: '📿', rarity: 'common',
-      desc: '모든 데미지 +10%. 차분한 정진.',
-      apply: (st) => { st.metaMods.dmgMul *= 1.10; }, unlockBy: null },
+      desc: '처치 점수 +20%. 정진의 깨달음이 쌓인다.',
+      apply: (st) => { st.metaMods.scoreMul = (st.metaMods.scoreMul || 1) * 1.20; }, unlockBy: null },
     cosmicDust: { name: '우주 먼지', icon: '🌌', rarity: 'common',
-      desc: '모든 데미지 +12%. 우주의 먼지만큼 가볍지만 무겁다.',
-      apply: (st) => { st.metaMods.dmgMul *= 1.12; }, unlockBy: null },
+      desc: '모든 데미지 +15%. 우주의 먼지만큼 가볍지만 무겁다.',
+      apply: (st) => { st.metaMods.dmgMul *= 1.15; }, unlockBy: null },
     darkPact: { name: '어둠의 약속', icon: '💣', rarity: 'common',
-      desc: '화면 적 수가 수용 한계의 절반 미만일 때 데미지 +60%',
-      apply: (st) => { st.relicEffects.darkPactBonus = 0.60; }, unlockBy: null },
+      desc: '화면 적 수가 수용 한계의 절반 미만일 때 데미지 +45%',
+      apply: (st) => { st.relicEffects.darkPactBonus = 0.45; }, unlockBy: null },
     deadCharm: { name: '망자의 부적', icon: '🪦', rarity: 'common',
       desc: '이번 게임에서 모은 골드 500마다 데미지 +1% (영구 누적, 사용한 골드 포함)',
       apply: (st) => { st.relicEffects.goldEarnedDmgRate = 0.01; }, unlockBy: null },
     trainBanner: { name: '단련의 깃발', icon: '💪', rarity: 'common',
-      desc: '모든 데미지 +15%. 단순하지만 확실하다.',
-      apply: (st) => { st.metaMods.dmgMul *= 1.15; }, unlockBy: 'achievement:combo3' },
+      desc: '보스 데미지 +30%. 단련된 힘은 강적 앞에서 빛난다.',
+      apply: (st) => { st.metaMods.bossDmgMul = (st.metaMods.bossDmgMul || 1) * 1.30; }, unlockBy: 'achievement:combo3' },
     leechKiss: { name: '거머리의 입맞춤', icon: '🩸', rarity: 'common',
       desc: '처치마다 골드 +1',
       apply: (st) => { st.relicEffects.killGoldBonus = (st.relicEffects.killGoldBonus || 0) + 1; }, unlockBy: null },
     staticSpark: { name: '정전기', icon: '⚡', rarity: 'common',
-      desc: '처치 시 5% 확률로 골드 +5. 천재의 영감.',
-      apply: (st) => { st.relicEffects.killGoldCritChance = 0.05; }, unlockBy: null },
+      desc: '처치 시 10% 확률로 골드 +8. 천재의 영감.',
+      apply: (st) => { st.relicEffects.killGoldCritChance = 0.10; }, unlockBy: null },
     wolfFang: { name: '늑대의 송곳니', icon: '🐺', rarity: 'common',
       desc: '저체력 적(HP 25% 이하) 즉사',
       apply: (st) => { st.relicEffects.executeBelow = Math.max(st.relicEffects.executeBelow, 0.25); }, unlockBy: 'achievement:kills1k' },
     starlight: { name: '별빛 부적', icon: '🌟', rarity: 'common',
-      desc: '시작 점수 +2,000. 빛나는 모든 것은 별이 된다.',
-      apply: (st) => { st.score += 2000; }, unlockBy: null },
+      desc: '획득 시 골드 +250. 빛나는 모든 것은 별이 된다.',
+      apply: (st) => { st.gold += 250; }, unlockBy: null },
 
     // ============================== RARE (12개) — 빌드 정의 + 시너지 ==============================
     crown: { name: '왕관', icon: '👑', rarity: 'rare',
@@ -10283,8 +10283,8 @@
         st.metaMods.dmgMul *= 1.20;
       }, unlockBy: 'achievement:speedrun' },
     gemHunter: { name: '보석 사냥꾼', icon: '💎', rarity: 'rare',
-      desc: '처치 시 5% 확률로 골드 +15. 보석함이 쏟아진다.',
-      apply: (st) => { st.relicEffects.gemHunterChance = 0.05; }, unlockBy: 'achievement:gold5kRun' },
+      desc: '처치 시 8% 확률로 골드 +25. 보석함이 쏟아진다.',
+      apply: (st) => { st.relicEffects.gemHunterChance = 0.08; }, unlockBy: 'achievement:gold5kRun' },
 
     // ============================== EPIC (6개) — 게임 변환 메커니즘 ==============================
     handOfByzantium: { name: '비잔틴의 손', icon: '🤝', rarity: 'epic',
@@ -14706,20 +14706,20 @@
         state.relicEffects.goldEarnedTotal = (state.relicEffects.goldEarnedTotal || 0) + state.relicEffects.killGoldBonus;
       }
       if (state.relicEffects.killGoldCritChance > 0 && Math.random() < state.relicEffects.killGoldCritChance) {
-        state.gold += 5;
-        state.relicEffects.goldEarnedTotal = (state.relicEffects.goldEarnedTotal || 0) + 5;
+        state.gold += 8;
+        state.relicEffects.goldEarnedTotal = (state.relicEffects.goldEarnedTotal || 0) + 8;
         state.damageNumbers.push({
           x: ex, y: ey - e.size - 12, vy: -1.2,
-          text: '⚡ +5', color: '#ffe070', life: 35, size: 11,
+          text: '⚡ +8', color: '#ffe070', life: 35, size: 11,
         });
       }
-      // 💎 보석 사냥꾼 (Rare) — 5% 확률 +15골드
+      // 💎 보석 사냥꾼 (Rare) — 8% 확률 +25골드
       if (state.relicEffects.gemHunterChance > 0 && Math.random() < state.relicEffects.gemHunterChance) {
-        state.gold += 15;
-        state.relicEffects.goldEarnedTotal = (state.relicEffects.goldEarnedTotal || 0) + 15;
+        state.gold += 25;
+        state.relicEffects.goldEarnedTotal = (state.relicEffects.goldEarnedTotal || 0) + 25;
         state.damageNumbers.push({
           x: ex, y: ey - e.size - 12, vy: -1.2,
-          text: '💎 +15', color: '#88e0ff', life: 40, size: 12,
+          text: '💎 +25', color: '#88e0ff', life: 40, size: 12,
         });
       }
       if (e.isBoss) {
@@ -20740,7 +20740,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 263;
+  const APP_VERSION = 264;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
