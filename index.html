@@ -10445,8 +10445,11 @@
     checkAchievements();
     saveRecord();
     renderPanel();
-    // 🌐 글로벌 랭킹 자동 제출 (비동기, 실패해도 게임에 영향 X)
+    // 🌐 글로벌 랭킹 자동 제출 (비동기)
     submitGlobalScore();
+    // 🛡 v206 — 게임 종료 직후 META를 즉시 서버에 push (queueServerSync 디바운스 우회)
+    //   사용자가 게임 종료 후 바로 로그아웃/탭 닫기 해도 진행도 손실 없게.
+    if (typeof queueServerSync === 'function') queueServerSync(true);
   }
 
   // ===== 메타 프로그레션 (스타더스트 영구 통화) =====
@@ -10870,33 +10873,41 @@
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) flushPendingSync();
   });
+  // 🛡 syncMetaToServer — 성공/실패 boolean 반환 (v206)
+  //   logoutAccount 등이 sync 결과를 확인하고 의사결정할 수 있게.
+  //   반환값: true = 서버에 저장 성공 / false = 실패 (네트워크, auth, 세션 무효 등)
   async function syncMetaToServer() {
-    if (!isAccountLoggedIn()) return;
-    if (_sessionInvalidated) return;   // 이미 강퇴 처리됨
+    if (!isAccountLoggedIn()) return false;
+    if (_sessionInvalidated) return false;
     const sb = getSupabase();
-    if (!sb) return;
+    if (!sb) return false;
     try {
-      // password / 인증 정보 / sessionId 는 서버 저장 데이터에서 제외
       const dataToSync = { ...META };
       delete dataToSync.accountPassword;
-      delete dataToSync.sessionId;       // 토큰은 별도 파라미터로만 전달
+      delete dataToSync.sessionId;
       const { data, error } = await sb.rpc('sync_account_data', {
         p_user_id: META.userId,
         p_password: META.accountPassword,
         p_data: dataToSync,
-        p_session_id: META.sessionId || null,    // 🛡 세션 토큰 검증용
+        p_session_id: META.sessionId || null,
       });
       if (error) {
         console.warn('동기화 실패:', error.message);
-      } else if (data === 'invalid_session') {
-        // 🛡 다른 기기에서 로그인됨 → 이 기기 강퇴
-        handleSessionInvalidation();
-      } else if (data === 'auth_failed' || data === false) {
-        console.warn('동기화 인증 실패 — 비밀번호 변경됐을 가능성');
+        return false;
       }
-      // data === 'ok' (또는 구버전 true) → 정상
+      if (data === 'invalid_session') {
+        handleSessionInvalidation();
+        return false;
+      }
+      if (data === 'auth_failed' || data === false) {
+        console.warn('동기화 인증 실패 — 비밀번호 변경됐을 가능성');
+        return false;
+      }
+      // 'ok' (신버전) 또는 true (구버전) → 성공
+      return data === 'ok' || data === true;
     } catch (e) {
       console.warn('동기화 통신 실패:', e);
+      return false;
     }
   }
 
@@ -11155,25 +11166,41 @@
 
   async function logoutAccount() {
     if (!confirm('로그아웃하면 이 기기의 데이터는 초기화됩니다. (서버 데이터는 안전)\n\n계속하시겠어요?')) return;
-    // 🛡 v204 — 로그아웃 전에 미푸시 변경사항 강제 sync (debounce 대기 중인 데이터까지)
-    //   이 단계가 없으면 다음 로그인 시 미푸시 데이터 영구 손실됨.
-    try {
-      // 진행 중인 debounce 타이머 취소 + 즉시 sync
-      if (typeof _syncTimer !== 'undefined' && _syncTimer) { clearTimeout(_syncTimer); _syncTimer = null; }
-      if (typeof _syncMaxTimer !== 'undefined' && _syncMaxTimer) { clearTimeout(_syncMaxTimer); _syncMaxTimer = null; }
-      if (isAccountLoggedIn()) {
-        await syncMetaToServer();
+    // 🛡 v206 — 로그아웃 전에 미푸시 변경사항 강제 sync.
+    //   syncMetaToServer 가 이제 boolean 반환 → 실패 시 사용자에게 명확히 안내.
+    if (typeof _syncTimer !== 'undefined' && _syncTimer) { clearTimeout(_syncTimer); _syncTimer = null; }
+    if (typeof _syncMaxTimer !== 'undefined' && _syncMaxTimer) { clearTimeout(_syncMaxTimer); _syncMaxTimer = null; }
+    let syncOk = true;   // 기본값: 로그인 안 된 상태면 sync 불필요
+    if (isAccountLoggedIn()) {
+      try {
+        // ⏱ 10초 타임아웃 — 네트워크 행 방지
+        syncOk = await Promise.race([
+          syncMetaToServer(),
+          new Promise(resolve => setTimeout(() => resolve(false), 10000)),
+        ]);
+      } catch (e) {
+        console.warn('로그아웃 전 sync 예외:', e);
+        syncOk = false;
       }
-    } catch (e) {
-      console.warn('로그아웃 전 sync 실패:', e);
-      // sync 실패해도 진행 — 사용자에게 확인 한 번 더
-      if (!confirm('⚠ 서버에 데이터 저장 실패. 일부 진행도가 손실될 수 있습니다.\n그래도 로그아웃 진행할까요?')) return;
+    }
+    if (!syncOk) {
+      // 💥 sync 실패 시 명시적 경고 + 사용자 결정 받기
+      const forceLogout = confirm(
+        '⚠ 서버 동기화 실패!\n\n' +
+        '이 기기의 진행도가 서버에 저장되지 않았습니다.\n' +
+        '지금 로그아웃하면 마지막 동기화 이후의 진행도가 사라집니다.\n\n' +
+        '[확인] = 어쨌든 로그아웃 (데이터 손실 감수)\n' +
+        '[취소] = 로그아웃 취소 (인터넷 확인 후 다시 시도)'
+      );
+      if (!forceLogout) return;
+    } else if (isAccountLoggedIn()) {
+      console.log('✅ 로그아웃 전 sync 성공');
     }
     // 로컬 META 초기화 (서버는 그대로)
     META = {};
     try {
       localStorage.removeItem(META_KEY);
-      localStorage.removeItem(META_KEY_OLD);  // 이전 평문 키도 삭제
+      localStorage.removeItem(META_KEY_OLD);
     } catch {}
     location.reload();
   }
@@ -18404,7 +18431,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 205;
+  const APP_VERSION = 207;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
@@ -18769,15 +18796,22 @@
             }
           }
         }
+        // ⭐ 별 진행도: 항상 보이게 (한눈에 확인) + 퍼크 세부는 접이식
         starInfo = `
-          <details style="margin-top:6px;font-size:11px;">
-            <summary style="cursor:pointer;color:${starColor};font-weight:bold;list-style:none;outline:none;">
-              ${starText} <span style="font-size:10px;color:#9aa3b3;font-weight:normal;">+${dmgBonus}% · 돌파 효과 보기 ▾</span>
-            </summary>
-            <div style="margin-top:6px;padding:6px 8px;background:#0f1219;border-radius:4px;border:1px solid #2a2f3a;color:#9aa3b3;line-height:1.6;">
-              ${rows.join('')}
+          <div style="margin-top:8px; padding:6px 8px; background:#0f1219; border-radius:4px; border:1px solid #2a2f3a;">
+            <div style="display:flex; justify-content:space-between; align-items:center; gap:6px;">
+              <span style="color:${starColor}; font-weight:bold; letter-spacing:1px; font-size:13px;">${starText}</span>
+              <span style="color:#cfd6e3; font-size:11px;">${stars}/${CHAR_MAX_STARS}★ <span style="color:#ffd479;">+${dmgBonus}%</span></span>
             </div>
-          </details>
+            <details style="margin-top:4px; font-size:10px;">
+              <summary style="cursor:pointer; color:#9aa3b3; list-style:none; outline:none; user-select:none;">
+                ▸ 돌파 보너스 보기
+              </summary>
+              <div style="margin-top:6px; color:#9aa3b3; line-height:1.7;">
+                ${rows.join('')}
+              </div>
+            </details>
+          </div>
         `;
       }
       card.innerHTML = `
