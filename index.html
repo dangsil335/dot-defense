@@ -140,50 +140,89 @@
     width: 260px; height: 640px;
     background: #141822; border: 2px solid #2a2f3a;
     padding: 12px; box-sizing: border-box;
-    display: flex; flex-direction: column; gap: 10px;
+    display: flex; flex-direction: column; gap: 6px;   /* v230: 10 → 6 더 빡빡하게 */
     font-size: 12px;
   }
-  #stats { line-height: 1.6; }
-  #stats .row { display: flex; justify-content: space-between; }
+  /* v230 — hr divider 더 얇게 (능력 영역 위 공간 절약) */
+  #panel hr { margin: 2px 0; }
+  /* === v230 — 능력 영역 확장을 위한 스탯 컴팩트화 + 핵심(라운드/골드) 강조 === */
+  #stats { line-height: 1.3; }
+  #stats .row { display: flex; justify-content: space-between; align-items: baseline; }
   #stats .label { color: #6b7283; }
 
-  /* === 핵심 스탯 위계 강조 — ROUND / GOLD === */
+  /* === 🔝 PRIMARY (라운드/골드) — 더 크게, 더 강조 === */
   #stats .row.primary {
-    font-size: 17px;
+    font-size: 20px;                  /* 18 → 20 */
     font-weight: bold;
-    padding: 6px 10px;
+    padding: 8px 10px;
     margin: 3px 0;
     background: rgba(20, 24, 34, 0.7);
-    border-left: 3px solid;
-    align-items: baseline;
+    border-left: 4px solid;            /* 3 → 4 */
+    border-radius: 0 4px 4px 0;
+    line-height: 1.15;
   }
   #stats .row.primary .label {
-    font-size: 14px;
+    font-size: 11px;
     font-weight: normal;
     color: #9aa3b3;
-    letter-spacing: 0;
-    line-height: 1.2;
+    letter-spacing: 2px;
+    text-transform: uppercase;
   }
-  #stats .row .label {
-    font-size: 13px;
-    color: #6b7283;
-  }
-  #stats .row span:last-child { font-weight: bold; }
-  #wrap.portrait #stats .row .label { font-size: 15px; }
-  #wrap.portrait #stats .row.primary .label { font-size: 16px; }
-  #wrap.portrait #stats .row { font-size: 16px; }
-  #wrap.portrait #stats .row.primary { font-size: 22px; padding: 10px 12px; }
   #stats .row.round { border-left-color: #7ad7ff; }
   #stats .row.round span:last-child {
     color: #7ad7ff;
-    text-shadow: 0 0 8px rgba(122,215,255,0.45);
+    text-shadow: 0 0 10px rgba(122,215,255,0.55);
+    font-size: 22px;                   /* 라운드 값 살짝 더 크게 */
   }
   #stats .row.gold { border-left-color: #ffd479; }
   #stats .row.gold span:last-child {
     color: #ffd479;
-    text-shadow: 0 0 8px rgba(255,212,121,0.45);
+    text-shadow: 0 0 10px rgba(255,212,121,0.55);
+    font-size: 22px;                   /* 골드 값 살짝 더 크게 */
   }
-  #wrap.portrait #stats .row.primary { font-size: 19px; padding: 8px 12px; }
+
+  /* === 🟡 SECONDARY (시간/점수/적 수) — 압축 === */
+  #stats .row.secondary {
+    font-size: 12px;                   /* 13 → 12 */
+    padding: 1px 4px;                  /* 2 → 1 */
+  }
+  #stats .row.secondary .label { font-size: 10px; color: #7a8090; }
+  #stats .row.secondary span:last-child {
+    font-weight: bold; color: #cfd6e3;
+  }
+
+  /* === ⚪ TERTIARY (레벨/누적처치) — 더 작고 묻힘 === */
+  .stats-tertiary-group {
+    margin-top: 4px;                   /* 6 → 4 */
+    padding-top: 4px;                  /* 6 → 4 */
+    border-top: 1px solid rgba(58,66,86,0.4);
+    display: flex; flex-direction: column; gap: 0;
+  }
+  #stats .row.tertiary {
+    font-size: 10px;
+    padding: 0 2px;                    /* 1 → 0 */
+    color: #7a8090;
+  }
+  #stats .row.tertiary .label { font-size: 10px; color: #5a5f6a; }
+  #stats .row.tertiary span:last-child {
+    font-weight: normal; color: #9aa3b3;
+  }
+
+  /* === 📊 BAR — 더 얇게 === */
+  #panel .bar { height: 5px; }         /* 8 → 5 */
+
+  /* === 📱 PORTRAIT MODE — 모바일에서 가독성 키움 === */
+  #wrap.portrait #stats .row.primary {
+    font-size: 24px;                   /* 22 → 24 */
+    padding: 10px 14px;
+  }
+  #wrap.portrait #stats .row.primary .label { font-size: 13px; }
+  #wrap.portrait #stats .row.round span:last-child,
+  #wrap.portrait #stats .row.gold span:last-child { font-size: 26px; }
+  #wrap.portrait #stats .row.secondary { font-size: 14px; padding: 1px 4px; }
+  #wrap.portrait #stats .row.secondary .label { font-size: 12px; }
+  #wrap.portrait #stats .row.tertiary { font-size: 11px; }
+  #wrap.portrait #stats .row.tertiary .label { font-size: 11px; }
   .bar { background: #1a1f2b; height: 8px; border: 1px solid #2a2f3a; position: relative; overflow: hidden; }
   .bar > i { display:block; height:100%; background:#52e07a; transition: width .15s; }
   .bar.danger > i { background: #ff5b6e; }
@@ -193,10 +232,49 @@
     font-family: inherit; font-size: 12px;
     background: #1f2735; color: #e8eaf0;
     border: 1px solid #3a4256; padding: 6px 8px; cursor: pointer;
-    transition: background .1s;
+    transition: background .1s, transform .08s ease-out, box-shadow .12s;
   }
   button:hover:not(:disabled) { background: #2a3550; }
   button:disabled { opacity: 0.4; cursor: not-allowed; }
+  /* 🎯 v226 — 전역 버튼 클릭 피드백 (눌림 인식)
+     :active 동안 살짝 축소 + 외곽 글로우 → "내가 눌렀다" 명확히. */
+  button:active:not(:disabled) {
+    transform: scale(0.96);
+    box-shadow: 0 0 0 2px rgba(122, 215, 255, 0.18);
+  }
+  /* 카드/타일류 클릭 가능 요소 — 같은 피드백 패턴 */
+  .codex-card, .char-card, .ability-row, .mode-card, .gacha-result-card, .gacha-pickup-icon {
+    transition: transform .08s ease-out, box-shadow .12s, background .12s;
+  }
+  .codex-card:active, .char-card:not(.locked):active, .mode-card:active {
+    transform: scale(0.98);
+  }
+  /* 🎯 v226 — 숫자 변경 펄스 (스타더스트/결정/골드 등) */
+  @keyframes _num-pulse {
+    0%   { color: #88ff88; text-shadow: 0 0 8px rgba(136,255,136,0.7); transform: scale(1.15); }
+    100% { color: inherit; text-shadow: inherit; transform: scale(1); }
+  }
+  ._num-pulse {
+    display: inline-block;
+    animation: _num-pulse 0.5s ease-out;
+  }
+  /* 🎯 v226 — 비용 감소 (소비) 펄스 */
+  @keyframes _num-pulse-down {
+    0%   { color: #ff8a98; transform: scale(1.12); }
+    100% { color: inherit; transform: scale(1); }
+  }
+  ._num-pulse-down {
+    display: inline-block;
+    animation: _num-pulse-down 0.45s ease-out;
+  }
+  /* 🎯 v226 — 화면 진입 페이드 */
+  @keyframes _screen-fade-in {
+    0%   { opacity: 0; transform: translateY(6px); }
+    100% { opacity: 1; transform: translateY(0); }
+  }
+  .screen.show {
+    animation: _screen-fade-in 0.18s ease-out;
+  }
   /* 🛡 v207 — font-size 고정 + min-height 고정 으로 텍스트 길이/portrait 전환 시 크기 변동 방지 */
   #randomBtn {
     width: 100%; padding: 10px; font-weight: bold;
@@ -443,21 +521,9 @@
     text-shadow: 0 0 30px rgba(122, 215, 255, 0.45);
     margin: 0 0 clamp(4px, 1.5vmin, 12px);
   }
-  /* 개발용: 데이터 초기화 버튼 (메뉴 우측 상단) */
-  .reset-data-btn {
-    position: absolute;
-    top: 16px;
-    right: 16px;
-    padding: 8px 12px;
-    background: #2a1018;
-    color: #c08090;
-    border: 1px solid #5a3038;
-    font-family: inherit;
-    font-size: 11px;
-    cursor: pointer;
-    touch-action: manipulation;
-  }
-  .reset-data-btn:hover { background: #3a1820; color: #ffaabb; }
+  /* v218 — 데이터 초기화 버튼은 이제 설정 모달 안에 (settings-action-btn.danger 사용)
+     이전 .reset-data-btn 클래스는 호환성 위해 남겨두지만 모달 내부 스타일 우선 */
+  .reset-data-btn { /* deprecated — use .settings-action-btn.danger */ }
   /* 캐시 초기화 (업데이트) 버튼 (메뉴 좌측 상단) — 저장 데이터는 유지 */
   .update-cache-btn {
     position: absolute;
@@ -534,10 +600,8 @@
     font-size: clamp(10px, 1.6vmin, 13px);
   }
   .menu-btn {
-    width: clamp(180px, 50vmin, 260px);
-    padding: clamp(8px, 2vmin, 18px);
-    margin: clamp(3px, 0.8vmin, 6px);
-    font-size: clamp(12px, 2.2vmin, 18px);
+    padding: clamp(10px, 2vmin, 16px);
+    font-size: clamp(13px, 1.9vmin, 16px);
     font-family: inherit;
     background: #1f2735;
     color: #e8eaf0;
@@ -545,9 +609,270 @@
     cursor: pointer;
     transition: background .12s, border-color .12s, transform .08s;
     touch-action: manipulation;
+    box-sizing: border-box;
   }
-  .menu-btn:hover { background: #2a3550; border-color: #5870a0; }
+  .menu-btn:hover:not(:disabled) { background: #2a3550; border-color: #5870a0; }
   .menu-btn:active { transform: scale(0.97); }
+
+  /* v218 — 메뉴 메인 컨테이너 (그룹화 + 그리드) */
+  .menu-main {
+    width: clamp(280px, 80vmin, 480px);
+    display: flex; flex-direction: column;
+    gap: clamp(8px, 1.6vmin, 16px);
+    margin-top: clamp(6px, 1.5vmin, 12px);
+  }
+  /* v221 — 현재 선택 캐릭터 미리보기 (카드 스타일 — 가챠 결과 카드 톤 매치) */
+  .menu-char-preview {
+    --card-color: #7ad7ff;
+    position: relative;
+    display: flex; align-items: stretch; gap: 0;
+    padding: 0;
+    background: linear-gradient(135deg,
+      color-mix(in srgb, var(--card-color) 15%, #0b0d12) 0%,
+      #0c0e18 50%,
+      #0a0d14 100%);
+    border: 2px solid var(--card-color);
+    border-radius: 6px;
+    cursor: pointer;
+    touch-action: manipulation;
+    transition: transform .12s, box-shadow .12s;
+    overflow: hidden;
+    box-shadow: 0 0 8px color-mix(in srgb, var(--card-color) 30%, transparent);
+  }
+  .menu-char-preview:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 16px color-mix(in srgb, var(--card-color) 50%, transparent);
+  }
+  .menu-char-preview .preview-img-wrap {
+    width: 56px; height: 56px;
+    flex-shrink: 0;
+    background: radial-gradient(circle at center,
+      color-mix(in srgb, var(--card-color) 30%, #0b0d12),
+      #0b0d12);
+    display: flex; align-items: center; justify-content: center;
+    border-right: 1px solid color-mix(in srgb, var(--card-color) 40%, transparent);
+  }
+  .menu-char-preview .preview-img-wrap img {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    image-rendering: pixelated;
+  }
+  .menu-char-preview .preview-info {
+    flex: 1; min-width: 0;
+    display: flex; flex-direction: column;
+    gap: 2px;
+    padding: 8px 10px 8px 12px;
+    justify-content: center;
+  }
+  .menu-char-preview .preview-label {
+    font-size: 9px;
+    color: color-mix(in srgb, var(--card-color) 60%, #9aa3b3);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    font-weight: bold;
+  }
+  .menu-char-preview .preview-name {
+    font-size: 14px;
+    font-weight: bold;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .menu-char-preview .preview-stars {
+    font-size: 11px;
+    letter-spacing: 1px;
+  }
+  .menu-char-preview .preview-arrow {
+    font-size: 16px;
+    color: var(--card-color);
+    flex-shrink: 0;
+    align-self: center;
+    padding-right: 10px;
+    opacity: 0.7;
+  }
+  /* 상단 라벨 띠 — 가챠 결과 카드의 rarity tag 매치 */
+  .menu-char-preview .preview-rarity-tag {
+    position: absolute;
+    top: 0; left: 0;
+    padding: 1px 6px;
+    background: var(--card-color);
+    color: #0b0d12;
+    font-size: 9px;
+    font-weight: bold;
+    letter-spacing: 1px;
+    border-radius: 0 0 4px 0;
+  }
+  /* 메인 CTA 그룹 — 새 게임/이어하기/난이도 */
+  .menu-cta-group {
+    display: flex; flex-direction: column; gap: 6px;
+  }
+  /* v223 — 빠른 시작 미리보기 (Primary 버튼 바로 아래 작은 텍스트) */
+  .quick-start-preview {
+    font-size: 11px;
+    color: #6b7283;
+    text-align: center;
+    padding: 2px 0 4px;
+    letter-spacing: 1px;
+  }
+  .quick-start-preview .qs-val {
+    color: #9aa3b3;
+    font-weight: bold;
+  }
+  /* Primary — 새 게임/이어하기. 큼 + 강조 */
+  .menu-btn-primary {
+    font-size: clamp(15px, 2.6vmin, 20px);
+    font-weight: bold;
+    padding: clamp(14px, 2.6vmin, 20px);
+    background: linear-gradient(135deg, #2a3550, #1f2735);
+    border-color: #5870a0;
+    color: #ffffff;
+  }
+  .menu-btn-primary:hover:not(:disabled) {
+    background: linear-gradient(135deg, #354270, #2a3045);
+    border-color: #7a90c0;
+    box-shadow: 0 0 12px rgba(122, 215, 255, 0.25);
+  }
+  /* 🔄 v228 — "처음부터 다시" — 진행 중일 때 startBtn에 적용 (이어하기와 시각 구분) */
+  .menu-btn-restart {
+    background: linear-gradient(135deg, #2a1818, #1a0c0c) !important;
+    border-color: #5a3038 !important;
+    color: #ffaabb !important;
+    font-size: clamp(13px, 1.9vmin, 16px) !important;   /* 작게 — 부수적 액션 */
+    padding: clamp(10px, 2vmin, 14px) !important;
+    font-weight: normal !important;
+  }
+  .menu-btn-restart:hover:not(:disabled) {
+    background: linear-gradient(135deg, #3a1820, #2a1010) !important;
+  }
+  /* Secondary — 난이도 등 */
+  .menu-btn-secondary {
+    font-size: clamp(12px, 1.7vmin, 14px);
+    padding: clamp(8px, 1.5vmin, 12px);
+    color: #ffd479;
+    border-color: #5a4220;
+    background: #1a1408;
+  }
+  /* 그룹 헤더 */
+  .menu-section {
+    display: flex; flex-direction: column; gap: 6px;
+    margin-top: 4px;
+  }
+  .menu-section-label {
+    font-size: clamp(10px, 1.4vmin, 12px);
+    color: #6b7283;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding-left: 4px;
+  }
+  /* 2~3컬럼 그리드 */
+  .menu-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 6px;
+  }
+  .menu-grid-3 { grid-template-columns: repeat(3, 1fr); }
+  .menu-grid-2 { grid-template-columns: repeat(2, 1fr); }
+  .menu-btn-grid {
+    padding: clamp(10px, 1.8vmin, 14px) clamp(6px, 1.2vmin, 10px);
+    font-size: clamp(11px, 1.6vmin, 14px);
+  }
+  .menu-btn-wide {
+    width: 100%;
+    margin-top: 4px;
+  }
+  /* 닉네임 — 하단 카드 */
+  .nickname-display {
+    margin-top: clamp(10px, 2vmin, 18px);
+    font-size: clamp(11px, 1.6vmin, 13px);
+    color: #9aa3b3;
+    cursor: pointer;
+    padding: 6px 12px;
+    border-radius: 6px;
+    border: 1px solid #2a2f3a;
+    background: rgba(20,24,34,0.5);
+    touch-action: manipulation;
+  }
+  .nickname-display:hover { background: rgba(40,48,68,0.5); color: #cfd6e3; }
+  .nickname-display #nickname-text { color: #7ad7ff; font-weight: bold; }
+
+  /* 설정 버튼 (우상단) */
+  .settings-btn {
+    position: absolute;
+    top: 16px; right: 16px;
+    width: 40px; height: 40px;
+    padding: 0;
+    background: #1f2735;
+    color: #cfd6e3;
+    border: 1px solid #3a4256;
+    border-radius: 8px;
+    font-size: 18px;
+    cursor: pointer;
+    touch-action: manipulation;
+    z-index: 11;
+    transition: background .12s, border-color .12s;
+  }
+  .settings-btn:hover { background: #2a3550; border-color: #5870a0; color: #ffffff; }
+
+  /* 설정 모달 */
+  .settings-modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.7);
+    z-index: 9990;
+    display: flex; align-items: center; justify-content: center;
+    padding: 16px;
+    box-sizing: border-box;
+    backdrop-filter: blur(4px);
+  }
+  .settings-modal-content {
+    background: #141822;
+    border: 2px solid #3a4256;
+    border-radius: 10px;
+    width: 100%; max-width: 420px;
+    max-height: 90vh; overflow-y: auto;
+    display: flex; flex-direction: column;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+  }
+  .settings-modal-header {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 14px 18px;
+    border-bottom: 1px solid #2a2f3a;
+  }
+  .settings-modal-header h3 {
+    margin: 0; font-size: 16px; color: #7ad7ff; letter-spacing: 2px;
+  }
+  .settings-modal-close {
+    width: 32px; height: 32px; padding: 0;
+    background: transparent; color: #9aa3b3;
+    border: 1px solid #3a4256; border-radius: 6px;
+    font-size: 14px; cursor: pointer;
+    touch-action: manipulation;
+  }
+  .settings-modal-close:hover { background: #2a2f3a; color: #ffffff; }
+  .settings-modal-body { padding: 16px; display: flex; flex-direction: column; gap: 16px; }
+  .settings-section {
+    padding: 12px; background: #0f1219;
+    border: 1px solid #2a2f3a; border-radius: 6px;
+  }
+  .settings-section.danger { border-color: #5a3038; background: #1a0c10; }
+  .settings-section-title {
+    font-size: 13px; font-weight: bold; color: #cfd6e3;
+    margin-bottom: 4px;
+  }
+  .settings-section.danger .settings-section-title { color: #ff8a98; }
+  .settings-section-desc {
+    font-size: 11px; color: #6b7283;
+    margin-bottom: 10px; line-height: 1.5;
+  }
+  .settings-action-btn {
+    width: 100%; padding: 10px;
+    background: #1f2735; color: #cfd6e3;
+    border: 1px solid #3a4256; border-radius: 6px;
+    font-family: inherit; font-size: 13px; font-weight: bold;
+    cursor: pointer; touch-action: manipulation;
+  }
+  .settings-action-btn:hover { background: #2a3550; }
+  .settings-action-btn.danger { color: #ff8a98; border-color: #5a3038; }
+  .settings-action-btn.danger:hover { background: #2a1018; color: #ffaabb; }
 
   #codex {
     padding: 24px;
@@ -584,6 +909,36 @@
     touch-action: manipulation;
   }
   .codex-tab.active { background: #3d5380; color: #fff; border-color: #5870a0; }
+
+  /* 🎯 v224 — 도감 필터 칩 (검색은 제거) */
+  .codex-filter-chips {
+    max-width: 900px; width: 100%;
+    margin: 0 auto 10px;
+    display: flex; gap: 6px; flex-wrap: wrap;
+    padding: 0 4px;
+    box-sizing: border-box;
+    justify-content: center;
+  }
+  .codex-filter-chip {
+    padding: 6px 14px;
+    background: #1f2735; color: #9aa3b3;
+    border: 1px solid #3a4256; border-radius: 14px;
+    font-family: inherit; font-size: 12px;
+    cursor: pointer; touch-action: manipulation;
+    transition: background .12s, border-color .12s, color .12s;
+  }
+  .codex-filter-chip:hover:not(.active) { background: #2a3550; color: #cfd6e3; }
+  .codex-filter-chip.active {
+    background: #3d5380; color: #fff;
+    border-color: #5870a0;
+  }
+  /* 필터 결과 0개 — 메시지 */
+  .codex-empty-msg {
+    text-align: center; padding: 40px 20px;
+    color: #6b7283; font-size: 13px;
+    grid-column: 1 / -1;
+  }
+
   #codex-list {
     max-width: 900px; width: 100%;
     margin: 0 auto;
@@ -594,6 +949,155 @@
     gap: 10px;
     padding: 4px 4px 24px;
   }
+  /* 🎴 v231 — 도감 캐릭터 카드 (R/SR/SSR 정보 카드) */
+  .codex-char-card {
+    grid-column: 1 / -1;     /* 1열 전체 폭 */
+    max-width: 720px;
+    margin: 0 auto;
+    width: 100%;
+  }
+  .codex-char-card.locked { opacity: 0.6; }
+  .codex-char-card .char-codex-header {
+    display: flex; align-items: center; gap: 12px;
+    margin-bottom: 10px;
+  }
+  .codex-char-card .char-codex-portrait {
+    width: 72px; height: 72px;
+    flex-shrink: 0;
+    background: #0a0d18;
+    border-radius: 6px;
+    overflow: hidden;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .codex-char-card .char-codex-portrait img {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    image-rendering: pixelated;
+  }
+  .codex-char-card .char-codex-portrait.locked-portrait {
+    background: #1a1f2b;
+    font-size: 32px;
+    color: #5a5f6a;
+  }
+  .codex-char-card .char-codex-meta {
+    flex: 1; min-width: 0;
+    display: flex; flex-direction: column; gap: 4px;
+  }
+  .codex-char-card .char-codex-name-row {
+    display: flex; align-items: center; gap: 8px;
+    flex-wrap: wrap;
+  }
+  .codex-char-card .char-codex-name {
+    font-size: 18px; font-weight: bold;
+  }
+  .codex-char-card .char-codex-rarity {
+    font-size: 10px;
+    padding: 2px 8px;
+    border: 1px solid;
+    border-radius: 10px;
+    font-weight: bold;
+    letter-spacing: 1px;
+  }
+  .codex-char-card .char-codex-stars {
+    font-size: 14px;
+    letter-spacing: 1px;
+    font-weight: bold;
+  }
+  .codex-char-card .char-codex-lock-hint {
+    font-size: 11px;
+    color: #7a8090;
+    font-style: italic;
+  }
+  .codex-char-card .char-codex-desc {
+    font-size: 12px;
+    color: #cfd6e3;
+    line-height: 1.5;
+    margin-bottom: 12px;
+    padding: 8px 10px;
+    background: rgba(20,24,34,0.5);
+    border-radius: 4px;
+    border-left: 2px solid #2a2f3a;
+  }
+  .codex-char-card .char-codex-section {
+    margin-top: 10px;
+    padding-top: 8px;
+    border-top: 1px solid #2a2f3a;
+  }
+  .codex-char-card .char-codex-section:first-of-type {
+    margin-top: 0;
+    padding-top: 0;
+    border-top: 0;
+  }
+  .codex-char-card .char-codex-section-title {
+    font-size: 10px;
+    font-weight: bold;
+    color: #9aa3b3;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .codex-char-card .char-codex-section-body {
+    font-size: 12px;
+    color: #cfd6e3;
+    line-height: 1.6;
+  }
+  .codex-char-card .char-codex-recipe {
+    padding: 4px 8px;
+    margin-bottom: 3px;
+    background: rgba(20,24,34,0.4);
+    border-radius: 4px;
+    font-size: 12px;
+    line-height: 1.4;
+  }
+  .codex-char-card .char-codex-perk {
+    display: flex; align-items: center; gap: 8px;
+    padding: 5px 8px;
+    margin-bottom: 3px;
+    background: rgba(20,24,34,0.4);
+    border-radius: 4px;
+    font-size: 12px;
+  }
+  .codex-char-card .char-codex-perk.unlocked {
+    background: rgba(255,212,121,0.08);
+    border: 1px solid rgba(255,212,121,0.25);
+  }
+  .codex-char-card .char-codex-perk .perk-lv {
+    font-weight: bold;
+    font-size: 11px;
+    min-width: 28px;
+  }
+  .codex-char-card .char-codex-perk .perk-name {
+    flex: 1;
+    font-weight: bold;
+  }
+  .codex-char-card .char-codex-perk .perk-status {
+    font-size: 10px;
+    color: #88ff88;
+    font-weight: bold;
+  }
+  .codex-char-card .char-codex-perk-row {
+    display: flex; align-items: center; gap: 8px;
+    padding: 2px 8px;
+    font-size: 11px;
+    color: #6b7283;
+  }
+  .codex-char-card .char-codex-perk-row.has {
+    color: #cfd6e3;
+  }
+  .codex-char-card .char-codex-perk-row .perk-lv-mini {
+    font-weight: bold;
+    color: #ffd479;
+    min-width: 26px;
+  }
+  .codex-char-card .char-codex-perk-row.has .perk-lv-mini {
+    color: #ffd060;
+  }
+  .codex-char-card .char-codex-perk-row .perk-text { flex: 1; }
+  .codex-char-card .char-codex-perk-row .perk-check {
+    color: #88ff88;
+    font-size: 12px;
+  }
+
   .codex-card {
     background: #141822;
     border: 1px solid #2a2f3a;
@@ -1297,6 +1801,89 @@
     /* 하단 패딩 — 플로팅 시작 버튼 (약 130px + safe-area) 와 겹치지 않게 */
     padding: 0 10px calc(150px + env(safe-area-inset-bottom));
   }
+  /* 🎴 v221 — 캐릭터 선택 hero 카드 (가챠 결과 카드 톤 — 큰 버전) */
+  .char-hero {
+    --card-color: #7ad7ff;
+    position: relative;
+    max-width: 960px; width: 100%;
+    margin: 0 auto 12px;
+    padding: 0;
+    background: linear-gradient(135deg,
+      color-mix(in srgb, var(--card-color) 12%, #0b0d12) 0%,
+      #0c0e18 60%,
+      #0a0d14 100%);
+    border: 2px solid var(--card-color);
+    border-radius: 8px;
+    display: flex; align-items: stretch; gap: 0;
+    box-sizing: border-box;
+    overflow: hidden;
+    box-shadow: 0 0 12px color-mix(in srgb, var(--card-color) 25%, transparent);
+  }
+  /* 상단 라벨 띠 — 가챠 카드 rarity tag 매치 */
+  .char-hero .hero-rarity-tag {
+    position: absolute;
+    top: 0; left: 0;
+    padding: 3px 10px;
+    background: var(--card-color);
+    color: #0b0d12;
+    font-size: 11px;
+    font-weight: bold;
+    letter-spacing: 2px;
+    border-radius: 0 0 6px 0;
+    z-index: 1;
+  }
+  .char-hero .hero-img-wrap {
+    width: 120px; height: 120px;
+    flex-shrink: 0;
+    background: radial-gradient(circle at center,
+      color-mix(in srgb, var(--card-color) 25%, #0b0d12),
+      #0b0d12);
+    display: flex; align-items: center; justify-content: center;
+    border-right: 1px solid color-mix(in srgb, var(--card-color) 30%, transparent);
+  }
+  .char-hero .hero-img-wrap img {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    image-rendering: pixelated;
+  }
+  .char-hero .hero-info {
+    flex: 1; min-width: 0;
+    display: flex; flex-direction: column;
+    gap: 6px;
+    padding: 14px 18px;
+    justify-content: center;
+  }
+  .char-hero .hero-label {
+    font-size: 10px;
+    color: color-mix(in srgb, var(--card-color) 70%, #9aa3b3);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    font-weight: bold;
+  }
+  .char-hero .hero-name-row {
+    display: flex; align-items: center; gap: 10px;
+    flex-wrap: wrap;
+  }
+  .char-hero .hero-name {
+    font-size: 22px;
+    font-weight: bold;
+    text-shadow: 0 0 12px color-mix(in srgb, var(--card-color) 50%, transparent);
+  }
+  .char-hero .hero-desc {
+    font-size: 12px;
+    color: #cfd6e3;
+    line-height: 1.5;
+  }
+  .char-hero .hero-stars {
+    font-size: 14px;
+    letter-spacing: 1px;
+  }
+  /* 모바일 좁은 화면에선 컴팩트 */
+  @media (max-width: 480px) {
+    .char-hero .hero-img-wrap { width: 88px; height: 88px; }
+    .char-hero .hero-info { padding: 10px 12px; }
+    .char-hero .hero-name { font-size: 18px; }
+  }
   .char-card {
     background: #141822;
     border: 2px solid #2a2f3a;
@@ -1349,7 +1936,16 @@
   }
   .char-card:hover:not(.locked) { background: #1a1f2b; }
   .char-card.selected { border-color: #ffd479; background: #1a2030; }
-  .char-card.locked { opacity: 0.5; cursor: not-allowed; }
+  /* v232 — 잠긴 캐릭터: 정보 가독성은 유지하되 시각적으로 "흑백 vs 컬러" 명확 구분 */
+  .char-card.locked {
+    cursor: default;
+    filter: grayscale(0.85) brightness(0.8);   /* 카드 전체 흑백 처리 */
+    border-left-color: #3a4256 !important;     /* 등급색 무력화 */
+  }
+  .char-card.locked .char-portrait-wrap {
+    filter: grayscale(1) brightness(0.6);      /* 포트레이트는 완전 흑백 */
+  }
+  .char-card.locked:hover { filter: grayscale(0.75) brightness(0.9); }   /* 호버 시 살짝 밝아짐 (관심 표시) */
   .char-card .char-name { font-size: 14px; font-weight: bold; flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .char-card .char-desc { font-size: 12px; color: #c8cdd8; line-height: 1.4; word-break: keep-all; }
   .char-card .char-lock { font-size: 11px; color: #ff8a98; margin-top: 6px; }
@@ -1464,35 +2060,94 @@
 </style>
 </head>
 <body>
-<!-- ===== 메뉴 화면 ===== -->
+<!-- ===== 메뉴 화면 (v218 — 그룹화 + 그리드 레이아웃) ===== -->
 <div id="menu" class="screen show">
-  <button id="updateCacheBtn" class="update-cache-btn" title="캐시만 지우고 최신 버전으로 업데이트 (저장 데이터는 유지)">🔄 최신으로 업데이트</button>
-  <button id="resetDataBtn" class="reset-data-btn" title="개발용: 모든 저장 데이터 초기화">🗑 데이터 초기화</button>
-  <!-- 🎰 가챠 원형 버튼 — 우측 상단 (캐릭터 이미지) -->
+  <!-- 상단 좌측: 캐시 업데이트 -->
+  <button id="updateCacheBtn" class="update-cache-btn" title="캐시만 지우고 최신 버전으로 업데이트 (저장 데이터는 유지)">🔄 업데이트</button>
+  <!-- 상단 우측: 설정 (데이터 초기화/동기화 모음) -->
+  <button id="settingsBtn" class="settings-btn" title="설정">⚙</button>
+  <!-- 🎰 가챠 원형 버튼 — 우측 하단 -->
   <button id="gachaBtn" class="gacha-circle-btn" title="🎰 가챠">
     <span id="gachaCircleEmoji">🎰</span>
     <div class="gacha-circle-label">가챠</div>
   </button>
+
+  <!-- 타이틀 -->
   <h1>DOT DEFENSE</h1>
   <div class="subtitle">픽셀 디펜스 · 능력 조합 빌더</div>
-  <!-- ▶ 이어하기 — 진행 중인 게임이 있을 때만 표시 (위쪽) -->
-  <button id="continueBtn" class="menu-btn" style="display:none;">▶ 이어하기</button>
-  <!-- ▶ 새 게임 — 항상 표시 (이어하기와 별개로) -->
-  <button id="startBtn" class="menu-btn">▶ 새 게임</button>
-  <button id="difficultyBtn" class="menu-btn" style="display:none">⚡ 난이도: 기본</button>
-  <button id="shopBtn" class="menu-btn">⭐ 강화소</button>
-  <button id="abilityPermaBtn" class="menu-btn">🌟 능력 영구 강화</button>
-  <button id="codexBtn" class="menu-btn">📖 도감</button>
-  <button id="achievementsBtn" class="menu-btn">🏅 업적</button>
-  <button id="recordsBtn" class="menu-btn">🏆 기록</button>
-  <button id="globalRankBtn" class="menu-btn">🌐 글로벌 랭킹</button>
-  <div class="nickname-display" id="nickname-display" style="margin-top:14px; font-size:13px; color:#9aa3b3; cursor:pointer;" title="클릭하여 닉네임 변경">
-    닉네임: <span id="nickname-text" style="color:#7ad7ff; font-weight:bold;">-</span> ✏️
+
+  <!-- 메인 컨테이너 — 그룹별 정렬 -->
+  <div class="menu-main">
+    <!-- 🎴 현재 선택 캐릭터 미리보기 (클릭 시 캐릭터 선택 화면으로) -->
+    <div id="menu-char-preview" class="menu-char-preview" title="클릭하여 캐릭터 변경">
+      <!-- 동적으로 채워짐 — refreshMenuCharPreview() -->
+    </div>
+
+    <!-- 메인 CTA: 이어하기 / 빠른 시작 / 새 게임 / 난이도 -->
+    <div class="menu-cta-group">
+      <button id="continueBtn" class="menu-btn menu-btn-primary" style="display:none;">▶ 이어하기</button>
+      <button id="startBtn" class="menu-btn menu-btn-primary">▶ 새 게임</button>
+      <!-- 빠른 시작 미리보기 (마지막 설정 표시) -->
+      <div id="quickStartPreview" class="quick-start-preview" style="display:none;"></div>
+      <!-- 설정 변경 (빠른 시작 가능할 때만 노출) -->
+      <button id="changeSettingsBtn" class="menu-btn menu-btn-secondary" style="display:none;">⚙ 설정 변경 (모드/캐릭터)</button>
+      <button id="difficultyBtn" class="menu-btn menu-btn-secondary" style="display:none">⚡ 난이도: 기본</button>
+    </div>
+
+    <!-- 그룹 1: 진행 관리 -->
+    <div class="menu-section">
+      <div class="menu-section-label">⭐ 진행 관리</div>
+      <div class="menu-grid">
+        <button id="shopBtn" class="menu-btn menu-btn-grid">⭐ 강화소</button>
+        <button id="abilityPermaBtn" class="menu-btn menu-btn-grid">🌟 능력 영구</button>
+      </div>
+    </div>
+
+    <!-- 그룹 2: 컬렉션 -->
+    <div class="menu-section">
+      <div class="menu-section-label">📚 컬렉션</div>
+      <div class="menu-grid menu-grid-2">
+        <button id="codexBtn" class="menu-btn menu-btn-grid">도감</button>
+        <button id="charCollectionBtn" class="menu-btn menu-btn-grid">캐릭터</button>
+      </div>
+      <div class="menu-grid menu-grid-2">
+        <button id="achievementsBtn" class="menu-btn menu-btn-grid">업적</button>
+        <button id="recordsBtn" class="menu-btn menu-btn-grid">기록</button>
+      </div>
+    </div>
+
+    <!-- 글로벌 랭킹 (와이드) -->
+    <button id="globalRankBtn" class="menu-btn menu-btn-wide">🌐 글로벌 랭킹</button>
   </div>
-  <!-- 🔄 다기기 수동 동기화 (서버 ↔ 기기 강제 새로고침) -->
-  <button id="manualSyncBtn" style="display:none; margin-top:8px; padding:6px 14px; background:rgba(122,215,255,0.08); color:#7ad7ff; border:1px solid #2a5878; border-radius:5px; font-family:inherit; font-size:11px; cursor:pointer;" title="컴퓨터 ↔ 휴대폰 데이터 강제 동기화">
-    🔄 데이터 동기화
-  </button>
+
+  <!-- 닉네임 (하단) -->
+  <div class="nickname-display" id="nickname-display" title="클릭하여 닉네임 변경">
+    닉네임: <span id="nickname-text">-</span> ✏️
+  </div>
+</div>
+
+<!-- ===== 설정 모달 (v218) — 데이터 초기화 / 동기화 / 캐시 새로고침 모음 ===== -->
+<div id="settingsModal" class="settings-modal-overlay" style="display:none;">
+  <div class="settings-modal-content">
+    <div class="settings-modal-header">
+      <h3>⚙ 설정</h3>
+      <button id="settingsModalClose" class="settings-modal-close" title="닫기">✕</button>
+    </div>
+    <div class="settings-modal-body">
+      <!-- 동기화 섹션 (로그인 상태에서만) -->
+      <div class="settings-section" id="settingsSyncSection" style="display:none;">
+        <div class="settings-section-title">🔄 데이터 동기화</div>
+        <div class="settings-section-desc">현재 진행도를 서버에 강제 푸시 + 풀</div>
+        <button id="manualSyncBtn" class="settings-action-btn">🔄 지금 동기화</button>
+      </div>
+      <!-- 위험 영역 -->
+      <div class="settings-section danger">
+        <div class="settings-section-title">⚠ 위험 영역</div>
+        <div class="settings-section-desc">개발/디버그용. 로컬 데이터 삭제 시 서버는 유지됨.</div>
+        <button id="resetDataBtn" class="settings-action-btn danger" title="개발용: 모든 저장 데이터 초기화">🗑 데이터 초기화</button>
+      </div>
+    </div>
+  </div>
 </div>
 
 <!-- ===== 🔐 인증 모달 (회원가입 / 로그인) ===== -->
@@ -1845,7 +2500,7 @@
   <div style="background:#0b0d14; border:2px solid #ffd479; border-radius:10px; max-width:520px; width:100%; max-height:90vh; max-height:90dvh; display:flex; flex-direction:column; box-shadow:0 0 40px rgba(255,212,121,0.3); overflow:hidden;">
     <!-- 헤더 -->
     <div style="padding:14px 16px; flex-shrink:0; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #2a2f3a;">
-      <div style="font-size:18px; font-weight:bold; color:#ffd479;">💎 보유 유물 <span id="relic-detail-count" style="font-size:13px; color:#9aa3b3; font-weight:normal;">0개</span></div>
+      <div style="font-size:18px; font-weight:bold; color:#ffd479;">보유 유물 <span id="relic-detail-count" style="font-size:13px; color:#9aa3b3; font-weight:normal;">0개</span></div>
       <button id="relicDetailClose" style="background:#2a2f3a; color:#fff; border:none; padding:6px 12px; border-radius:6px; cursor:pointer; font-size:12px;">✕ 닫기</button>
     </div>
     <!-- 본문 -->
@@ -1954,11 +2609,15 @@
   </div>
 </div>
 
-<!-- ===== 캐릭터 선택 화면 ===== -->
+<!-- ===== 캐릭터 화면 — 도감(메뉴 진입) / 선택(새 게임 진입) 둘 다 사용 ===== -->
 <div id="characterScreen" class="screen">
   <div class="codex-header">
-    <h2>캐릭터 선택</h2>
+    <h2 id="character-screen-title">캐릭터 선택</h2>
     <button id="characterBack" class="codex-back">← 메뉴로</button>
+  </div>
+  <!-- 🎴 v221 — 현재 선택 캐릭터 큰 카드 (상단 hero) -->
+  <div id="character-hero" class="char-hero">
+    <!-- 동적으로 채워짐 — refreshCharacterHero() -->
   </div>
   <div class="codex-tabs" id="char-tabs">
     <button class="codex-tab active" data-chartab="all">📦 전체</button>
@@ -2036,7 +2695,7 @@
 
 <!-- ===== 🎰 가챠 결과 화면 ===== -->
 <div id="gachaResultScreen" class="screen">
-  <div class="gacha-result-title">✨ 뽑기 결과</div>
+  <div class="gacha-result-title">뽑기 결과</div>
   <div id="gacha-result-cards" class="gacha-result-cards"></div>
   <div id="gacha-result-summary" class="gacha-result-summary"></div>
   <div class="gacha-result-actions">
@@ -2117,7 +2776,13 @@
     <button class="codex-tab" data-tab="passive">패시브</button>
     <button class="codex-tab" data-tab="combo">조합</button>
     <button class="codex-tab" data-tab="triple">히든</button>
-    <button class="codex-tab" data-tab="relic">💎 유물</button>
+    <button class="codex-tab" data-tab="relic">유물</button>
+  </div>
+  <!-- 🎯 v224 — 필터 칩 (검색은 제거 — 모바일에서 자리만 차지) -->
+  <div class="codex-filter-chips">
+    <button class="codex-filter-chip active" data-codexfilter="all">전체</button>
+    <button class="codex-filter-chip" data-codexfilter="owned">🔓 해금</button>
+    <button class="codex-filter-chip" data-codexfilter="locked">🔒 잠김</button>
   </div>
   <div id="codex-list"></div>
 </div>
@@ -2126,12 +2791,14 @@
   <canvas id="game" width="640" height="640"></canvas>
   <div id="panel">
     <div id="stats">
+      <!-- 🔝 핵심 스탯 — 라운드 + 골드 (큼, 강조) -->
       <div class="row primary round"><span class="label">라운드</span><span id="s-round">1</span></div>
-      <div class="row"><span class="label">시간</span><span id="s-time">20.0s</span></div>
+      <div class="row secondary"><span class="label">시간</span><span id="s-time">20.0s</span></div>
       <div class="bar warn"><i id="s-timebar" style="width:100%"></i></div>
       <div class="row primary gold"><span class="label">골드</span><span id="s-gold">0</span></div>
-      <div class="row"><span class="label">점수</span><span id="s-score">0</span></div>
-      <div class="row"><span class="label">적</span><span id="s-enemies">0 / 80</span></div>
+      <!-- 🟡 보조 스탯 — 점수 + 적 -->
+      <div class="row secondary"><span class="label">점수</span><span id="s-score">0</span></div>
+      <div class="row secondary"><span class="label">적</span><span id="s-enemies">0 / 80</span></div>
       <div class="bar"><i id="s-enemybar" style="width:0%"></i></div>
       <!-- 🏰 디펜스 모드 (TD) 전용: 본진 HP -->
       <div id="s-defense-block" style="display:none;">
@@ -2140,13 +2807,16 @@
         </div>
         <div class="bar"><i id="s-towerhp-bar" style="width:100%; background:#ff5b6e;"></i></div>
       </div>
-      <div class="row"><span class="label">레벨</span><span id="s-plevel">Lv1 (0/8)</span></div>
-      <div class="row"><span class="label">누적 처치</span><span id="s-totalkills">0</span></div>
+      <!-- ⚪ 보조 스탯 — 레벨 + 누적 처치 (작게) -->
+      <div class="stats-tertiary-group">
+        <div class="row tertiary"><span class="label">레벨</span><span id="s-plevel">Lv1 (0/8)</span></div>
+        <div class="row tertiary"><span class="label">누적 처치</span><span id="s-totalkills">0</span></div>
+      </div>
     </div>
     <hr/>
     <button id="randomBtn">🎲 랜덤 능력 획득 (50G)</button>
     <!-- 🏰 디펜스 모드: 슬롯 클릭 직접 사용 — 뽑기 버튼 제거됨 (v165) -->
-    <button id="relicViewBtn" class="relic-view-btn empty">💎 유물 <span id="relic-view-count">0개</span></button>
+    <button id="relicViewBtn" class="relic-view-btn empty">유물 <span id="relic-view-count">0개</span></button>
     <div class="ab-tabs">
       <button class="ab-tab active" data-abtab="active">액티브 <span id="ab-active-count">0/6</span></button>
       <button class="ab-tab" data-abtab="passive">패시브 <span id="ab-passive-count">0/6</span></button>
@@ -10453,6 +11123,12 @@
     if (state.goldBonusScore > 0) {
       state.score += state.goldBonusScore;
     }
+    // 🏆 v225 — 신기록 감지 (saveRecord 전에 캡처) + 결과 화면 애니메이션 시작 시각
+    const prevBestScore = (META.records && META.records.length > 0)
+      ? Math.max.apply(null, META.records.map(r => r.score || 0))
+      : 0;
+    state.isNewRecord = state.score > 0 && state.score > prevBestScore;
+    state.gameOverAnimStart = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
     earnStardust();
     earnCrystals();
     recordCharUsage();        // 캐릭터 사용 라운드 기록
@@ -12308,7 +12984,18 @@
     META.crystals = (META.crystals || 0) - n;
     META.crystalsSpent = (META.crystalsSpent || 0) + n;   // 🛡 누적 소비 카운터
     saveMeta();
+    // 🎯 v226 — 결정 감소 펄스 (가챠 화면에서)
+    setTimeout(() => _pulseEl(document.getElementById('crystal-count'), true), 0);
     return true;
+  }
+  // 🎯 v226 — 숫자 변경 펄스 헬퍼 (애니메이션 재시작 위해 클래스 재설정)
+  function _pulseEl(el, down) {
+    if (!el) return;
+    const cls = down ? '_num-pulse-down' : '_num-pulse';
+    el.classList.remove(cls);
+    void el.offsetWidth;   // force reflow → 애니메이션 재시작
+    el.classList.add(cls);
+    setTimeout(() => el && el.classList && el.classList.remove(cls), 600);
   }
   function addCrystals(n) {
     META.crystals = (META.crystals || 0) + n;
@@ -12506,6 +13193,8 @@
     META.abilityPerma[id] = lv + 1;
     saveMeta();
     if (typeof queueServerSync === 'function') queueServerSync(true);
+    // 🎯 v226 — 스타더스트 감소 펄스
+    setTimeout(() => _pulseEl(document.getElementById('perma-stardust-count'), true), 0);
     return true;
   }
 
@@ -12604,6 +13293,8 @@
     // 강화소 구매는 중요한 영구 진행 → 즉시 서버 동기화 (디바운스 X)
     if (typeof queueServerSync === 'function') queueServerSync(true);
     SFX.combo();
+    // 🎯 v226 — 스타더스트 감소 펄스 (다음 프레임에 buildShop 호출 후 반영)
+    setTimeout(() => _pulseEl(document.getElementById('stardust-count'), true), 0);
     return true;
   }
   function earnStardust() {
@@ -14362,6 +15053,10 @@
       state.bossesSpawnedThisRound = (state.bossesSpawnedThisRound || 0) + 1;
       shake(15, 12);
       SFX.bossSpawn();
+      // 🐲 v220 — 보스 등장 알림 (각 라운드 첫 보스만)
+      if (state.bossesSpawnedThisRound === 1) {
+        state.bossWarning = { life: 50 };
+      }
     }
     if (state.gameOver) return;
 
@@ -14388,6 +15083,8 @@
       state.waveClearText = {
         round: state.round, bonus, timeSaved, life: 70,
       };
+      // 🌟 v220 — 라운드 클리어 시 부드러운 골드 sweep
+      state.roundClearSweep = { life: 36 };
       toast(`R${state.round} 클리어! +${bonus} (${timeSaved.toFixed(1)}s 단축)`);
       advanceRound();
     }
@@ -14702,6 +15399,16 @@
     if (state.waveClearText) {
       state.waveClearText.life--;
       if (state.waveClearText.life <= 0) state.waveClearText = null;
+    }
+    // 🌟 v220 — 라운드 클리어 골드 sweep
+    if (state.roundClearSweep) {
+      state.roundClearSweep.life--;
+      if (state.roundClearSweep.life <= 0) state.roundClearSweep = null;
+    }
+    // 🐲 v220 — 보스 등장 워닝
+    if (state.bossWarning) {
+      state.bossWarning.life--;
+      if (state.bossWarning.life <= 0) state.bossWarning = null;
     }
     // 화면 흔들림 잔여 감소
     if (state.shakeFrames > 0) {
@@ -15689,32 +16396,102 @@
     ctx.globalAlpha = 1;
   }
   function drawOverlay() {
+    // ⏸ 일시정지 — 현재 라운드/점수 미리 표시 (v225)
     if (paused && !state.gameOver) {
-      ctx.fillStyle = 'rgba(0,0,0,0.5)'; ctx.fillRect(0,0,W,H);
-      ctx.fillStyle = '#fff'; ctx.textAlign='center'; ctx.font='28px Jua, sans-serif';
-      ctx.fillText('PAUSED', CX, CY - 10);
-      ctx.font='14px Jua, sans-serif'; ctx.fillText('Space 로 재개', CX, CY + 20);
+      ctx.fillStyle = 'rgba(0,0,0,0.55)'; ctx.fillRect(0,0,W,H);
+      ctx.textAlign='center';
+      // PAUSED 큰 텍스트
+      ctx.fillStyle = '#fff'; ctx.font='bold 30px Jua, sans-serif';
+      ctx.fillText('PAUSED', CX, CY - 36);
+      // 현재 상황 표시
+      ctx.fillStyle = '#cfd6e3'; ctx.font='14px Jua, sans-serif';
+      const ascSuf = (state.ascension && state.ascension > 0) ? ` ⚡${state.ascension}` : '';
+      ctx.fillText(`라운드 ${state.round}${ascSuf}`, CX, CY - 8);
+      ctx.fillStyle = '#ffd479'; ctx.font='bold 16px Jua, sans-serif';
+      ctx.fillText(state.score.toLocaleString() + ' 점', CX, CY + 14);
+      // 재개 힌트
+      ctx.fillStyle = '#7a8090'; ctx.font='12px Jua, sans-serif';
+      ctx.fillText('Space 로 재개', CX, CY + 42);
       ctx.textAlign='start';
     }
+    // 💀 게임오버/승리 화면 — 애니메이션 적용 (v225)
     if (state.gameOver) {
-      ctx.fillStyle = 'rgba(0,0,0,0.75)'; ctx.fillRect(0,0,W,H);
-      if (state.gameWin) {
-        ctx.fillStyle = '#ffe070'; ctx.textAlign='center'; ctx.font='36px Jua, sans-serif';
-        ctx.fillText(state.endless ? '♾ ENDLESS END' : 'VICTORY', CX, CY - 40);
-      } else {
-        ctx.fillStyle = '#ff8a98'; ctx.textAlign='center'; ctx.font='36px Jua, sans-serif';
-        ctx.fillText('GAME OVER', CX, CY - 40);
-      }
-      if (state.gameOverReason) {
+      const startT = state.gameOverAnimStart || 0;
+      const nowT = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+      const elapsed = Math.max(0, (nowT - startT) / 1000);   // 초 단위
+
+      // 페이드 배경 (0~0.3초 fade-in)
+      const bgAlpha = Math.min(0.78, elapsed * 2.6);
+      ctx.fillStyle = `rgba(0,0,0,${bgAlpha})`;
+      ctx.fillRect(0,0,W,H);
+
+      // 타이틀 페이드인 + 살짝 zoom (0-0.4초)
+      const titleProgress = Math.min(1, elapsed / 0.4);
+      const titleAlpha = titleProgress;
+      const titleScale = 1.0 + (1 - titleProgress) * 0.25;   // 1.25 → 1.0
+      ctx.save();
+      ctx.globalAlpha = titleAlpha;
+      ctx.translate(CX, CY - 56);
+      ctx.scale(titleScale, titleScale);
+      ctx.textAlign='center';
+      const titleColor = state.gameWin ? '#ffe070' : '#ff8a98';
+      ctx.fillStyle = titleColor;
+      ctx.shadowColor = titleColor;
+      ctx.shadowBlur = 18 * titleAlpha;
+      ctx.font='bold 42px Jua, sans-serif';
+      const titleText = state.gameWin
+        ? (state.endless ? '♾ ENDLESS END' : 'VICTORY')
+        : 'GAME OVER';
+      ctx.fillText(titleText, 0, 0);
+      ctx.shadowBlur = 0;
+      ctx.restore();
+
+      // ✨ NEW RECORD 배지 (신기록일 때만, 타이틀 안정 후)
+      if (state.isNewRecord && elapsed > 0.4) {
+        const pulseT = (elapsed - 0.4) * 2;
+        const pulseAlpha = 0.7 + 0.3 * Math.sin(pulseT * Math.PI * 1.2);
+        ctx.save();
+        ctx.globalAlpha = pulseAlpha;
+        ctx.textAlign='center';
+        ctx.fillStyle = '#88ff88';
+        ctx.shadowColor = '#88ff88';
+        ctx.shadowBlur = 12;
+        ctx.font='bold 14px Jua, sans-serif';
+        ctx.fillText('NEW RECORD', CX, CY - 22);
+        ctx.shadowBlur = 0;
+        ctx.restore();
+      } else if (state.gameOverReason && elapsed > 0.5) {
+        // 사유 텍스트 (신기록 없을 때만)
+        const reasonAlpha = Math.min(1, (elapsed - 0.5) / 0.3);
+        ctx.save();
+        ctx.globalAlpha = reasonAlpha;
+        ctx.textAlign='center';
         ctx.fillStyle = state.gameWin ? '#fff080' : '#ffaaaa';
         ctx.font='14px Jua, sans-serif';
-        ctx.fillText(state.gameOverReason, CX, CY - 12);
+        ctx.fillText(state.gameOverReason, CX, CY - 22);
+        ctx.restore();
       }
+
+      // 라운드 + 점수 카운트업 (0.5~1.4초)
+      const statsAlpha = Math.min(1, Math.max(0, (elapsed - 0.4) / 0.3));
+      ctx.save();
+      ctx.globalAlpha = statsAlpha;
+      ctx.textAlign='center';
       ctx.fillStyle = '#fff'; ctx.font='16px Jua, sans-serif';
-      // 엔드리스에서 사망 시: 실제 도달 라운드 표시. R100 클리어 후 거부: R100 고정.
       const lastRound = (state.endless || !state.gameWin) ? state.round : MAX_ROUND;
       const roundTxt = state.endless ? `♾ 도달 R${lastRound}` : `도달 라운드: ${lastRound}`;
-      ctx.fillText(`${roundTxt}   점수: ${state.score.toLocaleString()}`, CX, CY + 14);
+      // 점수 카운트업 (0.5~1.5초)
+      const countProgress = Math.max(0, Math.min(1, (elapsed - 0.5) / 1.0));
+      // easeOutCubic — 천천히 멈춤
+      const eased = 1 - Math.pow(1 - countProgress, 3);
+      const displayScore = Math.floor(state.score * eased);
+      ctx.fillText(`${roundTxt}   점수: ${displayScore.toLocaleString()}`, CX, CY + 14);
+      ctx.restore();
+      // 보상 통계 — 점수 카운트업 끝난 후 (1.5초 후) 한꺼번에 페이드인
+      const rewardsAlpha = Math.min(1, Math.max(0, (elapsed - 1.3) / 0.4));
+      ctx.save();
+      ctx.globalAlpha = rewardsAlpha;
+      ctx.textAlign='center';
       let lineY = CY + 38;
       // 남은 골드 → 점수 환산 표시
       if (state.goldBonusScore && state.goldBonusScore > 0) {
@@ -15760,6 +16537,12 @@
         ctx.fillText(`🔁 반복 업적: +${state.repeatStardust} ★`, CX, lineY);
         lineY += 16;
       }
+      ctx.restore();   // 보상 페이드인 그룹 종료
+
+      // 버튼 영역 — 보상 끝난 후 (1.6초 후) 페이드인
+      const btnAlpha = Math.min(1, Math.max(0, (elapsed - 1.6) / 0.3));
+      ctx.save();
+      ctx.globalAlpha = btnAlpha;
       // 다시하기 / 딜량 통계 / 메인메뉴 버튼 (캔버스 클릭 + R / ESC 단축키도 유지)
       const btnW = 124, btnH = 44, btnGap = 10;
       const totalBtnW = btnW * 3 + btnGap * 2;
@@ -15802,6 +16585,7 @@
       ctx.fillStyle = '#5a6068';
       ctx.font = '10px Jua, sans-serif';
       ctx.fillText('R = 다시하기  ·  ESC = 메인 메뉴', CX, btnYg + btnH + 16);
+      ctx.restore();   // 버튼 페이드인 그룹 종료
       ctx.textAlign='start';
     } else {
       state._retryBtn = null;
@@ -15835,11 +16619,72 @@
     drawWaveClear();
     drawBossUI();
     drawThunderStrikes(); // ⚡ 천둥의 신 번개 줄기
-    drawRelicHUD();    // 💎 보유 유물 아이콘 (모달 뒤에 그려야 함)
+    drawEffects();        // 🎬 v220 — 보스 워닝/HP 위급/클리어 sweep
+    drawRelicHUD();
     drawOverlay();
     drawLevelUpModal();
     drawRelicOffering();
-    drawEndlessOffer();  // ♾ R100 클리어 후 엔드리스 선택
+    drawEndlessOffer();
+  }
+
+  // 🎬 v220 — 절제된 시각 효과 (눈 안 아프게 부드럽게)
+  function drawEffects() {
+    // 1) 라운드 클리어 — 골드 가로 sweep (한 번만 흐름)
+    if (state.roundClearSweep) {
+      const t = 1 - state.roundClearSweep.life / 36;   // 0 → 1
+      const sweepX = -W * 0.3 + t * (W * 1.6);          // 좌측 밖 → 우측 밖
+      const alpha = Math.sin(t * Math.PI) * 0.25;       // 부드러운 산 모양
+      const grad = ctx.createLinearGradient(sweepX - 80, 0, sweepX + 80, 0);
+      grad.addColorStop(0, 'rgba(255, 212, 121, 0)');
+      grad.addColorStop(0.5, `rgba(255, 212, 121, ${alpha})`);
+      grad.addColorStop(1, 'rgba(255, 212, 121, 0)');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, W, H);
+    }
+    // 2) 본진 HP 위급 — 가장자리 빨간 vignette pulse (디펜스 모드)
+    if (state.mode === 'defense' && state.towerHP > 0 && state.towerMaxHP > 0) {
+      const hpPct = state.towerHP / state.towerMaxHP;
+      if (hpPct < 0.30) {
+        // HP 30% 미만 → 가장자리 빨간 펄스 (느린 sine)
+        const phase = (state.t || 0) * 0.04;
+        const baseAlpha = hpPct < 0.10 ? 0.35 : 0.20;
+        const alpha = baseAlpha * (0.6 + 0.4 * Math.sin(phase));
+        // 가장자리 vignette (라디얼 그라데이션)
+        const grad = ctx.createRadialGradient(CX, CY, Math.min(W, H) * 0.35, CX, CY, Math.max(W, H) * 0.7);
+        grad.addColorStop(0, 'rgba(255, 80, 100, 0)');
+        grad.addColorStop(1, `rgba(255, 50, 80, ${alpha})`);
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, W, H);
+      }
+    }
+    // 3) 보스 등장 워닝 — "BOSS" 텍스트 fade in/out
+    if (state.bossWarning) {
+      const t = 1 - state.bossWarning.life / 50;     // 0 → 1
+      // 0~0.4: fade in, 0.4~0.7: hold, 0.7~1.0: fade out
+      let alpha;
+      if (t < 0.4) alpha = t / 0.4;
+      else if (t < 0.7) alpha = 1;
+      else alpha = (1 - t) / 0.3;
+      alpha = Math.max(0, Math.min(1, alpha));
+      // 살짝 어두워지는 vignette
+      ctx.fillStyle = `rgba(0, 0, 0, ${alpha * 0.25})`;
+      ctx.fillRect(0, 0, W, H);
+      // 텍스트
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      ctx.textAlign = 'center';
+      ctx.font = 'bold 36px Jua, sans-serif';
+      ctx.fillStyle = '#ff5b6e';
+      ctx.shadowColor = 'rgba(255, 91, 110, 0.8)';
+      ctx.shadowBlur = 20;
+      ctx.fillText('⚠ BOSS', CX, CY - 20);
+      ctx.shadowBlur = 0;
+      ctx.font = '14px Jua, sans-serif';
+      ctx.fillStyle = '#ffaaaa';
+      ctx.fillText('보스 등장', CX, CY + 14);
+      ctx.restore();
+      ctx.textAlign = 'start';
+    }
   }
   // ⚡ 천둥의 신 — 번개 줄기 시각 효과
   function drawThunderStrikes() {
@@ -16520,7 +17365,7 @@
     ctx.fillStyle = '#ffd479';
     ctx.font = 'bold 24px Jua, sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('💎 보스의 유물 💎', CX, 48);
+    ctx.fillText('보스의 유물', CX, 48);
     ctx.fillStyle = '#9aa3b3';
     ctx.font = '12px Jua, sans-serif';
     ctx.fillText('하나를 선택하세요 (영원히 이번 게임에 적용)', CX, 68);
@@ -16747,7 +17592,7 @@
     ctx.fillStyle = '#ffd479';
     ctx.font = 'bold 12px Jua, sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('✨ 조합 완성 ✨', 0, -ch/2 + 18);
+    ctx.fillText('조합 완성', 0, -ch/2 + 18);
     // 이름
     ctx.fillStyle = def.color;
     ctx.font = 'bold 24px Jua, sans-serif';
@@ -16872,9 +17717,20 @@
       const y = cardY;
       const isBonus = c.action === 'bonusScore' || c.action === 'bonusStardust';
 
-      // 외곽 글로우 (티어가 좋을수록 강함)
+      // 🎯 v227 — 카드 눌림 효과 (pointerdown 시 살짝 작게 + 글로우 강조)
+      const isPressed = state.cardPressIdx === i;
+      ctx.save();
+      if (isPressed) {
+        const cx = x + cardW / 2;
+        const cy = y + cardH / 2;
+        ctx.translate(cx, cy);
+        ctx.scale(0.95, 0.95);
+        ctx.translate(-cx, -cy);
+      }
+
+      // 외곽 글로우 (티어가 좋을수록 강함) — 눌릴 때 강조
       if (p.glow) {
-        ctx.fillStyle = p.glow;
+        ctx.fillStyle = isPressed ? 'rgba(255, 255, 255, 0.2)' : p.glow;
         ctx.fillRect(x - 8, y - 8, cardW + 16, cardH + 16);
       }
       // 살짝 펄스하는 트리플
@@ -17123,6 +17979,7 @@
       ctx.fillStyle = p.accent;
       ctx.font = 'bold 15px Jua, sans-serif';
       ctx.fillText(`[${i + 1}]`, x + cardW/2, y + cardH - 12);
+      ctx.restore();   // 🎯 v227 — 카드 눌림 변형 종료
     }
 
     // 하단 버튼 — 리롤 / 취소 (있을 때만)
@@ -17549,6 +18406,33 @@
     if (e.code === 'Digit2') setSpeed(2);
     if (e.code === 'Digit3') setSpeed(3);
   });
+  // 🎯 v227 — 캔버스 카드 눌림 효과 (pointerdown 위치 추적)
+  function _canvasCardIdxAt(ev) {
+    if (!state.levelUpChoices) return -1;
+    const rect = canvas.getBoundingClientRect();
+    const x = (ev.clientX - rect.left) * (W / rect.width);
+    const y = (ev.clientY - rect.top) * (H / rect.height);
+    const cardW = 175, cardH = 290, gap = 12;
+    const totalW = cardW * 3 + gap * 2;
+    const startX = (W - totalW) / 2;
+    const cardY = (H - cardH) / 2 - 10;
+    for (let i = 0; i < state.levelUpChoices.length; i++) {
+      const x0 = startX + i * (cardW + gap);
+      if (x >= x0 && x <= x0 + cardW && y >= cardY && y <= cardY + cardH) {
+        return i;
+      }
+    }
+    return -1;
+  }
+  canvas.addEventListener('pointerdown', (ev) => {
+    const idx = _canvasCardIdxAt(ev);
+    if (idx >= 0) state.cardPressIdx = idx;
+  });
+  const _clearCardPress = () => { state.cardPressIdx = undefined; };
+  canvas.addEventListener('pointerup', _clearCardPress);
+  canvas.addEventListener('pointercancel', _clearCardPress);
+  canvas.addEventListener('pointerleave', _clearCardPress);
+
   // 캔버스 클릭으로 카드 선택 (모바일 터치 포함)
   canvas.addEventListener('click', (ev) => {
     const rect = canvas.getBoundingClientRect();
@@ -18010,19 +18894,55 @@
   }
   // 🔄 메뉴 버튼 상태 갱신 — showScreen('menu') 진입 시 + 서버 pull 완료 후 호출
   function refreshMenuButtons() {
-    const inProgress = state && !state.gameOver && state.tower &&
-                       (state.round > 1 || (state.totalKills || 0) > 0 || (state.score || 0) > 0);
-    // ▶ 이어하기: 진행 중일 때만 표시 (새 게임 위쪽)
+    // 🐛 v228 — 게임 시작 직후 (R1, kills 0)에도 이어하기 노출 → 카드 모달 상태 보존
+    //   기존 조건 (round>1 OR kills>0 OR score>0)은 카드 모달 떠있는데 진행 카운트 0이면 숨겨버려서
+    //   사용자가 "빠른 시작"을 이어하기로 착각 클릭 → reset() → R1 새 게임으로 보임.
+    const inProgress = state && !state.gameOver && state.tower;
+    // ▶ 이어하기: 게임 시작 후 게임오버 전까지 항상 표시
     const continueBtn = document.getElementById('continueBtn');
     if (continueBtn) continueBtn.style.display = inProgress ? '' : 'none';
-    // ▶ 새 게임: 항상 표시 — 라벨 고정
+    // 🚀 v223+v228 — 빠른 시작 vs 새 게임 vs 처음부터 다시 (진행 중일 때 구분)
     const startBtn = document.getElementById('startBtn');
-    if (startBtn) startBtn.textContent = '▶ 새 게임';
+    const qsPreview = document.getElementById('quickStartPreview');
+    const changeBtn = document.getElementById('changeSettingsBtn');
+    const hasLastSettings = !!(META.lastSelectedMode && selectedCharacter);
+    if (startBtn) {
+      if (inProgress) {
+        // 게임 진행 중 — "처음부터 다시" 명확히 (이어하기와 시각적 구분)
+        startBtn.textContent = '🔄 처음부터 다시';
+        startBtn.dataset.quickStart = hasLastSettings ? '1' : '0';
+        startBtn.classList.add('menu-btn-restart');   // 보조 스타일
+      } else {
+        startBtn.classList.remove('menu-btn-restart');
+        if (hasLastSettings) {
+          startBtn.textContent = '▶ 빠른 시작';
+          startBtn.dataset.quickStart = '1';
+        } else {
+          startBtn.textContent = '▶ 새 게임';
+          startBtn.dataset.quickStart = '0';
+        }
+      }
+    }
+    if (qsPreview) {
+      if (hasLastSettings && !inProgress) {   // 진행 중일 땐 미리보기 숨김
+        const modeLabel = META.lastSelectedMode === 'defense' ? '🏰 디펜스' : '⚔️ 표준';
+        const char = CHARACTERS[selectedCharacter] || CHARACTERS.standard;
+        const ascLabel = (typeof ascensionLabel === 'function')
+          ? ascensionLabel(getSelectedAscension())
+          : `승천 ${getSelectedAscension() || 0}`;
+        qsPreview.innerHTML = `<span class="qs-val">${modeLabel}</span> · <span class="qs-val" style="color:${char.color || '#cfd6e3'}">${char.name}</span> · <span class="qs-val">${ascLabel}</span>`;
+        qsPreview.style.display = '';
+      } else {
+        qsPreview.style.display = 'none';
+      }
+    }
+    // 설정 변경 버튼도 진행 중일 땐 숨김 (이어하기 우선)
+    if (changeBtn) changeBtn.style.display = (hasLastSettings && !inProgress) ? '' : 'none';
     // 🎰 가챠 원형 버튼 갱신
     if (typeof refreshGachaCircleBtn === 'function') refreshGachaCircleBtn();
-    // 🔄 다기기 동기화 버튼 — 로그인 상태에서만 노출
-    const syncBtn = document.getElementById('manualSyncBtn');
-    if (syncBtn) syncBtn.style.display = (typeof isAccountLoggedIn === 'function' && isAccountLoggedIn()) ? '' : 'none';
+    // 🔄 다기기 동기화 섹션 — 로그인 상태에서만 노출 (설정 모달 안)
+    const syncSec = document.getElementById('settingsSyncSection');
+    if (syncSec) syncSec.style.display = (typeof isAccountLoggedIn === 'function' && isAccountLoggedIn()) ? '' : 'none';
     // 승천 해금된 경우 난이도 버튼 표시
     const diffBtn = document.getElementById('difficultyBtn');
     if (diffBtn) {
@@ -18033,7 +18953,77 @@
         diffBtn.style.display = 'none';
       }
     }
+    // 🎴 v221 — 현재 선택 캐릭터 미리보기 갱신
+    if (typeof refreshMenuCharPreview === 'function') refreshMenuCharPreview();
   }
+
+  // 🎴 v221 — 메뉴 캐릭터 미리보기 (카드 스타일)
+  //   이미지 있으면 이미지 + 텍스트, 없으면 텍스트만. 카드 색상은 등급별/캐릭터별 자동.
+  function refreshMenuCharPreview() {
+    const el = document.getElementById('menu-char-preview');
+    if (!el) return;
+    const id = selectedCharacter || 'standard';
+    const char = CHARACTERS[id];
+    if (!char) { el.style.display = 'none'; return; }
+    const imgSrc = (typeof getCharacterImageSrc === 'function') ? getCharacterImageSrc(id) : null;
+    const isGacha = !!char.isGacha;
+    // 카드 컬러: 등급(SSR/SR/R) 우선, 없으면 캐릭터 컬러
+    let cardColor = char.color || '#7ad7ff';
+    if (char.rarity === 'SSR') cardColor = '#ffd479';
+    else if (char.rarity === 'SR') cardColor = '#c084ff';
+    else if (char.rarity === 'R')  cardColor = '#7ad7ff';
+    el.style.setProperty('--card-color', cardColor);
+    // 등급 라벨
+    const rarityTag = char.rarity
+      ? `<div class="preview-rarity-tag">${char.rarity}</div>`
+      : '';
+    // 별 진행도 (가챠 캐릭터만)
+    let starsHTML = '';
+    if (isGacha && typeof getCharStars === 'function') {
+      const stars = getCharStars(id);
+      const dmgBonus = typeof getCharStarDmgBonus === 'function' ? Math.round(getCharStarDmgBonus(id) * 100) : 0;
+      const starColor = stars >= 8 ? '#ff80ff' : (stars >= 4 ? '#ffd060' : '#ffd479');
+      starsHTML = `<div class="preview-stars" style="color:${starColor};">${'★'.repeat(stars)}${'☆'.repeat(8 - stars)} <span style="font-size:10px;color:#9aa3b3;">+${dmgBonus}%</span></div>`;
+    }
+    // 이미지 있을 때만 이미지 자리 표시
+    const imgHTML = imgSrc
+      ? `<div class="preview-img-wrap"><img src="${imgSrc}" alt="${char.name}" onerror="this.parentElement.style.display='none'"/></div>`
+      : '';
+    el.innerHTML = `
+      ${rarityTag}
+      ${imgHTML}
+      <div class="preview-info">
+        <div class="preview-label">선택된 캐릭터</div>
+        <div class="preview-name" style="color:${char.color || '#7ad7ff'};">${char.name}</div>
+        ${starsHTML}
+      </div>
+      <span class="preview-arrow">›</span>
+    `;
+    el.style.display = '';
+  }
+  // 클릭하면 캐릭터 선택 화면으로 (새 게임 흐름 우회 직접 이동)
+  // 🎴 v233 — 메뉴 캐릭터 미리보기 클릭 → 도감 모드로 진입 (보기 + 변경 가능)
+  function _openCharScreenAsCollection() {
+    if (typeof _characterScreenMode !== 'undefined') {
+      _characterScreenMode = 'collection';
+      if (typeof _applyCharScreenMode === 'function') _applyCharScreenMode();
+    }
+    if (typeof buildCharacterList === 'function') buildCharacterList();
+    if (typeof showScreen === 'function') showScreen('character');
+    if (typeof SFX !== 'undefined' && SFX.click) SFX.click();
+  }
+  document.addEventListener('DOMContentLoaded', () => {
+    const _menuCharPrev = document.getElementById('menu-char-preview');
+    if (_menuCharPrev) _menuCharPrev.onclick = _openCharScreenAsCollection;
+  });
+  // 이미 DOMContentLoaded 지났을 가능성 대비 — 즉시 시도도 1번
+  (function bindMenuCharPreviewNow() {
+    const el = document.getElementById('menu-char-preview');
+    if (el && !el._clickBound) {
+      el._clickBound = true;
+      el.onclick = _openCharScreenAsCollection;
+    }
+  })();
 
   // ===== 🎮 치트 시스템 (메뉴에서 "123123123" 입력) =====
   const CHEAT_CODE = '123123123';
@@ -18187,9 +19177,45 @@
       }
     };
   }
+  // 🚀 v223+v228 — startBtn: 빠른 시작 / 새 게임 / 처음부터 다시
   document.getElementById('startBtn').onclick = () => {
-    showScreen('mode');
+    const btn = document.getElementById('startBtn');
+    const quickMode = btn && btn.dataset.quickStart === '1';
+    // 🛡 v228 — 진행 중인 게임 있을 때 확인 (실수로 새 게임 시작 방지)
+    const isInProgress = state && !state.gameOver && state.tower;
+    if (isInProgress) {
+      if (!confirm('현재 진행 중인 게임이 사라집니다.\n정말 처음부터 다시 시작할까요?')) return;
+    }
+    if (quickMode && META.lastSelectedMode && selectedCharacter && isCharUnlocked(selectedCharacter)) {
+      // 마지막 설정 그대로 즉시 게임 시작
+      SFX.click();
+      // 디펜스 모드는 캐릭터 무관 → 빈 값으로 진행
+      if (META.lastSelectedMode === 'defense') {
+        const savedChar = selectedCharacter;
+        selectedCharacter = 'standard';
+        reset();
+        selectedCharacter = savedChar;
+      } else {
+        reset();
+      }
+      paused = false;
+      const pauseBtn = document.getElementById('pauseBtn');
+      if (pauseBtn) pauseBtn.textContent = '⏸ 일시정지';
+      renderPanel();
+      showScreen('game');
+    } else {
+      // 첫 플레이 또는 잠긴 캐릭터 → 모드 선택부터
+      showScreen('mode');
+    }
   };
+  // 🚀 v223 — 설정 변경 버튼: 모드 선택부터 정상 흐름
+  const _changeBtn = document.getElementById('changeSettingsBtn');
+  if (_changeBtn) {
+    _changeBtn.onclick = () => {
+      SFX.click();
+      showScreen('mode');
+    };
+  }
   // ▶ 이어하기 — 진행 중인 게임 재개
   const _continueBtn = document.getElementById('continueBtn');
   if (_continueBtn) {
@@ -18219,6 +19245,11 @@
         showScreen('game');
         return;
       }
+      // 🎴 v233 — 새 게임 흐름에서 진입 시 선택 모드로
+      if (typeof _characterScreenMode !== 'undefined') {
+        _characterScreenMode = 'select';
+        if (typeof _applyCharScreenMode === 'function') _applyCharScreenMode();
+      }
       buildCharacterList();
       updateCharStartButton();
       showScreen('character');
@@ -18230,6 +19261,25 @@
     showScreen('codex');
   };
   document.getElementById('codexBack').onclick = () => showScreen('menu');
+  // 🎴 v232 — 캐릭터 도감 (메인 메뉴에서 직접 진입)
+  //   v233 — 진입 경로에 따라 헤더/하단 바 표시 분기 ('도감' vs '선택')
+  let _characterScreenMode = 'select';   // 'select' (게임 시작 흐름) | 'collection' (도감 보기)
+  function _applyCharScreenMode() {
+    const title = document.getElementById('character-screen-title');
+    const floatBar = document.querySelector('.char-floating-bar');
+    if (title) title.textContent = _characterScreenMode === 'collection' ? '캐릭터 도감' : '캐릭터 선택';
+    // 도감 모드에선 하단 "▶ 게임 시작" 플로팅 바 숨김 (보기 전용)
+    if (floatBar) floatBar.style.display = _characterScreenMode === 'collection' ? 'none' : '';
+  }
+  const _charCollBtn = document.getElementById('charCollectionBtn');
+  if (_charCollBtn) {
+    _charCollBtn.onclick = () => {
+      _characterScreenMode = 'collection';
+      _applyCharScreenMode();
+      buildCharacterList();
+      showScreen('character');
+    };
+  }
   // 🌐 글로벌 랭킹 메뉴 + 닉네임 변경 + 모달
   document.getElementById('globalRankBtn').onclick = () => {
     if (!getNickname()) { openNicknameModal(true); return; }
@@ -18317,6 +19367,27 @@
   document.getElementById('recordDetailBack').onclick = () => showScreen('records');
   document.getElementById('shopBtn').onclick = () => { buildShop(); showScreen('shop'); };
   document.getElementById('shopBack').onclick = () => showScreen('menu');
+  // ⚙ 설정 모달 (v218)
+  const _settingsBtn = document.getElementById('settingsBtn');
+  const _settingsModal = document.getElementById('settingsModal');
+  const _settingsClose = document.getElementById('settingsModalClose');
+  if (_settingsBtn && _settingsModal) {
+    _settingsBtn.onclick = () => {
+      // 동기화 섹션은 로그인 시에만 노출
+      const syncSec = document.getElementById('settingsSyncSection');
+      if (syncSec) syncSec.style.display = (typeof isAccountLoggedIn === 'function' && isAccountLoggedIn()) ? '' : 'none';
+      _settingsModal.style.display = 'flex';
+    };
+  }
+  if (_settingsClose && _settingsModal) {
+    _settingsClose.onclick = () => { _settingsModal.style.display = 'none'; };
+  }
+  // 오버레이 바깥 클릭 시 닫기
+  if (_settingsModal) {
+    _settingsModal.addEventListener('click', (e) => {
+      if (e.target === _settingsModal) _settingsModal.style.display = 'none';
+    });
+  }
   // 캐릭터 선택 버튼 제거됨 — "새 게임" 클릭 시 자동으로 캐릭터 선택 화면으로
   // 플로팅 시작 버튼 — 선택된 캐릭터로 새 게임 시작
   function updateCharStartButton() {
@@ -18563,9 +19634,9 @@
       // 결과 상태: 신규 / 별업 / 환불
       let status;
       if (r.isNew) {
-        status = `<div class="card-status new">✨ NEW!</div>`;
+        status = `<div class="card-status new">NEW!</div>`;
       } else if (r.starUp) {
-        status = `<div class="card-status" style="color:#ffd060;">⭐ ${r.newStars}★ 강화!</div>`;
+        status = `<div class="card-status" style="color:#ffd060;">${r.newStars}★ 강화!</div>`;
       } else {
         status = `<div class="card-status">MAX · +${r.refund}★ 환급</div>`;
       }
@@ -18585,11 +19656,11 @@
     const summary = document.getElementById('gacha-result-summary');
     const parts = [];
     parts.push(`${results.length}회 뽑기`);
-    if (newCount > 0) parts.push(`<span style="color:#88ff88">✨ NEW ×${newCount}</span>`);
-    if (starUpCount > 0) parts.push(`<span style="color:#ffd060">⭐ 강화 ×${starUpCount}</span>`);
+    if (newCount > 0) parts.push(`<span style="color:#88ff88">NEW ×${newCount}</span>`);
+    if (starUpCount > 0) parts.push(`<span style="color:#ffd060">강화 ×${starUpCount}</span>`);
     if (totalRefund > 0) parts.push(`<span style="color:#ffd479">★ +${totalRefund}</span>`);
-    if (bestRarity === 'SSR') parts.unshift('<span style="color:#ffd479;font-weight:bold;">🎉 SSR 등장!</span>');
-    else if (bestRarity === 'SR') parts.unshift('<span style="color:#c084ff;">✨ SR 등장!</span>');
+    if (bestRarity === 'SSR') parts.unshift('<span style="color:#ffd479;font-weight:bold;">SSR 등장!</span>');
+    else if (bestRarity === 'SR') parts.unshift('<span style="color:#c084ff;">SR 등장!</span>');
     summary.innerHTML = parts.join('  ·  ');
   }
 
@@ -18669,7 +19740,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 217;
+  const APP_VERSION = 234;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
@@ -18923,7 +19994,55 @@
   });
 
   let charTab = 'all';
+
+  // 🎴 v221 — 캐릭터 선택 hero 카드 (가챠 결과 카드 톤)
+  //   이미지 있을 때만 portrait 표시. 없으면 텍스트만.
+  function refreshCharacterHero() {
+    const el = document.getElementById('character-hero');
+    if (!el) return;
+    const id = selectedCharacter || 'standard';
+    const char = CHARACTERS[id];
+    if (!char) { el.style.display = 'none'; return; }
+    const imgSrc = (typeof getCharacterImageSrc === 'function') ? getCharacterImageSrc(id) : null;
+    // 카드 컬러: 등급 우선, 없으면 캐릭터 색
+    let cardColor = char.color || '#7ad7ff';
+    if (char.rarity === 'SSR') cardColor = '#ffd479';
+    else if (char.rarity === 'SR') cardColor = '#c084ff';
+    else if (char.rarity === 'R')  cardColor = '#7ad7ff';
+    el.style.setProperty('--card-color', cardColor);
+    // 상단 등급 라벨 (가챠만)
+    const rarityTag = char.rarity
+      ? `<div class="hero-rarity-tag">${char.rarity}</div>`
+      : '';
+    // 별 진행도 (가챠만)
+    let starsHTML = '';
+    if (char.isGacha && typeof getCharStars === 'function') {
+      const stars = getCharStars(id);
+      const dmgBonus = typeof getCharStarDmgBonus === 'function' ? Math.round(getCharStarDmgBonus(id) * 100) : 0;
+      const starColor = stars >= 8 ? '#ff80ff' : (stars >= 4 ? '#ffd060' : '#ffd479');
+      starsHTML = `<div class="hero-stars" style="color:${starColor};">${'★'.repeat(stars)}${'☆'.repeat(8 - stars)} <span style="font-size:11px;color:#9aa3b3;font-weight:normal;">${stars}/8 · +${dmgBonus}% 데미지</span></div>`;
+    }
+    // 이미지 영역은 이미지 있을 때만 표시
+    const imgHTML = imgSrc
+      ? `<div class="hero-img-wrap"><img src="${imgSrc}" alt="${char.name}" onerror="this.parentElement.style.display='none'"/></div>`
+      : '';
+    el.innerHTML = `
+      ${rarityTag}
+      ${imgHTML}
+      <div class="hero-info">
+        <div class="hero-label">현재 선택</div>
+        <div class="hero-name-row">
+          <span class="hero-name" style="color:${char.color || '#7ad7ff'};">${char.name}</span>
+        </div>
+        <div class="hero-desc">${char.desc}</div>
+        ${starsHTML}
+      </div>
+    `;
+    el.style.display = '';
+  }
+
   function buildCharacterList() {
+    refreshCharacterHero();   // 🎴 v221 — 상단 hero 카드 갱신
     const list = document.getElementById('character-list');
     list.innerHTML = '';
     // 탭 카운트 갱신
@@ -18960,17 +20079,11 @@
       card.className = 'char-card' + (unlocked ? '' : ' locked') + (selected ? ' selected' : '');
       // 비-가챠 캐릭터는 중립색 (가챠만 등급 색)
       card.style.borderLeftColor = char.isGacha ? char.color : '#3a4256';
-      // 잠긴 캐릭터: 가챠 캐릭터는 한글 라벨, 그 외는 업적 정보
+      // 잠금 라벨 — 비-가챠 캐릭터(업적 잠금)만. 가챠는 starInfo가 자체 잠금 표시.
       let lockText = '';
-      if (!unlocked && char.unlockBy) {
-        let lockLabel;
-        if (char.unlockBy.startsWith('gacha:')) {
-          // 가챠 캐릭터: '🌸 사쿠라 획득' 형식
-          lockLabel = `🎰 ${char.name} 획득`;
-        } else {
-          const ach = ACHIEVEMENTS.find(a => a.id === char.unlockBy);
-          lockLabel = ach ? `업적 잠김: ${ach.name} (${ach.desc})` : char.unlockBy;
-        }
+      if (!unlocked && char.unlockBy && !char.isGacha) {
+        const ach = ACHIEVEMENTS.find(a => a.id === char.unlockBy);
+        const lockLabel = ach ? `업적 잠김: ${ach.name} (${ach.desc})` : char.unlockBy;
         lockText = `<div class="char-lock">🔒 ${lockLabel}</div>`;
       }
       const selText = selected ? `<div class="char-selected-tag">✓ 선택됨</div>` : '';
@@ -18996,13 +20109,13 @@
         ? `<div class="char-portrait-wrap" style="${unlocked ? '' : 'opacity:0.3;filter:grayscale(1);'}"><img src="${charImgSrc}" /></div>`
         : '';
       const nameColor = char.isGacha ? char.color : '#e8eaf0';
-      // ⭐ 가챠 캐릭터 별 진행도 + 돌파 보너스 표시 (해금된 경우만)
+      // ⭐ v232 — 가챠 캐릭터 정보 (잠긴 캐릭터도 전체 정보 노출 — 유저가 뽑을 동기 부여)
       let starInfo = '';
-      if (unlocked && char.isGacha) {
-        const stars = getCharStars(id);
+      if (char.isGacha) {
+        const stars = unlocked ? getCharStars(id) : 0;
         const starText = '★'.repeat(stars) + '☆'.repeat(CHAR_MAX_STARS - stars);
         const starColor = stars >= 8 ? '#ff80ff' : (stars >= 4 ? '#ffd060' : '#ffd479');
-        const dmgBonus = Math.round(getCharStarDmgBonus(id) * 100);
+        const dmgBonus = unlocked ? Math.round(getCharStarDmgBonus(id) * 100) : 0;
         // 별 등급별 퍼크 (모든 가챠 공통 + SR/SSR 4★/8★ 능력 해금)
         const perks = [
           { lv: 2, label: '쿨다운 -10%' },
@@ -19034,18 +20147,56 @@
             }
           }
         }
-        // ⭐ 별 진행도: 항상 보이게 (한눈에 확인) + 퍼크 세부는 접이식
-        starInfo = `
-          <div style="margin-top:8px; padding:6px 8px; background:#0f1219; border-radius:4px; border:1px solid #2a2f3a;">
-            <div style="display:flex; justify-content:space-between; align-items:center; gap:6px;">
+        // 조합 / 트리플 정보 자동 추출
+        const ownedAbs = new Set();
+        for (const aid of (char.startAbilities || [])) ownedAbs.add(aid);
+        if (unlocks) {
+          for (const lv in unlocks) for (const aid of unlocks[lv]) ownedAbs.add(aid);
+        }
+        const combos = COMBO_RECIPES.filter(r =>
+          (!r.tier || r.tier < 3) && r.parts.some(p => ownedAbs.has(p))
+        );
+        const triples = COMBO_RECIPES.filter(r =>
+          r.tier === 3 && r.parts.some(p => ownedAbs.has(p) || combos.some(c => c.combo === p))
+        );
+        const recipeHTML = (recipes) => recipes.map(r => {
+          const a = ABILITY_DEFS[r.parts[0]];
+          const b = ABILITY_DEFS[r.parts[1]];
+          const c = ABILITY_DEFS[r.combo];
+          if (!a || !b || !c) return '';
+          return `<div style="padding:3px 6px; background:rgba(20,24,34,0.5); border-radius:3px; margin-bottom:2px;">
+            <span style="color:${a.color}">${a.name}</span>
+            + <span style="color:${b.color}">${b.name}</span>
+            → <span style="color:${c.color};font-weight:bold;">${c.name}</span>
+          </div>`;
+        }).filter(Boolean).join('');
+        // ⭐ 정보 패널: 별 진행도 (항상 보이게 — 잠겨도 0/8 표시) + 능력 트리 / 돌파 보너스 (접이식)
+        const starHeaderHTML = unlocked
+          ? `<div style="display:flex; justify-content:space-between; align-items:center; gap:6px;">
               <span style="color:${starColor}; font-weight:bold; letter-spacing:1px; font-size:13px;">${starText}</span>
               <span style="color:#cfd6e3; font-size:11px;">${stars}/${CHAR_MAX_STARS}★ <span style="color:#ffd479;">+${dmgBonus}%</span></span>
-            </div>
+            </div>`
+          : `<div style="display:flex; justify-content:space-between; align-items:center; gap:6px;">
+              <span style="color:#5a5f6a; letter-spacing:1px; font-size:13px;">${'☆'.repeat(CHAR_MAX_STARS)}</span>
+              <span style="color:#7a8090; font-size:11px; font-style:italic;">미보유 · 🎰 가챠 해금</span>
+            </div>`;
+        starInfo = `
+          <div style="margin-top:8px; padding:6px 8px; background:#0f1219; border-radius:4px; border:1px solid #2a2f3a;">
+            ${starHeaderHTML}
             <details style="margin-top:4px; font-size:10px;">
               <summary style="cursor:pointer; color:#9aa3b3; list-style:none; outline:none; user-select:none;">
-                ▸ 돌파 보너스 보기
+                ▸ 능력 트리 / 돌파 보너스 보기
               </summary>
               <div style="margin-top:6px; color:#9aa3b3; line-height:1.7;">
+                ${combos.length > 0 ? `
+                  <div style="color:#c084ff; font-weight:bold; margin-top:6px; margin-bottom:2px; font-size:10px; letter-spacing:1px;">조합</div>
+                  ${recipeHTML(combos)}
+                ` : ''}
+                ${triples.length > 0 ? `
+                  <div style="color:#ffd060; font-weight:bold; margin-top:6px; margin-bottom:2px; font-size:10px; letter-spacing:1px;">트리플 (히든)</div>
+                  ${recipeHTML(triples)}
+                ` : ''}
+                <div style="color:#9aa3b3; font-weight:bold; margin-top:6px; margin-bottom:2px; font-size:10px; letter-spacing:1px;">돌파 보너스</div>
                 ${rows.join('')}
               </div>
             </details>
@@ -19469,14 +20620,235 @@
 
   // ===== 도감 콘텐츠 생성 =====
   let codexTab = 'basic';
+  // 🎯 v224 — 필터 상태 (검색은 제거)
+  let codexFilter = 'all';   // 'all' | 'owned' | 'locked'
   // codex 화면 내부의 탭만 — 강화소/업적/캐릭터 탭 충돌 방지
-  document.querySelectorAll('#codex .codex-tab').forEach(btn => {
+  document.querySelectorAll('#codex > .codex-tabs > .codex-tab').forEach(btn => {
     btn.onclick = () => {
       codexTab = btn.dataset.tab;
-      document.querySelectorAll('#codex .codex-tab').forEach(x => x.classList.toggle('active', x === btn));
+      document.querySelectorAll('#codex > .codex-tabs > .codex-tab').forEach(x => x.classList.toggle('active', x === btn));
       buildCodex();
     };
   });
+  // 🎯 v224 — 필터 chip 핸들러
+  document.querySelectorAll('#codex .codex-filter-chip').forEach(btn => {
+    btn.onclick = () => {
+      codexFilter = btn.dataset.codexfilter;
+      document.querySelectorAll('#codex .codex-filter-chip').forEach(x =>
+        x.classList.toggle('active', x === btn));
+      buildCodex();
+    };
+  });
+  // 🎴 v231 (deprecated v232) — 캐릭터 정보는 character selection screen 으로 이동됨.
+  //   메인 메뉴 "캐릭터" 버튼 → buildCharacterList()
+  //   이 함수는 호환성 위해 남겨두지만 호출되지 않음.
+  function renderCodexCharacters(list) {
+    const allIds = [...(GACHA_POOL.R || []), ...(GACHA_POOL.SR || []), ...(GACHA_POOL.SSR || [])];
+    // 등급순: SSR → SR → R, 그 안에서 보유 → 미보유
+    const rarityOrder = { SSR: 0, SR: 1, R: 2 };
+    const sorted = allIds.slice().sort((a, b) => {
+      const ca = CHARACTERS[a], cb = CHARACTERS[b];
+      const ra = rarityOrder[ca.rarity] || 99;
+      const rb = rarityOrder[cb.rarity] || 99;
+      if (ra !== rb) return ra - rb;
+      const ua = isCharUnlocked(a) ? 0 : 1;
+      const ub = isCharUnlocked(b) ? 0 : 1;
+      return ua - ub;
+    });
+    let rendered = 0;
+    for (const id of sorted) {
+      const char = CHARACTERS[id];
+      if (!char) continue;
+      const unlocked = isCharUnlocked(id);
+      // 필터 적용
+      if (codexFilter === 'owned' && !unlocked) continue;
+      if (codexFilter === 'locked' && unlocked) continue;
+      list.appendChild(_buildCodexCharCard(id, char, unlocked));
+      rendered++;
+    }
+    if (rendered === 0) {
+      const msg = document.createElement('div');
+      msg.className = 'codex-empty-msg';
+      msg.textContent = '필터 결과 없음';
+      list.appendChild(msg);
+    }
+  }
+  function _buildCodexCharCard(id, char, unlocked) {
+    const card = document.createElement('div');
+    card.className = 'codex-card codex-char-card';
+    if (!unlocked) card.classList.add('locked');
+    const rColor = char.rarity === 'SSR' ? '#ffd479'
+                : char.rarity === 'SR'  ? '#c084ff'
+                : '#7ad7ff';
+    card.style.borderLeftColor = rColor;
+    card.style.borderLeftWidth = '5px';
+    // 이미지 (있을 때만)
+    const imgSrc = (typeof getCharacterImageSrc === 'function') ? getCharacterImageSrc(id) : null;
+    let imgHTML = '';
+    if (unlocked && imgSrc) {
+      imgHTML = `<div class="char-codex-portrait"><img src="${imgSrc}" onerror="this.parentElement.style.display='none'"/></div>`;
+    } else if (!unlocked) {
+      imgHTML = `<div class="char-codex-portrait locked-portrait">🔒</div>`;
+    }
+    // 별 진행도 (해금된 경우만)
+    let starsHTML = '';
+    if (unlocked) {
+      const stars = getCharStars(id);
+      const dmgBonus = Math.round(getCharStarDmgBonus(id) * 100);
+      const starColor = stars >= 8 ? '#ff80ff' : (stars >= 4 ? '#ffd060' : '#ffd479');
+      starsHTML = `<div class="char-codex-stars" style="color:${starColor};">${'★'.repeat(stars)}${'☆'.repeat(8 - stars)} <span style="font-size:10px;color:#9aa3b3;">${stars}/8 · +${dmgBonus}%</span></div>`;
+    }
+    // 시작 능력
+    const startAbs = (char.startAbilities || []).map(aid => {
+      const d = ABILITY_DEFS[aid];
+      return d ? `<span style="color:${d.color}">${d.name}</span>` : aid;
+    }).join(', ');
+    // 조합 / 트리플 — COMBO_RECIPES 에서 이 캐릭터의 시작 능력 또는 별해금 능력이 재료인 레시피 찾기
+    const ownedAbilityIds = new Set();
+    for (const aid of (char.startAbilities || [])) ownedAbilityIds.add(aid);
+    const starUnlocks = CHAR_STAR_UNLOCKS[id] || {};
+    for (const lv in starUnlocks) {
+      for (const aid of starUnlocks[lv]) ownedAbilityIds.add(aid);
+    }
+    // 1차 조합 (재료 = 시작 능력)
+    const combos = COMBO_RECIPES.filter(r => !r.tier || r.tier < 3)
+      .filter(r => r.parts.some(p => ownedAbilityIds.has(p)));
+    const triples = COMBO_RECIPES.filter(r => r.tier === 3)
+      .filter(r => r.parts.some(p => ownedAbilityIds.has(p) || combos.some(c => c.combo === p)));
+    // 조합 HTML
+    const comboHTML = combos.map(r => {
+      const a = ABILITY_DEFS[r.parts[0]];
+      const b = ABILITY_DEFS[r.parts[1]];
+      const c = ABILITY_DEFS[r.combo];
+      if (!a || !b || !c) return '';
+      return `<div class="char-codex-recipe">
+        <span style="color:${a.color}">${a.name}</span>
+        +
+        <span style="color:${b.color}">${b.name}</span>
+        →
+        <span style="color:${c.color};font-weight:bold;">${c.name}</span>
+      </div>`;
+    }).filter(Boolean).join('');
+    const tripleHTML = triples.map(r => {
+      const a = ABILITY_DEFS[r.parts[0]];
+      const b = ABILITY_DEFS[r.parts[1]];
+      const c = ABILITY_DEFS[r.combo];
+      if (!a || !b || !c) return '';
+      return `<div class="char-codex-recipe">
+        <span style="color:${a.color}">${a.name}</span>
+        +
+        <span style="color:${b.color}">${b.name}</span>
+        →
+        <span style="color:${c.color};font-weight:bold;">${c.name}</span>
+      </div>`;
+    }).filter(Boolean).join('');
+    // ⭐ 별 해금 능력 (4★, 8★)
+    let starUnlockHTML = '';
+    if (starUnlocks[4] && starUnlocks[4].length > 0) {
+      const stars = getCharStars(id);
+      const isU = unlocked && stars >= 4;
+      for (const aid of starUnlocks[4]) {
+        const d = ABILITY_DEFS[aid];
+        if (!d) continue;
+        starUnlockHTML += `<div class="char-codex-perk ${isU ? 'unlocked' : ''}">
+          <span class="perk-lv" style="color:${isU ? '#ffd060' : '#5a5f6a'};">4★</span>
+          <span class="perk-name" style="color:${isU ? d.color : '#7a8090'};">${d.name}</span>
+          ${isU ? '<span class="perk-status">해금</span>' : ''}
+        </div>`;
+      }
+    }
+    if (starUnlocks[8] && starUnlocks[8].length > 0) {
+      const stars = getCharStars(id);
+      const isU = unlocked && stars >= 8;
+      for (const aid of starUnlocks[8]) {
+        const d = ABILITY_DEFS[aid];
+        if (!d) continue;
+        starUnlockHTML += `<div class="char-codex-perk ${isU ? 'unlocked' : ''}">
+          <span class="perk-lv" style="color:${isU ? '#ff80ff' : '#5a5f6a'};">8★</span>
+          <span class="perk-name" style="color:${isU ? d.color : '#7a8090'};">${d.name}</span>
+          ${isU ? '<span class="perk-status">해금</span>' : ''}
+        </div>`;
+      }
+    }
+    // 🎯 별 퍼크 (공통 — 2/3/5/6/7★)
+    const perksList = [
+      { lv: 2, label: '쿨다운 -10%' },
+      { lv: 3, label: '발사 개수 +1' },
+      { lv: 5, label: '효과 강도 +25%' },
+      { lv: 6, label: '발사 개수 +2 (누적 +3)' },
+      { lv: 7, label: '광역 반경 +25%' },
+    ];
+    const currentStars = unlocked ? getCharStars(id) : 0;
+    let perksHTML = '';
+    for (const p of perksList) {
+      const has = currentStars >= p.lv;
+      perksHTML += `<div class="char-codex-perk-row ${has ? 'has' : ''}">
+        <span class="perk-lv-mini">${p.lv}★</span>
+        <span class="perk-text">${p.label}</span>
+        ${has ? '<span class="perk-check">✓</span>' : ''}
+      </div>`;
+    }
+    // 잠긴 경우 — 정보 축약
+    if (!unlocked) {
+      card.innerHTML = `
+        <div class="char-codex-header">
+          ${imgHTML}
+          <div class="char-codex-meta">
+            <div class="char-codex-name-row">
+              <span class="char-codex-name" style="color:#5a5f6a;">🔒 ${char.rarity || 'R'} 캐릭터</span>
+              <span class="char-codex-rarity" style="color:${rColor};border-color:${rColor};">${char.rarity || 'R'}</span>
+            </div>
+            <div class="char-codex-lock-hint">🎰 가챠로 해금</div>
+          </div>
+        </div>
+      `;
+      return card;
+    }
+    // 해금된 경우 — 풀 정보
+    card.innerHTML = `
+      <div class="char-codex-header">
+        ${imgHTML}
+        <div class="char-codex-meta">
+          <div class="char-codex-name-row">
+            <span class="char-codex-name" style="color:${char.color};">${char.name}</span>
+            <span class="char-codex-rarity" style="color:${rColor};border-color:${rColor};">${char.rarity || 'R'}</span>
+          </div>
+          ${starsHTML}
+        </div>
+      </div>
+      <div class="char-codex-desc">${char.desc}</div>
+      ${startAbs ? `
+        <div class="char-codex-section">
+          <div class="char-codex-section-title">시작 능력</div>
+          <div class="char-codex-section-body">${startAbs}</div>
+        </div>
+      ` : ''}
+      ${comboHTML ? `
+        <div class="char-codex-section">
+          <div class="char-codex-section-title">조합</div>
+          <div class="char-codex-section-body">${comboHTML}</div>
+        </div>
+      ` : ''}
+      ${tripleHTML ? `
+        <div class="char-codex-section">
+          <div class="char-codex-section-title">트리플 (히든)</div>
+          <div class="char-codex-section-body">${tripleHTML}</div>
+        </div>
+      ` : ''}
+      ${starUnlockHTML ? `
+        <div class="char-codex-section">
+          <div class="char-codex-section-title">돌파 해금 능력</div>
+          <div class="char-codex-section-body">${starUnlockHTML}</div>
+        </div>
+      ` : ''}
+      <div class="char-codex-section">
+        <div class="char-codex-section-title">별 등급 퍼크</div>
+        <div class="char-codex-section-body">${perksHTML}</div>
+      </div>
+    `;
+    return card;
+  }
+
   function buildCodex() {
     const list = document.getElementById('codex-list');
     list.innerHTML = '';
@@ -19494,18 +20866,22 @@
     document.querySelector('.codex-tab[data-tab="combo"]').textContent = `조합 ${cUL}/${comboIds.length}`;
     document.querySelector('.codex-tab[data-tab="triple"]').textContent = `히든 ${tUL}/${tripleIds.length}`;
     const rUL = RELIC_IDS.filter(isRelicUnlocked).length;
-    document.querySelector('.codex-tab[data-tab="relic"]').textContent = `💎 유물 ${rUL}/${RELIC_IDS.length}`;
+    document.querySelector('.codex-tab[data-tab="relic"]').textContent = `유물 ${rUL}/${RELIC_IDS.length}`;
 
-    // 💎 유물 탭 — 별도 렌더링
+    // 유물 탭 — 별도 렌더링
     if (codexTab === 'relic') {
       // 등급순 정렬: legendary → epic → rare → common
       const order = { legendary: 0, epic: 1, rare: 2, common: 3 };
       const sorted = RELIC_IDS.slice().sort((a, b) =>
         order[RELICS[a].rarity] - order[RELICS[b].rarity]);
+      let rendered = 0;
       for (const rid of sorted) {
         const r = RELICS[rid];
         const rar = RELIC_RARITY[r.rarity];
         const unlocked = isRelicUnlocked(rid);
+        // 🎯 v224 — 필터 적용
+        if (codexFilter === 'owned' && !unlocked) continue;
+        if (codexFilter === 'locked' && unlocked) continue;
         const card = document.createElement('div');
         card.className = 'codex-card';
         card.style.borderLeftColor = rar.color;
@@ -19530,19 +20906,31 @@
           `;
         }
         list.appendChild(card);
+        rendered++;
+      }
+      if (rendered === 0) {
+        const msg = document.createElement('div');
+        msg.className = 'codex-empty-msg';
+        msg.textContent = '필터 결과 없음';
+        list.appendChild(msg);
       }
       return;
     }
 
+    let rendered = 0;
     for (const id of ALL_ABILITY_IDS) {
       const def = ABILITY_DEFS[id];
       if (codexTab === 'basic'   && (def.isCombo || def.isPassive)) continue;
       if (codexTab === 'passive' && (def.isCombo || !def.isPassive)) continue;
       if (codexTab === 'combo'   && (!def.isCombo || def.isTriple)) continue;
       if (codexTab === 'triple'  && !def.isTriple) continue;
+      const isUnlocked = unlockedAbilities.has(id);
+      // 🎯 v224 — 필터 적용
+      if (codexFilter === 'owned' && !isUnlocked) continue;
+      if (codexFilter === 'locked' && isUnlocked) continue;
       const card = document.createElement('div');
       card.className = 'codex-card';
-      if (!unlockedAbilities.has(id)) {
+      if (!isUnlocked) {
         // 잠긴 카드 — 정보 가림
         card.classList.add('locked');
         card.innerHTML = `
@@ -19550,6 +20938,7 @@
           <div class="desc">플레이하며 획득하면 해금됩니다.</div>
         `;
         list.appendChild(card);
+        rendered++;
         continue;
       }
       // 해금된 카드 — 정보 노출
@@ -19594,6 +20983,16 @@
         ${extra}
       `;
       list.appendChild(card);
+      rendered++;
+    }
+    // 🔍 v223 — 결과 0개 메시지
+    if (rendered === 0) {
+      const msg = document.createElement('div');
+      msg.className = 'codex-empty-msg';
+      msg.textContent = codexSearchText
+        ? `🔍 "${codexSearchText}" 검색 결과 없음`
+        : '필터 결과 없음';
+      list.appendChild(msg);
     }
   }
 
