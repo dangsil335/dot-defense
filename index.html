@@ -13595,7 +13595,7 @@
         const scoreMul = (state.metaMods && state.metaMods.scoreMul) || 1;
         const ratio = Math.random();
         if (ratio < 0.6) {
-          choices.push({ action: 'bonusScore', amount: Math.floor(800 * state.round * scoreMul * (0.85 + Math.random() * 0.4)) });
+          choices.push({ action: 'bonusScore', amount: Math.floor(Math.min(800 * state.round, 80000) * scoreMul * (0.92 + Math.random() * 0.16)) });
         } else {
           choices.push({ action: 'bonusStardust', amount: Math.max(1, Math.floor(state.round / 3)) });
         }
@@ -13696,7 +13696,7 @@
       // 액티브 풀이 3개 미만이면 보너스 카드로 채움 (정말 극단적 케이스만)
       while (choices.length < 3) {
         const scoreMul = (state.metaMods && state.metaMods.scoreMul) || 1;
-        const amount = Math.floor(800 * state.round * scoreMul * (0.85 + Math.random() * 0.4));
+        const amount = Math.floor(Math.min(800 * state.round, 80000) * scoreMul * (0.92 + Math.random() * 0.16));
         choices.push({ action: 'bonusScore', amount });
       }
       return choices;
@@ -13791,7 +13791,7 @@
       const scoreMul = (state.metaMods && state.metaMods.scoreMul) || 1;
       if (Math.random() < 0.6) {
         // 점수 보너스 (라운드에 비례)
-        const amount = Math.floor(800 * state.round * scoreMul * (0.85 + Math.random() * 0.4));
+        const amount = Math.floor(Math.min(800 * state.round, 80000) * scoreMul * (0.92 + Math.random() * 0.16));
         choices.push({ action: 'bonusScore', amount });
       } else {
         // 스타더스트 (영구 통화 소량)
@@ -14005,7 +14005,7 @@
       for (let i = 0; i < 3; i++) {
         // 골고루 — 점수 2장 + 스타더스트 1장
         if (i < 2) {
-          const amount = Math.floor(600 * state.round * scoreMul * (0.85 + Math.random() * 0.4));
+          const amount = Math.floor(Math.min(600 * state.round, 60000) * scoreMul * (0.92 + Math.random() * 0.16));
           choices.push({ action: 'bonusScore', amount });
         } else {
           const dustAmount = Math.max(1, Math.floor(state.round / 3));
@@ -17704,9 +17704,9 @@
   const toggleBtn = document.getElementById('abilityToggle');
   let abilitiesCollapsed = false;  // 세로 모드에서 기본 접힘
 
-  // 🚀 v214 — 탭 컨테이너 click+touch 드래그 스크롤
-  //   CSS 만으로는 데스크탑 클릭 드래그 안 됨. JS로 명시적 구현.
-  //   터치는 native scroll로도 되지만 fallback으로 같이 처리.
+  // 🚀 v217 — 탭 컨테이너 click+touch 드래그 스크롤
+  //   v214의 setPointerCapture가 자식 button 클릭 가로채는 버그 수정.
+  //   이제 캡처 없이 단순 이벤트만 추적 → 자식 버튼 클릭 정상 작동.
   function attachDragScroll(el) {
     if (!el || el._dragScrollAttached) return;
     el._dragScrollAttached = true;
@@ -17714,40 +17714,39 @@
     let startX = 0;
     let scrollStart = 0;
     let dragged = false;
-    let pointerId = null;
-    const DRAG_THRESHOLD = 6;   // 이 이상 움직이면 "드래그"로 간주 → 자식 클릭 무시
+    const DRAG_THRESHOLD = 8;
     el.style.cursor = 'grab';
-    el.style.userSelect = 'none';
     el.addEventListener('pointerdown', (e) => {
-      // 자식 button 의 클릭 자체는 그대로 — 드래그가 시작되면 click 차단
+      // 텍스트/버튼 자체 클릭은 그대로 둠 — pointer capture 안 함
       isDown = true; dragged = false;
       startX = e.clientX;
       scrollStart = el.scrollLeft;
-      pointerId = e.pointerId;
       el.style.cursor = 'grabbing';
-      try { el.setPointerCapture(pointerId); } catch {}
     });
     el.addEventListener('pointermove', (e) => {
       if (!isDown) return;
       const dx = e.clientX - startX;
-      if (Math.abs(dx) > DRAG_THRESHOLD) dragged = true;
-      el.scrollLeft = scrollStart - dx;
+      if (Math.abs(dx) > DRAG_THRESHOLD) {
+        dragged = true;
+        el.scrollLeft = scrollStart - dx;
+      }
     });
     const finish = () => {
-      if (!isDown) return;
       isDown = false;
-      try { if (pointerId != null) el.releasePointerCapture(pointerId); } catch {}
-      pointerId = null;
       el.style.cursor = 'grab';
     };
     el.addEventListener('pointerup', finish);
     el.addEventListener('pointercancel', finish);
     el.addEventListener('pointerleave', finish);
-    // 드래그 중이었다면 자식 click 차단 (탭 선택 방지)
+    // 드래그가 실제로 발생했을 때만 자식 click 차단 (단순 클릭은 통과)
     el.addEventListener('click', (e) => {
-      if (dragged) { e.stopPropagation(); e.preventDefault(); dragged = false; }
-    }, true);   // capture 단계에서 차단
-    // 마우스 휠로도 가로 스크롤 가능 (데스크탑 보너스)
+      if (dragged) {
+        e.stopPropagation();
+        e.preventDefault();
+        dragged = false;
+      }
+    }, true);
+    // 마우스 휠 가로 스크롤 (데스크탑)
     el.addEventListener('wheel', (e) => {
       if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
         el.scrollLeft += e.deltaY;
@@ -18670,7 +18669,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 216;
+  const APP_VERSION = 217;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
