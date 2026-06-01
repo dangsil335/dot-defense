@@ -19645,8 +19645,11 @@
         qsPreview.style.display = 'none';
       }
     }
-    // 🚀 v248 — 설정 변경 버튼: 진행 중이 아니면 항상 노출 (모드 언제든 변경 가능)
-    if (changeBtn) changeBtn.style.display = inProgress ? 'none' : '';
+    // 🚀 v252 — 설정 변경 버튼: 진행 중에도 항상 노출 (이어하기/처음부터다시 옆에서도 모드 변경 가능)
+    if (changeBtn) {
+      changeBtn.style.display = '';
+      changeBtn.textContent = inProgress ? '⚙ 모드/캐릭 변경' : '⚙ 설정 변경';
+    }
     // 🎰 가챠 원형 버튼 갱신
     if (typeof refreshGachaCircleBtn === 'function') refreshGachaCircleBtn();
     // 🔄 다기기 동기화 섹션 — 로그인 상태에서만 노출 (설정 모달 안)
@@ -20569,7 +20572,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 251;
+  const APP_VERSION = 252;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
