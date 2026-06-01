@@ -13296,6 +13296,16 @@
     { id: 'defenseSlow',   category: 'defense', name: '❄ 슬로우 강화',     desc: 'lv당 적 이동속도 -5%',     maxLv: 5,  cost: lv => 350 * (lv + 1), apply: lv => 0.05 * lv },
     { id: 'defenseRevive', category: 'defense', name: '🌅 한 번의 부활',   desc: '게임당 1회, HP 1 직전 풀회복', maxLv: 1,  cost: lv => 2000, apply: lv => lv },
   ];
+  // 🛒 v237 — 강화소 비용 전역 강화: 기존 선형(base × (lv+1))은 너무 저렴 (전체 만렙 ~111k).
+  //   새 공식: original × 2 × (1 + lv × 0.1) → 전체 만렙 ~330k.
+  //   - 베이스 ×2: 초/중반 진입장벽 적절히 ↑
+  //   - 후반 가속 (1 + lv·0.1): 만렙 마지막 레벨 비용 약 2-3배
+  (function applyShopCostInflation() {
+    for (const up of META_UPGRADES) {
+      const origCost = up.cost;
+      up.cost = (lv) => Math.ceil(origCost(lv) * 2 * (1 + lv * 0.1));
+    }
+  })();
   function getMetaMods() {
     const v = id => {
       const up = META_UPGRADES.find(u => u.id === id);
@@ -19791,7 +19801,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 236;
+  const APP_VERSION = 237;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
