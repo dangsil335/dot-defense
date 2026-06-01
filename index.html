@@ -974,27 +974,42 @@
 
   /* ===== 가챠 결과 화면 ===== */
   #gachaResultScreen {
-    padding: 24px;
+    padding: 12px;
     align-items: center;
     justify-content: center;
-    gap: 16px;
+    gap: 12px;
+    box-sizing: border-box;
+    /* 컨텐츠가 화면을 넘어가면 안 잘리게 — 단, 카드 자체는 그리드로 항상 fit */
+    overflow-y: auto;
   }
   .gacha-result-title {
     font-size: 26px; font-weight: bold; color: #ffd479;
     letter-spacing: 4px;
     text-shadow: 0 0 20px rgba(255, 212, 121, 0.5);
   }
+  /* 🎴 10연 결과 — 5×2 그리드 고정 (스크롤 없이 한 화면에) */
   .gacha-result-cards {
-    display: flex; flex-wrap: wrap; gap: 12px;
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 8px;
     justify-content: center;
-    max-width: 100%;
-    overflow-y: auto;
-    padding: 8px;
+    width: 100%;
+    max-width: 720px;
+    box-sizing: border-box;
+    padding: 4px;
+    /* 화면 잘림 방지 — 컨테이너 자체 스크롤 X, 카드 크기로 조절 */
+    overflow: hidden;
+  }
+  /* 1회 뽑기 — 카드 1개일 때 그리드 1열 + 큰 카드 */
+  .gacha-result-cards.single {
+    grid-template-columns: 200px;
+    max-width: 220px;
   }
   .gacha-result-card {
     --rarity-color: #7ad7ff;
     position: relative;
-    width: 130px;
+    width: 100%;
+    min-width: 0;        /* grid 자식이 콘텐츠로 인해 부풀지 않게 */
     background: #0c0e18;
     border: 2px solid var(--rarity-color);
     border-radius: 6px;
@@ -1009,33 +1024,41 @@
   }
   .gacha-result-card .card-rarity-tag {
     text-align: center;
-    padding: 4px;
+    padding: 3px;
     background: var(--rarity-color);
     color: #0b0d12;
     font-weight: bold;
-    font-size: 11px;
+    font-size: 10px;
     letter-spacing: 1px;
   }
   .gacha-result-card .card-portrait {
-    height: 130px;
+    aspect-ratio: 1 / 1;     /* 카드 폭에 비례한 정사각 portrait */
     display: flex; align-items: center; justify-content: center;
-    font-size: 56px;
+    font-size: clamp(28px, 7vw, 48px);
     background: radial-gradient(circle at center, color-mix(in srgb, var(--rarity-color) 25%, #0b0d12), #0b0d12);
     position: relative;
   }
   .gacha-result-card .card-name {
     text-align: center;
-    padding: 6px 4px 2px;
-    font-size: 13px; font-weight: bold;
+    padding: 4px 2px 2px;
+    font-size: clamp(10px, 1.8vw, 12px);
+    font-weight: bold;
     color: var(--rarity-color);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
   .gacha-result-card .card-status {
     text-align: center;
-    padding: 2px 4px 6px;
-    font-size: 10px;
+    padding: 1px 2px 4px;
+    font-size: clamp(8px, 1.4vw, 10px);
     color: #9aa3b3;
-    min-height: 16px;
+    min-height: 14px;
   }
+  /* 1회 결과 — 큰 카드일 때 폰트도 크게 */
+  .gacha-result-cards.single .card-portrait { font-size: 64px; }
+  .gacha-result-cards.single .card-name { font-size: 14px; }
+  .gacha-result-cards.single .card-status { font-size: 11px; }
   .gacha-result-card .card-status.new {
     color: #88ff88;
     font-weight: bold;
@@ -1870,15 +1893,15 @@
     <button id="achievementsBack" class="codex-back">← 메뉴로</button>
   </div>
   <div class="achievement-summary" id="achievement-summary">달성 0/0</div>
-  <div class="codex-tabs" id="ach-tabs" style="overflow-x:auto; flex-wrap:nowrap;">
-    <button class="codex-tab active" data-achtab="progress">📈 진행</button>
-    <button class="codex-tab" data-achtab="build">🎴 빌드</button>
-    <button class="codex-tab" data-achtab="combat">⚔️ 처치</button>
-    <button class="codex-tab" data-achtab="ascension">✨ 승천</button>
-    <button class="codex-tab" data-achtab="trans">🌌 초월</button>
-    <button class="codex-tab" data-achtab="chars">⭐ 캐릭터</button>
-    <button class="codex-tab" data-achtab="special">📖 특수</button>
-    <button class="codex-tab" data-achtab="repeat">🔁 반복</button>
+  <div class="codex-tabs" id="ach-tabs" style="overflow-x:auto; overflow-y:hidden; flex-wrap:nowrap; -webkit-overflow-scrolling:touch;">
+    <button class="codex-tab active" data-achtab="progress" style="flex-shrink:0; white-space:nowrap;">📈 진행</button>
+    <button class="codex-tab" data-achtab="build" style="flex-shrink:0; white-space:nowrap;">🎴 빌드</button>
+    <button class="codex-tab" data-achtab="combat" style="flex-shrink:0; white-space:nowrap;">⚔️ 처치</button>
+    <button class="codex-tab" data-achtab="ascension" style="flex-shrink:0; white-space:nowrap;">✨ 승천</button>
+    <button class="codex-tab" data-achtab="trans" style="flex-shrink:0; white-space:nowrap;">🌌 초월</button>
+    <button class="codex-tab" data-achtab="chars" style="flex-shrink:0; white-space:nowrap;">⭐ 캐릭터</button>
+    <button class="codex-tab" data-achtab="special" style="flex-shrink:0; white-space:nowrap;">📖 특수</button>
+    <button class="codex-tab" data-achtab="repeat" style="flex-shrink:0; white-space:nowrap;">🔁 반복</button>
   </div>
   <div id="achievements-list"></div>
 </div>
@@ -2025,12 +2048,12 @@
     <button id="shopBack" class="codex-back">← 메뉴로</button>
   </div>
   <div class="stardust-bar">스타더스트: <span id="stardust-count">0</span> ★</div>
-  <div class="codex-tabs" id="shop-tabs" style="overflow-x:auto; flex-wrap:nowrap;">
-    <button class="codex-tab active" data-shoptab="resource">💰 자원</button>
-    <button class="codex-tab" data-shoptab="combat">⚔️ 전투력</button>
-    <button class="codex-tab" data-shoptab="build">🎴 빌드</button>
-    <button class="codex-tab" data-shoptab="survival">🛡️ 생존</button>
-    <button class="codex-tab" data-shoptab="defense">🏰 디펜스</button>
+  <div class="codex-tabs" id="shop-tabs" style="overflow-x:auto; overflow-y:hidden; flex-wrap:nowrap; -webkit-overflow-scrolling:touch;">
+    <button class="codex-tab active" data-shoptab="resource" style="flex-shrink:0; white-space:nowrap;">💰 자원</button>
+    <button class="codex-tab" data-shoptab="combat" style="flex-shrink:0; white-space:nowrap;">⚔️ 전투력</button>
+    <button class="codex-tab" data-shoptab="build" style="flex-shrink:0; white-space:nowrap;">🎴 빌드</button>
+    <button class="codex-tab" data-shoptab="survival" style="flex-shrink:0; white-space:nowrap;">🛡️ 생존</button>
+    <button class="codex-tab" data-shoptab="defense" style="flex-shrink:0; white-space:nowrap;">🏰 디펜스</button>
   </div>
   <div id="shop-list"></div>
 </div>
@@ -11130,8 +11153,22 @@
     return row;
   }
 
-  function logoutAccount() {
+  async function logoutAccount() {
     if (!confirm('로그아웃하면 이 기기의 데이터는 초기화됩니다. (서버 데이터는 안전)\n\n계속하시겠어요?')) return;
+    // 🛡 v204 — 로그아웃 전에 미푸시 변경사항 강제 sync (debounce 대기 중인 데이터까지)
+    //   이 단계가 없으면 다음 로그인 시 미푸시 데이터 영구 손실됨.
+    try {
+      // 진행 중인 debounce 타이머 취소 + 즉시 sync
+      if (typeof _syncTimer !== 'undefined' && _syncTimer) { clearTimeout(_syncTimer); _syncTimer = null; }
+      if (typeof _syncMaxTimer !== 'undefined' && _syncMaxTimer) { clearTimeout(_syncMaxTimer); _syncMaxTimer = null; }
+      if (isAccountLoggedIn()) {
+        await syncMetaToServer();
+      }
+    } catch (e) {
+      console.warn('로그아웃 전 sync 실패:', e);
+      // sync 실패해도 진행 — 사용자에게 확인 한 번 더
+      if (!confirm('⚠ 서버에 데이터 저장 실패. 일부 진행도가 손실될 수 있습니다.\n그래도 로그아웃 진행할까요?')) return;
+    }
     // 로컬 META 초기화 (서버는 그대로)
     META = {};
     try {
@@ -13142,9 +13179,19 @@
       }
       // 광폭 트리거
       state.frenzyTrigger = true;
-      state.kills++;
-      state.totalKills = (state.totalKills || 0) + 1;
-      if (e.isBoss) state.bossKills = (state.bossKills || 0) + 1;
+      // 🐲 보스 처치 시 경험치 보너스 (+5 추가 = 총 +6 kill 카운트)
+      //    일반 처치 1, 보스 처치 6. 한 보스 = 잡몹 6마리분 경험치.
+      const killValue = e.isBoss ? 6 : 1;
+      state.kills += killValue;
+      state.totalKills = (state.totalKills || 0) + 1;   // 누적은 1씩만 증가 (업적용)
+      if (e.isBoss) {
+        state.bossKills = (state.bossKills || 0) + 1;
+        // 보스 처치 시 시각 피드백
+        state.damageNumbers.push({
+          x: ex, y: ey - e.size - 30, vy: -1.5,
+          text: `+${killValue - 1} 보너스 EXP`, color: '#ffd479', life: 60, size: 13,
+        });
+      }
       spawnParticles(ex, ey, '#ff5b6e', e.isBoss ? 20 : 8);
       SFX.kill();
       // ⚡ 오딘의 창 — 처치 시 주변 3마리에 50% 연쇄 데미지
@@ -17034,21 +17081,16 @@
     refreshAbilityAffordability();
   }
 
-  // 🚀 강화 버튼 활성/비활성 + 색상을 현재 골드 기준으로 즉시 갱신 (DOM 재생성 없이)
+  // 강화 버튼 활성/비활성 + 색상을 현재 골드 기준으로 즉시 갱신 (DOM 재생성 없이)
   // 카드 모달 떠있을 때는 모든 강화/삭제 버튼 비활성 (꼼수 방지)
-  //   최적화: querySelectorAll 결과를 캐시하고 (renderPanel 후 1회만 갱신),
-  //           DOM 쓰기는 diff helper로 변경된 것만 적용.
-  function _invalidateAbBtnCache() {
-    if (elAb) { elAb._cachedUpBtns = null; elAb._cachedRmBtns = null; }
-  }
+  //   ⚠ v205 — 캐싱/diff 제거. 매 프레임 querySelectorAll + 직접 set.
+  //   미세한 성능 차이는 있지만 정확성이 우선 — 캐시가 stale될 수 있는 엣지케이스 발생함.
+  function _invalidateAbBtnCache() { /* deprecated — no-op for backward compat */ }
   function refreshAbilityAffordability() {
     if (!elAb) return;
     const modalOpen = !!state.levelUpChoices;
-    // 캐시된 버튼 리스트 — 없으면 1회 querySelectorAll 후 저장
-    if (!elAb._cachedUpBtns) elAb._cachedUpBtns = elAb.querySelectorAll('button[data-act="up"]');
-    if (!elAb._cachedRmBtns) elAb._cachedRmBtns = elAb.querySelectorAll('button[data-act="rm"]');
-    // 강화 버튼 (for 루프 + diff)
-    const upBtns = elAb._cachedUpBtns;
+    // 강화 버튼 — 직접 처리 (캐시 없음)
+    const upBtns = elAb.querySelectorAll('button[data-act="up"]');
     for (let i = 0; i < upBtns.length; i++) {
       const btn = upBtns[i];
       const idx = +btn.dataset.i;
@@ -17058,24 +17100,22 @@
       const cost = enhanceCost(a);
       const canAfford = state.gold >= cost;
       const enabled = canAfford && !modalOpen;
-      _setDisabled(btn, !enabled);
-      _setStyle(btn, 'opacity', enabled ? '' : '0.55');
+      btn.disabled = !enabled;
+      btn.style.opacity = enabled ? '' : '0.55';
       const row = btn.closest('.ability-row');
-      if (row) _toggleClass(row, 'affordable', enabled);
+      if (row) row.classList.toggle('affordable', enabled);
       const costSpan = btn.querySelector('span');
-      if (costSpan) _setStyle(costSpan, 'color', enabled ? '#ffd479' : '#5a5f6a');
+      if (costSpan) costSpan.style.color = enabled ? '#ffd479' : '#5a5f6a';
     }
     // 삭제 버튼도 모달 중엔 비활성
-    const rmBtns = elAb._cachedRmBtns;
+    const rmBtns = elAb.querySelectorAll('button[data-act="rm"]');
     for (let i = 0; i < rmBtns.length; i++) {
       const btn = rmBtns[i];
-      _setDisabled(btn, modalOpen);
-      _setStyle(btn, 'opacity', modalOpen ? '0.4' : '');
+      btn.disabled = modalOpen;
+      btn.style.opacity = modalOpen ? '0.4' : '';
     }
     // 랜덤 능력 획득 버튼도 모달 중 비활성
-    if (modalOpen && elRandom && !elRandom.disabled) {
-      _setDisabled(elRandom, true);
-    }
+    if (modalOpen && elRandom && !elRandom.disabled) elRandom.disabled = true;
   }
 
   let currentAbTab = 'active';
@@ -18231,6 +18271,8 @@
   function buildGachaResult(results) {
     const cards = document.getElementById('gacha-result-cards');
     cards.innerHTML = '';
+    // 🎴 1회 뽑기와 10회 뽑기 레이아웃 분기 — single 클래스로 큰 카드 / 5×2 그리드 전환
+    cards.classList.toggle('single', results.length === 1);
     let totalRefund = 0;
     let newCount = 0;
     let starUpCount = 0;
@@ -18362,7 +18404,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 203;
+  const APP_VERSION = 205;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
@@ -18689,6 +18731,55 @@
         ? `<div class="char-portrait-wrap" style="${unlocked ? '' : 'opacity:0.3;filter:grayscale(1);'}"><img src="${charImgSrc}" /></div>`
         : '';
       const nameColor = char.isGacha ? char.color : '#e8eaf0';
+      // ⭐ 가챠 캐릭터 별 진행도 + 돌파 보너스 표시 (해금된 경우만)
+      let starInfo = '';
+      if (unlocked && char.isGacha) {
+        const stars = getCharStars(id);
+        const starText = '★'.repeat(stars) + '☆'.repeat(CHAR_MAX_STARS - stars);
+        const starColor = stars >= 8 ? '#ff80ff' : (stars >= 4 ? '#ffd060' : '#ffd479');
+        const dmgBonus = Math.round(getCharStarDmgBonus(id) * 100);
+        // 별 등급별 퍼크 (모든 가챠 공통 + SR/SSR 4★/8★ 능력 해금)
+        const perks = [
+          { lv: 2, label: '쿨다운 -10%' },
+          { lv: 3, label: '발사 개수 +1' },
+          { lv: 4, label: '범위 +15%' },
+          { lv: 5, label: '효과 강도 +25%' },
+          { lv: 6, label: '발사 개수 +2 (누적 +3)' },
+          { lv: 7, label: '광역 반경 +25%' },
+        ];
+        const rows = perks.map(p => {
+          const isUnlocked = stars >= p.lv;
+          const icon = isUnlocked ? '🔓' : '🔒';
+          const c = isUnlocked ? '#cfd6e3' : '#5a5f6a';
+          return `<div>${icon} ${p.lv}★ <span style="color:${c};">${p.label}</span></div>`;
+        });
+        // SR/SSR 4★/8★ 특수 능력 해금
+        const unlocks = CHAR_STAR_UNLOCKS[id];
+        if (unlocks) {
+          if (unlocks[4] && unlocks[4][0]) {
+            const d4 = ABILITY_DEFS[unlocks[4][0]];
+            if (d4) {
+              rows[2] = `<div>${stars >= 4 ? '🔓' : '🔒'} 4★ <span style="color:${stars >= 4 ? '#ffd060' : '#5a5f6a'};font-weight:bold;">⭐ ${d4.name} 해금 + 범위 +15%</span></div>`;
+            }
+          }
+          if (unlocks[8] && unlocks[8][0]) {
+            const d8 = ABILITY_DEFS[unlocks[8][0]];
+            if (d8) {
+              rows.push(`<div>${stars >= 8 ? '🔓' : '🔒'} 8★ <span style="color:${stars >= 8 ? '#ff80ff' : '#5a5f6a'};font-weight:bold;">💫 ${d8.name} 해금</span></div>`);
+            }
+          }
+        }
+        starInfo = `
+          <details style="margin-top:6px;font-size:11px;">
+            <summary style="cursor:pointer;color:${starColor};font-weight:bold;list-style:none;outline:none;">
+              ${starText} <span style="font-size:10px;color:#9aa3b3;font-weight:normal;">+${dmgBonus}% · 돌파 효과 보기 ▾</span>
+            </summary>
+            <div style="margin-top:6px;padding:6px 8px;background:#0f1219;border-radius:4px;border:1px solid #2a2f3a;color:#9aa3b3;line-height:1.6;">
+              ${rows.join('')}
+            </div>
+          </details>
+        `;
+      }
       card.innerHTML = `
         <div class="char-header">
           ${portraitHTML}
@@ -18701,10 +18792,13 @@
         </div>
         <div class="char-desc">${char.desc}</div>
         ${startInfo}
+        ${starInfo}
         ${lockText}${selText}
       `;
       if (unlocked) {
-        card.onclick = () => {
+        card.onclick = (ev) => {
+          // 돌파 정보 details 클릭 시 캐릭터 선택 트리거 X
+          if (ev.target.closest('details, summary')) return;
           // 캐릭터 선택 — 표시만 갱신, 게임 시작은 플로팅 버튼으로
           selectedCharacter = id;
           META.selectedCharacter = id;
