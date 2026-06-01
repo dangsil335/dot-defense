@@ -11174,8 +11174,11 @@
         tdBossHpMul = 1.35;
       }
     }
-    const hp = Math.ceil(baseHp * asc.enemyHpMul * tdHpMul);
-    const bossHp = Math.ceil(baseHp * (isFinal ? 13 : 10) * asc.bossHpMul * relicBossHp * tdBossHpMul);
+    // 🛡 v251 — 엔드리스 (R100+) 적 HP 가속 — 라운드당 +6% (베테랑 어센던트/유물 스택 대응)
+    //   R110: ×1.6, R150: ×4, R200: ×7
+    const endlessHpMul = n > MAX_ROUND ? (1 + (n - MAX_ROUND) * 0.06) : 1;
+    const hp = Math.ceil(baseHp * asc.enemyHpMul * tdHpMul * endlessHpMul);
+    const bossHp = Math.ceil(baseHp * (isFinal ? 13 : 10) * asc.bossHpMul * relicBossHp * tdBossHpMul * endlessHpMul);
     const baseTime = isFinal ? 180 : 30;
     const duration = Math.max(15, Math.floor((baseTime + (mm.roundTimeBonus || 0)) * asc.roundTimeMul)) * FPS;
     const baseSpawn = isFinal ? 30 : (isBoss ? 10 : 20);
@@ -13279,11 +13282,15 @@
   // 승천 (0~15): 선형 + 2차 — 점진적 상승
   // 초월 (16~30 = trans 1~15): 승천 15 위에 두 번째 가파른 곡선 — 거의 불가능 수준
   function getAscensionMods(asc) {
-    // === 1) 승천 영역 (0~15) — 기존 곡선 그대로 ===
+    // === 1) 승천 영역 (0~15) — 기존 곡선 + v251 베테랑 보정 ===
     if (asc <= MAX_ASCENSION) {
+      // 🛡 v251 — ANCIENT/어센던트/유물 스택 등 베테랑 파워 대응
+      // 승천 10+ 에 추가 HP 보정 (10:+5%, 15:+30% / 보스 더 가파름)
+      const veteranBoost  = asc >= 10 ? (1 + (asc - 9) * 0.05) : 1;
+      const veteranBossB  = asc >= 10 ? (1 + (asc - 9) * 0.06) : 1;
       return {
-        enemyHpMul:    1 + 0.30 * asc + 0.025 * asc * asc,
-        bossHpMul:     1 + 0.40 * asc + 0.030 * asc * asc,
+        enemyHpMul:    (1 + 0.30 * asc + 0.025 * asc * asc) * veteranBoost,
+        bossHpMul:     (1 + 0.40 * asc + 0.030 * asc * asc) * veteranBossB,
         maxAliveAdd:  -3 * asc,
         scoreReward:   1 + 0.12 * asc,
         stardustMul:   1 + 0.08 * asc,
@@ -20562,7 +20569,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 250;
+  const APP_VERSION = 251;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
