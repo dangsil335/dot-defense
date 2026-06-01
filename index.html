@@ -4716,8 +4716,8 @@
         const perma = 1 + getAbilityPermaBonus('fury');   // 🌟 영구강화
         const enemyCount = state.enemies.length;
         const bonus = Math.floor(enemyCount / 5) * (ab.level * 0.05) * perma;
-        // 🛡 v254 — defensive max-merge (다른 source 와 충돌 방지)
-        if (bonus > state.metaMods.furyBonus) state.metaMods.furyBonus = bonus;
+        // 🛡 v256 — additive stacking (패시브 + 콤보 동시 보유 시 합산)
+        state.metaMods.furyBonus += bonus;
       },
       draw(ab) {
         // 타워 주변 빨간 오라 (적 많을수록 진해짐)
@@ -5204,8 +5204,8 @@
       tick(ab) {
         if (!state.metaMods) return;
         const perma = 1 + getAbilityPermaBonus('precision');   // 🌟 영구강화
-        const own = ab.level * 0.07 * perma;
-        if (own > state.metaMods.precisionBonus) state.metaMods.precisionBonus = own;
+        // 🛡 v256 — additive stacking
+        state.metaMods.precisionBonus += ab.level * 0.07 * perma;
       },
     },
     haste: {
@@ -5233,9 +5233,8 @@
         const perma = 1 + getAbilityPermaBonus('frenzy');   // 🌟 영구강화
         if (ab.frames > 0) {
           ab.frames--;
-          // 🛡 v254 — defensive max-merge (frame-reset 와 함께 동작 — 활성 시만 contribute)
-          const own = ab.level * 0.09 * perma;
-          if (state.metaMods && own > state.metaMods.frenzyBonus) state.metaMods.frenzyBonus = own;
+          // 🛡 v256 — additive stacking (frame-reset 와 함께 동작 — 활성 시만 contribute)
+          if (state.metaMods) state.metaMods.frenzyBonus += ab.level * 0.09 * perma;
         }
         // frames 0 일 땐 contribute 안 함 → resetSharedPassiveSlots 에서 자동 0
       },
@@ -5247,9 +5246,8 @@
       tick(ab) {
         if (!state.metaMods) return;
         const perma = 1 + getAbilityPermaBonus('vampiric');   // 🌟 영구강화 (골드 +%)
-        // 🛡 v254 — defensive max-merge (약탈폭격 등 다른 source 와 충돌 방지)
-        const own = ab.level * 0.08 * perma;
-        if (own > state.metaMods.bonusGoldMul) state.metaMods.bonusGoldMul = own;
+        // 🛡 v256 — additive stacking (vampiric + 약탈폭격 합산)
+        state.metaMods.bonusGoldMul += ab.level * 0.08 * perma;
       },
     },
     fortune: {
@@ -5259,9 +5257,8 @@
       tick(ab) {
         if (!state.metaMods) return;
         const perma = 1 + getAbilityPermaBonus('fortune');   // 🌟 영구강화 (점수 확률 +%)
-        // 🛡 v254 — defensive max-merge
-        const own = ab.level * 0.05 * perma;
-        if (own > state.metaMods.fortuneChance) state.metaMods.fortuneChance = own;
+        // 🛡 v256 — additive stacking (fortune + 행운연쇄 합산)
+        state.metaMods.fortuneChance += ab.level * 0.05 * perma;
       },
     },
     mastery: {
@@ -5272,9 +5269,8 @@
         if (!state.metaMods) return;
         const perma = 1 + getAbilityPermaBonus('mastery');   // 🌟 영구강화
         const n = state.tower.abilities.filter(a => !ABILITY_DEFS[a.id].isPassive).length;
-        // 🛡 v254 — defensive max-merge
-        const own = n * ab.level * 0.04 * perma;
-        if (own > state.metaMods.masteryBonus) state.metaMods.masteryBonus = own;
+        // 🛡 v256 — additive stacking
+        state.metaMods.masteryBonus += n * ab.level * 0.04 * perma;
       },
     },
     scholar: {
@@ -5285,9 +5281,10 @@
         if (!state.metaMods) return;
         const perma = 1 + getAbilityPermaBonus('scholar');   // 🌟 영구강화 (할인 +%)
         const discount = ab.level * 0.04 * perma;
-        // 🛡 v254 — defensive min-merge (할인은 작을수록 좋음)
-        const own = 1 - Math.min(0.55, discount);
-        if (own < state.metaMods.scholarMul) state.metaMods.scholarMul = own;
+        // 🛡 v256 — multiplicative stacking (scholar + scholarSnipe 곱연산 — 둘 다 효과 발휘)
+        //   scholarMul (1=full cost) → 각 source 의 (1-discount) 를 곱해서 누적
+        //   최종 cap 은 enhanceCost 에서 Math.max(0.45, ...) 로 처리됨
+        state.metaMods.scholarMul *= (1 - Math.min(0.55, discount));
       },
     },
     ironwill: {
@@ -5297,9 +5294,8 @@
       tick(ab) {
         if (!state.metaMods) return;
         const perma = 1 + getAbilityPermaBonus('ironwill');   // 🌟 영구강화
-        // 🛡 v254 — defensive max-merge
-        const own = ab.level * 0.15 * perma;
-        if (own > state.metaMods.ironwillBonus) state.metaMods.ironwillBonus = own;
+        // 🛡 v256 — additive stacking
+        state.metaMods.ironwillBonus += ab.level * 0.15 * perma;
       },
     },
     executioner: {
@@ -5309,9 +5305,8 @@
       tick(ab) {
         if (!state.metaMods) return;
         const perma = 1 + getAbilityPermaBonus('executioner');   // 🌟 영구강화
-        // 🛡 v254 — defensive max-merge
-        const own = ab.level * 0.15 * perma;
-        if (own > state.metaMods.executionerBonus) state.metaMods.executionerBonus = own;
+        // 🛡 v256 — additive stacking
+        state.metaMods.executionerBonus += ab.level * 0.15 * perma;
       },
     },
     resilience: {
@@ -5326,8 +5321,8 @@
         const perStack = ab.level * 0.015 * perma;
         const max = ab.level * 0.50 * perma;
         ab.bonus = Math.min(max, stacks * perStack);
-        // 🛡 v254 — defensive max-merge
-        if (ab.bonus > state.metaMods.resilienceBonus) state.metaMods.resilienceBonus = ab.bonus;
+        // 🛡 v256 — additive stacking
+        state.metaMods.resilienceBonus += ab.bonus;
       },
     },
 
@@ -6428,7 +6423,7 @@
         // 🎯 정확 패시브 계승 — 모든 데미지 +8%/lv
         if (state.metaMods) {
           const own = ab.level * 0.08;
-          if (own > (state.metaMods.precisionBonus || 0)) state.metaMods.precisionBonus = own;
+          state.metaMods.precisionBonus += own;  // 🛡 v256 — additive
         }
         if (--ab.cooldown > 0) return;
         const target = findNearestEnemy(ARENA_R + 50);
@@ -6477,7 +6472,7 @@
           if (ab.frenzyFrames > 0) {
             ab.frenzyFrames--;
             const own = ab.level * 0.10;
-            if (own > (state.metaMods.frenzyBonus || 0)) state.metaMods.frenzyBonus = own;
+            state.metaMods.frenzyBonus += own;  // 🛡 v256 — additive
           }
         }
         const dmg = 5 + ab.level * 3;
@@ -6519,9 +6514,7 @@
       tick(ab) {
         // 🩸 흡혈 패시브 효과 계승 — 모든 처치 골드 +12%/lv (vampiric 대체)
         if (state.metaMods) {
-          const existing = state.metaMods.bonusGoldMul || 0;
-          const ownBonus = ab.level * 0.12;
-          if (ownBonus > existing) state.metaMods.bonusGoldMul = ownBonus;
+          state.metaMods.bonusGoldMul += ab.level * 0.12;  // 🛡 v256 — additive
         }
         for (const e of ab.fx) e.life--;
         ab.fx = ab.fx.filter(e => e.life > 0);
@@ -6569,9 +6562,7 @@
       tick(ab) {
         // 🍀 행운 패시브 효과 계승 — 모든 처치에 확률적 점수 보너스 (lv당 +8%)
         if (state.metaMods) {
-          const existing = state.metaMods.fortuneChance || 0;
-          const ownBonus = ab.level * 0.08;
-          if (ownBonus > existing) state.metaMods.fortuneChance = ownBonus;
+          state.metaMods.fortuneChance += ab.level * 0.08;  // 🛡 v256 — additive
         }
         for (const c of ab.chains) c.life--;
         ab.chains = ab.chains.filter(c => c.life > 0);
@@ -6629,7 +6620,7 @@
         if (state.metaMods) {
           const n = state.tower.abilities.filter(a => !ABILITY_DEFS[a.id].isPassive).length;
           const own = n * ab.level * 0.05;
-          if (own > (state.metaMods.masteryBonus || 0)) state.metaMods.masteryBonus = own;
+          state.metaMods.masteryBonus += own;  // 🛡 v256 — additive
         }
         ab.angle += 0.04 + ab.level * 0.005;
         const target = findNearestEnemy(ARENA_R + 100);
@@ -6685,7 +6676,7 @@
         // 📚 연구 패시브 계승 — 강화 비용 -5%/lv
         if (state.metaMods) {
           const own = 1 - ab.level * 0.05;
-          if (own < (state.metaMods.scholarMul || 1)) state.metaMods.scholarMul = own;
+          state.metaMods.scholarMul *= own;  // 🛡 v256 — multiplicative stacking
         }
         if (--ab.cooldown > 0) return;
         let target = null, best = -1;
@@ -6721,7 +6712,7 @@
         // 🛡 강철의지 패시브 계승 — 모든 능력 보스 데미지 +18%/lv
         if (state.metaMods) {
           const own = ab.level * 0.18;
-          if (own > (state.metaMods.ironwillBonus || 0)) state.metaMods.ironwillBonus = own;
+          state.metaMods.ironwillBonus += own;  // 🛡 v256 — additive
         }
         const dmg = 8 + ab.level * 6;
         for (const b of ab.boomerangs) {
@@ -7482,7 +7473,7 @@
         // ⚔ 처형 패시브 계승 — 모든 능력의 저체력 적 데미지 +18%/lv
         if (state.metaMods) {
           const own = ab.level * 0.18;
-          if (own > (state.metaMods.executionerBonus || 0)) state.metaMods.executionerBonus = own;
+          state.metaMods.executionerBonus += own;  // 🛡 v256 — additive
         }
         for (const e of ab.explosions) e.life--;
         ab.explosions = ab.explosions.filter(e => e.life > 0);
@@ -7543,7 +7534,7 @@
         if (state.metaMods) {
           const stacks = Math.floor((state.totalKills || 0) / 50);
           const own = Math.min(ab.level * 0.60, stacks * ab.level * 0.018);
-          if (own > (state.metaMods.resilienceBonus || 0)) state.metaMods.resilienceBonus = own;
+          state.metaMods.resilienceBonus += own;  // 🛡 v256 — additive
         }
         for (const [e, cd] of ab.hits) {
           if (cd <= 1 || e.hp <= 0) ab.hits.delete(e);
@@ -11134,14 +11125,15 @@
   // 능력 상향 보정 — 평균 빌드 DPS +20~30% 만큼 적 HP +8% 보정 (전 구간)
   const ABILITY_BUFF_HP_COMP = 1.08;
   function enemyHpFor(n) {
-    // R1~25 지수 성장, R26+ 선형 + 약한 2차 항 → 후반 가파르게
+    // R1~25 지수 성장 (그대로 — 초반 큰 변화 없음), R26+ 가파르게 (베테랑 파워 대응)
     let base;
     if (n <= 25) base = Math.ceil(3 * Math.pow(1.35, n - 1));
     else {
       const baseR25 = Math.ceil(3 * Math.pow(1.35, 24));
       const d = n - 25;
-      // 선형 0.18 + 2차 0.0035 — R50: 5.7x, R75: 10.4x, R100: 17.5x
-      base = Math.ceil(baseR25 * (1 + d * 0.18 + d * d * 0.0035));
+      // 🛡 v259 — 중후반 곡선 강화: 선형 0.18 → 0.22, 2차 0.0035 → 0.005
+      //   R50: ×7.7→×9.6 (+25%), R75: ×18.75→×22.4 (+20%), R100: ×34.2→×45.6 (+33%)
+      base = Math.ceil(baseR25 * (1 + d * 0.22 + d * d * 0.005));
     }
     // ♾ 엔드리스: R100 이후 매 라운드 ×ENDLESS_HP_MUL (R101 = R100 × 1.5, R102 = R100 × 2.25, ...)
     if (n > MAX_ROUND) {
@@ -11190,11 +11182,9 @@
         tdBossHpMul = 1.35;
       }
     }
-    // 🛡 v251 — 엔드리스 (R100+) 적 HP 가속 — 라운드당 +6% (베테랑 어센던트/유물 스택 대응)
-    //   R110: ×1.6, R150: ×4, R200: ×7
-    const endlessHpMul = n > MAX_ROUND ? (1 + (n - MAX_ROUND) * 0.06) : 1;
-    const hp = Math.ceil(baseHp * asc.enemyHpMul * tdHpMul * endlessHpMul);
-    const bossHp = Math.ceil(baseHp * (isFinal ? 13 : 10) * asc.bossHpMul * relicBossHp * tdBossHpMul * endlessHpMul);
+    // 🛡 v259 — v251 엔드리스 +6%/round 롤백: enemyHpFor() 가 이미 R100+ 에서 ×1.5^(n-100) 가속 → 추가 보정 불필요 (이중 가속이라 너무 가팔라짐)
+    const hp = Math.ceil(baseHp * asc.enemyHpMul * tdHpMul);
+    const bossHp = Math.ceil(baseHp * (isFinal ? 13 : 10) * asc.bossHpMul * relicBossHp * tdBossHpMul);
     const baseTime = isFinal ? 180 : 30;
     const duration = Math.max(15, Math.floor((baseTime + (mm.roundTimeBonus || 0)) * asc.roundTimeMul)) * FPS;
     const baseSpawn = isFinal ? 30 : (isBoss ? 10 : 20);
@@ -11511,7 +11501,9 @@
       const cfg2 = roundConfig(state.round);
       const mm = state.metaMods || { goldMul: 1, scoreMul: 1, bonusGoldMul: 0 };
       const simKills = cfg2.spawnCount;
-      const goldEach = Math.ceil(cfg2.enemyGold * (mm.goldMul || 1) * (1 + (mm.bonusGoldMul || 0)));
+      // 🛡 v257 — bonusGoldMul cap 동일 적용 (스킵 라운드 보상도 동일하게)
+      const goldBonus = Math.min(3.0, mm.bonusGoldMul || 0);
+      const goldEach = Math.ceil(cfg2.enemyGold * (mm.goldMul || 1) * (1 + goldBonus));
       const giveGold  = simKills * goldEach;
       const giveScore = Math.ceil(simKills * 10 * state.round * (mm.scoreMul || 1) * ((state.asc && state.asc.scoreReward) || 1));
       state.gold  += giveGold;
@@ -13261,7 +13253,8 @@
     row.className = `rank-row ${isMe ? 'me' : ''} rank-${rankNum <= 3 ? rankNum : 'n'}`;
     const ch = CHARACTERS[r.character];
     const charName = ch ? ch.name : (r.character || '?');
-    const ascText = r.ascension > 0 ? `승천 ${r.ascension}` : '기본';
+    // 🛡 v258 — ascensionLabel 사용 (초월 영역도 정상 표시)
+    const ascText = r.ascension > 0 ? ascensionLabel(r.ascension) : '기본';
     // 📏 닉네임 길이 기반 폰트 자동 축소 (한국어/이모지 고려해 codePoint 단위 카운트)
     const nick = r.nickname || '';
     const nickLen = [...nick].length;
@@ -13304,12 +13297,13 @@
   // 승천 (0~15): 선형 + 2차 — 점진적 상승
   // 초월 (16~30 = trans 1~15): 승천 15 위에 두 번째 가파른 곡선 — 거의 불가능 수준
   function getAscensionMods(asc) {
-    // === 1) 승천 영역 (0~15) — 기존 곡선 + v251 베테랑 보정 ===
+    // === 1) 승천 영역 (0~15) — 기존 곡선 + v259 베테랑 보정 ===
     if (asc <= MAX_ASCENSION) {
-      // 🛡 v251 — ANCIENT/어센던트/유물 스택 등 베테랑 파워 대응
-      // 승천 10+ 에 추가 HP 보정 (10:+5%, 15:+30% / 보스 더 가파름)
-      const veteranBoost  = asc >= 10 ? (1 + (asc - 9) * 0.05) : 1;
-      const veteranBossB  = asc >= 10 ? (1 + (asc - 9) * 0.06) : 1;
+      // 🛡 v259 — ANCIENT/어센던트/유물 스택 등 베테랑 파워 대응 (이전 v251 보정 강화)
+      // 승천 10+ 에 추가 HP 보정 (10:+20%, 15:+120% / 보스 +15~90%)
+      //   풀빌드 베테랑 데미지 ×20~30 에 맞춰 asc 15 가 "거의 풀강으로도 빠듯" 수준
+      const veteranBoost  = asc >= 10 ? (1 + (asc - 9) * 0.20) : 1;
+      const veteranBossB  = asc >= 10 ? (1 + (asc - 9) * 0.15) : 1;
       return {
         enemyHpMul:    (1 + 0.30 * asc + 0.025 * asc * asc) * veteranBoost,
         bossHpMul:     (1 + 0.40 * asc + 0.030 * asc * asc) * veteranBossB,
@@ -14458,12 +14452,15 @@
     // 모든 데미지 멀티 (캐릭터 + 모든 패시브 + 메타 효과)
     if (state.metaMods) {
       const mm = state.metaMods;
+      // 🛡 v257 — 패시브 합산 cap (한 슬롯당 최대 +500% / 5x boost)
+      //   합산 무한대 방지 + 슬롯간 곱연산이라 5^N 폭증도 자연 방지
+      const cap = v => Math.min(5.0, v || 0);
       let mul = (mm.dmgMul || 1)
         * (1 + (mm.dmgBoost || 0))            // 메타: 데미지 부스트
-        * (1 + (mm.furyBonus || 0))           // 액티브 패시브: 분노
-        * (1 + (mm.precisionBonus || 0))      // 패시브: 정확
-        * (1 + (mm.frenzyBonus || 0))         // 패시브: 광폭
-        * (1 + (mm.masteryBonus || 0));       // 패시브: 숙련
+        * (1 + cap(mm.furyBonus))             // 액티브 패시브: 분노
+        * (1 + cap(mm.precisionBonus))        // 패시브: 정확
+        * (1 + cap(mm.frenzyBonus))           // 패시브: 광폭
+        * (1 + cap(mm.masteryBonus));         // 패시브: 숙련
       // ⭐ 캐릭터 별 보너스 — 가챠 캐릭터 고유 능력에만 적용 (해당 캐릭터 별 수만큼 데미지 ↑)
       const starBonus = getCharStarBonusForAbility(state.currentAbilityId);
       if (starBonus > 0) mul *= (1 + starBonus);
@@ -14490,11 +14487,13 @@
         mul *= vulnMul;
       }
       if (e.isBoss) {
-        mul *= (mm.bossDmgMul || 1) * (1 + (mm.ironwillBonus || 0));
+        // 🛡 v257 — ironwillBonus cap (한 슬롯당 +500%)
+        mul *= (mm.bossDmgMul || 1) * (1 + cap(mm.ironwillBonus));
       }
       // 신규 패시브: 처형 (저체력 비-보스 적에게 추가 데미지)
       if (!e.isBoss && mm.executionerBonus && e.maxHp > 0 && e.hp / e.maxHp <= 0.5) {
-        mul *= (1 + mm.executionerBonus);
+        // 🛡 v257 — executionerBonus cap
+        mul *= (1 + cap(mm.executionerBonus));
       }
       // 💎 유물 처형 (즉사) — 저체력 비-보스 적
       const exBelow = (state.relicEffects && state.relicEffects.executeBelow) || 0;
@@ -14532,7 +14531,8 @@
       }
       // 신규 패시브: 불굴 (누적 처치에 비례한 영구 데미지 — 매 프레임 갱신됨)
       if (mm.resilienceBonus) {
-        mul *= (1 + mm.resilienceBonus);
+        // 🛡 v257 — resilienceBonus cap
+        mul *= (1 + cap(mm.resilienceBonus));
       }
       // 조합/트리플 위계 보너스 — 메타 강화 적용 (comboPower)
       // 사용자 요청: 기본 능력 2개 max 합친 거니까 조합 = 기본max × 2 이상,
@@ -14583,13 +14583,17 @@
       // 골드 — 흡혈 패시브 + 보스 골드 보너스 (메타)
       // 보스 골드 배수 — 0 이하로는 떨어지지 않게 클램프 (deathPromise -0.5 + 기타 음수 합산 방어)
       const bossGold = e.isBoss ? Math.max(0, 1 + (mm.bossGoldMul || 0)) : 1;
-      const goldDrop = Math.ceil(e.goldDrop * mm.goldMul * (1 + (mm.bonusGoldMul || 0)) * bossGold);
+      // 🛡 v257 — bonusGoldMul cap (최대 +300% / 4x 골드) — vampiric + 약탈폭격 합산 폭주 방지
+      const goldBonus = Math.min(3.0, mm.bonusGoldMul || 0);
+      const goldDrop = Math.ceil(e.goldDrop * mm.goldMul * (1 + goldBonus) * bossGold);
       state.gold += goldDrop;
       // 💎 망자의 부적용 누적 골드 추적
       if (state.relicEffects) state.relicEffects.goldEarnedTotal = (state.relicEffects.goldEarnedTotal || 0) + goldDrop;
       // 점수 + 행운 보너스 (확률)
       state.score += Math.ceil(10 * state.round * mm.scoreMul * ((state.asc && state.asc.scoreReward) || 1));
-      if (mm.fortuneChance && Math.random() < mm.fortuneChance) {
+      // 🛡 v257 — fortuneChance cap 0.95 (절대 100% 안 됨 — 약간의 랜덤성 보존)
+      const fortuneP = Math.min(0.95, mm.fortuneChance || 0);
+      if (fortuneP > 0 && Math.random() < fortuneP) {
         const fortuneBonus = Math.ceil(40 * state.round * mm.scoreMul);
         state.score += fortuneBonus;
         const [ex2, ey2] = enemyXY(e);
@@ -20636,7 +20640,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 255;
+  const APP_VERSION = 259;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
@@ -21921,8 +21925,9 @@
       const d = new Date(rec.date);
       const dateStr = `${String(d.getFullYear()).slice(2)}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
       const roundLabel = rec.win ? '🏆 100라운드 클리어' : `도달 R${rec.round}`;
+      // 🛡 v258 — ascensionLabel 로 초월(16+) 표시 정상화
       const ascBadge = (rec.ascension && rec.ascension > 0)
-        ? `<span style="background:${rec.ascension >= 10 ? '#ff66bb' : '#ffd479'};color:#0b0d12;padding:1px 6px;border-radius:3px;font-size:11px;font-weight:bold;margin-right:6px">⚡ 승천 ${rec.ascension}</span>`
+        ? `<span style="background:${rec.ascension > MAX_ASCENSION ? '#ff66bb' : (rec.ascension >= 10 ? '#ffaa55' : '#ffd479')};color:#0b0d12;padding:1px 6px;border-radius:3px;font-size:11px;font-weight:bold;margin-right:6px">${ascensionLabel(rec.ascension)}</span>`
         : '';
       card.innerHTML = `
         <div class="rank">${i + 1}</div>
