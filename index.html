@@ -17230,9 +17230,11 @@
     _setStyle(bar, 'width', (pct*100) + '%');
     _toggleClass(bar.parentElement, 'danger', pct > 0.75);
     _toggleClass(bar.parentElement, 'warn',   pct > 0.5 && pct <= 0.75);
-    // 랜덤 버튼 상태 — 골드만 충족하면 항상 활성 (슬롯 가득 시 보너스 카드 모드)
+    // 🛡 v214 — 랜덤 버튼 상태 — _setDisabled 캐시가 refreshAbilityAffordability 의 직접 .disabled=true 설정과
+    //   충돌해서 모달 닫혀도 캐시가 stale인 채로 남는 버그 발생. 직접 set 으로 변경.
     const acqCost = randomAcquireCost();
-    _setDisabled(elRandom, state.gold < acqCost);
+    const modalOpenForRandom = !!state.levelUpChoices;
+    elRandom.disabled = state.gold < acqCost || modalOpenForRandom;
     // 슬롯 가득이면 보너스 카드 모드임을 명시
     const aFull = activeCount() >= maxActiveSlots();
     const pFull = passiveCount() >= maxPassiveSlots();
@@ -17240,10 +17242,12 @@
     const hasUpgradable = state.tower.abilities.some(a => !isAtMax(a));
     const bonusOnly = aFull && pFull && !hasCombo && !hasUpgradable;
     const costLabel = acqCost === 0 ? '무료' : `${acqCost}G`;
-    _setText(elRandom, bonusOnly
+    const newText = bonusOnly
       ? `🎁 보너스 카드 (${costLabel})`
-      : `🎲 랜덤 능력 획득 (${costLabel})`);
-    // 능력 강화 버튼 어포더블 상태 매 프레임 갱신 (골드 변경에 즉시 반응)
+      : `🎲 랜덤 능력 획득 (${costLabel})`;
+    // 텍스트만 캐시 (성능) — 안전한 비교
+    if (elRandom._lastText !== newText) { elRandom.textContent = newText; elRandom._lastText = newText; }
+    // 능력 강화 버튼 어포더블 상태 매 프레임 갱신
     refreshAbilityAffordability();
   }
 
@@ -17280,8 +17284,7 @@
       btn.disabled = modalOpen;
       btn.style.opacity = modalOpen ? '0.4' : '';
     }
-    // 랜덤 능력 획득 버튼도 모달 중 비활성
-    if (modalOpen && elRandom && !elRandom.disabled) elRandom.disabled = true;
+    // 랜덤 버튼 처리는 renderStats 에서 이미 함 (modal + gold 조건 둘 다 반영) — 여기선 중복 X
   }
 
   let currentAbTab = 'active';
@@ -17661,6 +17664,64 @@
   const abilitiesEl = document.getElementById('abilities');
   const toggleBtn = document.getElementById('abilityToggle');
   let abilitiesCollapsed = false;  // 세로 모드에서 기본 접힘
+
+  // 🚀 v214 — 탭 컨테이너 click+touch 드래그 스크롤
+  //   CSS 만으로는 데스크탑 클릭 드래그 안 됨. JS로 명시적 구현.
+  //   터치는 native scroll로도 되지만 fallback으로 같이 처리.
+  function attachDragScroll(el) {
+    if (!el || el._dragScrollAttached) return;
+    el._dragScrollAttached = true;
+    let isDown = false;
+    let startX = 0;
+    let scrollStart = 0;
+    let dragged = false;
+    let pointerId = null;
+    const DRAG_THRESHOLD = 6;   // 이 이상 움직이면 "드래그"로 간주 → 자식 클릭 무시
+    el.style.cursor = 'grab';
+    el.style.userSelect = 'none';
+    el.addEventListener('pointerdown', (e) => {
+      // 자식 button 의 클릭 자체는 그대로 — 드래그가 시작되면 click 차단
+      isDown = true; dragged = false;
+      startX = e.clientX;
+      scrollStart = el.scrollLeft;
+      pointerId = e.pointerId;
+      el.style.cursor = 'grabbing';
+      try { el.setPointerCapture(pointerId); } catch {}
+    });
+    el.addEventListener('pointermove', (e) => {
+      if (!isDown) return;
+      const dx = e.clientX - startX;
+      if (Math.abs(dx) > DRAG_THRESHOLD) dragged = true;
+      el.scrollLeft = scrollStart - dx;
+    });
+    const finish = () => {
+      if (!isDown) return;
+      isDown = false;
+      try { if (pointerId != null) el.releasePointerCapture(pointerId); } catch {}
+      pointerId = null;
+      el.style.cursor = 'grab';
+    };
+    el.addEventListener('pointerup', finish);
+    el.addEventListener('pointercancel', finish);
+    el.addEventListener('pointerleave', finish);
+    // 드래그 중이었다면 자식 click 차단 (탭 선택 방지)
+    el.addEventListener('click', (e) => {
+      if (dragged) { e.stopPropagation(); e.preventDefault(); dragged = false; }
+    }, true);   // capture 단계에서 차단
+    // 마우스 휠로도 가로 스크롤 가능 (데스크탑 보너스)
+    el.addEventListener('wheel', (e) => {
+      if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+        el.scrollLeft += e.deltaY;
+        e.preventDefault();
+      }
+    }, { passive: false });
+  }
+  // 페이지 로드 후 모든 .codex-tabs 에 드래그 스크롤 부착
+  function initAllDragScroll() {
+    document.querySelectorAll('.codex-tabs').forEach(attachDragScroll);
+  }
+  // DOM 준비되는 대로 부착
+  initAllDragScroll();
 
   function fitScale() {
     if (wrapEl.style.display === 'none') return;
@@ -18570,7 +18631,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 213;
+  const APP_VERSION = 215;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
