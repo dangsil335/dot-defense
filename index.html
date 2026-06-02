@@ -3013,10 +3013,28 @@
   // ===== 상수 =====
   const canvas = document.getElementById('game');
   const ctx = canvas.getContext('2d');
+  // 📱 모바일 성능 — 발열/렉/강제종료 완화
+  //   모바일 판별 (터치 포인터 또는 UA)
+  const IS_MOBILE = (function(){
+    try { return (window.matchMedia && window.matchMedia('(pointer: coarse)').matches)
+      || /Android|iPhone|iPad|iPod|Mobile|Silk|Kindle/i.test(navigator.userAgent || ''); }
+    catch(e){ return false; }
+  })();
+  // 📱 그림자 블러는 캔버스에서 가장 비싼 연산 → 모바일에선 전역 무력화 (프로토타입 단일 패치)
+  if (IS_MOBILE) {
+    try {
+      const _proto = CanvasRenderingContext2D.prototype;
+      const _d = Object.getOwnPropertyDescriptor(_proto, 'shadowBlur');
+      if (_d && _d.set) Object.defineProperty(_proto, 'shadowBlur', {
+        configurable: true, get: _d.get, set: function(){ _d.set.call(this, 0); },
+      });
+    } catch(e){}
+  }
   // 논리적 크기 — 모드별로 가변 (표준 640×640, TD 540×800)
   // 내부 해상도는 DPR 만큼 키워 텍스트 선명도 확보.
   let W = 640, H = 640;
-  const DPR = Math.max(1, Math.min(3, window.devicePixelRatio || 1));
+  // 📱 DPR 제한 — 모바일 1.5배(픽셀 ~75%↓), 데스크탑 2배. (기존 3배는 휴대폰에서 370만 픽셀/프레임 → 과열)
+  const DPR = Math.max(1, Math.min(IS_MOBILE ? 1.5 : 2, window.devicePixelRatio || 1));
   // ⚠ CX, CY는 가변 — 타워별 컨텍스트 스왑 시 임시로 변경됨 (TD 모드)
   // 그래도 대부분의 시간엔 "캔버스 중앙"의 의미로 동작
   let CX = W/2, CY = H/2;
@@ -11284,6 +11302,8 @@
     // 'standard': 기존 — 적 한계 초과 시 패배
     // 'defense':  디펜스 — 적이 타워로 직진, 타워 HP 0 시 패배
     const gameMode = META.lastSelectedMode === 'defense' ? 'defense' : 'standard';
+    // 🔒 게임 시작 시 해금 검증 — 잠긴 캐릭터로 시작 못 하게 (조작 방지)
+    try { if (!isCharUnlocked(selectedCharacter)) { selectedCharacter = 'standard'; META.selectedCharacter = 'standard'; } } catch (e) { selectedCharacter = 'standard'; }
     state = {
       mode: gameMode,
       // 🏰 디펜스 모드 전용 — 타워 체력
@@ -14102,6 +14122,8 @@
     return have.has(c.unlockBy);
   }
   let selectedCharacter = META.selectedCharacter || 'standard';
+  // 🔒 해금되지 않은 캐릭터가 선택돼 있으면(데이터 오염/조작 방지) standard로 강제 + 저장값도 정리
+  try { if (!isCharUnlocked(selectedCharacter)) { selectedCharacter = 'standard'; META.selectedCharacter = 'standard'; } } catch (e) { selectedCharacter = 'standard'; }
 
   // ===== 업적 시스템 (15+) — 일부는 캐릭터/능력을 해금 =====
   // unlocks: { char: 'id' } or { ability: 'id' }
@@ -16334,7 +16356,8 @@
     // 파티클 수 줄이고 수명 짧게 — 시각적 노이즈 감소
     n = Math.max(1, Math.floor(n * 0.6));
     // 🛡 글로벌 캡 — 많은 적 동시 피격 시 FPS 보호 (특히 슬로우/광역 동시 다발 시)
-    const cap = 350;
+    // 📱 모바일은 더 낮게 (발열/렉 완화)
+    const cap = IS_MOBILE ? 150 : 350;
     const room = cap - state.particles.length;
     if (room <= 0) return;
     if (n > room) n = room;
@@ -21129,7 +21152,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 283;
+  const APP_VERSION = 285;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
