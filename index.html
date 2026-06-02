@@ -3295,7 +3295,8 @@
   }
   function maxPassiveSlots() {
     const relicMod = (typeof state !== 'undefined' && state && state.relicEffects) ? (state.relicEffects.bonusPassiveSlot || 0) : 0;
-    return MAX_SLOTS + relicMod;
+    const metaMod = (typeof state !== 'undefined' && state && state.metaMods) ? (state.metaMods.passiveSlotBonus || 0) : 0;  // 🆕 v280
+    return MAX_SLOTS + relicMod + metaMod;
   }
   function activeCount() { return state.tower.abilities.filter(a => !ABILITY_DEFS[a.id].isPassive).length; }
   function passiveCount() { return state.tower.abilities.filter(a => ABILITY_DEFS[a.id].isPassive).length; }
@@ -13798,6 +13799,7 @@
   const SHOP_CATEGORIES = [
     { id: 'resource', label: '💰 자원',     color: '#ffd479' },
     { id: 'combat',   label: '⚔️ 전투력',    color: '#ff8a98' },
+    { id: 'attacktype', label: '🎯 공격 유형 특화', color: '#ff9966' },
     { id: 'build',    label: '🎴 빌드 / 카드', color: '#b890ff' },
     { id: 'survival', label: '🛡️ 생존 / 슬롯',  color: '#7ad7ff' },
     { id: 'defense',  label: '🏰 디펜스 모드', color: '#ddc080' },
@@ -13809,11 +13811,23 @@
     { id: 'goldGain',    category: 'resource', name: '골드 획득량',       desc: 'lv당 +4%',              maxLv: 8,  cost: lv => 60 * (lv + 1),  apply: lv => 0.04 * lv },
     { id: 'bossGold',    category: 'resource', name: '보스 골드 보너스',  desc: 'lv당 +15% 보스 골드',    maxLv: 4,  cost: lv => 100 * (lv + 1), apply: lv => 0.15 * lv },
     { id: 'killScore',   category: 'resource', name: '처치 점수 보너스',  desc: 'lv당 +20%',             maxLv: 8,  cost: lv => 50 * (lv + 1),  apply: lv => 0.20 * lv },
+    { id: 'stardustGain', category: 'resource', name: '⭐ 스타더스트 획득', desc: 'lv당 게임 종료 보상 +5%', maxLv: 8, cost: lv => 120 * (lv + 1), apply: lv => 0.05 * lv },
 
     // === ⚔️ 전투력 ===
     { id: 'dmgBoost',    category: 'combat',  name: '데미지 부스트',     desc: 'lv당 +3% 모든 데미지',   maxLv: 5,  cost: lv => 150 * (lv + 1), apply: lv => 0.03 * lv },
     { id: 'bossDmg',     category: 'combat',  name: '보스 추가 데미지',  desc: 'lv당 +15%',             maxLv: 6,  cost: lv => 120 * (lv + 1), apply: lv => 0.15 * lv },
     { id: 'comboPower',  category: 'combat',  name: '조합 위계 강화',     desc: 'lv당 조합 +3%, 트리플 +5%', maxLv: 10, cost: lv => 250 * (lv + 1), apply: lv => 0.03 * lv },
+    // 🆕 v280 — 전투력 보강
+    { id: 'fireRate',    category: 'combat',  name: '⚡ 발사 속도',       desc: 'lv당 액티브 쿨다운 -2.5% (max -15%)', maxLv: 6, cost: lv => 200 * (lv + 1), apply: lv => 0.025 * lv },
+
+    // === 🎯 공격 유형 특화 (v282) — 능력의 무기 종류별 데미지 강화. 능력이 가진 유형마다 중첩 적용 ===
+    { id: 'dmgWide',   category: 'attacktype', name: '💥 광역 공격',     desc: 'lv당 광역/범위 능력 +4%',  maxLv: 6, cost: lv => 200 * (lv + 1), apply: lv => 0.04 * lv },
+    { id: 'dmgExplo',  category: 'attacktype', name: '🧨 폭발 공격',     desc: 'lv당 폭발 능력 +4%',       maxLv: 6, cost: lv => 200 * (lv + 1), apply: lv => 0.04 * lv },
+    { id: 'dmgPierce', category: 'attacktype', name: '🔫 관통/레이저',   desc: 'lv당 관통·빔 능력 +4%',    maxLv: 6, cost: lv => 200 * (lv + 1), apply: lv => 0.04 * lv },
+    { id: 'dmgMulti',  category: 'attacktype', name: '➿ 다중/연사',     desc: 'lv당 다중공격 능력 +4%',   maxLv: 6, cost: lv => 200 * (lv + 1), apply: lv => 0.04 * lv },
+    { id: 'dmgChain',  category: 'attacktype', name: '⚡ 연쇄 공격',     desc: 'lv당 연쇄 능력 +4%',       maxLv: 6, cost: lv => 200 * (lv + 1), apply: lv => 0.04 * lv },
+    { id: 'dmgSpin',   category: 'attacktype', name: '🌀 회전 공격',     desc: 'lv당 회전 능력 +4%',       maxLv: 6, cost: lv => 200 * (lv + 1), apply: lv => 0.04 * lv },
+    { id: 'dmgSnipe',  category: 'attacktype', name: '🎯 저격 공격',     desc: 'lv당 단발·저격 능력 +4%',  maxLv: 6, cost: lv => 200 * (lv + 1), apply: lv => 0.04 * lv },
 
     // === 🎴 빌드 / 카드 ===
     { id: 'freeRolls',   category: 'build',   name: '시작 레벨업',       desc: 'lv당 무료 레벨업 +1',     maxLv: 5,  cost: lv => 250 * (lv + 1), apply: lv => lv },
@@ -13829,6 +13843,7 @@
     // === 🛡️ 생존 / 슬롯 ===
     { id: 'extraSlot',   category: 'survival', name: '액티브 슬롯 +1',    desc: 'lv당 +1칸 (최대 +2)',    maxLv: 2,  cost: lv => 1200 * (lv + 1), apply: lv => lv },
     { id: 'maxAliveBonus', category: 'survival', name: '적 수용 한계',    desc: 'lv당 +5 마리',           maxLv: 6,  cost: lv => 350 * (lv + 1), apply: lv => 5 * lv },
+    { id: 'passiveSlot', category: 'survival', name: '⚙ 패시브 슬롯 +1',  desc: 'lv당 +1칸 (최대 +2)',    maxLv: 2,  cost: lv => 1000 * (lv + 1), apply: lv => lv },
     { id: 'roundTime',   category: 'survival', name: '라운드 시간 보너스', desc: 'lv당 +1초',              maxLv: 5,  cost: lv => 300 * (lv + 1), apply: lv => lv },
 
     // === 🏰 디펜스 모드 전용 ===
@@ -13840,14 +13855,14 @@
     { id: 'defenseSlow',   category: 'defense', name: '❄ 슬로우 강화',     desc: 'lv당 적 이동속도 -5%',     maxLv: 5,  cost: lv => 350 * (lv + 1), apply: lv => 0.05 * lv },
     { id: 'defenseRevive', category: 'defense', name: '🌅 한 번의 부활',   desc: '게임당 1회, HP 1 직전 풀회복', maxLv: 1,  cost: lv => 2000, apply: lv => lv },
   ];
-  // 🛒 v237 — 강화소 비용 전역 강화: 기존 선형(base × (lv+1))은 너무 저렴 (전체 만렙 ~111k).
-  //   새 공식: original × 2 × (1 + lv × 0.1) → 전체 만렙 ~330k.
-  //   - 베이스 ×2: 초/중반 진입장벽 적절히 ↑
-  //   - 후반 가속 (1 + lv·0.1): 만렙 마지막 레벨 비용 약 2-3배
+  // 🛒 v283 — 강화소 비용 전역 강화 (스타더스트 수급 증가 + 신규 항목 대응)
+  //   v237: ×2 × (1+lv×0.1) → v283: ×2.8 × (1+lv×0.15)
+  //   - 베이스 ×2.8: 전반 비용 40% ↑
+  //   - 후반 가속 강화 (0.1→0.15): 만렙 막판이 가파르게 (수급 많은 후반 흡수)
   (function applyShopCostInflation() {
     for (const up of META_UPGRADES) {
       const origCost = up.cost;
-      up.cost = (lv) => Math.ceil(origCost(lv) * 2 * (1 + lv * 0.1));
+      up.cost = (lv) => Math.ceil(origCost(lv) * 2.8 * (1 + lv * 0.15));
     }
   })();
   function getMetaMods() {
@@ -13867,7 +13882,16 @@
       levelUpFast: v('levelUpFast'),
       dmgBoost:    v('dmgBoost'),
       bossGoldMul: v('bossGold'),
-      // 신규 강화 항목
+      // 🆕 v280 — 신규 강화 항목
+      fireRateBonus:    v('fireRate'),       // 액티브 쿨다운 감소 (프레임당 추가 차감)
+      // 🎯 v282 — 공격 유형별 데미지 강화 (태그 기반)
+      tagDmg: {
+        wide:   v('dmgWide'),    explo: v('dmgExplo'), pierce: v('dmgPierce'),
+        multi:  v('dmgMulti'),   chain: v('dmgChain'), spin:   v('dmgSpin'),
+        snipe:  v('dmgSnipe'),
+      },
+      stardustGainMul:  1 + v('stardustGain'), // 게임 종료 스타더스트 배수
+      passiveSlotBonus: metaLv('passiveSlot'), // 패시브 슬롯 추가
       luckyChanceBonus:      v('luckyChance'),         // 럭키 카드 추가 확률
       superLuckyChanceBonus: v('superLuckyChance'),    // 슈퍼럭키 추가 확률
       comboPowerBonus:       v('comboPower'),          // 조합/트리플 데미지 보너스
@@ -13920,8 +13944,10 @@
     } else {
       scoreDust = 125 + Math.floor(Math.sqrt((score - 100000) / 20));
     }
-    // 🛡 v266 — 한 게임 스타더스트 상한 20,000 (인플레/폭증 방지)
-    const earned = Math.min(20000, Math.floor((scoreDust + state.round * 3 + (state.gameWin ? 300 : 0)) * ascMul));
+    // 🆕 v280 — 스타더스트 획득 강화 (메타) 적용
+    const sdGainMul = (state.metaMods && state.metaMods.stardustGainMul) || 1;
+    // 🛡 v266 — 한 게임 스타더스트 상한 20,000 (인플레/폭증 방지) — 강화 반영 후 cap
+    const earned = Math.min(20000, Math.floor((scoreDust + state.round * 3 + (state.gameWin ? 300 : 0)) * ascMul * sdGainMul));
     META.stardust = (META.stardust || 0) + earned;
     // 🛡 stardustEarned가 stardust보다 작으면 (서버 직접 수정 등) catch-up 보장 → sync 시 데이터 손실 방지
     META.stardustEarned = Math.max(META.stardustEarned || 0, (META.stardust - earned) || 0) + earned;
@@ -14604,10 +14630,22 @@
           if (re.darkPactBonus > 0 && ratio < 0.5) mul *= (1 + re.darkPactBonus);
           if (re.fateScaleBonus > 0 && ratio >= 0.5) mul *= (1 + re.fateScaleBonus);
         }
-        // 광역 능력 데미지 보너스 (현재 능력의 tag 확인)
-        if (re.aoeDmgMul !== 1 && state.currentAbilityTier && state.currentAbilityId) {
+        // 🎯 v282 — 공격 유형별 데미지 강화 (능력 태그 기반, 보유 유형마다 중첩)
+        if (state.currentAbilityTier && state.currentAbilityId) {
           const tags = ABILITY_TAGS[state.currentAbilityId] || [];
-          if (tags.includes('광역') || tags.includes('영역')) mul *= re.aoeDmgMul;
+          // 유물 aoeDmgMul — 기존대로 광역/영역
+          if (re.aoeDmgMul !== 1 && (tags.includes('광역') || tags.includes('영역'))) mul *= re.aoeDmgMul;
+          // 메타 공격 유형 특화 (태그별)
+          const td = mm.tagDmg;
+          if (td) {
+            if (td.wide   && (tags.includes('광역') || tags.includes('영역'))) mul *= (1 + td.wide);
+            if (td.explo  && tags.includes('폭발')) mul *= (1 + td.explo);
+            if (td.pierce && (tags.includes('관통') || tags.includes('빔'))) mul *= (1 + td.pierce);
+            if (td.multi  && tags.includes('다중공격')) mul *= (1 + td.multi);
+            if (td.chain  && tags.includes('연쇄')) mul *= (1 + td.chain);
+            if (td.spin   && tags.includes('회전')) mul *= (1 + td.spin);
+            if (td.snipe  && (tags.includes('단발') || tags.includes('단일') || tags.includes('최강적'))) mul *= (1 + td.snipe);
+          }
         }
       }
       // 신규 패시브: 불굴 (누적 처치에 비례한 영구 데미지 — 매 프레임 갱신됨)
@@ -15030,13 +15068,17 @@
     function abilityHasFutureUse(id) {
       const partners = COMBO_PARTNERS[id] || [];
       if (partners.length === 0) return true;   // 조합 없는 능력은 일반 허용
-      for (const p of partners) {
-        if (p.tier === 3) return true;          // 트리플 재료 — 무조건 통과
+      // 🛡 v277 — 이미 만든 조합(p.combo 보유)은 미래 가치 X → 그 경로 제외
+      //   (예: 흡혈의 유일 조합 '약탈폭격'을 이미 보유 → 흡혈은 더 뜨지 않음)
+      const usefulPartners = partners.filter(p => !owned.has(p.combo));
+      if (usefulPartners.length === 0) return false;  // 모든 조합 이미 완성 → 재료로서 무의미
+      for (const p of usefulPartners) {
+        if (p.tier === 3) return true;          // 미완성 트리플 재료 — 무조건 통과
       }
-      for (const p of partners) {
-        if (!consumedByCombos.has(p.partner)) return true;  // 소진 안 될 파트너
+      for (const p of usefulPartners) {
+        if (!consumedByCombos.has(p.partner)) return true;  // 소진 안 될 파트너로 만들 미완성 조합
       }
-      return false;   // 모든 일반 파트너가 소진 예정 + 트리플 X
+      return false;   // 남은 일반 파트너가 전부 소진 예정 + 트리플 X
     }
     // RANDOM_POOL_IDS 사용 → 가챠 고유 능력 카드 풀에서 완전 차단 (belt-and-suspenders)
     const unownedActive  = RANDOM_POOL_IDS.filter(id => !owned.has(id) && allowed.has(id) && !ABILITY_DEFS[id].isPassive && abilityHasFutureUse(id));
@@ -15138,17 +15180,22 @@
     // ===== 보너스 폴백 직전 — 능력 카드 한 번 더 시도 =====
     // (메인 루프가 abilityHasFutureUse 필터로 막혀서 풀이 비어버린 경우 대비)
     // abilityHasFutureUse 무시하고 슬롯 + 미보유 + 해금된 것 전부 허용.
+    // 🛡 v277 — 조합이 전부 완성된 "죽은 재료" 제외 (예: 약탈폭격 보유 시 흡혈) — 폴백에서도 막음
+    const comboDead = id => {
+      const ps = COMBO_PARTNERS[id];
+      return ps && ps.length > 0 && ps.every(p => owned.has(p.combo));
+    };
     while (choices.length < 3) {
       const newActiveCount = choices.filter(c => c.action === 'new' && !ABILITY_DEFS[c.id].isPassive).length;
       const newPassiveCount = choices.filter(c => c.action === 'new' && ABILITY_DEFS[c.id].isPassive).length;
       const aSlotsFree = activeCount() + newActiveCount < maxActiveSlots();
       const pSlotsFree = passiveCount() + newPassiveCount < maxPassiveSlots();
       const looseActive = RANDOM_POOL_IDS.filter(id =>
-        !owned.has(id) && allowed.has(id) && !ABILITY_DEFS[id].isPassive &&
+        !owned.has(id) && allowed.has(id) && !ABILITY_DEFS[id].isPassive && !comboDead(id) &&
         !choices.some(c => c.action === 'new' && c.id === id)
       );
       const looseUnPassive = RANDOM_POOL_IDS.filter(id =>
-        !owned.has(id) && allowed.has(id) && ABILITY_DEFS[id].isPassive &&
+        !owned.has(id) && allowed.has(id) && ABILITY_DEFS[id].isPassive && !comboDead(id) &&
         !choices.some(c => c.action === 'new' && c.id === id)
       );
       const canA = aSlotsFree && looseActive.length > 0;
@@ -15659,7 +15706,7 @@
         angle: 0, radius: 0, targetRadius: 0, radiusChangeAt: 999999,
         angularSpeed: 0,
         hp: Math.ceil(cfg.bossHp * specialHpMul), maxHp: Math.ceil(cfg.bossHp * specialHpMul),
-        size: special ? 22 : 18, goldDrop: Math.ceil(cfg.bossGold * (special ? 1.5 : 1)),
+        size: 18, goldDrop: Math.ceil(cfg.bossGold * (special ? 1.5 : 1)),
         slowFrames: 0, isBoss: true,
         type: 'boss', seed: Math.random() * 1000,
         rotation: 0, rotSpeed: special ? 0 : 0.012,   // 특수 보스는 회전 X (외형 인식)
@@ -15695,7 +15742,7 @@
       radiusChangeAt: 240,
       angularSpeed: cfg.enemySpeed * (Math.random() < 0.5 ? 1 : -1) * 0.4,
       hp: Math.ceil(cfg.bossHp * specialHpMul), maxHp: Math.ceil(cfg.bossHp * specialHpMul),
-      size: special ? 22 : 18, goldDrop: Math.ceil(cfg.bossGold * (special ? 1.5 : 1)),
+      size: 18, goldDrop: Math.ceil(cfg.bossGold * (special ? 1.5 : 1)),
       slowFrames: 0, isBoss: true,
       type: 'boss', seed: Math.random() * 1000,
       rotation: 0, rotSpeed: special ? 0 : 0.012,
@@ -16032,6 +16079,19 @@
     // 🛡 v254 — 패시브 공유 슬롯 프레임 리셋 (능력 제거 시 stale 값 잔존 방지)
     //   여러 능력/조합이 같은 metaMods 슬롯에 쓸 때 안전한 max/min 머지 가능하게 함
     resetSharedPassiveSlots();
+    // ⚡ v280 — 발사 속도 강화: 액티브 쿨다운 프레임당 추가 차감 (haste 메타판)
+    const _fireRate = (state.metaMods && state.metaMods.fireRateBonus) || 0;
+    if (_fireRate > 0) {
+      if (state.mode === 'defense') {
+        for (const t of (state.towers || [])) {
+          if (t.ab && t.ab.cooldown > 0) t.ab.cooldown -= _fireRate;
+        }
+      } else {
+        for (const a of state.tower.abilities) {
+          if (!ABILITY_DEFS[a.id].isPassive && a.cooldown > 0) a.cooldown -= _fireRate;
+        }
+      }
+    }
     // 💀 v267 — 사신 봉인 중이면 능력 tick 전체 스킵 (발사/패시브 정지)
     const _abilitySealed = state.abilitySealUntil > state.t;
     // 능력 tick — 모드별 분기
@@ -16787,64 +16847,60 @@
   }
 
   // ===== 🌌 v267 — 특수 보스 (고유 외형 + 등장 연출) =====
-  // draw 함수: (0,0) 중심 로컬 좌표. fill=본체색, eyeGlow=안광 강도(0~1), silhouette=그림자모드
-  // 🦈 우주 레비아탄 — 유선형 상어 (왼쪽 향함)
+  // draw 함수: (0,0) 중심 로컬 좌표. fill=본체색, eyeGlow=안광 강도(0~1)
+  // 🦈 v278 — 우주 레비아탄: 위에서 내려다본 시점 (머리=위 -y, 꼬리=아래 +y, 좌우 대칭)
+  //   탑다운 게임에 맞게 "위에서 본 상어" — drawBossE 에서 진행 방향으로 회전됨
   function drawLeviathanShape(ctx, s, fill, edge, eyeGlow, eyeColor) {
-    // 🦈 v269 — 헤엄 애니메이션: 꼬리 흔들기 + 몸통 S자 굽이
     const _t = (typeof state !== 'undefined' && state && state.t) || 0;
-    const sw = Math.sin(_t * 0.13);                 // 기본 웨이브
-    const tailWag = sw * s * 0.5;                   // 꼬리 흔들 진폭
-    const undul = Math.sin(_t * 0.13 - 0.7) * s * 0.12;  // 몸통 굽이 (위상차로 물결치듯)
-    // 몸체 (유선형 — 등/배가 물결치며 헤엄)
+    const sw = Math.sin(_t * 0.16);
+    const tail = sw * s * 0.4;                       // 꼬리 좌우(x) 스윙 — 헤엄
+    const bend = Math.sin(_t * 0.16 - 0.5) * s * 0.08;  // 몸통 좌우 굽이
+    // 몸통 (위=머리, 아래=꼬리자루, 좌우 대칭 유선형)
     ctx.fillStyle = fill;
     ctx.beginPath();
-    ctx.moveTo(-s * 1.4, undul * 0.4);                          // 주둥이
-    ctx.quadraticCurveTo(-s * 0.3, -s * 0.85 + undul, s * 0.6, -s * 0.4 + undul * 0.6);  // 등
-    ctx.quadraticCurveTo(s * 1.5, -s * 0.15 + tailWag * 0.5, s * 1.5, tailWag * 0.6);    // 꼬리 시작 위
-    ctx.quadraticCurveTo(s * 1.5, s * 0.15 + tailWag * 0.5, s * 0.6, s * 0.4 + undul * 0.6);  // 꼬리 시작 아래
-    ctx.quadraticCurveTo(-s * 0.3, s * 0.85 + undul, -s * 1.4, undul * 0.4);             // 배
+    ctx.moveTo(bend, -s * 1.5);                                     // 머리 끝 (위)
+    ctx.quadraticCurveTo(s * 0.62, -s * 0.45, s * 0.3, s * 0.6);    // 우측 몸통
+    ctx.quadraticCurveTo(s * 0.16 + tail, s * 1.0, tail, s * 1.2);  // 우측 꼬리자루
+    ctx.quadraticCurveTo(-s * 0.16 + tail, s * 1.0, -s * 0.3, s * 0.6); // 좌측 꼬리자루
+    ctx.quadraticCurveTo(-s * 0.62, -s * 0.45, bend, -s * 1.5);     // 좌측 몸통
     ctx.closePath(); ctx.fill();
     if (edge) { ctx.strokeStyle = edge; ctx.lineWidth = 1.5; ctx.stroke(); }
-    // 등지느러미 (몸통 굽이 따라 흔들림)
+    // 가슴지느러미 (중간 양옆)
     ctx.fillStyle = fill;
     ctx.beginPath();
-    ctx.moveTo(-s * 0.1, -s * 0.7 + undul);
-    ctx.lineTo(s * 0.25 + sw * s * 0.1, -s * 1.5 + undul);
-    ctx.lineTo(s * 0.5, -s * 0.55 + undul);
-    ctx.closePath(); ctx.fill();
-    if (edge) ctx.stroke();
-    // 꼬리지느러미 (좌우로 흔들림 — 헤엄의 핵심)
+    ctx.moveTo(s * 0.32, -s * 0.05); ctx.lineTo(s * 0.95, s * 0.35); ctx.lineTo(s * 0.38, s * 0.4);
+    ctx.closePath(); ctx.fill(); if (edge) ctx.stroke();
     ctx.beginPath();
-    ctx.moveTo(s * 1.3, tailWag * 0.6);
-    ctx.lineTo(s * 1.9, -s * 0.7 + tailWag);
-    ctx.lineTo(s * 1.55, tailWag * 0.6);
-    ctx.lineTo(s * 1.9, s * 0.7 + tailWag);
+    ctx.moveTo(-s * 0.32, -s * 0.05); ctx.lineTo(-s * 0.95, s * 0.35); ctx.lineTo(-s * 0.38, s * 0.4);
+    ctx.closePath(); ctx.fill(); if (edge) ctx.stroke();
+    // 꼬리지느러미 (아래 좌우 갈래 — 스윙)
+    ctx.beginPath();
+    ctx.moveTo(tail, s * 1.15);
+    ctx.lineTo(-s * 0.5 + tail * 1.3, s * 1.75);
+    ctx.lineTo(tail * 1.4, s * 1.35);
+    ctx.lineTo(s * 0.5 + tail * 1.3, s * 1.75);
+    ctx.closePath(); ctx.fill(); if (edge) ctx.stroke();
+    // 등지느러미 (위에서 본 가운데 능선 — 작은 삼각)
+    ctx.fillStyle = edge || fill;
+    ctx.beginPath();
+    ctx.moveTo(bend * 0.5, -s * 0.5); ctx.lineTo(s * 0.13, s * 0.25); ctx.lineTo(-s * 0.13, s * 0.25);
     ctx.closePath(); ctx.fill();
-    if (edge) ctx.stroke();
-    // 이빨 (주둥이 톱니) — 그림자 모드 X
-    if (!eyeGlow && edge) {
-      ctx.fillStyle = '#fff';
-      for (let i = 0; i < 4; i++) {
-        const tx = -s * 1.35 + i * s * 0.18;
-        ctx.beginPath();
-        ctx.moveTo(tx, s * 0.12 + undul * 0.4); ctx.lineTo(tx + s * 0.07, s * 0.32 + undul * 0.4); ctx.lineTo(tx + s * 0.14, s * 0.12 + undul * 0.4);
-        ctx.closePath(); ctx.fill();
+    // 눈 (머리 양옆, 안광)
+    const eyeY = -s * 1.0;
+    const eyePos = [[-s * 0.24, eyeY], [s * 0.24, eyeY]];
+    for (const [ex, ey] of eyePos) {
+      if (eyeGlow > 0) {
+        ctx.save();
+        ctx.shadowColor = eyeColor; ctx.shadowBlur = 26 * Math.min(1.4, eyeGlow);
+        ctx.fillStyle = eyeColor; ctx.globalAlpha = Math.min(1, eyeGlow);
+        ctx.beginPath(); ctx.arc(ex, ey, s * 0.16, 0, Math.PI * 2); ctx.fill();
+        ctx.globalAlpha = Math.min(1, eyeGlow) * 0.4;
+        ctx.beginPath(); ctx.arc(ex, ey, s * 0.32, 0, Math.PI * 2); ctx.fill();
+        ctx.restore();
+      } else {
+        ctx.fillStyle = eyeColor || '#66ffff';
+        ctx.beginPath(); ctx.arc(ex, ey, s * 0.1, 0, Math.PI * 2); ctx.fill();
       }
-    }
-    // 눈 (안광) — 주둥이 근처. v269 안광 강화 (더 크고 밝게)
-    const ex = -s * 0.55, ey = -s * 0.22 + undul * 0.4;
-    if (eyeGlow > 0) {
-      ctx.save();
-      ctx.shadowColor = eyeColor; ctx.shadowBlur = 28 * Math.min(1.4, eyeGlow);
-      ctx.fillStyle = eyeColor; ctx.globalAlpha = Math.min(1, eyeGlow);
-      ctx.beginPath(); ctx.arc(ex, ey, s * 0.2, 0, Math.PI * 2); ctx.fill();
-      // 외곽 글로우 헤일로
-      ctx.globalAlpha = Math.min(1, eyeGlow) * 0.4;
-      ctx.beginPath(); ctx.arc(ex, ey, s * 0.4, 0, Math.PI * 2); ctx.fill();
-      ctx.restore();
-    } else {
-      ctx.fillStyle = eyeColor || '#66ffff';
-      ctx.beginPath(); ctx.arc(ex, ey, s * 0.12, 0, Math.PI * 2); ctx.fill();
     }
   }
   // 💀 우주 사신 — 후드 망토 + 낫
@@ -16961,13 +17017,12 @@
       let eyeGlow = 0.3 + eased * 0.8;
       eyeGlow *= (0.65 + 0.35 * Math.sin(f * 0.16));
       if (f > 360) eyeGlow = Math.min(1.5, eyeGlow + (f - 360) / 130);
-      // 진행 방향으로 바라보기 (좌우 헤엄 방향감) — x 속도 부호
-      const xVel = Math.cos(f * 0.045) * (1 - eased);
-      const facing = xVel < -0.02 ? -1 : 1;   // 왼쪽 이동 시 뒤집기
+      // 🦈 v278 — 위에서 본 시점: 좌우 이동 방향으로 살짝 기울임 (머리는 위 향함)
+      const tilt = Math.cos(f * 0.045) * 0.25 * (1 - eased);
       ctx.save();
       ctx.globalAlpha = Math.min(1, shAlpha);
       ctx.translate(cx, cy);
-      ctx.scale(facing, 1);
+      ctx.rotate(tilt);
       def.draw(ctx, 50 * scale, '#06070f', '#101428', eyeGlow, def.eye);
       ctx.restore();
     }
@@ -17002,8 +17057,14 @@
     // 🌌 v267 — 특수 보스 전용 외형
     if (e.special && SPECIAL_BOSS_DEFS[e.special]) {
       const def = SPECIAL_BOSS_DEFS[e.special];
-      const s = e.size * 1.3;   // 특수 보스는 약간 크게
+      const s = e.size * 0.7;   // 🦈 v279 — 크기 축소 (레비아탄/사신 외형이 세로로 퍼져 너무 컸음 → 일반 보스 수준)
       ctx.save(); ctx.translate(x, y);
+      // 🦈 v278 — 레비아탄: 위에서 본 상어 → 진행 방향(중앙 향함)으로 회전 (머리가 코어 쪽)
+      //   사신은 유령(부유)이라 방향 무관 → 회전 X
+      if (e.special === 'leviathan') {
+        const angC = Math.atan2(CY - y, CX - x);
+        ctx.rotate(angC + Math.PI / 2);   // 머리(-y)를 중앙 방향으로
+      }
       // 🎬 등장 애니메이션
       const fx = bossSpawnFx(e);
       if (fx) { ctx.globalAlpha = fx.alpha; ctx.scale(fx.scale, fx.scale); }
@@ -21068,7 +21129,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 276;
+  const APP_VERSION = 283;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
