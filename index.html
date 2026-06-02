@@ -6626,8 +6626,8 @@
           const wasHp = current.hp;
           damageEnemy(current, dmg);
           if (wasHp > 0 && current.hp <= 0) {
-            // 행운 보너스 점수 (kill score x3)
-            state.score += Math.ceil(20 * state.round * ((state.metaMods && state.metaMods.scoreMul) || 1));
+            // 행운 보너스 점수 (kill score x3) — 🛡 v265 엔드리스 패널티 적용
+            state.score += Math.ceil(20 * state.round * ((state.metaMods && state.metaMods.scoreMul) || 1) * endlessScorePenalty());
           }
           spawnParticles(cx, cy, '#ffcc66', 3);
           hit.add(current);
@@ -10650,7 +10650,7 @@
     { id: 'asc_might',    icon: '💪', name: '거인의 권능', desc: '주요 데미지 +5%',  color: '#ff8800', apply: (st) => { st.metaMods.dmgMul = (st.metaMods.dmgMul || 1) * 1.05; } },
     { id: 'asc_gold',     icon: '💰', name: '황금의 손길', desc: '획득 골드 +5%',    color: '#ffd479', apply: (st) => { st.metaMods.goldMul = (st.metaMods.goldMul || 1) * 1.05; } },
     { id: 'asc_killGold', icon: '🪙', name: '풍요의 시혜', desc: '처치당 +1 골드',   color: '#ffe070', apply: (st) => { st.relicEffects.killGoldBonus = (st.relicEffects.killGoldBonus || 0) + 1; } },
-    { id: 'asc_score',    icon: '🏆', name: '영예의 인장', desc: '획득 점수 +5%',    color: '#88ffaa', apply: (st) => { st.metaMods.scoreMul = (st.metaMods.scoreMul || 1) * 1.05; } },
+    // ⚠ v265 — asc_score(점수 +5%) 제거: 무한 스택 시 scoreMul 폭증 → 엔드리스 점수 인플레 직접 원인
     { id: 'asc_bossDmg',  icon: '👹', name: '거대 사냥꾼', desc: '보스 데미지 +8%',  color: '#aa88ff', apply: (st) => { st.metaMods.bossDmgMul = (st.metaMods.bossDmgMul || 1) * 1.08; } },
   ];
   const ASCENDANT_BY_ID = {};
@@ -13915,7 +13915,8 @@
     } else {
       scoreDust = 125 + Math.floor(Math.sqrt((score - 100000) / 20));
     }
-    const earned = Math.floor((scoreDust + state.round * 3 + (state.gameWin ? 300 : 0)) * ascMul);
+    // 🛡 v266 — 한 게임 스타더스트 상한 20,000 (인플레/폭증 방지)
+    const earned = Math.min(20000, Math.floor((scoreDust + state.round * 3 + (state.gameWin ? 300 : 0)) * ascMul));
     META.stardust = (META.stardust || 0) + earned;
     // 🛡 stardustEarned가 stardust보다 작으면 (서버 직접 수정 등) catch-up 보장 → sync 시 데이터 손실 방지
     META.stardustEarned = Math.max(META.stardustEarned || 0, (META.stardust - earned) || 0) + earned;
@@ -14655,7 +14656,8 @@
       // 🛡 v257 — fortuneChance cap 0.95 (절대 100% 안 됨 — 약간의 랜덤성 보존)
       const fortuneP = Math.min(0.95, mm.fortuneChance || 0);
       if (fortuneP > 0 && Math.random() < fortuneP) {
-        const fortuneBonus = Math.ceil(40 * state.round * mm.scoreMul);
+        // 🛡 v265 — fortune 보너스도 엔드리스 패널티 적용 (점수 무한 누적 차단)
+        const fortuneBonus = Math.ceil(40 * state.round * mm.scoreMul * endlessScorePenalty());
         state.score += fortuneBonus;
         const [ex2, ey2] = enemyXY(e);
         state.damageNumbers.push({
@@ -14833,7 +14835,9 @@
     const scoreMul = (state && state.metaMods && state.metaMods.scoreMul) || 1;
     const baseLine = 150 * round + 4 * round * round;
     const variance = 0.92 + Math.random() * 0.16;
-    return Math.floor(Math.min(baseLine * scoreMul * variance, 80000));
+    // 🛡 v265 — cap(80k) 후 엔드리스 난이도 패널티 적용 → 일반 엔드리스 무한 점수 파밍 차단
+    const capped = Math.min(baseLine * scoreMul * variance, 80000);
+    return Math.floor(capped * endlessScorePenalty());
   }
   // 🏰 TD 모드 레벨업 카드 — 패시브 + 보너스 (액티브 X)
   function generateTDLevelUpChoices() {
@@ -15796,7 +15800,8 @@
         && state.roundFrame > 60
         && !bossAlive) {
       const timeSaved = Math.max(0, (cfg.duration - state.roundFrame) / FPS);
-      const bonus = Math.max(0, Math.floor(timeSaved * 10 * state.round));
+      // 🛡 v265 — 시간 보너스도 엔드리스 패널티 적용
+      const bonus = Math.max(0, Math.floor(timeSaved * 10 * state.round * endlessScorePenalty()));
       state.score += bonus;
       SFX.waveClear();
       state.waveClearText = {
@@ -20740,7 +20745,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 264;
+  const APP_VERSION = 266;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
