@@ -5287,13 +5287,13 @@
     },
     vampiric: {
       name: '흡혈', isPassive: true, baseCost: 65, color: '#cc6699',
-      desc: lv => `처치 시 추가 골드 +${lv*8}%`,
+      desc: lv => `처치 시 +${lv} 골드 (고정)`,
       init() {},
       tick(ab) {
         if (!state.metaMods) return;
-        const perma = 1 + getAbilityPermaBonus('vampiric');   // 🌟 영구강화 (골드 +%)
-        // 🛡 v256 — additive stacking (vampiric + 약탈폭격 합산)
-        state.metaMods.bonusGoldMul += ab.level * 0.08 * perma;
+        const perma = 1 + getAbilityPermaBonus('vampiric');   // 🌟 영구강화
+        // 💉 v276 — %→고정 +N 전환: 처치당 +lv 골드 (초반/후반 일관, 레벨업 체감 명확)
+        state.metaMods.vampiricFlat += ab.level * perma;
       },
     },
     fortune: {
@@ -11559,7 +11559,7 @@
       const simKills = cfg2.spawnCount;
       // 🛡 v257 — bonusGoldMul cap 동일 적용 (스킵 라운드 보상도 동일하게)
       const goldBonus = Math.min(3.0, mm.bonusGoldMul || 0);
-      const goldEach = Math.ceil(cfg2.enemyGold * (mm.goldMul || 1) * (1 + goldBonus));
+      const goldEach = Math.ceil(cfg2.enemyGold * (mm.goldMul || 1) * (1 + goldBonus)) + Math.floor(mm.vampiricFlat || 0);   // 💉 v276 흡혈 고정분 포함
       const giveGold  = simKills * goldEach;
       const giveScore = Math.ceil(simKills * 10 * state.round * (mm.scoreMul || 1) * ((state.asc && state.asc.scoreReward) || 1) * endlessScorePenalty());
       state.gold  += giveGold;
@@ -14666,7 +14666,9 @@
       const bossGold = e.isBoss ? Math.max(0, 1 + (mm.bossGoldMul || 0)) : 1;
       // 🛡 v257 — bonusGoldMul cap (최대 +300% / 4x 골드) — vampiric + 약탈폭격 합산 폭주 방지
       const goldBonus = Math.min(3.0, mm.bonusGoldMul || 0);
-      const goldDrop = Math.ceil(e.goldDrop * mm.goldMul * (1 + goldBonus) * bossGold);
+      // 💉 v276 — 흡혈 고정 골드 (처치당 +N, 적 골드 배수와 별개로 가산)
+      const vampFlat = Math.floor(mm.vampiricFlat || 0);
+      const goldDrop = Math.ceil(e.goldDrop * mm.goldMul * (1 + goldBonus) * bossGold) + vampFlat;
       state.gold += goldDrop;
       // 💎 망자의 부적용 누적 골드 추적
       if (state.relicEffects) state.relicEffects.goldEarnedTotal = (state.relicEffects.goldEarnedTotal || 0) + goldDrop;
@@ -14769,6 +14771,18 @@
           state.relicEffects.dragonStackBonus += state.relicEffects.dragonStackPerBoss;
         }
         state.relicEffects.bossesSlain = (state.relicEffects.bossesSlain || 0) + 1;
+        // ✨ v275 — 특수 보스 처치 추가 보상 (미니 제외) — 소량 (일반 적 ~6마리분)
+        if (e.special && !e.isMiniBoss) {
+          const mm2 = state.metaMods || {};
+          const bonusScore = Math.ceil(state.round * 60 * (mm2.scoreMul || 1) * ((state.asc && state.asc.scoreReward) || 1) * endlessScorePenalty());
+          const bonusGold = state.round * 2;
+          state.score += bonusScore;
+          state.gold += bonusGold;
+          const [bx2, by2] = enemyXY(e);
+          state.damageNumbers.push({ x: bx2, y: by2 - e.size - 16, vy: -1.4,
+            text: `✨ +${bonusScore.toLocaleString()}`, color: '#ff88ff', life: 55, size: 15 });
+          toast(`✨ 특수 보스 처치! +${bonusScore.toLocaleString()}점 · +${bonusGold}G`);
+        }
         // 🦈 v267 — 우주 레비아탄: 죽을 때 미니 레비아탄 2마리로 분열 (자식은 분열 X)
         if (e.special === 'leviathan' && !e.isMiniBoss) {
           for (let k = 0; k < 2; k++) {
@@ -15798,6 +15812,7 @@
     mm.ironwillBonus   = 0;
     mm.executionerBonus= 0;
     mm.resilienceBonus = 0;
+    mm.vampiricFlat    = 0;   // 💉 v276 — 흡혈 처치당 고정 골드 (%→+N 전환)
     // 1 로 리셋되는 슬롯들 (기본값 1, min 머지 — scholarMul 은 할인이라 작을수록 좋음)
     mm.scholarMul      = 1;
   }
@@ -21053,7 +21068,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 273;
+  const APP_VERSION = 276;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
