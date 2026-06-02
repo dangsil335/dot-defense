@@ -11312,6 +11312,9 @@
       autoCardTimer: 0,      // 자동 카드 선택 카운트다운 (프레임)
       round: 1,
       roundFrame: 0,        // 현재 라운드 경과 프레임
+      bossIntro: null,      // 🌌 v267 — 특수 보스 등장 연출 시퀀스 { special, frame, dur }
+      pendingSpecialBoss: null,  // 다음 spawnBoss 에 적용할 특수 보스 id
+      abilitySealUntil: 0,  // 사신 능력 봉인 종료 프레임
       spawnPlan: [],        // 이번 라운드에 남은 스폰 시점
       gold: 0,
       score: 0,
@@ -14374,6 +14377,12 @@
       for (let k = 1; k <= cfg.extraBosses; k++) {
         state.bossSpawns.push(60 + 3 * FPS * k);
       }
+      // 🌌 v267 — 특수 보스 등장 결정 (R15+ 보스 라운드, 35% 확률, 최종보스 R100 제외)
+      if (state.round >= 15 && !cfg.isFinal && Math.random() < 0.35) {
+        const sid = SPECIAL_BOSS_IDS[Math.floor(Math.random() * SPECIAL_BOSS_IDS.length)];
+        state.pendingSpecialBoss = sid;
+        state.bossIntro = { special: sid, frame: 0, skip: false };
+      }
     } else {
       state.bossSpawns = [];
     }
@@ -14750,6 +14759,23 @@
           state.relicEffects.dragonStackBonus += state.relicEffects.dragonStackPerBoss;
         }
         state.relicEffects.bossesSlain = (state.relicEffects.bossesSlain || 0) + 1;
+        // 🦈 v267 — 우주 레비아탄: 죽을 때 미니 레비아탄 2마리로 분열 (자식은 분열 X)
+        if (e.special === 'leviathan' && !e.isMiniBoss) {
+          for (let k = 0; k < 2; k++) {
+            const mini = Object.assign({}, e, {
+              hp: Math.max(1, Math.ceil(e.maxHp * 0.25)),
+              maxHp: Math.max(1, Math.ceil(e.maxHp * 0.25)),
+              size: Math.max(9, Math.floor(e.size * 0.6)),
+              goldDrop: Math.max(1, Math.ceil(e.goldDrop * 0.3)),
+              isMiniBoss: true, sealUsed: true, pattern: 'basic',
+              angle: (e.angle || 0) + (k === 0 ? -0.3 : 0.3),
+              spawnT: state.t,   // 🎬 v268 — 미니도 등장 애니메이션
+            });
+            state.enemies.push(mini);
+          }
+          toast('🦈 레비아탄 분열!');
+          shake(8, 10);
+        }
         // 💎 종말의 시계 — 5마리당 다음 라운드 스킵 충전 (총 3회 사용)
         if (state.relicEffects.skipRoundCharges > 0) {
           state.relicEffects.skipRoundBossCount++;
@@ -15585,6 +15611,11 @@
   }
   function spawnBoss() {
     const cfg = roundConfig(state.round);
+    // 🌌 v267 — 특수 보스 마킹 (첫 보스에만 적용, 1회 소비)
+    const special = state.pendingSpecialBoss || null;
+    const specialDef = special ? SPECIAL_BOSS_DEFS[special] : null;
+    state.pendingSpecialBoss = null;
+    const specialHpMul = specialDef ? (specialDef.hpMul || 1) : 1;
     // 🏰 디펜스 모드 (TD): 보스도 path 시작점에서 스폰 (느리게)
     if (state.mode === 'defense') {
       const map = getActiveTDMap();
@@ -15603,17 +15634,24 @@
         speed: cfg.enemySpeed * 0.7,  // 보스 천천히
         angle: 0, radius: 0, targetRadius: 0, radiusChangeAt: 999999,
         angularSpeed: 0,
-        hp: cfg.bossHp, maxHp: cfg.bossHp,
-        size: 18, goldDrop: cfg.bossGold,
+        hp: Math.ceil(cfg.bossHp * specialHpMul), maxHp: Math.ceil(cfg.bossHp * specialHpMul),
+        size: special ? 22 : 18, goldDrop: Math.ceil(cfg.bossGold * (special ? 1.5 : 1)),
         slowFrames: 0, isBoss: true,
         type: 'boss', seed: Math.random() * 1000,
-        rotation: 0, rotSpeed: 0.012,
+        rotation: 0, rotSpeed: special ? 0 : 0.012,   // 특수 보스는 회전 X (외형 인식)
         pattern: pickBossPattern(state.round),
         patternCD: 180,
         enraged: false,
         shieldHp: 0,
         lastDamageAt: 0,
+        special: special,          // 🌌 v267
+        sealUsed: false,
+        spawnT: state.t,           // 🎬 v268 — 등장 애니메이션 시작 시각
       });
+      // 🎬 v268 — 등장 이펙트 (스르륵 커지며 + 빛 퍼짐)
+      { const lb = state.enemies[state.enemies.length - 1]; const [bx, by] = enemyXY(lb);
+        for (let p = 0; p < 16; p++) spawnParticles(bx, by, special ? SPECIAL_BOSS_DEFS[special].eye : '#ff8090', 2);
+        shake(special ? 10 : 6, special ? 14 : 8); }
       const re = state.relicEffects;
       if (re && re.bossStartStop > 0) {
         for (const en of state.enemies) {
@@ -15632,17 +15670,24 @@
       targetRadius: 100 + Math.random() * 150,
       radiusChangeAt: 240,
       angularSpeed: cfg.enemySpeed * (Math.random() < 0.5 ? 1 : -1) * 0.4,
-      hp: cfg.bossHp, maxHp: cfg.bossHp,
-      size: 18, goldDrop: cfg.bossGold,
+      hp: Math.ceil(cfg.bossHp * specialHpMul), maxHp: Math.ceil(cfg.bossHp * specialHpMul),
+      size: special ? 22 : 18, goldDrop: Math.ceil(cfg.bossGold * (special ? 1.5 : 1)),
       slowFrames: 0, isBoss: true,
       type: 'boss', seed: Math.random() * 1000,
-      rotation: 0, rotSpeed: 0.012,
+      rotation: 0, rotSpeed: special ? 0 : 0.012,
       pattern: pickBossPattern(state.round),
       patternCD: 180,    // 보스 능력 쿨다운
       enraged: false,
       shieldHp: 0,
       lastDamageAt: 0,
+      special: special,          // 🌌 v267
+      sealUsed: false,
+      spawnT: state.t,           // 🎬 v268 — 등장 애니메이션 시작 시각
     });
+    // 🎬 v268 — 등장 이펙트
+    { const lb = state.enemies[state.enemies.length - 1]; const [bx, by] = enemyXY(lb);
+      for (let p = 0; p < 16; p++) spawnParticles(bx, by, special ? SPECIAL_BOSS_DEFS[special].eye : '#ff8090', 2);
+      shake(special ? 10 : 6, special ? 14 : 8); }
     // 🔮 예언자의 수정구 — 보스 등장 시 모든 적 정지
     const re = state.relicEffects;
     if (re && re.bossStartStop > 0) {
@@ -15693,6 +15738,16 @@
         const [bx, by] = enemyXY(e);
         spawnParticles(bx, by, '#88ccff', 16);
         toast('🛡 보스 실드 발동!');
+        SFX.bossSpawn();
+      }
+      // 💀 v267 — 우주 사신: HP 50% 이하 시 1회, 2.5초간 능력 봉인 (공허 컨셉)
+      if (e.special === 'reaper' && !e.sealUsed && e.hp < e.maxHp * 0.5) {
+        e.sealUsed = true;
+        state.abilitySealUntil = state.t + 150;   // 2.5초
+        const [bx, by] = enemyXY(e);
+        spawnParticles(bx, by, '#ff7ac0', 20);
+        toast('💀 사신의 봉인 — 2.5초간 능력 정지!');
+        state.comboFlash = 30; state.comboFlashColor = '#9a6ad0';
         SFX.bossSpawn();
       }
     }
@@ -15748,6 +15803,8 @@
     }
     if (paused || state.gameOver || state.levelUpChoices) return;
     state.t++;
+    // 🌌 v267 — 특수 보스 등장 연출 중: 라운드 진행/스폰/적 이동 전부 정지 (시네마틱)
+    if (state.bossIntro) { updateBossIntro(); return; }
 
     // 라운드 진행
     const cfg = roundConfig(state.round);
@@ -15950,8 +16007,10 @@
     // 🛡 v254 — 패시브 공유 슬롯 프레임 리셋 (능력 제거 시 stale 값 잔존 방지)
     //   여러 능력/조합이 같은 metaMods 슬롯에 쓸 때 안전한 max/min 머지 가능하게 함
     resetSharedPassiveSlots();
+    // 💀 v267 — 사신 봉인 중이면 능력 tick 전체 스킵 (발사/패시브 정지)
+    const _abilitySealed = state.abilitySealUntil > state.t;
     // 능력 tick — 모드별 분기
-    if (state.mode === 'defense') {
+    if (!_abilitySealed && state.mode === 'defense') {
       // 🏰 TD: 각 배치 타워별로 CX/CY 스왑 후 ability tick
       // 적이 한 마리도 없으면 능력 발동 자체를 차단 (시각적으로도 깔끔 + 헛 발사 방지)
       const anyEnemyAlive = (state.enemies || []).some(e => e.hp > 0);
@@ -15990,7 +16049,7 @@
         state.currentAbilityId = ab.id;
         def.tick(ab);
       }
-    } else {
+    } else if (!_abilitySealed) {
       // 표준 모드 — 기존 동작
       for (const ab of state.tower.abilities) {
         const def = ABILITY_DEFS[ab.id];
@@ -16702,9 +16761,230 @@
     ctx.restore();
   }
 
+  // ===== 🌌 v267 — 특수 보스 (고유 외형 + 등장 연출) =====
+  // draw 함수: (0,0) 중심 로컬 좌표. fill=본체색, eyeGlow=안광 강도(0~1), silhouette=그림자모드
+  // 🦈 우주 레비아탄 — 유선형 상어 (왼쪽 향함)
+  function drawLeviathanShape(ctx, s, fill, edge, eyeGlow, eyeColor) {
+    // 몸체 (유선형 — 뒤로 갈수록 좁아짐)
+    ctx.fillStyle = fill;
+    ctx.beginPath();
+    ctx.moveTo(-s * 1.4, 0);                       // 주둥이 (왼쪽 끝)
+    ctx.quadraticCurveTo(-s * 0.3, -s * 0.85, s * 0.6, -s * 0.4);  // 등
+    ctx.quadraticCurveTo(s * 1.5, -s * 0.15, s * 1.5, 0);          // 꼬리 시작 위
+    ctx.quadraticCurveTo(s * 1.5, s * 0.15, s * 0.6, s * 0.4);     // 꼬리 시작 아래
+    ctx.quadraticCurveTo(-s * 0.3, s * 0.85, -s * 1.4, 0);         // 배
+    ctx.closePath(); ctx.fill();
+    if (edge) { ctx.strokeStyle = edge; ctx.lineWidth = 1.5; ctx.stroke(); }
+    // 등지느러미
+    ctx.fillStyle = fill;
+    ctx.beginPath();
+    ctx.moveTo(-s * 0.1, -s * 0.7);
+    ctx.lineTo(s * 0.25, -s * 1.5);
+    ctx.lineTo(s * 0.5, -s * 0.55);
+    ctx.closePath(); ctx.fill();
+    if (edge) ctx.stroke();
+    // 꼬리지느러미 (오른쪽 갈래)
+    ctx.beginPath();
+    ctx.moveTo(s * 1.3, 0);
+    ctx.lineTo(s * 1.9, -s * 0.7);
+    ctx.lineTo(s * 1.55, 0);
+    ctx.lineTo(s * 1.9, s * 0.7);
+    ctx.closePath(); ctx.fill();
+    if (edge) ctx.stroke();
+    // 이빨 (주둥이 톱니) — 그림자 모드 X
+    if (!eyeGlow && edge) {
+      ctx.fillStyle = '#fff';
+      for (let i = 0; i < 4; i++) {
+        const tx = -s * 1.35 + i * s * 0.18;
+        ctx.beginPath();
+        ctx.moveTo(tx, s * 0.12); ctx.lineTo(tx + s * 0.07, s * 0.32); ctx.lineTo(tx + s * 0.14, s * 0.12);
+        ctx.closePath(); ctx.fill();
+      }
+    }
+    // 눈 (안광) — 주둥이 근처
+    const ex = -s * 0.55, ey = -s * 0.22;
+    if (eyeGlow > 0) {
+      ctx.save();
+      ctx.shadowColor = eyeColor; ctx.shadowBlur = 16 * eyeGlow;
+      ctx.fillStyle = eyeColor; ctx.globalAlpha = eyeGlow;
+      ctx.beginPath(); ctx.arc(ex, ey, s * 0.16, 0, Math.PI * 2); ctx.fill();
+      ctx.restore();
+    } else {
+      ctx.fillStyle = eyeColor || '#66ffff';
+      ctx.beginPath(); ctx.arc(ex, ey, s * 0.12, 0, Math.PI * 2); ctx.fill();
+    }
+  }
+  // 💀 우주 사신 — 후드 망토 + 낫
+  function drawReaperShape(ctx, s, fill, edge, eyeGlow, eyeColor) {
+    // 망토 (위 둥글고 아래 퍼짐)
+    ctx.fillStyle = fill;
+    ctx.beginPath();
+    ctx.moveTo(0, -s * 1.3);                       // 후드 꼭대기
+    ctx.quadraticCurveTo(-s * 0.9, -s * 0.9, -s * 0.8, s * 0.2);   // 왼쪽 어깨→옆
+    ctx.quadraticCurveTo(-s * 0.95, s * 1.2, -s * 0.3, s * 1.3);   // 왼쪽 자락
+    ctx.lineTo(s * 0.3, s * 1.3);
+    ctx.quadraticCurveTo(s * 0.95, s * 1.2, s * 0.8, s * 0.2);     // 오른쪽
+    ctx.quadraticCurveTo(s * 0.9, -s * 0.9, 0, -s * 1.3);
+    ctx.closePath(); ctx.fill();
+    if (edge) { ctx.strokeStyle = edge; ctx.lineWidth = 1.5; ctx.stroke(); }
+    // 후드 안쪽 어둠 (빈 얼굴)
+    ctx.fillStyle = edge || '#0a0a14';
+    ctx.beginPath();
+    ctx.ellipse(0, -s * 0.55, s * 0.42, s * 0.55, 0, 0, Math.PI * 2);
+    ctx.fill();
+    // 낫 (오른쪽: 자루 + 날)
+    ctx.strokeStyle = fill; ctx.lineWidth = Math.max(2, s * 0.12);
+    ctx.beginPath(); ctx.moveTo(s * 0.75, -s * 1.1); ctx.lineTo(s * 1.0, s * 1.0); ctx.stroke();
+    ctx.fillStyle = eyeGlow ? fill : '#c8d0e0';
+    ctx.beginPath();
+    ctx.moveTo(s * 0.75, -s * 1.1);
+    ctx.quadraticCurveTo(s * 1.7, -s * 1.3, s * 1.5, -s * 0.4);
+    ctx.quadraticCurveTo(s * 1.2, -s * 0.85, s * 0.75, -s * 1.1);
+    ctx.closePath(); ctx.fill();
+    // 빈 눈구멍 2개 (안광)
+    const eyW = s * 0.16;
+    const eyes = [[-s * 0.18, -s * 0.6], [s * 0.18, -s * 0.6]];
+    for (const [ex, ey] of eyes) {
+      if (eyeGlow > 0) {
+        ctx.save();
+        ctx.shadowColor = eyeColor; ctx.shadowBlur = 14 * eyeGlow;
+        ctx.fillStyle = eyeColor; ctx.globalAlpha = eyeGlow;
+        ctx.beginPath(); ctx.arc(ex, ey, eyW, 0, Math.PI * 2); ctx.fill();
+        ctx.restore();
+      } else {
+        ctx.fillStyle = eyeColor || '#ff66aa';
+        ctx.beginPath(); ctx.arc(ex, ey, eyW * 0.8, 0, Math.PI * 2); ctx.fill();
+      }
+    }
+  }
+  const SPECIAL_BOSS_DEFS = {
+    leviathan: { name: '우주 레비아탄', icon: '🦈', color: '#3aa0d0', edge: '#16415c', eye: '#7dffff',
+                 gimmick: 'split', draw: drawLeviathanShape, hpMul: 1.15 },
+    reaper:    { name: '우주 사신',     icon: '💀', color: '#9a6ad0', edge: '#3a1f5c', eye: '#ff7ac0',
+                 gimmick: 'seal',  draw: drawReaperShape, hpMul: 1.0 },
+  };
+  const SPECIAL_BOSS_IDS = Object.keys(SPECIAL_BOSS_DEFS);
+
+  // 🌌 v267 — 특수 보스 등장 연출 (3초). 정신없지 않게 부드러운 페이드 위주.
+  //   타임라인 (180프레임 = 3초):
+  //     0~40  : 화면 어두워짐 (vignette 페이드인)
+  //     30~110: 거대 그림자 아래→중앙 부상 + 안광 2~3회 은은한 펄스
+  //     110~155: 그림자 스르륵 페이드아웃
+  //     130~175: 보스 이름 경고 텍스트 펄스
+  //   탭하면 스킵 (introSkip)
+  const BOSS_INTRO_DUR = 180;
+  function updateBossIntro() {
+    if (!state.bossIntro) return;
+    state.bossIntro.frame++;
+    if (state.bossIntro.frame >= BOSS_INTRO_DUR || state.bossIntro.skip) {
+      // 연출 종료 → 정상 라운드 진행 재개
+      state.bossIntro = null;
+      // 연출 직후 보스 즉시 등장 (첫 보스 스폰 시점 직전으로 roundFrame 점프)
+      if (state.bossSpawns && state.bossSpawns.length) {
+        state.roundFrame = Math.max(state.roundFrame, state.bossSpawns[0] - 1);
+      }
+    }
+  }
+  function drawBossIntro() {
+    const bi = state.bossIntro;
+    if (!bi) return;
+    const def = SPECIAL_BOSS_DEFS[bi.special];
+    if (!def) return;
+    const f = bi.frame;
+    const skipBoost = bi.skip ? 4 : 1;  // 스킵 시 빠르게 마무리
+    // 1) 화면 어두워짐 (vignette)
+    let darkAlpha;
+    if (f < 40) darkAlpha = (f / 40) * 0.72;
+    else if (f > 155) darkAlpha = Math.max(0, 0.72 * (1 - (f - 155) / 25));
+    else darkAlpha = 0.72;
+    ctx.save();
+    ctx.fillStyle = `rgba(4,5,12,${darkAlpha})`;
+    ctx.fillRect(0, 0, W, H);
+    // 2) 거대 그림자 (아래→중앙 부상 + 페이드)
+    const riseStart = 30, riseEnd = 110, fadeStart = 110, fadeEnd = 155;
+    if (f >= riseStart && f <= fadeEnd) {
+      const rp = Math.min(1, (f - riseStart) / (riseEnd - riseStart));   // 0~1 부상
+      const eased = 1 - Math.pow(1 - rp, 3);
+      const yOff = (1 - eased) * H * 0.4;        // 아래에서 올라옴
+      let shAlpha = 0.9 * eased;
+      if (f > fadeStart) shAlpha *= Math.max(0, 1 - (f - fadeStart) / (fadeEnd - fadeStart));
+      const scale = Math.min(W, H) * 0.0042;     // 화면 대비 큰 실루엣
+      // 안광 펄스 (60~110 구간 2~3회)
+      let eyeGlow = 0;
+      if (f >= 55 && f <= fadeStart) {
+        eyeGlow = 0.5 + 0.5 * Math.sin((f - 55) * 0.18);
+      }
+      ctx.save();
+      ctx.globalAlpha = shAlpha;
+      ctx.translate(CX, CY + yOff);
+      // 그림자 본체 (거의 검정 — 윤곽만)
+      def.draw(ctx, 60 * scale, '#05060e', '#0c0e1a', eyeGlow, def.eye);
+      ctx.restore();
+    }
+    // 3) 보스 이름 경고 텍스트 (펄스)
+    if (f >= 130) {
+      const tp = Math.min(1, (f - 130) / 20);
+      const pulse = 0.75 + 0.25 * Math.sin(f * 0.25);
+      ctx.globalAlpha = tp;
+      ctx.textAlign = 'center';
+      ctx.fillStyle = def.eye;
+      ctx.shadowColor = def.eye; ctx.shadowBlur = 16;
+      ctx.font = 'bold 30px Jua, sans-serif';
+      ctx.globalAlpha = tp * pulse;
+      ctx.fillText(`${def.icon} ${def.name}`, CX, CY - 6);
+      ctx.shadowBlur = 0;
+      ctx.globalAlpha = tp;
+      ctx.fillStyle = '#cfd6e3';
+      ctx.font = '13px Jua, sans-serif';
+      ctx.fillText('특수 보스 출현', CX, CY + 22);
+    }
+    // 스킵 안내 (하단)
+    ctx.globalAlpha = 0.5;
+    ctx.fillStyle = '#9aa3b3';
+    ctx.font = '11px Jua, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('(탭하면 건너뛰기)', CX, H - 24);
+    ctx.restore();
+    ctx.textAlign = 'start';
+  }
+
+  // 🎬 v268 — 보스 등장 변환 (스르륵 커지며 페이드인, 살짝 overshoot)
+  function bossSpawnFx(e) {
+    const se = state.t - (e.spawnT || 0);
+    const DUR = 32;
+    if (se >= DUR || !e.spawnT) return null;
+    const p = se / DUR;
+    const eased = 1 - Math.pow(1 - p, 3);
+    let scale = 0.35 + eased * 0.71 + Math.sin(p * Math.PI) * 0.08;  // 0.35 → ~1.08 → 1.0
+    return { scale, alpha: Math.min(1, p * 1.6) };
+  }
   function drawBossE(e, x, y, slow) {
+    // 🌌 v267 — 특수 보스 전용 외형
+    if (e.special && SPECIAL_BOSS_DEFS[e.special]) {
+      const def = SPECIAL_BOSS_DEFS[e.special];
+      const s = e.size * 1.3;   // 특수 보스는 약간 크게
+      ctx.save(); ctx.translate(x, y);
+      // 🎬 등장 애니메이션
+      const fx = bossSpawnFx(e);
+      if (fx) { ctx.globalAlpha = fx.alpha; ctx.scale(fx.scale, fx.scale); }
+      // 외곽 오라 (은은한 펄스)
+      const pulse = 1 + Math.sin(state.t * 0.08) * 0.12;
+      const auraA = (fx ? fx.alpha : 1) * 0.16 * pulse;
+      ctx.globalAlpha = auraA;
+      ctx.fillStyle = slow ? '#88bbee' : def.eye;
+      ctx.beginPath(); ctx.arc(0, 0, s * 1.6, 0, Math.PI*2); ctx.fill();
+      ctx.globalAlpha = fx ? fx.alpha : 1;
+      const bodyColor = slow ? '#4a6a88' : def.color;
+      def.draw(ctx, s, bodyColor, def.edge, 0, def.eye);
+      ctx.restore();
+      return;
+    }
     const s = e.size;
-    ctx.save(); ctx.translate(x, y); ctx.rotate(e.rotation);
+    ctx.save(); ctx.translate(x, y);
+    // 🎬 등장 애니메이션 (일반 보스도)
+    const fx = bossSpawnFx(e);
+    if (fx) { ctx.globalAlpha = fx.alpha; ctx.scale(fx.scale, fx.scale); }
+    ctx.rotate(e.rotation);
     // 외곽 펄스 오라 (덜 강하게)
     const pulse = 1 + Math.sin(state.t * 0.09) * 0.12;
     ctx.fillStyle = slow ? 'rgba(120, 180, 240, 0.18)' : 'rgba(220, 50, 80, 0.22)';
@@ -17376,6 +17656,7 @@
     drawLevelUpModal();
     drawRelicOffering();
     drawEndlessOffer();
+    drawBossIntro();      // 🌌 v267 — 특수 보스 등장 연출 (최상위)
   }
 
   // 🎬 v220 — 절제된 시각 효과 (눈 안 아프게 부드럽게)
@@ -19293,6 +19574,11 @@
 
   // 캔버스 클릭으로 카드 선택 (모바일 터치 포함)
   canvas.addEventListener('click', (ev) => {
+    // 🌌 v267 — 특수 보스 등장 연출 중 탭 → 건너뛰기
+    if (state && state.bossIntro) {
+      state.bossIntro.skip = true;
+      return;
+    }
     const rect = canvas.getBoundingClientRect();
     const x = (ev.clientX - rect.left) * (W / rect.width);
     const y = (ev.clientY - rect.top) * (H / rect.height);
@@ -20745,7 +21031,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 266;
+  const APP_VERSION = 268;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
