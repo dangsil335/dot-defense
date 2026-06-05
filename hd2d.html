@@ -22608,6 +22608,7 @@
     // 카메라 기본값 — hd2d-test.html 느낌 (각도 25°, 회전 없음). 640 월드에 맞춰 거리 보정.
     const api = { on:true, ready:false, angle:25, dist:850 };
     let scene, cam, renderer, cv3d, floorMesh, bgPoints, mapGroup, mapKey=null;
+    let ambLight, sunLight, waterMesh, waterGeo, oceanPts, oceanGeo, glowRing, curTier=null, oceanOverride=null;  // 🌊 바다 환경
     let groundCv, groundCtx, groundTex, groundMesh, screenCtx=null;   // 지상 이펙트 레이어
     const HALF = 320;
     const w3 = (gx,gy,h)=> new THREE.Vector3(gx - HALF, h||0, gy - HALF);
@@ -22737,35 +22738,65 @@
     }
 
     // ── 게임의 실제 적/보스 그리기 함수를 오프스크린에 구워 빌보드 텍스처로 (컨셉 그대로) ──
+    // 🐟 아기자기 바다 생물 도트 (적 타입별: 게=바위, 해파리=얼음, 오징어=드론, 복어=플라즈마, 물고기=크리스탈)
+    function seaCreatureTex(type){
+      const SEA = { ice:['jelly','#9fe6ff'], drone:['squid','#c79bff'], plasma:['puffer','#ff8fb0'], crystal:['fish','#8effc0'] };
+      const def = SEA[type] || ['crab','#ff9e6b'];
+      const variant=def[0], col=def[1], dark='#243240';
+      const key='sea:'+variant; if(texCache.has(key)) return texCache.get(key);
+      const S=44, c=mkCanvas(S), x=c.getContext('2d'); const M=S/2;
+      x.lineJoin='round'; x.lineCap='round';
+      function eye(ex,ey,r){ x.fillStyle='#fff'; x.beginPath(); x.arc(ex,ey,r,0,7); x.fill(); x.fillStyle=dark; x.beginPath(); x.arc(ex+r*0.2,ey,r*0.55,0,7); x.fill(); }
+      if(variant==='fish'){
+        x.fillStyle=col;
+        x.beginPath(); x.moveTo(M-13,M); x.lineTo(M-22,M-9); x.lineTo(M-22,M+9); x.closePath(); x.fill();           // 꼬리
+        x.beginPath(); x.ellipse(M+2,M,15,11,0,0,7); x.fill();                                                       // 몸통
+        x.beginPath(); x.moveTo(M-2,M-10); x.lineTo(M+5,M-17); x.lineTo(M+9,M-9); x.closePath(); x.fill();           // 등지느러미
+        eye(M+8,M-2,4); x.strokeStyle=dark; x.lineWidth=1.5; x.beginPath(); x.arc(M+10,M+4,3,0.1,1.0); x.stroke();
+      } else if(variant==='jelly'){
+        x.fillStyle=col; x.beginPath(); x.arc(M,M-1,15,Math.PI,0); x.lineTo(M+15,M+3); x.lineTo(M-15,M+3); x.closePath(); x.fill(); // 갓
+        x.strokeStyle=col; x.lineWidth=3; for(let i=-3;i<=3;i+=2){ x.beginPath(); x.moveTo(M+i*4,M+3); x.quadraticCurveTo(M+i*4+3,M+11,M+i*4,M+19); x.stroke(); } // 촉수
+        eye(M-6,M-4,4); eye(M+6,M-4,4);
+      } else if(variant==='puffer'){
+        x.fillStyle=col; for(let i=0;i<12;i++){ const a=i/12*Math.PI*2; x.beginPath(); x.moveTo(M+Math.cos(a)*12,M+Math.sin(a)*12); x.lineTo(M+Math.cos(a)*19,M+Math.sin(a)*19); x.lineTo(M+Math.cos(a+0.28)*12,M+Math.sin(a+0.28)*12); x.closePath(); x.fill(); } // 가시
+        x.beginPath(); x.arc(M,M,13,0,7); x.fill();
+        eye(M-5,M-2,4); eye(M+5,M-2,4); x.strokeStyle=dark; x.lineWidth=1.5; x.beginPath(); x.moveTo(M-3,M+7); x.lineTo(M+3,M+7); x.stroke();
+      } else if(variant==='squid'){
+        x.fillStyle=col; x.beginPath(); x.moveTo(M,M-18); x.quadraticCurveTo(M+13,M-10,M+12,M+3); x.lineTo(M-12,M+3); x.quadraticCurveTo(M-13,M-10,M,M-18); x.fill(); // 몸
+        x.strokeStyle=col; x.lineWidth=3; for(let i=-2;i<=2;i++){ x.beginPath(); x.moveTo(M+i*5,M+3); x.quadraticCurveTo(M+i*5+(i>0?4:-4),M+13,M+i*5,M+19); x.stroke(); } // 다리
+        eye(M-6,M-6,4.5); eye(M+6,M-6,4.5);
+      } else { // crab
+        x.fillStyle=col; x.beginPath(); x.ellipse(M,M+2,16,11,0,0,7); x.fill();                                      // 몸
+        x.beginPath(); x.arc(M-17,M-4,6,0,7); x.fill(); x.beginPath(); x.arc(M+17,M-4,6,0,7); x.fill();              // 집게
+        x.strokeStyle=col; x.lineWidth=2.5; for(let i=-1;i<=1;i++){ x.beginPath(); x.moveTo(M+i*7-2,M+10); x.lineTo(M+i*7-6,M+16); x.stroke(); x.beginPath(); x.moveTo(M+i*7+2,M+10); x.lineTo(M+i*7+6,M+16); x.stroke(); } // 다리
+        x.lineWidth=2; x.beginPath(); x.moveTo(M-5,M-8); x.lineTo(M-5,M-13); x.stroke(); x.beginPath(); x.moveTo(M+5,M-8); x.lineTo(M+5,M-13); x.stroke();
+        eye(M-5,M-14,3.5); eye(M+5,M-14,3.5);
+      }
+      const t=pixTex(c); texCache.set(key,t); return t;
+    }
     function enemyBillboardTex(e){
-      const key = e.isBoss ? ('GB:'+(e.special||'std')) : ('GE:'+(e.type||'rock'));
-      if(texCache.has(key)) return texCache.get(key);
-      const boss=!!e.isBoss, S = boss?180:96, cx=S/2, cy=S/2, refSize = boss?48:24;
-      const tmp = { type:e.type, isBoss:boss, special:e.special, size:refSize, rotation:0, rotSpeed:0,
+      if(!e.isBoss) return seaCreatureTex(e.type);   // 🐟 일반 적 = 아기자기 바다 생물
+      // 보스 = 게임 아트 (레비아탄/사신 — 바다 컨셉과 자연스러움)
+      const key='GB:'+(e.special||'std'); if(texCache.has(key)) return texCache.get(key);
+      const S=180, cx=S/2, cy=S/2;
+      const tmp = { type:e.type, isBoss:true, special:e.special, size:48, rotation:0, rotSpeed:0,
                     hp:1, maxHp:1, behavior:null, slowFrames:0, isChild:false, shieldHp:0,
                     _cart:true, x:cx, y:cy, spawnT:0, spawnFrames:0, spawnFrame:0 };
       const cv=mkCanvas(S), bctx=cv.getContext('2d');
       const save=ctx; ctx=bctx;
-      try {
-        if(boss)                     drawBossE(tmp, cx, cy, false);
-        else if(e.type==='ice')      drawIceE(tmp, cx, cy, false);
-        else if(e.type==='drone')    drawDroneE(tmp, cx, cy, false);
-        else if(e.type==='plasma')   drawPlasmaE(tmp, cx, cy, false);
-        else if(e.type==='crystal')  drawCrystalE(tmp, cx, cy, false);
-        else                         drawAsteroidE(tmp, cx, cy, false);
-      } catch(err){ console.warn('적 베이크 실패 → 폴백', key, err); }
+      try { drawBossE(tmp, cx, cy, false); } catch(err){ console.warn('보스 베이크 실패', err); }
       finally { ctx=save; }
-      // 베이크가 비었으면(투명) 손그림 폴백
       let ok=false; try{ const d=bctx.getImageData(0,0,S,S).data; for(let i=3;i<d.length;i+=4){ if(d[i]>16){ok=true;break;} } }catch(e2){ ok=true; }
-      const tex = ok ? pixTex(cv) : enemyTex(e);
+      const tex = ok ? pixTex(cv) : seaCreatureTex('crab');
       texCache.set(key, tex); return tex;
     }
 
     // ── 적/보스 빌보드 (그림자 + 세워진 스프라이트) ──
     function makeEnemy(e){
       const g=new THREE.Group();
-      const sz=(e.size||12)*3.6;                 // 베이크 캔버스의 art 비율 보정 → 2D와 동일 체감 크기
-      g.add(shadowMesh((e.size||12)*1.0));
+      // 일반 적은 작게(바다 도트는 캔버스를 꽉 채워 더 커 보임 → ×2.0), 보스는 크게(게임아트 채움비율 보정 ×3.4)
+      const sz = e.isBoss ? (e.size||40)*3.4 : (e.size||12)*2.0;
+      g.add(shadowMesh((e.size||12)*(e.isBoss?1.1:0.7)));
       const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:enemyBillboardTex(e),transparent:true}));
       sp.center.set(0.5,0.5); sp.scale.set(sz,sz,1); sp.position.y=sz*0.40;
       g.add(sp); g.userData={sp,sz,bobP:Math.random()*6.28,fly:(e.size||12)*(e.isBoss?1.4:1.1)}; return g;
@@ -22972,7 +23003,9 @@
     function isBeamFx(ab){ return ab && (typeof ab.fxAng==='number' || Array.isArray(ab.fxPoints) || ROT_BEAM[ab.id] || Array.isArray(ab.waves) || METEOR_CFG[ab.id] || ORBIT_IDS[ab.id]); }
     // 비배타 3D(폭발/발사체/낙뢰) 능력도 평면 건너뜀
     function isAdditiveFx(ab){ if(!ab) return false;
-      return Array.isArray(ab.explosions) || Array.isArray(ab.missiles) || Array.isArray(ab.rockets) || Array.isArray(ab.lances) || Array.isArray(ab.torpedoes) || SKYBOLT_IDS[ab.id] || (MORTAR_FX[ab.id] && Array.isArray(ab.fx)); }
+      return Array.isArray(ab.explosions) || Array.isArray(ab.missiles) || Array.isArray(ab.rockets) || Array.isArray(ab.lances) || Array.isArray(ab.torpedoes)
+        || Array.isArray(ab.drones) || Array.isArray(ab.clones) || Array.isArray(ab.butterflies) || Array.isArray(ab.holes) || Array.isArray(ab.tornadoes)
+        || SKYBOLT_IDS[ab.id] || (MORTAR_FX[ab.id] && Array.isArray(ab.fx)) || (FIRE_FIELD[ab.id] && Array.isArray(ab.particles)); }
     function isFx3D(ab){ return isBeamFx(ab) || isAdditiveFx(ab); }
     function drawGroundEffects(){
       if(state.mode==='defense'){
@@ -22993,6 +23026,7 @@
     const fxPool2=new Map();  // 비배타(폭발/발사체/낙뢰) — 능력이 동시에 가질 수 있음
     const SKYBOLT_IDS={ thunder:1 };        // ab.bolts=[{x,y,life}] 하늘→타깃 수직 번개
     const MORTAR_FX={ mortar:1, lootBomb:1 }; // ab.fx=[{x,y,r,life}] 확장 버스트
+    const FIRE_FIELD={ fire:1, pyreShield:1 }; // ab.particles=[{x,y,vy,life}] 상승 불꽃 장판
     const _UP=new THREE.Vector3(0,1,0);
     function ability3DFx(){
       const seen=new Set();
@@ -23114,12 +23148,44 @@
               m.quaternion.identity(); m.position.set(b.x-320, 60, b.y-320); m.scale.set(1.4*pow, 120, 1.4*pow); // 수직 번개(기본 실린더=Y축)
               m.material.color.set(col); m.material.opacity=Math.max(0,(b.life||0)/10)*0.9; }
             else m.visible=false; } touched=true; }
+        const T=(state.t||0);
+        // 소환수 (드론/클론/나비) — 공중 빌보드
+        let sarr=null, sButterfly=false; for(const f of ['drones','clones','butterflies']){ if(Array.isArray(ab[f])&&ab[f].length){ sarr=ab[f]; sButterfly=(f==='butterflies'); break; } }
+        if(sarr){ const o=getO2(ab); o.sm=o.sm||[]; o.ssh=o.ssh||[];
+          while(o.sm.length<sarr.length){ let m; if(sButterfly){ m=new THREE.Sprite(new THREE.SpriteMaterial({map:motifTex('butterfly'),transparent:true,depthWrite:false})); scene.add(m); } else { m=softSprite(col); } o.sm.push(m); o.ssh.push(discMesh()); }
+          for(let i=0;i<o.sm.length;i++){ const m=o.sm[i], sh=o.ssh[i];
+            if(i<sarr.length){ const p=sarr[i]; m.visible=true; sh.visible=true;
+              m.position.set(p.x-320, 16, p.y-320); const s=sButterfly?15:(11*pow); m.scale.set(s,s,1); if(!sButterfly) m.material.color.set(col); m.material.opacity=1;
+              sh.position.set(p.x-320,0.8,p.y-320); sh.scale.set(6,6,1); sh.material.opacity=0.22; }
+            else { m.visible=false; sh.visible=false; } } touched=true; }
+        // 블랙홀 — 바닥 어두운 소용돌이 + 회전 발광 링
+        if(Array.isArray(ab.holes) && ab.holes.length){ const o=getO2(ab); o.hd=o.hd||[]; o.hr=o.hr||[];
+          while(o.hd.length<ab.holes.length){ const d=new THREE.Mesh(new THREE.CircleGeometry(1,28), new THREE.MeshBasicMaterial({color:0x06021a,transparent:true,opacity:0.72,depthWrite:false})); d.rotation.x=-Math.PI/2; scene.add(d); o.hd.push(d); o.hr.push(ringMesh(col)); }
+          const pr=110+(ab.level||0)*10;
+          for(let i=0;i<o.hd.length;i++){ const d=o.hd[i], r=o.hr[i];
+            if(i<ab.holes.length){ const h=ab.holes[i]; d.visible=true; r.visible=true;
+              d.position.set(h.x-320,1.5,h.y-320); d.scale.set(pr,pr,1);
+              const rr=Math.max(6, pr*(0.55+0.28*Math.sin(T*0.12+i))); r.position.set(h.x-320,2.4,h.y-320); r.scale.set(rr,rr,1); r.material.color.set(col); r.material.opacity=0.55; }
+            else { d.visible=false; r.visible=false; } } touched=true; }
+        // 토네이도 — 회전하는 반투명 소용돌이 기둥
+        if(Array.isArray(ab.tornadoes) && ab.tornadoes.length){ const o=getO2(ab); o.tc=o.tc||[];
+          while(o.tc.length<ab.tornadoes.length){ const m=new THREE.Mesh(new THREE.ConeGeometry(1,1,14,1,true), new THREE.MeshBasicMaterial({color:col,transparent:true,opacity:0.38,depthWrite:false,side:THREE.DoubleSide,blending:THREE.AdditiveBlending})); scene.add(m); o.tc.push(m); }
+          for(let i=0;i<o.tc.length;i++){ const m=o.tc[i];
+            if(i<ab.tornadoes.length){ const t2=ab.tornadoes[i]; m.visible=true; m.position.set(t2.x-320,30,t2.y-320); m.scale.set(22,60,22); m.rotation.y=T*0.22+i; m.material.color.set(col); }
+            else m.visible=false; } touched=true; }
+        // 불꽃 장판 — 상승하는 발광 입자
+        if(FIRE_FIELD[ab.id] && Array.isArray(ab.particles)){ const o=getO2(ab); o.fp=o.fp||[];
+          while(o.fp.length<ab.particles.length) o.fp.push(softSprite(col));
+          for(let i=0;i<o.fp.length;i++){ const m=o.fp[i];
+            if(i<ab.particles.length){ const p=ab.particles[i]; m.visible=true; const lf=p.life?Math.min(1,p.life/30):0.7;
+              m.position.set(p.x-320, 6+(1-lf)*22, p.y-320); m.scale.set(7,7,1); m.material.color.set(col); m.material.opacity=lf; }
+            else m.visible=false; } touched=true; }
         if(touched) seen2.add(ab);
       }
       if(state.mode==='defense'){ for(const t of (state.towers||[])){ const c=cellCenter(t.col,t.row); additive(t.ab, c.x, c.y); } }
       else { for(const ab of ((state.tower&&state.tower.abilities)||[])) additive(ab, 320, 320); }
       for(const [ab,o] of fxPool2){ if(!seen2.has(ab)){
-        ['expl','mfx','proj','psh','bolts'].forEach(k=>{ if(o[k]) o[k].forEach(s=>scene.remove(s)); }); fxPool2.delete(ab); } }
+        ['expl','mfx','proj','psh','bolts','sm','ssh','hd','hr','tc','fp'].forEach(k=>{ if(o[k]) o[k].forEach(s=>scene.remove(s)); }); fxPool2.delete(ab); } }
 
       for(const [ab,o] of fxPool){ if(!seen.has(ab)){
         if(o.beam) scene.remove(o.beam); if(o.segs) o.segs.forEach(s=>scene.remove(s)); if(o.rot) o.rot.forEach(s=>scene.remove(s));
@@ -23270,30 +23336,26 @@
 
     function init(){
       cv3d=document.getElementById('game3d'); if(!cv3d) throw new Error('no #game3d');
-      renderer=new THREE.WebGLRenderer({canvas:cv3d,antialias:true,preserveDrawingBuffer:true});
+      renderer=new THREE.WebGLRenderer({canvas:cv3d,antialias:true,powerPreference:'high-performance'});
       scene=new THREE.Scene();
-      scene.background=new THREE.Color(0x03040c);
-      scene.fog=new THREE.Fog(0x05060f, 900, 2600);
+      scene.background=new THREE.Color(0x6db3d9);
+      scene.fog=new THREE.Fog(0x8fc4e0, 400, 2200);
       cam=new THREE.PerspectiveCamera(45,1,1,6000);
-      scene.add(new THREE.AmbientLight(0xaab4e0,0.6));
-      const sun=new THREE.DirectionalLight(0xfff0d8,1.3); sun.position.set(260,560,300); scene.add(sun);
-      const fill=new THREE.PointLight(0x88aaff,0.6,2200); fill.position.set(-300,250,-220); scene.add(fill);
+      ambLight=new THREE.AmbientLight(0xaab4e0,0.85); scene.add(ambLight);
+      sunLight=new THREE.DirectionalLight(0xfff4e0,1.5); sunLight.position.set(260,560,300); scene.add(sunLight);
+      const fill=new THREE.PointLight(0x88aaff,0.5,2200); fill.position.set(-300,250,-220); scene.add(fill);
       const RAD=330;   // 플랫폼 반경 (게임 640 월드 커버)
-      // 별 배경 (전 구체)
-      const bg=new THREE.BufferGeometry(), pts=[];
-      for(let i=0;i<2600;i++){ const r=1400+Math.random()*2400, th=Math.random()*6.28, ph=Math.acos(2*Math.random()-1);
-        pts.push(r*Math.sin(ph)*Math.cos(th), r*Math.cos(ph), r*Math.sin(ph)*Math.sin(th)); }
-      bg.setAttribute('position',new THREE.Float32BufferAttribute(pts,3));
-      bgPoints=new THREE.Points(bg,new THREE.PointsMaterial({color:0xffffff,size:1.7,transparent:true,opacity:0.85,sizeAttenuation:false})); scene.add(bgPoints);
-      // 성운 (가산)
-      function nebula(color,size,x,y,z,op){ const c=mkCanvas(256), g=c.getContext('2d');
-        const rg=g.createRadialGradient(128,128,10,128,128,128); rg.addColorStop(0,color); rg.addColorStop(1,'rgba(0,0,0,0)');
-        g.fillStyle=rg; g.fillRect(0,0,256,256);
-        const s=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(c),transparent:true,opacity:op,blending:THREE.AdditiveBlending,depthWrite:false}));
-        s.scale.set(size,size,1); s.position.set(x,y,z); scene.add(s); }
-      nebula('rgba(120,90,200,0.9)',1700,-700,300,-1300,0.42);
-      nebula('rgba(60,120,200,0.9)',1500,800,250,-1100,0.38);
-      nebula('rgba(200,90,150,0.8)',1300,200,-300,-1500,0.30);
+      // 🌊 물 표면 (바다 위 단계에서만 보임) — 정점 파동. 섬(y=0)보다 충분히 아래(-14)라 파도가 섬을 안 덮음
+      waterGeo=new THREE.PlaneGeometry(2800,2800,26,26);
+      waterMesh=new THREE.Mesh(waterGeo, new THREE.MeshStandardMaterial({color:0x2a78a8,roughness:0.25,metalness:0.5,transparent:true,opacity:0.92}));
+      waterMesh.rotation.x=-Math.PI/2; waterMesh.position.y=-14; scene.add(waterMesh);
+      waterGeo.userData.base = waterGeo.attributes.position.array.slice();  // 파동 기준 좌표
+      // 🌊 부유 입자 (단계별: 거품/마린스노우/발광생물) — 플랫폼 주변 볼륨
+      const N=300; oceanGeo=new THREE.BufferGeometry(); const op=new Float32Array(N*3);
+      for(let i=0;i<N;i++){ op[i*3]=(Math.random()-0.5)*900; op[i*3+1]=Math.random()*400-40; op[i*3+2]=(Math.random()-0.5)*900; }
+      oceanGeo.setAttribute('position', new THREE.Float32BufferAttribute(op,3));
+      oceanPts=new THREE.Points(oceanGeo, new THREE.PointsMaterial({color:0xcfeaff,size:4,transparent:true,opacity:0.7,depthWrite:false,blending:THREE.AdditiveBlending}));
+      scene.add(oceanPts);
       // 원형 플랫폼 (Cylinder + 방사 텍스처)
       floorMesh=new THREE.Mesh(new THREE.CylinderGeometry(RAD,RAD,18,72),
         new THREE.MeshStandardMaterial({color:0xffffff,map:floorTex(),roughness:0.7,metalness:0.35}));
@@ -23303,9 +23365,9 @@
         new THREE.MeshStandardMaterial({color:0x4a5470,roughness:0.5,metalness:0.7}));
       rim.rotation.x=Math.PI/2; rim.position.y=0; scene.add(rim);
       // 발광 에너지 링
-      const glow=new THREE.Mesh(new THREE.TorusGeometry(RAD-3,3,16,90),
+      glowRing=new THREE.Mesh(new THREE.TorusGeometry(RAD-3,3,16,90),
         new THREE.MeshStandardMaterial({color:0x66ccff,emissive:0x44aaff,emissiveIntensity:1.8}));
-      glow.rotation.x=Math.PI/2; glow.position.y=2.5; scene.add(glow);
+      glowRing.rotation.x=Math.PI/2; glowRing.position.y=2.5; scene.add(glowRing);
       // 아래로 좁아지는 받침 기둥 (공중에 뜬 전장)
       const base=new THREE.Mesh(new THREE.CylinderGeometry(RAD*0.7,RAD*0.34,90,36),
         new THREE.MeshStandardMaterial({color:0x1a2030,roughness:0.6,metalness:0.5}));
@@ -23327,7 +23389,53 @@
           spawnParticles._hd2d=true;
         }
       }catch(e){}
+      applyOceanTier(tierFromAsc());   // 🌊 시작 단계 적용
       api.ready=true; api.cv=cv3d;
+    }
+
+    // ── 🌊 난이도별 바다 단계 ──
+    function tierFromAsc(){ const a=(state&&state.ascension)||0; return a<=0 ? 'surface' : (a<=15 ? 'underwater' : 'abyss'); }
+    const OCEAN_TIERS = {
+      // 바다 위 — 밝은 수면, 중앙 섬, 물결
+      surface:   { bg:0x6db3d9, fogN:450, fogF:2400, fogC:0x9cc9e4, amb:0.9,  sun:1.5,  sunC:0xfff4e0, water:true,  waterC:0x2a78a8, waterY:-14, part:0xdff2ff, partMode:'foam',   glow:0x66ccff, glowE:1.4 },
+      // 바닷속 — 푸른 물, 상승 거품, 위에서 내려오는 빛
+      underwater:{ bg:0x10597a, fogN:160, fogF:1000, fogC:0x125f82, amb:0.7,  sun:0.95, sunC:0x9fd8ff, water:false, waterY:120, part:0xbfefff, partMode:'bubble', glow:0x3fd0ff, glowE:1.6 },
+      // 심해 — 칠흑, 발광 생물, 공포
+      abyss:     { bg:0x020a12, fogN:110, fogF:560,  fogC:0x02060c, amb:0.34, sun:0.4,  sunC:0x3a90c0, water:false, waterY:160, part:0x55ffd8, partMode:'biolum', glow:0x18406a, glowE:1.0 },
+    };
+    function applyOceanTier(t){
+      curTier=t; const c=OCEAN_TIERS[t]||OCEAN_TIERS.surface;
+      try{
+        if(scene.background) scene.background.setHex(c.bg); else scene.background=new THREE.Color(c.bg);
+        if(scene.fog){ scene.fog.color.setHex(c.fogC); scene.fog.near=c.fogN; scene.fog.far=c.fogF; }
+        if(ambLight){ ambLight.intensity=c.amb; }
+        if(sunLight){ sunLight.intensity=c.sun; sunLight.color.setHex(c.sunC); }
+        if(waterMesh){ waterMesh.visible=!!c.water; if(c.water){ waterMesh.position.y=(c.waterY!=null?c.waterY:-14); waterMesh.material.color.setHex(c.waterC); } }
+        if(oceanPts){ oceanPts.material.color.setHex(c.part); oceanPts.material.size = (t==='biolum'||t==='abyss')?5:4; oceanPts.userData.mode=c.partMode; }
+        if(glowRing){ glowRing.material.color.setHex(c.glow); glowRing.material.emissive.setHex(c.glow); glowRing.material.emissiveIntensity=c.glowE; }
+      }catch(e){ console.warn('applyOceanTier', e); }
+    }
+    let _oceanT=0;
+    function oceanFx(){
+      const t=oceanOverride || tierFromAsc(); if(t!==curTier) applyOceanTier(t);   // 단계 전환 감지(O키 강제 우선)
+      _oceanT += 0.03;
+      // 수면 파동 (바다 위 단계)
+      if(waterMesh && waterMesh.visible && waterGeo && waterGeo.userData.base){
+        const pos=waterGeo.attributes.position, base=waterGeo.userData.base;
+        for(let i=0;i<pos.count;i++){ const x=base[i*3], y=base[i*3+1];
+          pos.array[i*3+2] = base[i*3+2] + Math.sin(x*0.01+_oceanT)*5 + Math.cos(y*0.013+_oceanT*0.8)*5; }
+        pos.needsUpdate=true;
+      }
+      // 부유 입자 — 단계별 거동
+      if(oceanPts && oceanGeo){
+        const arr=oceanGeo.attributes.position.array, mode=oceanPts.userData.mode;
+        for(let i=0;i<arr.length;i+=3){
+          if(mode==='bubble'){ arr[i+1]+=1.5; if(arr[i+1]>380) arr[i+1]=-40; }                                  // 거품 상승
+          else if(mode==='foam'){ arr[i]+=0.3; arr[i+1]=-3+Math.sin(_oceanT+arr[i]*0.01)*2.5; if(arr[i]>460) arr[i]=-460; } // 수면 부유
+          else { arr[i+1]+=Math.sin(_oceanT*0.4+arr[i]*0.05)*0.35; arr[i]+=0.12; if(arr[i]>460) arr[i]=-460; }    // 발광생물 느린 부유
+        }
+        oceanGeo.attributes.position.needsUpdate=true;
+      }
     }
 
     function syncSize(){
@@ -23335,7 +23443,7 @@
       const w=gc.offsetWidth, h=gc.offsetHeight;
       cv3d.style.left=gc.offsetLeft+'px'; cv3d.style.top=gc.offsetTop+'px';
       cv3d.style.width=w+'px'; cv3d.style.height=h+'px';
-      if(api._w!==w || api._h!==h){ renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+      if(api._w!==w || api._h!==h){ renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));  // 🛡 성능: DPR 1.5 제한
         renderer.setSize(w,h,false); cam.aspect=w/h; cam.updateProjectionMatrix(); api._w=w; api._h=h; }
     }
     function updateCam(){
@@ -23346,8 +23454,14 @@
 
     function frame(){
       if(!api.ready) return;
+      // FPS 표시기 (디버그)
+      api._fc=(api._fc||0)+1; const _now=performance.now(); if(!api._ft) api._ft=_now;
+      if(_now-api._ft>=1000){ const fps=Math.round(api._fc*1000/(_now-api._ft)); api._fc=0; api._ft=_now;
+        let el=document.getElementById('hd2dfps'); if(!el){ el=document.createElement('div'); el.id='hd2dfps';
+          el.style.cssText='position:fixed;top:4px;right:6px;z-index:99999;color:#7fff7f;font:bold 12px monospace;background:rgba(0,0,0,.55);padding:2px 7px;border-radius:5px;pointer-events:none'; document.body.appendChild(el); }
+        el.textContent='FPS '+fps; el.style.color = fps>=55?'#7fff7f':(fps>=35?'#ffd479':'#ff6b6b'); }
       syncSize(); updateCam();
-      if(bgPoints) bgPoints.rotation.y+=0.0002;
+      oceanFx();                                                  // 🌊 단계 전환 + 물결/입자
       sync(ePool, state.enemies||[], makeEnemy, updEnemy);
       sync(tPool, state.towers||[], makeTower, updTower);
       sync(bPool, state.bullets||[], makeBullet, updBullet);     // 3D 탄환 (공중 + 호)
@@ -23362,7 +23476,9 @@
     function renderFrame(){
       cv3d.style.display='block';
       // ① 지상 이펙트 레이어 — 게임의 def.draw 등 2D 그리기를 groundCv에 (능력별 정밀 이펙트 그대로)
-      if(groundCtx){
+      // 🛡 성능: 640² 텍스처 GPU 업로드가 무거워 격프레임(30fps)으로 throttle (평면 효과는 대부분 3D로 이동됨)
+      api._gf = (api._gf||0) + 1;
+      if(groundCtx && (api._gf & 1)){
         const save=ctx;
         try{
           ctx=groundCtx;
@@ -23401,6 +23517,8 @@
         else if(k===']') api.angle=Math.min(82,api.angle+3);
         else if(k==='-' || k==='_') api.dist=Math.min(1600,api.dist+50);
         else if(k==='=' || k==='+') api.dist=Math.max(320,api.dist-50);
+        else if(k==='o'){ const seq=['surface','underwater','abyss']; const i=seq.indexOf(oceanOverride); oceanOverride=seq[(i+1)%seq.length];
+          try{ if(typeof toast==='function') toast('🌊 바다 단계: '+oceanOverride); }catch(e){} }   // 테스트: 단계 순환
       }
     });
 
