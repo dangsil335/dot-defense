@@ -11189,6 +11189,10 @@
   // 5라운드마다 보스 라운드: 잡몹 절반 + 보스 1마리.
   // 100라운드: 5라운드분 시간(150초) + 보스 3마리 + 잡몹 다수 (최종전).
   const MAX_ROUND = 100;
+  // 🛡 자가치유 상한 — "정상 점수(억~조)"는 보존, "경(1e16)·해(1e20) 같은 익스플로잇"만 제거.
+  //   정상 최대치(딥엔드리스/초월 ~수백억~수천억)와 익스플로잇은 자릿수가 완전히 다름.
+  //   10조(1e13) = 정상 최대 추정치의 ~100배 위 / 경(1e16)의 1000배 아래 → 그 사이에 안전하게 선.
+  const SCORE_SANE_CAP = 10000000000000;  // 10조 (= 10,000,000,000,000)
   // ♾ 엔드리스 모드 HP 배수 — R100 클리어 후 한 라운드마다 ×1.5 (기하급수)
   const ENDLESS_HP_MUL = 1.5;
   // 🏆 v262 — A: 엔드리스(R100+) 점수 패널티 — 낮은 난이도일수록 강하게 감쇠
@@ -12372,7 +12376,7 @@
       for (const r of [...serverRecs, ...localRecs]) {
         if (r && typeof r.score === 'number') recMap.set(recKey(r), r);
       }
-      const mergedRecs = [...recMap.values()];
+      const mergedRecs = [...recMap.values()].filter(r => (r.score || 0) <= SCORE_SANE_CAP);  // 🛡 비정상 기록 제거
       mergedRecs.sort((a, b) => b.score - a.score);
       merged.records = mergedRecs.slice(0, 10);
 
@@ -12908,12 +12912,12 @@
   // ===== 점수 제출 (게임 종료 시) — title 컬럼 미생성 대응 =====
   let _lastSubmitError = null;
   let _submitPromise = null;       // 진행 중인 제출 Promise (조회 시 await 용도)
-  function submitGlobalScore() {
-    // 항상 새 Promise 반환 — loadGlobalRankings가 await할 수 있게
-    _submitPromise = _submitGlobalScoreImpl();
+  function submitGlobalScore(override) {
+    // override 있으면 그 기록(점수/라운드/난이도/캐릭/모드)을 제출, 없으면 현재 게임 state
+    _submitPromise = _submitGlobalScoreImpl(override);
     return _submitPromise;
   }
-  async function _submitGlobalScoreImpl() {
+  async function _submitGlobalScoreImpl(override) {
     _lastSubmitError = null;
     if (!isSupabaseEnabled()) { _lastSubmitError = 'Supabase 미설정'; console.warn('[점수제출] Supabase 미설정'); return; }
     const sb = getSupabase();
@@ -12921,12 +12925,12 @@
     const nickname = getNickname();
     if (!nickname) { _lastSubmitError = '닉네임 없음'; console.warn('[점수제출] 닉네임 미설정'); return; }
     const userId = ensureUserId();
-    // ⚠ 모든 state 값을 await 이전에 캡처 (state.score race 방어)
-    const gameMode = state.mode || 'standard';
-    const newScore = state.score || 0;
-    const gameRound = state.gameWin ? MAX_ROUND : Math.max(1, state.round || 1);
-    const gameAsc = state.ascension || 0;
-    const gameChar = state.character || 'standard';
+    // ⚠ 모든 값을 await 이전에 캡처 (state.score race 방어). override 있으면 그 기록 사용.
+    const gameMode  = override ? (override.mode || 'standard')   : (state.mode || 'standard');
+    const newScore  = override ? (override.score || 0)           : (state.score || 0);
+    const gameRound = override ? (override.round || 1)           : (state.gameWin ? MAX_ROUND : Math.max(1, state.round || 1));
+    const gameAsc   = override ? (override.ascension || 0)       : (state.ascension || 0);
+    const gameChar  = override ? (override.character || 'standard') : (state.character || 'standard');
     const titleVal = getSelectedTitle() || null;
     if (newScore <= 0) { _lastSubmitError = '점수 0'; console.warn('[점수제출] 점수가 0 — 제출 생략'); return; }
     console.log(`[점수제출] 시작: ${newScore}점 (mode=${gameMode}, round=${gameRound}, asc=${gameAsc})`);
@@ -13007,15 +13011,29 @@
   // 🔁 수동 재제출 — 마지막 게임 결과를 다시 서버에 시도
   //    state.gameOver 와 state.score 가 유효하면 submitGlobalScore() 재호출
   function manualResubmitScore() {
-    if (!state || state.score == null || state.score <= 0) {
-      toast('⚠ 제출할 점수가 없습니다');
+    // 🏁 이번 시즌(직전 리셋 이후) 기록 중 모드별 최고점을 서버에 재제출
+    const seasonStart = getSeasonStartTime();
+    const recs = (loadRecords() || []).filter(r =>
+      r && typeof r.score === 'number' && r.score > 0 && r.score <= SCORE_SANE_CAP && (r.date || 0) >= seasonStart);
+    if (recs.length === 0) {
+      toast('⚠ 이번 시즌 기록이 없습니다');
       return null;
     }
-    toast('🔁 점수 재제출 중...');
-    const p = submitGlobalScore();
+    // 모드별 최고 기록 선별
+    const bestByMode = {};
+    for (const r of recs) {
+      const m = r.mode || 'standard';
+      if (!bestByMode[m] || r.score > bestByMode[m].score) bestByMode[m] = r;
+    }
+    const list = Object.values(bestByMode);
+    toast(`🔁 이번 시즌 최고 기록 재제출 중... (${list.length}개 모드)`);
+    const p = Promise.all(list.map(r => submitGlobalScore({
+      score: r.score, round: r.round || 1, ascension: r.ascension || 0,
+      character: r.character || 'standard', mode: r.mode || 'standard',
+    })));
     p.then(() => {
       if (_lastSubmitError) toast(`❌ 재제출 실패: ${_lastSubmitError}`);
-      else { toast('✅ 점수 재제출 완료'); invalidateRankingCache(); loadGlobalRankings(); }
+      else { toast('✅ 이번 시즌 최고 기록 재제출 완료'); invalidateRankingCache(); loadGlobalRankings(); }
     });
     return p;
   }
@@ -13239,6 +13257,8 @@
     target.setUTCHours(15, 0, 0, 0);
     return target;
   }
+  // 🏁 이번 시즌 시작 시각(ms) = 직전 리셋 = 다음 리셋 - 7일. 이 이후 기록만 "이번 시즌".
+  function getSeasonStartTime() { return getNextResetTime().getTime() - 7 * 86400000; }
 
   let _countdownInterval = null;
   function startRankCountdown() {
@@ -14385,6 +14405,19 @@
       }
     } catch {}
   })();
+  // 🛡 로드 시 비정상(상한 초과) 기록 자동 제거 — 익스플로잇 점수가 로컬에 남아 병합으로 되살아나는 것 차단
+  (function sanitizeRecordsOnLoad() {
+    try {
+      if (!Array.isArray(META.records)) return;
+      const before = META.records.length;
+      META.records = META.records.filter(r => r && typeof r.score === 'number' && r.score <= SCORE_SANE_CAP);
+      if (META.records.length !== before) {
+        try { localStorage.setItem(META_KEY, _packMeta(META)); } catch {}
+        try { localStorage.setItem(RECORDS_KEY, JSON.stringify(META.records)); } catch {}
+        if (typeof saveMeta === 'function') { try { saveMeta(); } catch {} }   // 서버에도 정리본 동기화
+      }
+    } catch {}
+  })();
   function loadRecords() {
     // META.records 우선. 없으면 localStorage 폴백
     if (Array.isArray(META.records)) return META.records;
@@ -14403,6 +14436,7 @@
       win: !!state.gameWin,
       ascension: state.ascension || 0,            // 난이도 저장
       character: state.character || 'standard',   // 캐릭터 저장
+      mode: state.mode || 'standard',             // 🏰 모드 저장 (재제출 시 모드별 랭킹 매칭용)
     });
     records.sort((a, b) => b.score - a.score);
     records.length = Math.min(records.length, 10);
@@ -21157,7 +21191,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 286;
+  const APP_VERSION = 289;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
