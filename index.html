@@ -48,6 +48,15 @@
     padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
     box-sizing: border-box;
   }
+  /* 🎨 디자인 토큰 — 색/라운딩/섀도우 통일 (전 화면 공통) */
+  :root {
+    --bg: #0b0d12; --panel: #1f2735; --panel-hi: #2a3550;
+    --border: #3a4256; --accent: #7ad7ff; --accent-2: #5870a0;
+    --gold: #ffd479; --text: #e8eaf0; --text-dim: #9aa3b3;
+    --radius: 10px; --radius-sm: 8px;
+    --shadow: 0 4px 14px rgba(0,0,0,0.42);
+    --glow: 0 0 14px rgba(122,215,255,0.22);
+  }
   /* 게임 wrap — transform 기준점 명시 + 정확한 측정용 */
   #wrap {
     transform-origin: center center;
@@ -661,6 +670,21 @@
     -webkit-overflow-scrolling: touch;
   }
   .screen.show { display: flex; }
+  /* 🌌 메뉴 배경 — 검정 → 은은한 우주 (중앙 네이비 글로우 + 성긴 별, 정적/차분) */
+  #menu {
+    background:
+      radial-gradient(2px 2px at 12% 22%, rgba(255,255,255,0.5), transparent),
+      radial-gradient(1px 1px at 28% 64%, rgba(200,220,255,0.45), transparent),
+      radial-gradient(1.5px 1.5px at 47% 16%, rgba(255,255,255,0.4), transparent),
+      radial-gradient(1px 1px at 63% 48%, rgba(190,215,255,0.4), transparent),
+      radial-gradient(2px 2px at 79% 28%, rgba(255,255,255,0.45), transparent),
+      radial-gradient(1px 1px at 88% 70%, rgba(200,220,255,0.4), transparent),
+      radial-gradient(1px 1px at 34% 88%, rgba(255,255,255,0.35), transparent),
+      radial-gradient(1.5px 1.5px at 71% 82%, rgba(190,215,255,0.35), transparent),
+      radial-gradient(1px 1px at 8% 50%, rgba(255,255,255,0.3), transparent),
+      radial-gradient(1px 1px at 93% 12%, rgba(200,220,255,0.35), transparent),
+      radial-gradient(ellipse 72% 52% at 50% 30%, #14182c 0%, #0b0d12 70%);
+  }
   #menu h1 {
     font-family: 'Black Han Sans', 'Jua', sans-serif;
     font-size: clamp(34px, 9vmin, 68px);  /* 둥근 굵은 폰트는 살짝 크게 */
@@ -681,11 +705,14 @@
     background: #102028;
     color: #7ad7ff;
     border: 1px solid #2a5878;
+    border-radius: 8px;
     font-family: inherit;
     font-size: 11px;
     cursor: pointer;
     touch-action: manipulation;
+    transition: background .12s, box-shadow .12s;
   }
+  .update-cache-btn:hover { background: #163240; box-shadow: 0 0 10px rgba(122,215,255,0.2); }
   .update-cache-btn:hover { background: #143040; color: #aaeaff; }
   /* 🎰 가챠 원형 버튼 — 우측 하단 캐릭터 이미지 (데이터 초기화 버튼과 겹치지 않게) */
   .gacha-circle-btn {
@@ -751,15 +778,20 @@
     padding: clamp(10px, 2vmin, 16px);
     font-size: clamp(13px, 1.9vmin, 16px);
     font-family: inherit;
-    background: #1f2735;
-    color: #e8eaf0;
-    border: 2px solid #3a4256;
+    background: linear-gradient(180deg, #242d3f, #1a2230);
+    color: var(--text, #e8eaf0);
+    border: 1.5px solid var(--border, #3a4256);
+    border-radius: var(--radius-sm, 9px);
     cursor: pointer;
-    transition: background .12s, border-color .12s, transform .08s;
+    transition: background .12s, border-color .12s, transform .08s, box-shadow .12s;
     touch-action: manipulation;
     box-sizing: border-box;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.05);
   }
-  .menu-btn:hover:not(:disabled) { background: #2a3550; border-color: #5870a0; }
+  .menu-btn:hover:not(:disabled) {
+    background: linear-gradient(180deg, #2e3a55, #232d42); border-color: var(--accent-2, #5870a0);
+    box-shadow: 0 4px 14px rgba(0,0,0,0.4), 0 0 12px rgba(122,215,255,0.18), inset 0 1px 0 rgba(255,255,255,0.08);
+  }
   .menu-btn:active { transform: scale(0.97); }
 
   /* v218 — 메뉴 메인 컨테이너 (그룹화 + 그리드) */
@@ -871,9 +903,10 @@
     font-size: clamp(15px, 2.6vmin, 20px);
     font-weight: bold;
     padding: clamp(14px, 2.6vmin, 20px);
-    background: linear-gradient(135deg, #2a3550, #1f2735);
-    border-color: #5870a0;
+    background: linear-gradient(135deg, #2e3c5e, #1f2840);
+    border-color: #6a82b8;
     color: #ffffff;
+    box-shadow: 0 0 14px rgba(122,215,255,0.18), 0 3px 12px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.1);
   }
   .menu-btn-primary:hover:not(:disabled) {
     background: linear-gradient(135deg, #354270, #2a3045);
@@ -1031,16 +1064,21 @@
     display: flex; justify-content: space-between; align-items: center;
     max-width: 900px; width: 100%;
     margin: 0 auto 14px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(122,215,255,0.16);
   }
-  .codex-header h2 { margin: 0; font-size: 22px; letter-spacing: 6px; color: #7ad7ff; }
+  .codex-header h2 { margin: 0; font-size: 22px; letter-spacing: 6px; color: var(--accent, #7ad7ff); text-shadow: 0 0 14px rgba(122,215,255,0.35); }
   .codex-back {
     padding: 10px 18px;
-    background: #1f2735; color: #e8eaf0;
-    border: 1px solid #3a4256;
+    background: linear-gradient(180deg, #242d3f, #1a2230); color: var(--text, #e8eaf0);
+    border: 1px solid var(--border, #3a4256);
+    border-radius: var(--radius-sm, 8px);
     cursor: pointer; font-family: inherit; font-size: 13px;
     touch-action: manipulation;
+    transition: background .12s, border-color .12s, box-shadow .12s;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
   }
-  .codex-back:hover { background: #2a3550; }
+  .codex-back:hover { background: linear-gradient(180deg, #2e3a55, #232d42); border-color: var(--accent-2, #5870a0); box-shadow: 0 0 10px rgba(122,215,255,0.2); }
   .codex-tabs {
     display: flex; gap: 8px;
     max-width: 900px; width: 100%;
@@ -1051,12 +1089,17 @@
   }
   .codex-tab {
     padding: 10px 18px;
-    background: #1f2735; color: #9aa3b3;
-    border: 1px solid #3a4256;
+    background: linear-gradient(180deg, #232c3d, #1a2230); color: #9aa3b3;
+    border: 1px solid #3a4256; border-radius: var(--radius-sm, 8px);
     cursor: pointer; font-family: inherit; font-size: 13px;
     touch-action: manipulation;
+    transition: background .12s, border-color .12s, color .12s, box-shadow .12s;
   }
-  .codex-tab.active { background: #3d5380; color: #fff; border-color: #5870a0; }
+  .codex-tab:hover:not(.active) { background: linear-gradient(180deg, #2a3550, #202a3d); color: #cfd6e3; }
+  .codex-tab.active {
+    background: linear-gradient(180deg, #44598a, #354b76); color: #fff;
+    border-color: #6a82b8; box-shadow: 0 0 12px rgba(122,215,255,0.22), inset 0 1px 0 rgba(255,255,255,0.08);
+  }
 
   /* 🎯 v224 — 도감 필터 칩 (검색은 제거) */
   .codex-filter-chips {
@@ -1077,8 +1120,8 @@
   }
   .codex-filter-chip:hover:not(.active) { background: #2a3550; color: #cfd6e3; }
   .codex-filter-chip.active {
-    background: #3d5380; color: #fff;
-    border-color: #5870a0;
+    background: linear-gradient(180deg, #44598a, #354b76); color: #fff;
+    border-color: #6a82b8; box-shadow: 0 0 10px rgba(122,215,255,0.2);
   }
   /* 필터 결과 0개 — 메시지 */
   .codex-empty-msg {
@@ -1247,12 +1290,14 @@
   }
 
   .codex-card {
-    background: #141822;
+    background: linear-gradient(180deg, #161b27, #11151e);
     border: 1px solid #2a2f3a;
     border-left: 4px solid #7ad7ff;
+    border-radius: 9px;
     padding: 12px;
     font-size: 12px;
     line-height: 1.5;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
   }
   .codex-card .name {
     font-weight: bold;
@@ -1288,14 +1333,16 @@
     display: flex;
     align-items: center;
     gap: 14px;
-    background: #141822;
+    background: linear-gradient(180deg, #161b27, #11151e);
     border: 1px solid #2a2f3a;
+    border-radius: 10px;
     padding: 14px;
     margin-bottom: 8px;
     cursor: pointer;
-    transition: background .12s, border-color .12s;
+    transition: background .12s, border-color .12s, transform .1s, box-shadow .12s;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
   }
-  .record-card:hover { background: #1a1f2b; border-color: #3a4256; }
+  .record-card:hover { background: linear-gradient(180deg, #1c222f, #141823); border-color: #3a4256; transform: translateY(-1px); box-shadow: 0 5px 16px rgba(0,0,0,0.42), 0 0 10px rgba(122,215,255,0.1); }
   .record-card.win { border-left: 4px solid #ffe070; }
   .record-card .rank {
     font-size: 26px; font-weight: bold; color: #7ad7ff;
@@ -1848,7 +1895,7 @@
     display: flex; justify-content: space-between; align-items: center;
     padding: 14px 4px 6px;
     margin-top: 8px;
-    border-bottom: 2px solid #2a2f3a;
+    border-bottom: 2px solid rgba(122,215,255,0.18);
   }
   .shop-category-header:first-child { margin-top: 0; }
   .shop-category-header .cat-label {
@@ -1870,14 +1917,16 @@
     overflow-wrap: anywhere;
   }
   .shop-card {
-    background: #141822;
+    background: linear-gradient(180deg, #161b27, #11151e);
     border: 1px solid #2a2f3a;
     border-left: 4px solid #7ad7ff;
+    border-radius: 9px;
     padding: 12px 14px;
     display: grid;
     grid-template-columns: 1fr auto;
     gap: 12px;
     align-items: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
   }
   .shop-card.maxed { border-left-color: #52e07a; opacity: 0.75; }
   .shop-card .name { font-weight: bold; font-size: 14px; margin-bottom: 4px; }
@@ -1895,12 +1944,14 @@
     transition: width 0.3s;
   }
   .shop-buy {
-    background: #1f2735; color: #ffd479;
-    border: 1px solid #ffd479; padding: 10px 16px;
+    background: linear-gradient(180deg, #2a2410, #1d1908); color: #ffd479;
+    border: 1px solid #ffd479; border-radius: 8px; padding: 10px 16px;
     font-family: inherit; font-size: 13px; cursor: pointer;
     touch-action: manipulation; min-width: 90px;
+    transition: background .12s, box-shadow .12s, transform .08s;
   }
-  .shop-buy:hover:not(:disabled) { background: #2a3550; }
+  .shop-buy:hover:not(:disabled) { background: linear-gradient(180deg, #3a3014, #2a230c); box-shadow: 0 0 12px rgba(255,212,121,0.3); }
+  .shop-buy:active:not(:disabled) { transform: scale(0.97); }
   .shop-buy:disabled { opacity: 0.4; cursor: not-allowed; border-color: #3a4256; color: #6b7283; }
   .shop-buy.maxed { color: #52e07a; border-color: #52e07a; }
   .stardust-bar {
@@ -2048,12 +2099,14 @@
     .char-hero .hero-name { font-size: 18px; }
   }
   .char-card {
-    background: #141822;
+    background: linear-gradient(180deg, #161b27, #11151e);
     border: 2px solid #2a2f3a;
     border-left: 4px solid #7ad7ff;
+    border-radius: 10px;
     padding: 10px 12px;
     cursor: pointer;
-    transition: background .12s, border-color .12s;
+    transition: background .12s, border-color .12s, transform .1s, box-shadow .12s;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
     display: flex;
     flex-direction: column;
     gap: 4px;
@@ -2097,8 +2150,8 @@
     font-weight: bold;
     letter-spacing: 1px;
   }
-  .char-card:hover:not(.locked) { background: #1a1f2b; }
-  .char-card.selected { border-color: #ffd479; background: #1a2030; }
+  .char-card:hover:not(.locked) { background: linear-gradient(180deg, #1c222f, #141823); transform: translateY(-1px); box-shadow: 0 5px 16px rgba(0,0,0,0.42), 0 0 10px rgba(122,215,255,0.1); }
+  .char-card.selected { border-color: #ffd479; background: linear-gradient(180deg, #1c2333, #141a28); box-shadow: 0 2px 9px rgba(0,0,0,0.32), 0 0 12px rgba(255,212,121,0.18); }
   /* v232 — 잠긴 캐릭터: 정보 가독성은 유지하되 시각적으로 "흑백 vs 컬러" 명확 구분 */
   .char-card.locked {
     cursor: default;
@@ -2136,15 +2189,18 @@
   .achievement-card {
     display: flex; gap: 14px;
     align-items: center;
-    background: #141822;
+    background: linear-gradient(180deg, #161b27, #11151e);
     border: 1px solid #2a2f3a;
     border-left: 4px solid #4a5163;
+    border-radius: 9px;
     padding: 14px;
     margin-bottom: 6px;
+    box-shadow: 0 2px 7px rgba(0,0,0,0.28);
   }
   .achievement-card.unlocked {
     border-left-color: #ffd479;
-    background: #1a2030;
+    background: linear-gradient(180deg, #1c2333, #141a28);
+    box-shadow: 0 2px 9px rgba(0,0,0,0.32), 0 0 9px rgba(255,212,121,0.1);
   }
   .achievement-card .ach-icon {
     font-size: 22px;
@@ -2217,9 +2273,81 @@
     letter-spacing: 3px;
     padding: 14px 4px 6px;
     margin-top: 8px;
-    border-bottom: 1px solid #2a2f3a;
+    border-bottom: 1px solid rgba(122,215,255,0.14);
   }
   .ach-section-header:first-child { margin-top: 0; }
+
+  /* ===== 🎁 게임 결과 — 획득 보상 패널 + 메뉴 NEW 뱃지 (v322) ===== */
+  .menu-btn, .menu-btn-grid, .nickname-display { position: relative; }
+  .menu-new-dot {
+    position: absolute; top: 6px; right: 8px;
+    min-width: 17px; height: 17px; padding: 0 4px; box-sizing: border-box;
+    background: linear-gradient(180deg, #ff6b7c, #d83a4e); color: #fff;
+    font-size: 10px; font-weight: 900; line-height: 17px; text-align: center;
+    border-radius: 999px; box-shadow: 0 0 8px rgba(255,91,110,0.6), 0 1px 3px rgba(0,0,0,0.4);
+    pointer-events: none; z-index: 3;
+    animation: newDotPulse 1.6s ease-in-out infinite;
+  }
+  @keyframes newDotPulse { 0%,100%{transform:scale(1);} 50%{transform:scale(1.16);} }
+  .nickname-display .menu-new-dot { top: 50%; right: 8px; transform: translateY(-50%); animation: none; }
+
+  .reward-overlay {
+    display: none; position: fixed; inset: 0; z-index: 9993;
+    background: rgba(6,8,14,0.74); backdrop-filter: blur(3px);
+    align-items: center; justify-content: center; padding: 14px; box-sizing: border-box;
+  }
+  .reward-overlay.show { display: flex; }
+  .reward-card {
+    width: 100%; max-width: 440px; max-height: 86vh; display: flex; flex-direction: column;
+    background: linear-gradient(180deg, #1a2030, #11151e);
+    border: 1px solid #3a4256; border-radius: 16px;
+    box-shadow: 0 18px 60px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.05), 0 0 40px rgba(122,215,255,0.08);
+    padding: 18px 16px 14px; box-sizing: border-box;
+    animation: rewardIn .34s cubic-bezier(.2,.9,.3,1.12);
+  }
+  @keyframes rewardIn { from{opacity:0; transform:translateY(16px) scale(.95);} to{opacity:1; transform:none;} }
+  .reward-head { text-align: center; margin-bottom: 12px; }
+  .reward-title { font-size: 19px; font-weight: bold; color: #ffd479; text-shadow: 0 0 16px rgba(255,212,121,0.4); }
+  .reward-sub { display: block; font-size: 12px; color: #9aa3b3; margin-top: 4px; }
+  .reward-body { overflow-y: auto; display: flex; flex-direction: column; gap: 8px; padding: 2px; }
+  .reward-row {
+    display: flex; align-items: center; gap: 12px; padding: 11px 12px;
+    background: linear-gradient(180deg, #1c2333, #141a28); border: 1px solid #2a3140;
+    border-radius: 11px; position: relative;
+  }
+  .reward-row.hot { border-color: rgba(255,212,121,0.5); box-shadow: 0 0 14px rgba(255,212,121,0.13); }
+  .reward-ico {
+    width: 46px; height: 46px; flex-shrink: 0; border-radius: 10px; overflow: hidden;
+    display: flex; align-items: center; justify-content: center; font-size: 24px;
+    background: #0e1320; border: 1px solid #2a3140;
+  }
+  .reward-ico img { width: 100%; height: 100%; object-fit: cover; image-rendering: pixelated; }
+  .reward-txt { flex: 1; min-width: 0; }
+  .reward-kind { font-size: 10px; letter-spacing: 1px; color: #7ad7ff; font-weight: bold; }
+  .reward-name { font-size: 15px; font-weight: bold; color: #e8eaf0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .reward-name .title-plate, .reward-name .title-emblem { vertical-align: middle; }
+  .reward-desc { font-size: 11px; color: #9aa3b3; line-height: 1.35; white-space: normal; }
+  .reward-new {
+    position: absolute; top: -7px; right: -6px;
+    background: linear-gradient(180deg, #ff6b7c, #d83a4e); color: #fff;
+    font-size: 9px; font-weight: 900; letter-spacing: .5px; padding: 2px 7px; border-radius: 999px;
+    box-shadow: 0 2px 8px rgba(255,91,110,0.5); transform: rotate(7deg);
+  }
+  .reward-currency { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 6px; }
+  .reward-currency span {
+    font-size: 12px; color: #cfd6e3; background: #0e1320;
+    border: 1px solid #2a3140; border-radius: 999px; padding: 6px 13px;
+  }
+  .reward-ok {
+    margin-top: 14px; padding: 13px; width: 100%;
+    font-family: inherit; font-size: 15px; font-weight: bold; color: #0b0d12; cursor: pointer;
+    background: linear-gradient(180deg, #ffe49a, #ffd479); border: none; border-radius: 11px;
+    box-shadow: 0 4px 14px rgba(255,212,121,0.3); transition: transform .08s, box-shadow .12s;
+    touch-action: manipulation;
+  }
+  .reward-ok:hover { box-shadow: 0 6px 20px rgba(255,212,121,0.45); }
+  .reward-ok:active { transform: scale(.98); }
+  .reward-foot { text-align: center; font-size: 11px; color: #6b7283; margin-top: 9px; }
 </style>
 </head>
 <body>
@@ -2253,7 +2381,7 @@
       <!-- 빠른 시작 미리보기 (마지막 설정 표시) -->
       <div id="quickStartPreview" class="quick-start-preview" style="display:none;"></div>
       <!-- 설정 변경 (빠른 시작 가능할 때만 노출) -->
-      <button id="changeSettingsBtn" class="menu-btn menu-btn-secondary" style="display:none;">⚙ 설정 변경 (모드/캐릭터)</button>
+      <button id="changeSettingsBtn" class="menu-btn menu-btn-secondary" style="display:none;">⚙ 캐릭터 변경</button>
       <button id="difficultyBtn" class="menu-btn menu-btn-secondary" style="display:none">⚡ 난이도: 기본</button>
     </div>
 
@@ -2315,9 +2443,9 @@
 
 <!-- ===== 🔐 인증 모달 (회원가입 / 로그인) ===== -->
 <div id="authModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.95); z-index:9997; align-items:center; justify-content:center; padding:8px; box-sizing:border-box;">
-  <div style="background:#1a1f2b; border:2px solid #7ad7ff; border-radius:12px; max-width:420px; width:100%; max-height:calc(100dvh - 16px); display:flex; flex-direction:column; box-shadow:0 0 40px rgba(122,215,255,0.4); overflow:hidden;">
+  <div style="background:linear-gradient(180deg,#1d2333,#161a24); border:2px solid #7ad7ff; border-radius:14px; max-width:420px; width:100%; max-height:calc(100dvh - 16px); display:flex; flex-direction:column; box-shadow:0 0 44px rgba(122,215,255,0.4), 0 12px 40px rgba(0,0,0,0.5); overflow:hidden;">
     <div style="padding:16px 18px 8px; flex-shrink:0;">
-      <div style="font-size:20px; font-weight:bold; color:#7ad7ff; margin-bottom:6px;">🔐 계정</div>
+      <div style="font-size:20px; font-weight:bold; color:#7ad7ff; margin-bottom:6px; text-shadow:0 0 12px rgba(122,215,255,0.4);">🔐 계정</div>
       <div id="authModalSubtitle" style="color:#9aa3b3; font-size:12px; line-height:1.4;">
         같은 기기에선 자동 로그인됩니다. 비밀번호는 다른 기기 접속 시 필요.
       </div>
@@ -2365,14 +2493,16 @@
   .auth-tab:hover { color: #aaeaff; }
   .auth-tab.active {
     color: #7ad7ff; border-bottom-color: #7ad7ff; font-weight: bold;
+    text-shadow: 0 0 8px rgba(122,215,255,0.4);
   }
   .auth-input {
     width: 100%; box-sizing: border-box;
-    background: #0f1219; border: 1.5px solid #2a2f3a;
-    color: #fff; padding: 10px 14px; border-radius: 6px;
+    background: #0d1119; border: 1.5px solid #2a2f3a;
+    color: #fff; padding: 11px 14px; border-radius: 8px;
     font-family: inherit; font-size: 14px; margin-bottom: 8px;
+    transition: border-color .12s, box-shadow .12s;
   }
-  .auth-input:focus { outline: none; border-color: #7ad7ff; }
+  .auth-input:focus { outline: none; border-color: #7ad7ff; box-shadow: 0 0 0 3px rgba(122,215,255,0.15); }
   .auth-err {
     color: #ff8888; font-size: 12px; margin-bottom: 8px;
     min-height: 16px; line-height: 1.4;
@@ -2384,17 +2514,22 @@
     cursor: pointer; transition: opacity 0.15s;
   }
   .auth-btn.primary {
-    background: #7ad7ff; color: #000;
+    background: linear-gradient(180deg, #8fe0ff, #5cc4f0); color: #042230;
+    box-shadow: 0 3px 12px rgba(122,215,255,0.3);
+    transition: filter .12s, box-shadow .12s, opacity .15s;
   }
+  .auth-btn.primary:hover:not(:disabled) { filter: brightness(1.08); box-shadow: 0 4px 16px rgba(122,215,255,0.45); }
   .auth-btn.primary:disabled { opacity: 0.5; cursor: not-allowed; }
 </style>
 
 <!-- ===== 🌐 닉네임 입력 모달 (첫 실행 시) ===== -->
 <div id="nicknameModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.92); z-index:9998; align-items:center; justify-content:center; padding:8px; box-sizing:border-box;">
-  <div style="background:#1a1f2b; border:2px solid #7ad7ff; border-radius:12px; max-width:420px; width:100%; max-height:100vh; max-height:calc(100dvh - 16px); display:flex; flex-direction:column; box-shadow:0 0 40px rgba(122,215,255,0.4); overflow:hidden;">
+  <div style="position:relative; background:linear-gradient(180deg,#1d2333,#161a24); border:2px solid #7ad7ff; border-radius:14px; max-width:420px; width:100%; max-height:100vh; max-height:calc(100dvh - 16px); display:flex; flex-direction:column; box-shadow:0 0 44px rgba(122,215,255,0.4), 0 12px 40px rgba(0,0,0,0.5); overflow:hidden;">
+    <!-- 닫기 X (첫 실행 시 숨김) -->
+    <button id="nicknameCloseBtn" title="닫기" style="position:absolute; top:10px; right:10px; z-index:2; width:30px; height:30px; padding:0; display:flex; align-items:center; justify-content:center; background:#222a3a; color:#9aa3b3; border:1px solid #3a4256; border-radius:8px; font-size:16px; cursor:pointer; transition:background .12s,color .12s;">✕</button>
     <!-- 헤더 (고정) -->
-    <div style="padding:14px 18px 6px; flex-shrink:0;">
-      <div style="font-size:20px; font-weight:bold; color:#7ad7ff; margin-bottom:4px;">👋 환영합니다!</div>
+    <div style="padding:14px 44px 6px 18px; flex-shrink:0;">
+      <div style="font-size:20px; font-weight:bold; color:#7ad7ff; margin-bottom:4px; text-shadow:0 0 12px rgba(122,215,255,0.4);">👋 환영합니다!</div>
       <div style="color:#9aa3b3; font-size:12px; line-height:1.4;">
         글로벌 랭킹에 표시될 닉네임을 정해주세요. (1~12자, 한/영/숫자)
       </div>
@@ -2437,10 +2572,9 @@
     </div>
     <div id="rank-countdown" style="color:#88ccff; font-weight:bold; font-family:monospace;">- - - - -</div>
   </div>
-  <!-- 🏰 모드별 탭 -->
-  <div class="codex-tabs" id="rank-mode-tabs" style="margin:0 auto 8px; justify-content:center; max-width:520px;">
+  <!-- 🏰 모드별 탭 — 디펜스 비활성화로 클래식 단일 (탭 숨김) -->
+  <div class="codex-tabs" id="rank-mode-tabs" style="display:none; margin:0 auto 8px; justify-content:center; max-width:520px;">
     <button class="codex-tab active" data-rankmode="standard">⚔️ 클래식</button>
-    <button class="codex-tab" data-rankmode="defense">🏰 디펜스</button>
   </div>
   <div id="globalRank-status" style="text-align:center; color:#9aa3b3; padding:30px; font-size:14px;">불러오는 중...</div>
   <div id="globalRank-top10" style="padding:0 12px;"></div>
@@ -2615,7 +2749,7 @@
   /* 고등급 플레이트 — 텍스트를 감싸는 장식 배너 (compact + 줄바꿈 금지) */
   .title-plate {
     display: inline-flex; align-items: center; gap: 3px;
-    padding: 0 8px; border-radius: 5px; font-size: 11px; line-height: 1.45;
+    padding: 0 8px; border-radius: 5px; font-size: 11px; line-height: 1.2;
     background: linear-gradient(180deg, #1c2030, #0b0d15);
     border: 1px solid var(--c, #c8a8ff);
     box-shadow: 0 0 7px var(--c, #c8a8ff), inset 0 1px 0 rgba(255,255,255,0.12);
@@ -2623,7 +2757,7 @@
     margin: 0 7px 0 5px;   /* 끝 보석(±3px 돌출)이 옆 텍스트(닉네임 등) 침범 방지 */
   }
   .rank-nick > span.title-plate { display: inline-flex; }   /* .rank-nick>span{display:inline} 덮어쓰기 방지 */
-  .title-plate .tp-text { font-weight: bold; white-space: nowrap; }
+  .title-plate .tp-text { font-weight: bold; white-space: nowrap; line-height: 1; position: relative; top: 0.5px; }   /* 한글 광학 세로중앙 보정 */
   /* 양끝 다이아 보석 장식 */
   .title-plate::before, .title-plate::after {
     content: ''; position: absolute; top: 50%; width: 5px; height: 5px;
@@ -2632,7 +2766,33 @@
   }
   .title-plate::before { left: -3px; }
   .title-plate::after  { right: -3px; }
-  /* 무지개 등급 플레이트 — 테두리/글로우 (텍스트 그라데는 .tp-text에 별도 적용) */
+  /* 🎀 카테고리별 모양 차별화 */
+  /* 캐릭터 — 둥근 + 다이아 (기본 장식 유지) */
+  .title-plate.tp-char { border-radius: 6px; }
+  /* 난이도(승천/초월) — 각진 계급장 + 화살촉 양끝 */
+  .title-plate.tp-rank { border-radius: 2px; }
+  .title-plate.tp-rank::before, .title-plate.tp-rank::after { width: 7px; height: 9px; transform: translateY(-50%); box-shadow: none; }
+  .title-plate.tp-rank::before { left: -5px; clip-path: polygon(100% 0, 0 50%, 100% 100%); }
+  .title-plate.tp-rank::after  { right: -5px; clip-path: polygon(0 0, 100% 50%, 0 100%); }
+  /* 시즌 — 알약(메달 리본) + 원형 장식 */
+  .title-plate.tp-season { border-radius: 999px; padding: 1px 12px; }
+  .title-plate.tp-season::before, .title-plate.tp-season::after { width: 6px; height: 6px; border-radius: 50%; transform: translateY(-50%); }
+  /* 그랜드 — 둥근 + (무지개 글로우는 tp-rainbow가 담당) */
+  .title-plate.tp-grand { border-radius: 6px; }
+  /* 🌌 초월 — 프리미엄 우주 플레이트 (둥근 + 깊은 보라 + 4각 별 + 강한 다중 글로우) */
+  .title-plate.tp-trans {
+    border-radius: 7px;
+    background: linear-gradient(180deg, #261b40, #0a0612);
+    border: 1px solid var(--c, #b48cf0);
+    box-shadow: 0 0 9px var(--c, #9966ff), 0 0 17px rgba(150,100,255,0.32), inset 0 1px 0 rgba(255,255,255,0.18), inset 0 0 8px rgba(150,100,255,0.18);
+  }
+  .title-plate.tp-trans::before, .title-plate.tp-trans::after {
+    width: 8px; height: 8px; box-shadow: none; transform: translateY(-50%);
+    clip-path: polygon(50% 0, 60% 40%, 100% 50%, 60% 60%, 50% 100%, 40% 60%, 0 50%, 40% 40%);
+  }
+  .title-plate.tp-trans::before { left: -5px; }
+  .title-plate.tp-trans::after  { right: -5px; }
+  /* 무지개 등급 플레이트 — 색만 담당 (모양은 위 변형이 결정, 순서상 색 override 마지막) */
   .title-plate.tp-rainbow {
     border-color: #ff9ad6;
     box-shadow: 0 0 8px rgba(255,140,220,0.7), inset 0 1px 0 rgba(255,255,255,0.14);
@@ -2642,35 +2802,41 @@
   /* === 칭호 선택 그리드 (닉네임 모달용) === */
   .title-picker-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
-    gap: 6px;
+    grid-template-columns: repeat(auto-fill, minmax(112px, 1fr));
+    gap: 7px;
     /* max-height 제거 — 부모 (모달 본문)가 스크롤 처리하므로 그리드 자체는 자유롭게 늘어남 */
-    padding: 6px;
-    background: #0f1219;
-    border: 1px solid #2a2f3a;
-    border-radius: 6px;
+    padding: 8px;
+    background: #0c0e15;
+    border: 1px solid #232838;
+    border-radius: 10px;
   }
   .title-pick-item {
-    background: #1a1f2b;
-    border: 1.5px solid #2a2f3a;
-    border-radius: 4px;
-    padding: 6px 8px;
+    background: linear-gradient(180deg, #1e2433, #161a25);
+    border: 1.5px solid #2c3242;
+    border-radius: 8px;
+    padding: 8px;
     cursor: pointer;
     font-size: 11px;
     text-align: center;
-    transition: border-color 0.15s, background 0.15s;
+    transition: border-color 0.15s, background 0.15s, transform 0.1s, box-shadow 0.15s;
+    display: flex; align-items: center; justify-content: center; min-height: 30px;
   }
-  .title-pick-item:hover { background: #2a2f3a; }
+  .title-pick-item:hover {
+    background: linear-gradient(180deg, #2a3245, #1e2433);
+    border-color: #4a546a; transform: translateY(-1px);
+    box-shadow: 0 3px 10px rgba(0,0,0,0.4), 0 0 10px rgba(122,215,255,0.12);
+  }
   .title-pick-item.selected {
-    border-color: #ffd479;
-    background: #2a2410;
-    box-shadow: 0 0 10px rgba(255,212,121,0.3);
+    border-color: var(--gold, #ffd479);
+    background: linear-gradient(180deg, #2e2814, #1d1a0c);
+    box-shadow: 0 0 12px rgba(255,212,121,0.35), inset 0 1px 0 rgba(255,255,255,0.08);
   }
   .title-pick-item.locked {
-    opacity: 0.35;
+    opacity: 0.32;
     cursor: not-allowed;
     filter: grayscale(0.6);
   }
+  .title-pick-item.locked:hover { transform: none; box-shadow: none; }
 </style>
 
 <!-- ===== 🎮 치트 모달 (123123123 입력 시) ===== -->
@@ -2936,7 +3102,6 @@
     <button class="codex-tab" data-shoptab="combat" style="flex-shrink:0; white-space:nowrap;">⚔️ 전투력</button>
     <button class="codex-tab" data-shoptab="build" style="flex-shrink:0; white-space:nowrap;">🎴 빌드</button>
     <button class="codex-tab" data-shoptab="survival" style="flex-shrink:0; white-space:nowrap;">🛡️ 생존</button>
-    <button class="codex-tab" data-shoptab="defense" style="flex-shrink:0; white-space:nowrap;">🏰 디펜스</button>
   </div>
   <div id="shop-list"></div>
 </div>
@@ -2995,6 +3160,19 @@
     <button class="codex-filter-chip" data-codexfilter="locked">🔒 잠김</button>
   </div>
   <div id="codex-list"></div>
+</div>
+
+<!-- 🎁 게임 결과 — 획득 보상 패널 (body 레벨 — 게임 컨테이너 transform/display 영향 차단) -->
+<div id="rewardSummary" class="reward-overlay">
+  <div class="reward-card">
+    <div class="reward-head">
+      <span class="reward-title">🎁 획득 보상</span>
+      <span class="reward-sub" id="rewardSub"></span>
+    </div>
+    <div class="reward-body" id="rewardBody"></div>
+    <button class="reward-ok" id="rewardOk">확인</button>
+    <div class="reward-foot">메뉴 › 캐릭터 · 업적 · 도감 에서 다시 볼 수 있어요</div>
+  </div>
 </div>
 
 <div id="wrap" style="position:relative; display:none;">
@@ -5316,26 +5494,48 @@
         if (--ab.cooldown > 0) return;
         // ⚖ v269 — DMG 58→116 (풀스크린 단발 + 보호막 카운터 제 역할)
         const dmg = 20 + ab.level * 12;
+        let _marked = 0;
         for (const e of state.enemies) {
           if (e.hp <= 0) continue;
+          const [ex, ey] = enemyXY(e);
           if (e.shieldHp > 0) {
             e.shieldHp = 0;
-            const [ex, ey] = enemyXY(e);
-            spawnParticles(ex, ey, '#ffaaff', 6);
+            spawnParticles(ex, ey, '#ffaaff', 7);   // 보호막 산산조각
           }
           damageEnemy(e, dmg);
+          // 🟣 정화 마크 — 모든 적에 소량 반짝 (캡) → "전체가 정화됨"이 보이게
+          if (_marked < 40) { spawnParticles(ex, ey, '#ffd0ff', 2); _marked++; }
         }
-        ab.fxLife = 25;
-        shake(8, 8);
+        ab.fxLife = 32;
+        shake(7, 8);
         // ⚖ v269 — 쿨다운 3.5초→2.5초 (풀스크린 빈도 ↑)
         ab.cooldown = Math.max(90, 280 - ab.level * 16);
       },
       draw(ab) {
         if (ab.fxLife <= 0) return;
-        const a = ab.fxLife / 25;
-        // 풀스크린 번쩍임 → 가장자리 비네팅 (눈 부담 ↓)
-        ctx.globalAlpha = a * 0.22;
-        const grad = ctx.createRadialGradient(CX, CY, CX * 0.45, CX, CY, CX * 1.15);
+        const MAX = 32;
+        const a = ab.fxLife / MAX;        // 1 → 0
+        const prog = 1 - a;               // 0 → 1 (파동 확산 진행)
+        ctx.save();
+        ctx.globalCompositeOperation = 'lighter';
+        // 🌊 정화 파동 — 중앙에서 아레나 끝까지 퍼지는 동심 링 2겹 (시차)
+        for (let r = 0; r < 2; r++) {
+          const rp = prog - r * 0.16;
+          if (rp <= 0 || rp >= 1) continue;
+          ctx.globalAlpha = (1 - rp) * 0.5;
+          ctx.strokeStyle = '#ffd6ff';
+          ctx.lineWidth = 7 * (1 - rp) + 2;
+          ctx.beginPath(); ctx.arc(CX, CY, rp * ARENA_R * 1.12, 0, Math.PI * 2); ctx.stroke();
+        }
+        // 중앙 소프트 플래시 (초반 강 → 빠르게 감쇠)
+        ctx.globalAlpha = a * a * 0.28;
+        const cg = ctx.createRadialGradient(CX, CY, 0, CX, CY, ARENA_R * 0.75);
+        cg.addColorStop(0, 'rgba(255,215,255,0.7)'); cg.addColorStop(1, 'rgba(255,170,255,0)');
+        ctx.fillStyle = cg; ctx.beginPath(); ctx.arc(CX, CY, ARENA_R * 0.75, 0, Math.PI * 2); ctx.fill();
+        ctx.restore();
+        // 가장자리 비네팅 (은은 — 눈 부담 ↓)
+        ctx.globalAlpha = a * 0.20;
+        const grad = ctx.createRadialGradient(CX, CY, CX * 0.5, CX, CY, CX * 1.15);
         grad.addColorStop(0, 'rgba(255, 170, 255, 0)');
         grad.addColorStop(1, '#ffaaff');
         ctx.fillStyle = grad;
@@ -11442,7 +11642,7 @@
     // 🏰 게임 모드 — 메뉴 → 모드 선택에서 결정
     // 'standard': 기존 — 적 한계 초과 시 패배
     // 'defense':  디펜스 — 적이 타워로 직진, 타워 HP 0 시 패배
-    const gameMode = META.lastSelectedMode === 'defense' ? 'defense' : 'standard';
+    const gameMode = 'standard';   // 🚫 디펜스 모드 비활성화 — 항상 클래식 모드로 진행
     // 🔒 게임 시작 시 해금 검증 — 잠긴 캐릭터로 시작 못 하게 (조작 방지)
     try { if (!isCharUnlocked(selectedCharacter)) { selectedCharacter = 'standard'; META.selectedCharacter = 'standard'; } } catch (e) { selectedCharacter = 'standard'; }
     state = {
@@ -11782,8 +11982,10 @@
     earnCrystals();
     recordCharUsage();        // 캐릭터 사용 라운드 기록
     checkAchievements();
+    computeRewardData();       // 🎁 해금 보상 집계 (캐릭터/칭호/능력) + NEW 뱃지 카운트
     saveRecord();
     renderPanel();
+    scheduleRewardSummary();   // 🎁 점수 연출 후 보상 패널 표시 (해금 있을 때만)
     // 🌐 글로벌 랭킹 자동 제출 (비동기)
     submitGlobalScore();
     // 🛡 v206 — 게임 종료 직후 META를 즉시 서버에 push (queueServerSync 디바운스 우회)
@@ -12012,6 +12214,21 @@
     // SSR 캐릭터 칭호
     ariaMaster:      { name: '천공의 노래꾼',   icon: '🌟', achId: 'char8_aria',    style: 'rainbow' },
     misakiMaster:    { name: '시공의 여행자',   icon: '🦋', achId: 'char8_misaki',  style: 'rainbow' },
+    // 🔱 트리플 컬렉션 — 해당 트리플을 한 게임에서 형성하면 해금
+    tcUltra:    { name: '탄막의 폭군',    icon: '🔫', achId: 'tc_ultraGatling',    style: 'glow', color: '#cfe0ff' },
+    tcFrost:    { name: '동결뇌제',      icon: '❄️', achId: 'tc_absoluteThunder',  style: 'glow', color: '#bcd8ff' },
+    tcElem:     { name: '원소술사',      icon: '🌀', achId: 'tc_elementalStorm',   style: 'glow', color: '#ffaaee' },
+    tcFusion:   { name: '융합 포격수',   icon: '💥', achId: 'tc_fusionCannon',     style: 'glow', color: '#ff9966' },
+    tcGalaxy:   { name: '은하의 지배자', icon: '🌌', achId: 'tc_galaxyOrbit',      style: 'glow', color: '#88ffff' },
+    tcTitan:    { name: '거포 사령관',   icon: '🚀', achId: 'tc_titanMissile',     style: 'glow', color: '#ffcc44' },
+    tcPlasma:   { name: '재앙술사',      icon: '⚡', achId: 'tc_plasmaCataclysm',   style: 'glow', color: '#ff66ff' },
+    tcVoidNova: { name: '공허의 폭심',   icon: '💜', achId: 'tc_voidNova',          style: 'glow', color: '#aa66ff' },
+    tcSiege:    { name: '공성 포격수',   icon: '🔆', achId: 'tc_siegeBeam',         style: 'glow', color: '#88ddff' },
+    tcDeepSea:  { name: '심해의 포술사', icon: '🌊', achId: 'tc_deepSeaBarrage',    style: 'glow', color: '#5599cc' },
+    tcStellar:  { name: '별을 부수는 자',icon: '☄️', achId: 'tc_stellarCollapse',   style: 'glow', color: '#ff6633' },
+    tcVoidStop: { name: '시공 봉인자',   icon: '🌀', achId: 'tc_voidStop',          style: 'glow', color: '#9966ff' },
+    // 🌟 그랜드 — 한 게임 트리플 5개
+    tripleSageTitle: { name: '조합의 현자', icon: '✨', achId: 'tripleSage', style: 'rainbow' },
   };
   // 🎖 커스텀 SVG 엠블럼 — 이모지 대체 (currentColor=칭호 색으로 틴트). 24x24 viewBox.
   const TITLE_ICON_SVG = {
@@ -12040,6 +12257,11 @@
     moon: '<svg viewBox="0 0 24 24" fill-rule="evenodd"><path d="M21 12a9 9 0 11-9-9 7 7 0 109 9z"/></svg>',
     butterfly: '<svg viewBox="0 0 24 24"><ellipse cx="7" cy="8.5" rx="5" ry="4.2"/><ellipse cx="17" cy="8.5" rx="5" ry="4.2"/><ellipse cx="8" cy="16.5" rx="4" ry="3.6"/><ellipse cx="16" cy="16.5" rx="4" ry="3.6"/><rect x="11.2" y="6" width="1.6" height="12.5" rx="0.8"/></svg>',
     medal: '<svg viewBox="0 0 24 24"><polygon points="7,2 5,11 10,11 11,4" opacity="0.85"/><polygon points="17,2 19,11 14,11 13,4" opacity="0.85"/><circle cx="12" cy="16" r="6.5"/><polygon points="12,12.4 13,15 15.8,15 13.6,16.8 14.4,19.5 12,17.8 9.6,19.5 10.4,16.8 8.2,15 11,15" fill="#161826"/></svg>',
+    barrage: '<svg viewBox="0 0 24 24"><rect x="2" y="6" width="9" height="2.4" rx="1.2"/><rect x="4" y="11" width="11" height="2.4" rx="1.2"/><rect x="2" y="16" width="9" height="2.4" rx="1.2"/><circle cx="18" cy="7.2" r="1.7"/><circle cx="20" cy="12.2" r="1.7"/><circle cx="18" cy="17.2" r="1.7"/></svg>',
+    cannon: '<svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="4.2"/><rect x="4" y="9" width="12" height="6" rx="1.5"/><polygon points="16,6.5 23,12 16,17.5"/></svg>',
+    missile: '<svg viewBox="0 0 24 24"><path d="M17 2c-5 1-8.5 4.5-10.5 9.5l4 4C15.5 13.5 19 10 20 5z"/><path d="M6 13l-3.5 6 6-3z"/><circle cx="14.5" cy="7.5" r="1.6" fill="#0c0e16"/></svg>',
+    beam: '<svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="3.6"/><polygon points="7,9.2 23,11 23,13 7,14.8"/></svg>',
+    fusion: '<svg viewBox="0 0 24 24"><polygon points="12,2 15,6 12,10 9,6" opacity="0.8"/><polygon points="4,12 8,9 12,12 8,15" opacity="0.8"/><polygon points="20,12 16,9 12,12 16,15" opacity="0.8"/><circle cx="12" cy="13" r="3.4"/></svg>',
   };
   // 칭호 id → 엠블럼 키
   const TITLE_ICON_KEY = {
@@ -12051,12 +12273,17 @@
     trans1Title:'galaxy', trans3Title:'galaxy', trans5Title:'starburst', trans10Title:'crown', trans15Title:'starburst',
     starGazer:'star', marineMaster:'wave', solarMaster:'sun', gravitasMaster:'vortex',
     sakuraMaster:'blossom', lunaMaster:'moon', ariaMaster:'star', misakiMaster:'butterfly',
+    // 🔱 트리플 컬렉션
+    tcUltra:'barrage', tcFrost:'bolt', tcElem:'sparkle', tcFusion:'cannon', tcGalaxy:'galaxy', tcTitan:'missile',
+    tcPlasma:'bolt', tcVoidNova:'starburst', tcSiege:'beam', tcDeepSea:'wave', tcStellar:'sun', tcVoidStop:'vortex',
+    tripleSageTitle:'fusion',
   };
   // 고등급 = 플레이트 배너 (SR/SSR 캐릭 · 고난이도 · 시즌은 별도 처리)
   const PLATE_TITLES = new Set([
     'conqueror', 'asc10Title', 'asc15Title',
     'trans1Title', 'trans3Title', 'trans5Title', 'trans10Title', 'trans15Title',
     'sakuraMaster', 'lunaMaster', 'ariaMaster', 'misakiMaster',
+    'tripleSageTitle',   // 그랜드 — 한 게임 트리플 5개
   ]);
   function titleEmblemHtml(key, emojiFallback) {
     const svg = TITLE_ICON_SVG[key];
@@ -12127,7 +12354,7 @@
       const styleVar = season.color ? `--c:${season.color};` : '';
       const emblem = titleEmblemHtml('medal', season.icon);
       const pr = season.style === 'rainbow' ? ' tp-rainbow' : '';
-      return `<span class="title-plate${pr}" style="${styleVar}">${emblem}<span class="tp-text title-${season.style}">${season.name}</span></span>`;
+      return `<span class="title-plate tp-season${pr}" style="${styleVar}">${emblem}<span class="tp-text title-${season.style}">${season.name}</span></span>`;
     }
     // 일반 (하드코딩) 칭호
     if (!TITLES[tid]) return '';
@@ -12137,7 +12364,11 @@
     // 고등급 = 플레이트 배너 / 그 외 = 엠블럼 + 텍스트
     if (PLATE_TITLES.has(tid)) {
       const pr = t.style === 'rainbow' ? ' tp-rainbow' : '';
-      return `<span class="title-plate${pr}" style="${styleVar}">${emblem}<span class="tp-text title-${t.style}">${t.name}</span></span>`;
+      const variant = (tid === 'sakuraMaster' || tid === 'lunaMaster' || tid === 'ariaMaster' || tid === 'misakiMaster') ? 'tp-char'
+                    : (tid === 'tripleSageTitle') ? 'tp-grand'
+                    : /^trans\d/.test(tid) ? 'tp-trans'   // 🌌 초월 = 프리미엄 우주 플레이트
+                    : 'tp-rank';                           // 완전정복/승천 = 각진 계급장
+      return `<span class="title-plate ${variant}${pr}" style="${styleVar}">${emblem}<span class="tp-text title-${t.style}">${t.name}</span></span>`;
     }
     return `<span class="rank-title title-${t.style}" style="${styleVar}">[${emblem} ${t.name}]</span>`;
   }
@@ -12855,10 +13086,20 @@
   function openNicknameModal(forceRequired) {
     const modal = document.getElementById('nicknameModal');
     openModalAnimated(modal);
+    // 🔴 칭호 NEW 해제 (닉네임/칭호 화면 = 칭호 확인 경로)
+    if (META.unseen && META.unseen.titles) {
+      META.unseen.titles = 0; saveMeta();
+      const _nd = document.getElementById('nickname-display');
+      const _dot = _nd && _nd.querySelector('.menu-new-dot');
+      if (_dot) _dot.remove();
+    }
     const input = document.getElementById('nicknameInput');
     input.value = META.nickname || '';
     document.getElementById('nicknameError').textContent = '';
     modal._forceRequired = forceRequired;
+    // 닫기 X — 첫 실행(필수 입력)엔 숨김
+    const _xb = document.getElementById('nicknameCloseBtn');
+    if (_xb) _xb.style.display = forceRequired ? 'none' : 'flex';
     // 미리보기 — 현재 저장된 칭호로 초기화
     _modalPreviewTitle = getSelectedTitle();
     buildTitlePicker();
@@ -14476,6 +14717,21 @@
       check: () => ((META.charStars || {}).aria     || 0) >= 8 },
     { id: 'char8_misaki',   name: '🦋 시공의 여행자',  desc: '🦋 미사키 8★ 달성',   reward: 1500,
       check: () => ((META.charStars || {}).misaki   || 0) >= 8 },
+    // === 🔱 트리플 컬렉션 — 해당 트리플을 한 게임에서 형성 시 (각각 고유 칭호) ===
+    { id: 'tc_ultraGatling',   name: '🔫 탄막의 폭군',    desc: '초연사총(트리플) 형성',     reward: 150, check: s => s.tower.abilities.some(a => a.id === 'ultraGatling') },
+    { id: 'tc_absoluteThunder',name: '❄️ 동결뇌제',       desc: '절대빙뢰(트리플) 형성',     reward: 150, check: s => s.tower.abilities.some(a => a.id === 'absoluteThunder') },
+    { id: 'tc_elementalStorm', name: '🌀 원소술사',       desc: '원소폭풍(트리플) 형성',     reward: 150, check: s => s.tower.abilities.some(a => a.id === 'elementalStorm') },
+    { id: 'tc_fusionCannon',   name: '💥 융합 포격수',    desc: '융합포(트리플) 형성',       reward: 150, check: s => s.tower.abilities.some(a => a.id === 'fusionCannon') },
+    { id: 'tc_galaxyOrbit',    name: '🌌 은하의 지배자',  desc: '은하궤도(트리플) 형성',     reward: 150, check: s => s.tower.abilities.some(a => a.id === 'galaxyOrbit') },
+    { id: 'tc_titanMissile',   name: '🚀 거포 사령관',    desc: '거대미사일(트리플) 형성',   reward: 150, check: s => s.tower.abilities.some(a => a.id === 'titanMissile') },
+    { id: 'tc_plasmaCataclysm',name: '⚡ 재앙술사',       desc: '플라즈마대재앙(트리플) 형성', reward: 150, check: s => s.tower.abilities.some(a => a.id === 'plasmaCataclysm') },
+    { id: 'tc_voidNova',       name: '💜 공허의 폭심',    desc: '공허폭발(트리플) 형성',     reward: 150, check: s => s.tower.abilities.some(a => a.id === 'voidNova') },
+    { id: 'tc_siegeBeam',      name: '🔆 공성 포격수',    desc: '공성빔(트리플) 형성',       reward: 150, check: s => s.tower.abilities.some(a => a.id === 'siegeBeam') },
+    { id: 'tc_deepSeaBarrage', name: '🌊 심해의 포술사',  desc: '심해폭격(트리플) 형성',     reward: 150, check: s => s.tower.abilities.some(a => a.id === 'deepSeaBarrage') },
+    { id: 'tc_stellarCollapse',name: '☄️ 별을 부수는 자', desc: '항성붕괴(트리플) 형성',     reward: 150, check: s => s.tower.abilities.some(a => a.id === 'stellarCollapse') },
+    { id: 'tc_voidStop',       name: '🌀 시공 봉인자',    desc: '공허정지(트리플) 형성',     reward: 150, check: s => s.tower.abilities.some(a => a.id === 'voidStop') },
+    // 🌟 그랜드 — 한 게임에 트리플 5개 (조합 늘어도 안 깨지는 고정 임계값)
+    { id: 'tripleSage',        name: '✨ 조합의 현자',    desc: '한 게임에 트리플 5개 형성', reward: 2500, check: s => s.tower.abilities.filter(a => ABILITY_DEFS[a.id].isTriple).length >= 5 },
   ];
 
   // ===== 반복 업적 — 게임 종료마다 조건 충족 시 매번 보상 =====
@@ -14547,6 +14803,128 @@
       state.repeatHits = repeatHits;
     }
   }
+
+  // ===== 🎁 게임 결과 — 획득 보상 집계 + 패널 (v322) =====
+  //   업적이 푼 캐릭터/칭호/능력을 한 곳에 모아 결과 화면 패널로 명확히 표시.
+  //   + 안 본 해금은 META.unseen 카운트로 누적 → 메뉴 NEW 뱃지.
+  function computeRewardData() {
+    const newAchs = state.achievementsEarned || [];
+    const newAchIds = new Set(newAchs.map(a => a.id));
+    const chars = [], abilities = [];
+    for (const a of newAchs) {
+      if (a.unlocks) {
+        if (a.unlocks.char && CHARACTERS[a.unlocks.char]) chars.push(a.unlocks.char);
+        if (a.unlocks.ability && ABILITY_DEFS[a.unlocks.ability]) abilities.push(a.unlocks.ability);
+      }
+    }
+    const titles = [];
+    for (const tid in TITLES) {
+      if (newAchIds.has(TITLES[tid].achId)) titles.push(tid);
+    }
+    const uniqChars = [...new Set(chars)];
+    const uniqAbil = [...new Set(abilities)];
+    state.rewardData = {
+      achievements: newAchs,
+      chars: uniqChars,
+      abilities: uniqAbil,
+      titles: titles,
+      totalStardust: state.stardustEarned || 0,
+      crystals: state.crystalsEarned || 0,
+      ascension: state.newAscensionUnlocked || 0,
+    };
+    // 🔴 안 본 해금 누적 (메뉴 NEW 뱃지용)
+    if (uniqChars.length || newAchs.length || uniqAbil.length || titles.length) {
+      META.unseen = META.unseen || { chars: 0, achs: 0, abilities: 0, titles: 0 };
+      META.unseen.chars = (META.unseen.chars || 0) + uniqChars.length;
+      META.unseen.achs = (META.unseen.achs || 0) + newAchs.length;
+      META.unseen.abilities = (META.unseen.abilities || 0) + uniqAbil.length;
+      META.unseen.titles = (META.unseen.titles || 0) + titles.length;
+      saveMeta();
+    }
+  }
+  function rewardHasUnlocks() {
+    const d = state.rewardData;
+    return !!(d && (d.chars.length || d.titles.length || d.abilities.length || d.achievements.length));
+  }
+  function showRewardSummary() {
+    const d = state.rewardData;
+    if (!d || !rewardHasUnlocks()) return;
+    const body = document.getElementById('rewardBody');
+    const sub = document.getElementById('rewardSub');
+    const overlay = document.getElementById('rewardSummary');
+    if (!body || !overlay) return;
+    let html = '';
+    // 새 캐릭터
+    for (const cid of d.chars) {
+      const c = CHARACTERS[cid]; if (!c) continue;
+      const src = getCharacterImageSrc(cid);
+      const ico = src ? `<img src="${src}" alt="">` : `<span style="color:${c.color || '#ffd479'}">🦸</span>`;
+      html += `<div class="reward-row hot">
+        <div class="reward-ico">${ico}</div>
+        <div class="reward-txt">
+          <div class="reward-kind" style="color:#ffd479">새 캐릭터 해금</div>
+          <div class="reward-name" style="color:${c.color || '#e8eaf0'}">${escapeHtml(c.name)}</div>
+          <div class="reward-desc">${escapeHtml(c.desc || '')}</div>
+        </div><span class="reward-new">NEW</span></div>`;
+    }
+    // 새 칭호 — 실제 칭호 플레이트 렌더
+    for (const tid of d.titles) {
+      const t = TITLES[tid]; if (!t) continue;
+      html += `<div class="reward-row hot">
+        <div class="reward-ico">🏆</div>
+        <div class="reward-txt">
+          <div class="reward-kind" style="color:#c084ff">새 칭호 해금</div>
+          <div class="reward-name">${titleHTML(tid)}</div>
+        </div><span class="reward-new">NEW</span></div>`;
+    }
+    // 새 능력
+    for (const aid of d.abilities) {
+      const ab = ABILITY_DEFS[aid]; if (!ab) continue;
+      html += `<div class="reward-row">
+        <div class="reward-ico"><span style="color:${ab.color || '#7ad7ff'}">✦</span></div>
+        <div class="reward-txt">
+          <div class="reward-kind">새 능력 해금</div>
+          <div class="reward-name" style="color:${ab.color || '#e8eaf0'}">${escapeHtml(ab.name)}</div>
+          <div class="reward-desc">랜덤 · 레벨업 능력 풀에 추가됨</div>
+        </div><span class="reward-new">NEW</span></div>`;
+    }
+    // 달성 업적
+    for (const ach of d.achievements) {
+      html += `<div class="reward-row">
+        <div class="reward-ico">🏅</div>
+        <div class="reward-txt">
+          <div class="reward-kind" style="color:#52e07a">업적 달성</div>
+          <div class="reward-name">${escapeHtml(ach.name)}</div>
+          <div class="reward-desc">${escapeHtml(ach.desc || '')} · +${ach.reward || 0}★</div>
+        </div></div>`;
+    }
+    // 통화 요약
+    let cur = '';
+    if (d.totalStardust) cur += `<span>★ +${d.totalStardust.toLocaleString()} 스타더스트</span>`;
+    if (d.crystals) cur += `<span style="color:#88ccff">💎 +${d.crystals} 결정</span>`;
+    if (d.ascension) cur += `<span style="color:#ff80ff">✨ 승천 ${d.ascension} 해금</span>`;
+    if (cur) html += `<div class="reward-currency">${cur}</div>`;
+    body.innerHTML = html;
+    // 서브 요약
+    const parts = [];
+    if (d.chars.length) parts.push(`캐릭터 ${d.chars.length}`);
+    if (d.titles.length) parts.push(`칭호 ${d.titles.length}`);
+    if (d.abilities.length) parts.push(`능력 ${d.abilities.length}`);
+    if (d.achievements.length) parts.push(`업적 ${d.achievements.length}`);
+    if (sub) sub.textContent = parts.length ? ('이번 게임에서 새로 — ' + parts.join(' · ')) : '';
+    overlay.classList.add('show');
+  }
+  function scheduleRewardSummary() {
+    if (!rewardHasUnlocks()) return;
+    setTimeout(() => {
+      if (state.gameOver && currentScreen === 'game') showRewardSummary();
+    }, 1500);
+  }
+  function hideRewardSummary() {
+    const el = document.getElementById('rewardSummary');
+    if (el) el.classList.remove('show');
+  }
+
   // 업적으로 해금된 능력 ID 집합 (랜덤 풀 + 레벨업 풀에 포함될지 결정)
   function getUnlockedAbilityIds() {
     const set = new Set();
@@ -14809,6 +15187,10 @@
   }
   function damageEnemy(e, dmg) {
     if (e.hp <= 0) return;
+    // 👁 공허의 눈 — 점멸 무적 중 피해 무효
+    if (e.blinkInvulnUntil && e.blinkInvulnUntil > state.t) return;
+    // 💎 수정 군주 — 결정 보호막 활성 중 피해 대폭 감소
+    if (e.shieldPhaseUntil && e.shieldPhaseUntil > state.t) dmg *= 0.18;
     // 모든 데미지 멀티 (캐릭터 + 모든 패시브 + 메타 효과)
     if (state.metaMods) {
       const mm = state.metaMods;
@@ -15091,6 +15473,20 @@
           }
           toast('🦈 레비아탄 분열!');
           shake(8, 10);
+        }
+        // ☀ 초신성 코어 — 사멸 폭발: 처치 시 고속 잡몹 링 분출
+        if (e.special === 'supernova' && !e.isMiniBoss) {
+          const [bx2, by2] = enemyXY(e);
+          const ringN = 8;
+          for (let k = 0; k < ringN; k++) {
+            const aa = (k / ringN) * Math.PI * 2;
+            spawnEnemy({ angle: aa, radius: e.radius, behavior: null, size: 6 });
+            const last = state.enemies[state.enemies.length - 1];
+            if (last) { last.angle = aa; last.radius = e.radius; last.angularSpeed = (last.angularSpeed || 0) * 1.7; }
+          }
+          for (let p = 0; p < 26; p++) spawnParticles(bx2, by2, '#ffb04a', 3);
+          shake(12, 16);
+          toast('☀ 초신성 폭발!');
         }
         // 💎 종말의 시계 — 5마리당 다음 라운드 스킵 충전 (총 3회 사용)
         if (state.relicEffects.skipRoundCharges > 0) {
@@ -16076,6 +16472,59 @@
         state.comboFlash = 30; state.comboFlashColor = '#9a6ad0';
         SFX.bossSpawn();
       }
+      // 🐙 우주 크라켄 — 포식: 주기적으로 주변 잡몹을 삼켜 회복
+      if (e.special === 'kraken') {
+        if (e.devourCD === undefined) e.devourCD = 240;
+        if (--e.devourCD <= 0) {
+          e.devourCD = 270;   // ~4.5초
+          const [bx, by] = enemyXY(e);
+          let eaten = 0;
+          for (const t of state.enemies) {
+            if (eaten >= 3) break;
+            if (t === e || t.isBoss || t.hp <= 0) continue;
+            const [tx, ty] = enemyXY(t);
+            if (Math.hypot(tx - bx, ty - by) < e.size * 4.6) {
+              t.hp = 0; eaten++;   // 삼킴 (보상 없이 제거 — _alivePredEnemy)
+              for (let p = 0; p < 6; p++) spawnParticles(tx, ty, '#a0e0ff', 2);
+            }
+          }
+          if (eaten > 0) {
+            const heal = Math.ceil(e.maxHp * 0.05 * eaten);
+            e.hp = Math.min(e.maxHp, e.hp + heal);
+            state.damageNumbers.push({ x: bx, y: by - e.size - 14, vy: -1.2, text: `+${heal}`, color: '#7affc8', life: 45, size: 13 });
+            spawnParticles(bx, by, '#a0e0ff', 12);
+          }
+        }
+      }
+      // 💎 수정 군주 — 결정 보호막: 주기적 3초간 피해 대폭 감소
+      if (e.special === 'crystal') {
+        if (e.shieldCD === undefined) e.shieldCD = 300;
+        if (--e.shieldCD <= 0) {
+          e.shieldCD = 420;                       // 7초 주기
+          e.shieldPhaseUntil = state.t + 180;     // 3초 지속
+          const [bx, by] = enemyXY(e);
+          spawnParticles(bx, by, '#e6ffff', 18);
+          toast('💎 수정 보호막 — 피해 감소!');
+          SFX.bossSpawn();
+        }
+      }
+      // 👁 공허의 눈 — 점멸: 주기적 순간이동 + 짧은 무적
+      if (e.special === 'voidEye') {
+        if (e.blinkCD === undefined) e.blinkCD = 240;
+        if (--e.blinkCD <= 0) {
+          e.blinkCD = 300;                        // 5초 주기
+          const [ox, oy] = enemyXY(e);
+          for (let p = 0; p < 14; p++) spawnParticles(ox, oy, '#ff5ad0', 2);
+          if (state.mode !== 'defense') {
+            e.angle = Math.random() * Math.PI * 2;
+            e.radius = 90 + Math.random() * 150;
+            e.targetRadius = e.radius;
+          }
+          e.blinkInvulnUntil = state.t + 26;      // ~0.43초 무적
+          const [nx, ny] = enemyXY(e);
+          for (let p = 0; p < 14; p++) spawnParticles(nx, ny, '#ff5ad0', 2);
+        }
+      }
     }
   }
 
@@ -16847,26 +17296,77 @@
   const BG = { stars: [], planets: [], nebulae: [], meteors: [], meteorTimer: 200, tier: 0, starTint: '255,255,255', core: null };
   // 🌌 난이도(단계)별 우주 배경 — 기본(asc0) / 승천(asc1~15) / 초월(asc16~30)
   function bgTierIndex(asc) { asc = asc || 0; if (asc <= 0) return 0; if (asc <= 15) return 1; return 2; }
+  // 🌌 전 단계 모두 어둡고 저채도 (중앙 깨끗·눈 편하게) → 단계는 "하늘 요소 + 미세 색조 + 아레나 액센트"로 구분
   const BG_TIERS = [
     { // 0 기본 — 고요한 청색 심우주
-      core: [16, 22, 52], mid: '#080b1c', edge: '#03040c', star: '255,255,255', glow: '191,224,255',
-      nebula: ['rgba(70,120,210,0.06)', 'rgba(60,180,220,0.05)', 'rgba(90,110,200,0.03)'],
-      planets: [['#4a2870', '#1a0f30', false], ['#205070', '#0d1c30', true], ['#703020', '#28100a', false]],
-      meteorRate: [240, 500], meteorCol: '255,224,128',
+      core: [12, 18, 38], mid: '#070a16', edge: '#03040c', star: '255,255,255', glow: '170,205,255',
+      accent: '#5ab4e0', sky: null,
+      nebula: ['rgba(70,120,200,0.05)', 'rgba(60,150,200,0.04)', 'rgba(80,100,180,0.03)'],
+      planets: [['#3a2860', '#160d28', false], ['#1e4866', '#0c1a2c', true], ['#5a2818', '#220d08', false]],
+      meteorRate: [260, 520], meteorCol: '210,225,255',
     },
-    { // 1 승천 — 보랏빛 성운 우주 (에너지 상승)
-      core: [34, 18, 60], mid: '#0c0820', edge: '#05030e', star: '218,206,255', glow: '210,180,255',
-      nebula: ['rgba(155,70,225,0.10)', 'rgba(195,80,205,0.07)', 'rgba(120,70,215,0.05)'],
-      planets: [['#6a30a8', '#260f44', false], ['#5040a8', '#160f38', true], ['#a04070', '#380f28', false]],
-      meteorRate: [160, 360], meteorCol: '210,150,255',
+    { // 1 승천 — 차분한 보랏빛 + 오로라 (색칠 아님, 하늘 요소로 구분)
+      core: [20, 16, 40], mid: '#090814', edge: '#04030a', star: '208,202,232', glow: '170,160,225',
+      accent: '#9a7ad0', sky: 'aurora',
+      nebula: ['rgba(120,80,190,0.05)', 'rgba(150,90,180,0.045)', 'rgba(100,80,180,0.03)'],
+      planets: [['#4a2c78', '#1c0f34', false], ['#3a3080', '#120e2c', true], ['#6a3060', '#260f24', false]],
+      meteorRate: [220, 460], meteorCol: '200,180,235',
     },
-    { // 2 초월 — 진홍 공허 / 은하핵 (종막)
-      core: [46, 10, 28], mid: '#11040c', edge: '#070108', star: '255,198,208', glow: '255,150,170',
-      nebula: ['rgba(205,40,80,0.11)', 'rgba(155,30,120,0.08)', 'rgba(120,20,60,0.06)'],
-      planets: [['#902036', '#300810', false], ['#701048', '#240620', true], ['#a83020', '#300a08', false]],
-      meteorRate: [110, 260], meteorCol: '255,110,90',
+    { // 2 초월 — 어둡고 텅 빈 심연 + 멀리 거대한 은하 실루엣 (밝은 빨강 X)
+      core: [16, 12, 26], mid: '#070510', edge: '#030208', star: '214,205,222', glow: '170,150,200',
+      accent: '#b06aa0', sky: 'galaxy',
+      nebula: ['rgba(110,60,140,0.05)', 'rgba(90,55,150,0.04)', 'rgba(70,40,110,0.035)'],
+      planets: [['#5a2050', '#200a1c', false], ['#402060', '#160a24', true], ['#6a2840', '#260a18', false]],
+      meteorRate: [220, 460], meteorCol: '210,175,205',
     },
   ];
+  // 🌌 아레나 바닥 텍스처 베이크 (1회/게임) — 유기질 노이즈 + 그레인 (단계 액센트 틴트, 림 페이드)
+  //   매 프레임 drawImage 1회로 "도트 텍스처" 질감 + 깊이감. 저채도/저알파 → 눈 편하게.
+  function bakeArenaTexture() {
+    try {
+      const acc = BG.accent || '#5ab4e0';
+      const n = parseInt(acc.slice(1), 16), AR = (n>>16)&255, AG = (n>>8)&255, AB = n&255;
+      const R = ARENA_R, D = R * 2, cx = R, cy = R;
+      const c = document.createElement('canvas'); c.width = D; c.height = D;
+      const g = c.getContext('2d');
+      g.save();
+      g.beginPath(); g.arc(cx, cy, R, 0, Math.PI*2); g.clip();
+      // 베이스 — 중앙이 약간 밝은 방사 (광원 로직)
+      const base = g.createRadialGradient(cx, cy - R*0.12, R*0.1, cx, cy, R);
+      base.addColorStop(0, `rgba(${AR},${AG},${AB},0.15)`);
+      base.addColorStop(0.55, `rgba(${(AR*0.5)|0},${(AG*0.5)|0},${(AB*0.6)|0},0.09)`);
+      base.addColorStop(1, 'rgba(0,0,0,0.02)');
+      g.fillStyle = base; g.fillRect(0, 0, D, D);
+      // 유기질 성운 얼룩 (절차적 텍스처)
+      for (let i = 0; i < 70; i++) {
+        const a = Math.random()*7, rr = Math.sqrt(Math.random())*R*0.96;
+        const x = cx + Math.cos(a)*rr, y = cy + Math.sin(a)*rr;
+        const rad = R*0.06 + Math.random()*R*0.22;
+        const lighter = Math.random() < 0.55;
+        g.globalCompositeOperation = lighter ? 'lighter' : 'source-over';
+        g.globalAlpha = lighter ? (0.02 + Math.random()*0.05) : (0.03 + Math.random()*0.06);
+        const tint = lighter
+          ? `rgba(${Math.min(255,AR+60)},${Math.min(255,AG+60)},${Math.min(255,AB+60)},1)`
+          : `rgba(${(AR*0.4)|0},${(AG*0.35)|0},${(AB*0.5)|0},1)`;
+        const bg = g.createRadialGradient(x, y, 0, x, y, rad);
+        bg.addColorStop(0, tint); bg.addColorStop(1, 'rgba(0,0,0,0)');
+        g.fillStyle = bg; g.beginPath(); g.arc(x, y, rad, 0, Math.PI*2); g.fill();
+      }
+      g.globalAlpha = 1; g.globalCompositeOperation = 'source-over';
+      g.restore();
+      // 미세 그레인 (평평함 제거 = 도트 질감)
+      const id = g.getImageData(0, 0, D, D), d = id.data;
+      for (let i = 0; i < d.length; i += 4) { if (d[i+3] === 0) continue; const nz = (Math.random()*2-1)*6; d[i]+=nz; d[i+1]+=nz; d[i+2]+=nz; }
+      g.putImageData(id, 0, 0);
+      // 림 페이드 — 중앙 불투명 → 가장자리 투명 (우주로 자연스럽게 녹음)
+      g.globalCompositeOperation = 'destination-in';
+      const mask = g.createRadialGradient(cx, cy, R*0.32, cx, cy, R);
+      mask.addColorStop(0, 'rgba(0,0,0,1)'); mask.addColorStop(0.82, 'rgba(0,0,0,0.9)'); mask.addColorStop(1, 'rgba(0,0,0,0)');
+      g.fillStyle = mask; g.beginPath(); g.arc(cx, cy, R, 0, Math.PI*2); g.fill();
+      g.globalCompositeOperation = 'source-over';
+      BG.arenaTex = c;
+    } catch (e) { BG.arenaTex = null; }
+  }
   function initBackground() {
     BG.stars.length = 0;
     BG.planets.length = 0;
@@ -16896,6 +17396,7 @@
     const T = BG_TIERS[_tier];
     BG.tier = _tier; BG.starTint = T.star; BG.glowTint = T.glow;
     BG.meteorRate = T.meteorRate; BG.meteorCol = T.meteorCol;
+    BG.accent = T.accent; BG.sky = T.sky;   // 아레나 링 액센트 + 하늘 요소(오로라/은하)
     // 행성 (위치/크기 고정, 색은 단계별)
     const _pp = [[95, 110, 52], [525, 95, 26], [545, 560, 36]];
     const _ringC = _tier === 2 ? '#c87080' : (_tier === 1 ? '#a888d8' : '#6a8aa8');
@@ -16903,8 +17404,10 @@
     // 성운 (단계별 색)
     const _np = [[180, 480, 240], [480, 210, 200], [320, 320, 320]];
     for (let i = 0; i < 3; i++) BG.nebulae.push({ x: _np[i][0], y: _np[i][1], r: _np[i][2], c: T.nebula[i] });
-    // 초월 — 은하핵(블랙홀) 시그니처
-    BG.core = _tier === 2 ? { x: W * 0.84, y: H * 0.15, r: 66 } : null;
+    // 초월 — 멀리 떠 있는 거대 은하 실루엣 (어둡게)
+    BG.core = _tier === 2 ? { x: W * 0.80, y: H * 0.17, r: 95 } : null;
+    // 🌌 아레나 바닥 텍스처 베이크 (액센트 확정 후 1회)
+    bakeArenaTexture();
   }
   function updateBackground() {
     for (const s of BG.stars) {
@@ -16954,17 +17457,35 @@
       ctx.fillStyle = bg;
     }
     ctx.fillRect(0, 0, W, H);
-    // 🕳 초월 — 은하핵/블랙홀 시그니처 (보라 글로우 + 어두운 코어, 회전 X · 탑다운)
+    // 🌌 초월 — 멀리 떠 있는 거대 은하 실루엣 (어둡고 차분, 가산 아님 = 눈 편함)
     if (BG.core) {
       const co = BG.core;
-      ctx.save(); ctx.globalCompositeOperation = 'lighter';
-      const ag2 = ctx.createRadialGradient(co.x, co.y, co.r*0.3, co.x, co.y, co.r*2.0);
-      ag2.addColorStop(0, 'rgba(170,90,230,0.20)'); ag2.addColorStop(0.45, 'rgba(130,50,180,0.10)'); ag2.addColorStop(1, 'rgba(110,40,160,0)');
-      ctx.fillStyle = ag2; ctx.beginPath(); ctx.arc(co.x, co.y, co.r*2.0, 0, Math.PI*2); ctx.fill();
+      ctx.save(); ctx.translate(co.x, co.y); ctx.rotate(-0.5);
+      // 부드러운 은하 헤이즈 (저명도 보라회색, 살짝 기운 디스크)
+      const g = ctx.createRadialGradient(0, 0, 0, 0, 0, co.r);
+      g.addColorStop(0, 'rgba(120,98,150,0.15)'); g.addColorStop(0.4, 'rgba(82,66,112,0.09)'); g.addColorStop(1, 'rgba(50,40,80,0)');
+      ctx.fillStyle = g; ctx.beginPath(); ctx.ellipse(0, 0, co.r, co.r * 0.62, 0, 0, Math.PI*2); ctx.fill();
+      // 아주 흐린 핵
+      const cg = ctx.createRadialGradient(0, 0, 0, 0, 0, co.r * 0.2);
+      cg.addColorStop(0, 'rgba(186,166,206,0.18)'); cg.addColorStop(1, 'rgba(186,166,206,0)');
+      ctx.fillStyle = cg; ctx.beginPath(); ctx.arc(0, 0, co.r * 0.2, 0, Math.PI*2); ctx.fill();
       ctx.restore();
-      // 사건의 지평선 (어두운 원 + 보라 림)
-      ctx.fillStyle = '#08040e'; ctx.beginPath(); ctx.arc(co.x, co.y, co.r*0.5, 0, Math.PI*2); ctx.fill();
-      ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.strokeStyle = 'rgba(190,120,240,0.5)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(co.x, co.y, co.r*0.5, 0, Math.PI*2); ctx.stroke(); ctx.restore();
+    }
+    // 🌈 승천 — 상단 오로라 리본 (은은하게 흐름, 중앙 안 가림)
+    if (BG.sky === 'aurora') {
+      ctx.save(); ctx.globalCompositeOperation = 'lighter';
+      const tt = state.t * 0.01;
+      for (let band = 0; band < 2; band++) {
+        const baseY = 66 + band * 46, col = band ? '150,118,222' : '120,162,220';
+        ctx.beginPath();
+        for (let x = -20; x <= W + 20; x += 16) {
+          const y = baseY + Math.sin(x*0.012 + tt + band) * 16 + Math.sin(x*0.031 - tt*0.7) * 6;
+          x <= -20 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+        }
+        ctx.strokeStyle = `rgba(${col},${0.05 + 0.025*Math.sin(tt + band)})`; ctx.lineWidth = 22 - band*7; ctx.lineCap = 'round';
+        ctx.stroke();
+      }
+      ctx.restore();
     }
     // 성운 — 광역 그라데이션 (위치/색이 고정이라 1회만 생성 후 캐시)
     for (const n of BG.nebulae) {
@@ -17036,33 +17557,15 @@
       ctx.fillStyle = '#ffffff'; ctx.fillRect(m.x - 1, m.y - 1, 3, 3);
     }
     ctx.globalAlpha = 1;
-    // 단계 비네팅 — 가장자리 색 (기본=없음 / 승천=자색~자홍 / 초월=진홍, 밤에 부담 적게)
+    // 단계 표시 = 우측 상단 배지만 (눈 아픈 풀스크린 컬러 비네트/펄스 제거 — 구분은 하늘 요소 + 아레나 링 액센트로)
     if (asc > 0) {
       const tier = BG.tier || 1;
-      const intensity = Math.min(0.5, 0.06 + asc * 0.026);
-      let color;
-      if (tier >= 2) color = `rgba(220, 30, 60, ${intensity})`;          // 초월 진홍
-      else if (asc <= 7) color = `rgba(140, 60, 190, ${intensity})`;     // 승천 전반 자색
-      else color = `rgba(200, 50, 140, ${intensity})`;                   // 승천 후반 자홍
-      const grad = ctx.createRadialGradient(CX, CY, CX * 0.55, CX, CY, CX * 1.1);
-      grad.addColorStop(0, 'rgba(0,0,0,0)');
-      grad.addColorStop(1, color);
-      ctx.fillStyle = grad;
-      ctx.fillRect(0, 0, W, H);
-
-      // 가장자리 아주 옅은 펄스 (천천히 — 시각 부담 X)
-      const pulse = 0.4 + 0.6 * (Math.sin(state.t * 0.018) * 0.5 + 0.5);
-      ctx.strokeStyle = color.replace(/[\d.]+\)/, (intensity * 0.6 * pulse).toFixed(2) + ')');
-      ctx.lineWidth = 2;
-      ctx.strokeRect(2, 2, W - 4, H - 4);
-
-      // 우측 상단 단계 배지 (캔버스 안)
+      const isTrans = tier >= 2;
       ctx.save();
       ctx.font = 'bold 14px Jua, sans-serif';
       ctx.textAlign = 'right';
-      const isTrans = tier >= 2;
-      ctx.fillStyle = isTrans ? '#ff7a7a' : (asc >= 8 ? '#ff80ff' : '#ffd479');
-      ctx.shadowColor = isTrans ? '#ff5a5a' : '#ff8060';
+      ctx.fillStyle = isTrans ? '#c89ad8' : '#c4b0e8';   // 차분한 액센트색
+      ctx.shadowColor = BG.accent || '#9a7ad0';
       ctx.shadowBlur = 6;
       ctx.fillText(isTrans ? `🌌 초월 ${asc - 15}` : `⚡ 승천 ${asc}`, W - 12, 22);
       ctx.shadowBlur = 0;
@@ -17077,30 +17580,42 @@
       drawDefenseArena();
       return;
     }
-    // 표준 모드 — 홀로그래픽 라디얼 아레나 (바닥 텍스처 + 회전 홀로 + 글로우 엣지)
-    // 1) 바닥 에너지 디스크 (은은한 라디얼 — 빈 공간 채움)
+    // 표준 모드 — 홀로그래픽 라디얼 아레나 (단계 액센트색으로 틴트 = 색은 여기에만, 하늘은 깨끗)
+    const acc = BG.accent || '#5ab4e0';
+    const _an = parseInt(acc.slice(1), 16), AR = (_an>>16)&255, AG = (_an>>8)&255, AB = _an&255, argb = `${AR},${AG},${AB}`;
+    const lrgb = `${Math.min(255,AR+90)},${Math.min(255,AG+90)},${Math.min(255,AB+90)}`;
+    // 1) 바닥 에너지 디스크
     const fg = ctx.createRadialGradient(CX, CY - 24, 18, CX, CY, ARENA_R);
-    fg.addColorStop(0, 'rgba(44, 98, 142, 0.13)'); fg.addColorStop(0.62, 'rgba(28, 70, 115, 0.06)'); fg.addColorStop(1, 'rgba(20, 50, 90, 0)');
+    fg.addColorStop(0, `rgba(${argb},0.11)`); fg.addColorStop(0.62, `rgba(${argb},0.05)`); fg.addColorStop(1, `rgba(${argb},0)`);
     ctx.fillStyle = fg; ctx.beginPath(); ctx.arc(CX, CY, ARENA_R, 0, Math.PI*2); ctx.fill();
-    // 2) 회전 홀로 스포크 (가산, 아주 옅게 — 살아있는 느낌)
+    // 1.5) 🌌 텍스처 바닥 (베이크) — 유기질 노이즈 + 그레인, 림 페이드 (도트 질감 + 깊이)
+    if (BG.arenaTex) ctx.drawImage(BG.arenaTex, CX - ARENA_R, CY - ARENA_R);
+    // 2) 회전 홀로 스포크 (가산, 아주 옅게)
     ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.translate(CX, CY); ctx.rotate(state.t * 0.0022);
-    ctx.strokeStyle = 'rgba(90, 180, 225, 0.045)'; ctx.lineWidth = 1;
+    ctx.strokeStyle = `rgba(${argb},0.045)`; ctx.lineWidth = 1;
     for (let k = 0; k < 36; k++) { const a = k * Math.PI / 18; ctx.beginPath(); ctx.moveTo(Math.cos(a)*44, Math.sin(a)*44); ctx.lineTo(Math.cos(a)*ARENA_R, Math.sin(a)*ARENA_R); ctx.stroke(); }
     ctx.restore();
     // 3) 동심 그리드 링
-    ctx.strokeStyle = 'rgba(80, 170, 220, 0.10)'; ctx.lineWidth = 1;
+    ctx.strokeStyle = `rgba(${argb},0.09)`; ctx.lineWidth = 1;
     for (let r = 60; r <= ARENA_R; r += 40) { ctx.beginPath(); ctx.arc(CX, CY, r, 0, Math.PI*2); ctx.stroke(); }
-    // 4) 회전 점선 테크 링 (홀로 느낌)
-    ctx.save(); ctx.strokeStyle = 'rgba(120, 210, 255, 0.16)'; ctx.lineWidth = 1.5;
+    // 4) 회전 점선 테크 링
+    ctx.save(); ctx.strokeStyle = `rgba(${lrgb},0.16)`; ctx.lineWidth = 1.5;
     ctx.setLineDash([6, 14]); ctx.lineDashOffset = -(state.t * 0.4) % 20;
     ctx.beginPath(); ctx.arc(CX, CY, ARENA_R * 0.72, 0, Math.PI*2); ctx.stroke();
     ctx.setLineDash([]); ctx.restore();
+    // 4.5) 🌑 내부 엣지 섀도우 — 바닥 깊이감 (아레나 안쪽만, 우주엔 영향 X)
+    ctx.save();
+    ctx.beginPath(); ctx.arc(CX, CY, ARENA_R, 0, Math.PI*2); ctx.clip();
+    const _vg = ctx.createRadialGradient(CX, CY, ARENA_R*0.55, CX, CY, ARENA_R);
+    _vg.addColorStop(0, 'rgba(0,0,0,0)'); _vg.addColorStop(1, 'rgba(0,0,0,0.26)');
+    ctx.fillStyle = _vg; ctx.beginPath(); ctx.arc(CX, CY, ARENA_R, 0, Math.PI*2); ctx.fill();
+    ctx.restore();
     // 5) 엣지 글로우 링 (가산 펄스) + 선명한 테두리
     const aPulse = 0.5 + 0.5 * Math.sin(state.t * 0.03);
     ctx.save(); ctx.globalCompositeOperation = 'lighter';
-    ctx.globalAlpha = 0.10 + aPulse * 0.06; ctx.strokeStyle = '#5ab4e0'; ctx.lineWidth = 8;
+    ctx.globalAlpha = 0.10 + aPulse * 0.06; ctx.strokeStyle = acc; ctx.lineWidth = 8;
     ctx.beginPath(); ctx.arc(CX, CY, ARENA_R, 0, Math.PI*2); ctx.stroke();
-    ctx.globalAlpha = 0.5; ctx.strokeStyle = '#aee4ff'; ctx.lineWidth = 2;
+    ctx.globalAlpha = 0.5; ctx.strokeStyle = `rgb(${lrgb})`; ctx.lineWidth = 2;
     ctx.beginPath(); ctx.arc(CX, CY, ARENA_R, 0, Math.PI*2); ctx.stroke();
     ctx.restore(); ctx.globalAlpha = 1;
   }
@@ -17449,48 +17964,81 @@
     const sw = Math.sin(_t * 0.16);
     const tail = sw * s * 0.4;                       // 꼬리 좌우(x) 스윙 — 헤엄
     const bend = Math.sin(_t * 0.16 - 0.5) * s * 0.08;  // 몸통 좌우 굽이
-    // 몸통 (위=머리, 아래=꼬리자루, 좌우 대칭 유선형)
-    ctx.fillStyle = fill;
-    ctx.beginPath();
-    ctx.moveTo(bend, -s * 1.5);                                     // 머리 끝 (위)
-    ctx.quadraticCurveTo(s * 0.62, -s * 0.45, s * 0.3, s * 0.6);    // 우측 몸통
-    ctx.quadraticCurveTo(s * 0.16 + tail, s * 1.0, tail, s * 1.2);  // 우측 꼬리자루
-    ctx.quadraticCurveTo(-s * 0.16 + tail, s * 1.0, -s * 0.3, s * 0.6); // 좌측 꼬리자루
-    ctx.quadraticCurveTo(-s * 0.62, -s * 0.45, bend, -s * 1.5);     // 좌측 몸통
-    ctx.closePath(); ctx.fill();
-    if (edge) { ctx.strokeStyle = edge; ctx.lineWidth = 1.5; ctx.stroke(); }
-    // 가슴지느러미 (중간 양옆)
-    ctx.fillStyle = fill;
-    ctx.beginPath();
-    ctx.moveTo(s * 0.32, -s * 0.05); ctx.lineTo(s * 0.95, s * 0.35); ctx.lineTo(s * 0.38, s * 0.4);
-    ctx.closePath(); ctx.fill(); if (edge) ctx.stroke();
-    ctx.beginPath();
-    ctx.moveTo(-s * 0.32, -s * 0.05); ctx.lineTo(-s * 0.95, s * 0.35); ctx.lineTo(-s * 0.38, s * 0.4);
-    ctx.closePath(); ctx.fill(); if (edge) ctx.stroke();
-    // 꼬리지느러미 (아래 좌우 갈래 — 스윙)
+    const lite = lightenHex(fill, 0.15);
+    const dark = darkenHex(fill, 0.42);
+    const edgeC = edge || darkenHex(fill, 0.55);
+    // 몸통 path (재사용)
+    const bodyPath = () => {
+      ctx.beginPath();
+      ctx.moveTo(bend, -s * 1.5);                                     // 머리 끝 (위)
+      ctx.quadraticCurveTo(s * 0.62, -s * 0.45, s * 0.3, s * 0.6);    // 우측 몸통
+      ctx.quadraticCurveTo(s * 0.16 + tail, s * 1.0, tail, s * 1.2);  // 우측 꼬리자루
+      ctx.quadraticCurveTo(-s * 0.16 + tail, s * 1.0, -s * 0.3, s * 0.6); // 좌측 꼬리자루
+      ctx.quadraticCurveTo(-s * 0.62, -s * 0.45, bend, -s * 1.5);     // 좌측 몸통
+      ctx.closePath();
+    };
+    // 가슴지느러미 (음영 — 본체 뒤, 밑에서 뻗어나오는 느낌)
+    const fin = (sign) => { ctx.beginPath(); ctx.moveTo(sign*s*0.32, -s*0.05); ctx.lineTo(sign*s*0.95, s*0.35); ctx.lineTo(sign*s*0.38, s*0.4); ctx.closePath(); };
+    ctx.fillStyle = dark; fin(1); ctx.fill(); fin(-1); ctx.fill();
+    if (edge) { ctx.strokeStyle = edgeC; ctx.lineWidth = 1.2; fin(1); ctx.stroke(); fin(-1); ctx.stroke(); }
+    // 꼬리지느러미 (음영)
+    ctx.fillStyle = dark;
     ctx.beginPath();
     ctx.moveTo(tail, s * 1.15);
     ctx.lineTo(-s * 0.5 + tail * 1.3, s * 1.75);
     ctx.lineTo(tail * 1.4, s * 1.35);
     ctx.lineTo(s * 0.5 + tail * 1.3, s * 1.75);
-    ctx.closePath(); ctx.fill(); if (edge) ctx.stroke();
-    // 등지느러미 (위에서 본 가운데 능선 — 작은 삼각)
-    ctx.fillStyle = edge || fill;
+    ctx.closePath(); ctx.fill();
+    if (edge) { ctx.strokeStyle = edgeC; ctx.lineWidth = 1.2; ctx.stroke(); }
+    // 몸통 — 좌우 그라데이션 (원통형 입체: 가장자리 어둡고 등줄 밝음)
+    const bgrad = ctx.createLinearGradient(-s * 0.62, 0, s * 0.62, 0);
+    bgrad.addColorStop(0, dark); bgrad.addColorStop(0.5, lite); bgrad.addColorStop(1, dark);
+    bodyPath(); ctx.fillStyle = bgrad; ctx.fill();
+    if (edge) { ctx.strokeStyle = edgeC; ctx.lineWidth = 1.5; bodyPath(); ctx.stroke(); }
+    // 디테일 — 몸통 안쪽 클립
+    ctx.save(); bodyPath(); ctx.clip();
+    // 등줄(척추 능선) 하이라이트
+    ctx.strokeStyle = lightenHex(fill, 0.3); ctx.globalAlpha = 0.5; ctx.lineWidth = Math.max(1.5, s * 0.08); ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(bend, -s * 1.3); ctx.quadraticCurveTo(tail * 0.4, 0, tail, s * 1.0); ctx.stroke();
+    ctx.globalAlpha = 1; ctx.lineCap = 'butt';
+    // 아가미 슬릿 (머리 양옆 3쌍)
+    ctx.strokeStyle = edgeC; ctx.lineWidth = 1;
+    for (let i = 0; i < 3; i++) {
+      const gy = -s * 0.82 + i * s * 0.2;
+      ctx.beginPath(); ctx.moveTo(s * 0.16, gy); ctx.quadraticCurveTo(s * 0.34, gy + s * 0.05, s * 0.30, gy + s * 0.16); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(-s * 0.16, gy); ctx.quadraticCurveTo(-s * 0.34, gy + s * 0.05, -s * 0.30, gy + s * 0.16); ctx.stroke();
+    }
+    // 스케일 반점 (텍스처)
+    ctx.fillStyle = dark; ctx.globalAlpha = 0.32;
+    const spots = [[s*0.12,-s*0.2],[-s*0.18,s*0.12],[s*0.2,s*0.32],[-s*0.1,-s*0.45],[s*0.04,s*0.55]];
+    for (const [sx, sy] of spots) { ctx.beginPath(); ctx.arc(sx, sy, s * 0.05, 0, Math.PI * 2); ctx.fill(); }
+    ctx.globalAlpha = 1;
+    ctx.restore();
+    // 등지느러미 (가운데 능선 — 밝은 가장자리)
+    ctx.fillStyle = lite;
     ctx.beginPath();
     ctx.moveTo(bend * 0.5, -s * 0.5); ctx.lineTo(s * 0.13, s * 0.25); ctx.lineTo(-s * 0.13, s * 0.25);
     ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = edgeC; ctx.lineWidth = 1; ctx.stroke();
+    // 입 (머리 끝 — 어두운 초승달)
+    ctx.strokeStyle = darkenHex(fill, 0.62); ctx.lineWidth = Math.max(1.2, s * 0.06); ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.arc(bend, -s * 1.3, s * 0.2, 0.28 * Math.PI, 0.72 * Math.PI); ctx.stroke();
+    ctx.lineCap = 'butt';
     // 눈 (머리 양옆, 안광)
     const eyeY = -s * 1.0;
     const eyePos = [[-s * 0.24, eyeY], [s * 0.24, eyeY]];
     for (const [ex, ey] of eyePos) {
       if (eyeGlow > 0) {
         ctx.save();
-        ctx.shadowColor = eyeColor; ctx.shadowBlur = 26 * Math.min(1.4, eyeGlow);
+        ctx.shadowColor = eyeColor; ctx.shadowBlur = 22 * Math.min(1.4, eyeGlow);
         ctx.fillStyle = eyeColor; ctx.globalAlpha = Math.min(1, eyeGlow);
-        ctx.beginPath(); ctx.arc(ex, ey, s * 0.16, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(ex, ey, s * 0.14, 0, Math.PI * 2); ctx.fill();
         ctx.globalAlpha = Math.min(1, eyeGlow) * 0.4;
-        ctx.beginPath(); ctx.arc(ex, ey, s * 0.32, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(ex, ey, s * 0.3, 0, Math.PI * 2); ctx.fill();
         ctx.restore();
+        ctx.fillStyle = '#ffffff'; ctx.globalAlpha = Math.min(1, eyeGlow) * 0.9;
+        ctx.beginPath(); ctx.arc(ex - s * 0.04, ey - s * 0.04, s * 0.04, 0, Math.PI * 2); ctx.fill();
+        ctx.globalAlpha = 1;
       } else {
         ctx.fillStyle = eyeColor || '#66ffff';
         ctx.beginPath(); ctx.arc(ex, ey, s * 0.1, 0, Math.PI * 2); ctx.fill();
@@ -17504,31 +18052,63 @@
     const bob = Math.sin(_t * 0.07) * s * 0.10;        // 위아래 부유
     const cl = Math.sin(_t * 0.11) * s * 0.13;         // 왼쪽 자락 펄럭
     const cr = Math.sin(_t * 0.11 + 1.2) * s * 0.13;   // 오른쪽 자락 (위상차)
-    // 망토 (위 둥글고 아래 퍼짐 — 자락이 물결치듯 흔들림, 전체 부유)
-    ctx.fillStyle = fill;
-    ctx.beginPath();
-    ctx.moveTo(0, -s * 1.3 + bob);                                   // 후드 꼭대기
-    ctx.quadraticCurveTo(-s * 0.9, -s * 0.9 + bob, -s * 0.8, s * 0.2 + bob);        // 왼쪽 어깨
-    ctx.quadraticCurveTo(-s * 0.95 + cl, s * 1.2 + bob, -s * 0.3 + cl, s * 1.3 + bob);  // 왼쪽 자락 (펄럭)
-    ctx.lineTo(s * 0.3 + cr, s * 1.3 + bob);
-    ctx.quadraticCurveTo(s * 0.95 + cr, s * 1.2 + bob, s * 0.8, s * 0.2 + bob);     // 오른쪽 자락 (펄럭)
-    ctx.quadraticCurveTo(s * 0.9, -s * 0.9 + bob, 0, -s * 1.3 + bob);
-    ctx.closePath(); ctx.fill();
-    if (edge) { ctx.strokeStyle = edge; ctx.lineWidth = 1.5; ctx.stroke(); }
-    // 후드 안쪽 어둠 (빈 얼굴) — 부유 따라
-    ctx.fillStyle = edge || '#0a0a14';
-    ctx.beginPath();
-    ctx.ellipse(0, -s * 0.55 + bob, s * 0.42, s * 0.55, 0, 0, Math.PI * 2);
-    ctx.fill();
-    // 낫 (오른쪽: 자루 + 날) — 부유 따라
-    ctx.strokeStyle = fill; ctx.lineWidth = Math.max(2, s * 0.12);
+    const lite = lightenHex(fill, 0.13);
+    const dark = darkenHex(fill, 0.42);
+    const edgeC = edge || darkenHex(fill, 0.55);
+    // 망토 path (재사용)
+    const cloak = () => {
+      ctx.beginPath();
+      ctx.moveTo(0, -s * 1.3 + bob);                                   // 후드 꼭대기
+      ctx.quadraticCurveTo(-s * 0.9, -s * 0.9 + bob, -s * 0.8, s * 0.2 + bob);        // 왼쪽 어깨
+      ctx.quadraticCurveTo(-s * 0.95 + cl, s * 1.2 + bob, -s * 0.3 + cl, s * 1.3 + bob);  // 왼쪽 자락 (펄럭)
+      ctx.lineTo(s * 0.3 + cr, s * 1.3 + bob);
+      ctx.quadraticCurveTo(s * 0.95 + cr, s * 1.2 + bob, s * 0.8, s * 0.2 + bob);     // 오른쪽 자락 (펄럭)
+      ctx.quadraticCurveTo(s * 0.9, -s * 0.9 + bob, 0, -s * 1.3 + bob);
+      ctx.closePath();
+    };
+    // 낫 — 본체 뒤 (자루 어둡게 + 하이라이트)
+    ctx.strokeStyle = darkenHex(fill, 0.55); ctx.lineWidth = Math.max(2.5, s * 0.14); ctx.lineCap = 'round';
     ctx.beginPath(); ctx.moveTo(s * 0.75, -s * 1.1 + bob); ctx.lineTo(s * 1.0, s * 1.0 + bob); ctx.stroke();
-    ctx.fillStyle = eyeGlow ? fill : '#c8d0e0';
+    ctx.strokeStyle = lightenHex(fill, 0.22); ctx.lineWidth = Math.max(1, s * 0.04);
+    ctx.beginPath(); ctx.moveTo(s * 0.72, -s * 1.05 + bob); ctx.lineTo(s * 0.97, s * 0.95 + bob); ctx.stroke();
+    ctx.lineCap = 'butt';
+    // 낫 날 — 강철 그라데이션 + 날카로운 빛
+    const blade = ctx.createLinearGradient(s * 0.75, -s * 1.1 + bob, s * 1.6, -s * 0.5 + bob);
+    blade.addColorStop(0, '#6a7488'); blade.addColorStop(0.55, '#c8d0e0'); blade.addColorStop(1, '#ffffff');
+    ctx.fillStyle = blade;
     ctx.beginPath();
     ctx.moveTo(s * 0.75, -s * 1.1 + bob);
     ctx.quadraticCurveTo(s * 1.7, -s * 1.3 + bob, s * 1.5, -s * 0.4 + bob);
     ctx.quadraticCurveTo(s * 1.2, -s * 0.85 + bob, s * 0.75, -s * 1.1 + bob);
     ctx.closePath(); ctx.fill();
+    ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.strokeStyle = 'rgba(220,235,255,0.6)'; ctx.lineWidth = 1.2;
+    ctx.beginPath(); ctx.moveTo(s * 0.78, -s * 1.08 + bob); ctx.quadraticCurveTo(s * 1.66, -s * 1.28 + bob, s * 1.48, -s * 0.42 + bob); ctx.stroke(); ctx.restore();
+    // 망토 — 세로 그라데이션 (후드 위 밝고 아래 어둡게 = 입체)
+    const cg = ctx.createLinearGradient(0, -s * 1.3 + bob, 0, s * 1.3 + bob);
+    cg.addColorStop(0, lite); cg.addColorStop(0.45, fill); cg.addColorStop(1, dark);
+    cloak(); ctx.fillStyle = cg; ctx.fill();
+    if (edge) { ctx.strokeStyle = edgeC; ctx.lineWidth = 1.5; cloak(); ctx.stroke(); }
+    // 망토 디테일 — 안쪽 클립
+    ctx.save(); cloak(); ctx.clip();
+    // 옷주름 (세로 곡선 — 펄럭 따라)
+    ctx.strokeStyle = darkenHex(fill, 0.5); ctx.globalAlpha = 0.55; ctx.lineWidth = Math.max(1.2, s * 0.05);
+    const folds = [[-s * 0.4, cl], [0, (cl + cr) * 0.5], [s * 0.4, cr]];
+    for (const [fx, sway] of folds) { ctx.beginPath(); ctx.moveTo(fx * 0.5, -s * 0.5 + bob); ctx.quadraticCurveTo(fx, s * 0.4 + bob, fx * 0.7 + sway, s * 1.2 + bob); ctx.stroke(); }
+    // 좌상단 림 하이라이트 (광원)
+    ctx.globalAlpha = 0.4; ctx.strokeStyle = lightenHex(fill, 0.32); ctx.lineWidth = Math.max(1.5, s * 0.07);
+    ctx.beginPath(); ctx.moveTo(-s * 0.05, -s * 1.25 + bob); ctx.quadraticCurveTo(-s * 0.78, -s * 0.85 + bob, -s * 0.72, s * 0.1 + bob); ctx.stroke();
+    ctx.globalAlpha = 1; ctx.restore();
+    // 후드 안쪽 어둠 (빈 얼굴) — 부유 따라
+    ctx.fillStyle = '#070510';
+    ctx.beginPath();
+    ctx.ellipse(0, -s * 0.55 + bob, s * 0.42, s * 0.55, 0, 0, Math.PI * 2);
+    ctx.fill();
+    // 후드 안쪽 공허 글로우 (가산, 은은)
+    ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = 0.10 + 0.08 * (eyeGlow || 0.5);
+    const innerG = ctx.createRadialGradient(0, -s * 0.5 + bob, 0, 0, -s * 0.5 + bob, s * 0.45);
+    innerG.addColorStop(0, eyeColor || '#ff7ac0'); innerG.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = innerG; ctx.beginPath(); ctx.arc(0, -s * 0.5 + bob, s * 0.45, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
     // 빈 눈구멍 2개 (안광) — 부유 따라
     const eyW = s * 0.16;
     const eyes = [[-s * 0.18, -s * 0.6 + bob], [s * 0.18, -s * 0.6 + bob]];
@@ -17547,11 +18127,160 @@
       }
     }
   }
+  // 🐙 우주 크라켄 — 맨틀 + 꿈틀대는 촉수 8개 + 큰 안광 (탑다운)
+  function drawKrakenShape(ctx, s, fill, edge, eyeGlow, eyeColor) {
+    const _t = (typeof state !== 'undefined' && state && state.t) || 0;
+    const lite = lightenHex(fill, 0.16), dark = darkenHex(fill, 0.45), edgeC = edge || darkenHex(fill, 0.55);
+    const N = 8;
+    for (let i = 0; i < N; i++) {
+      const a = i * Math.PI * 2 / N + Math.sin(_t * 0.04) * 0.1;
+      const wob = Math.sin(_t * 0.08 + i * 0.8);
+      const len = s * 1.75;
+      const bx = Math.cos(a) * s * 0.5, by = Math.sin(a) * s * 0.5;
+      const mx = Math.cos(a) * len * 0.6 + Math.cos(a + 1.5) * wob * s * 0.45;
+      const my = Math.sin(a) * len * 0.6 + Math.sin(a + 1.5) * wob * s * 0.45;
+      const ex = Math.cos(a) * len + Math.cos(a + 1.5) * wob * s * 0.7;
+      const ey = Math.sin(a) * len + Math.sin(a + 1.5) * wob * s * 0.7;
+      ctx.lineCap = 'round';
+      ctx.strokeStyle = dark; ctx.lineWidth = s * 0.34;
+      ctx.beginPath(); ctx.moveTo(bx, by); ctx.quadraticCurveTo(mx, my, ex, ey); ctx.stroke();
+      ctx.strokeStyle = fill; ctx.lineWidth = s * 0.2;
+      ctx.beginPath(); ctx.moveTo(bx, by); ctx.quadraticCurveTo(mx, my, bx + (ex - bx) * 0.9, by + (ey - by) * 0.9); ctx.stroke();
+      ctx.fillStyle = lite;
+      for (let k = 1; k <= 3; k++) { const tt = k / 4; const sx = bx + (ex - bx) * tt + (mx - (bx + ex) / 2) * 0.5 * Math.sin(tt * Math.PI); const sy = by + (ey - by) * tt + (my - (by + ey) / 2) * 0.5 * Math.sin(tt * Math.PI); ctx.beginPath(); ctx.arc(sx, sy, s * 0.045, 0, Math.PI * 2); ctx.fill(); }
+    }
+    ctx.lineCap = 'butt';
+    // 맨틀(머리) — 라디얼 음영
+    const mg = ctx.createRadialGradient(-s * 0.3, -s * 0.4, s * 0.1, 0, -s * 0.1, s * 1.0);
+    mg.addColorStop(0, lite); mg.addColorStop(0.6, fill); mg.addColorStop(1, dark);
+    ctx.fillStyle = mg; ctx.beginPath(); ctx.ellipse(0, -s * 0.1, s * 0.85, s * 0.98, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = edgeC; ctx.lineWidth = 1.5; ctx.stroke();
+    // 이마 능선 하이라이트
+    ctx.strokeStyle = lightenHex(fill, 0.3); ctx.globalAlpha = 0.5; ctx.lineWidth = Math.max(1.5, s * 0.07);
+    ctx.beginPath(); ctx.arc(0, -s * 0.1, s * 0.6, Math.PI * 1.15, Math.PI * 1.85); ctx.stroke(); ctx.globalAlpha = 1;
+    // 큰 눈 2개
+    const eyeY = -s * 0.15, eyePos = [[-s * 0.36, eyeY], [s * 0.36, eyeY]];
+    for (const [ex, ey] of eyePos) {
+      ctx.fillStyle = darkenHex(fill, 0.62); ctx.beginPath(); ctx.ellipse(ex, ey, s * 0.26, s * 0.3, 0, 0, Math.PI * 2); ctx.fill();
+      if (eyeGlow > 0) {
+        ctx.save(); ctx.shadowColor = eyeColor; ctx.shadowBlur = 20 * Math.min(1.4, eyeGlow);
+        ctx.fillStyle = eyeColor; ctx.globalAlpha = Math.min(1, eyeGlow);
+        ctx.beginPath(); ctx.arc(ex, ey, s * 0.15, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+        ctx.fillStyle = '#fff'; ctx.globalAlpha = Math.min(1, eyeGlow) * 0.9; ctx.beginPath(); ctx.arc(ex - s * 0.05, ey - s * 0.05, s * 0.05, 0, Math.PI * 2); ctx.fill(); ctx.globalAlpha = 1;
+      } else { ctx.fillStyle = eyeColor || '#a0e0ff'; ctx.beginPath(); ctx.arc(ex, ey, s * 0.1, 0, Math.PI * 2); ctx.fill(); }
+    }
+  }
+  // 💎 수정 군주 — 다면체 크리스탈 + 떠다니는 파편 + 발광 심장
+  function drawCrystalShape(ctx, s, fill, edge, eyeGlow, eyeColor) {
+    const _t = (typeof state !== 'undefined' && state && state.t) || 0;
+    const lite = lightenHex(fill, 0.24), mid = fill, dark = darkenHex(fill, 0.42), edgeC = edge || darkenHex(fill, 0.55);
+    const pulse = 1 + Math.sin(_t * 0.06) * 0.04;
+    // 주변 파편 6개
+    for (let i = 0; i < 6; i++) {
+      const a = i * Math.PI / 3 + _t * 0.005, bob = Math.sin(_t * 0.05 + i) * s * 0.08;
+      const dx = Math.cos(a) * s * 1.2, dy = Math.sin(a) * s * 1.2 + bob, sh = s * 0.3;
+      ctx.save(); ctx.translate(dx, dy); ctx.rotate(a);
+      ctx.fillStyle = dark; ctx.beginPath(); ctx.moveTo(0, -sh); ctx.lineTo(sh * 0.5, 0); ctx.lineTo(0, sh); ctx.lineTo(-sh * 0.5, 0); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = lite; ctx.beginPath(); ctx.moveTo(0, -sh); ctx.lineTo(sh * 0.5, 0); ctx.lineTo(0, sh * 0.2); ctx.closePath(); ctx.fill();
+      ctx.restore();
+    }
+    // 중앙 큰 결정 (다이아몬드 — 좌/우/좌상 facet)
+    const S = s * 1.05 * pulse, top = -S * 1.15, bot = S * 1.25, wx = S * 0.8, my = -S * 0.1;
+    ctx.fillStyle = dark; ctx.beginPath(); ctx.moveTo(0, top); ctx.lineTo(-wx, my); ctx.lineTo(0, bot); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = mid; ctx.beginPath(); ctx.moveTo(0, top); ctx.lineTo(wx, my); ctx.lineTo(0, bot); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = lite; ctx.beginPath(); ctx.moveTo(0, top); ctx.lineTo(-wx, my); ctx.lineTo(-wx * 0.3, my * 0.2); ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = edgeC; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(0, top); ctx.lineTo(-wx, my); ctx.lineTo(0, bot); ctx.lineTo(wx, my); ctx.closePath(); ctx.stroke();
+    ctx.strokeStyle = 'rgba(255,255,255,0.25)'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(0, top); ctx.lineTo(0, bot); ctx.moveTo(-wx, my); ctx.lineTo(wx, my); ctx.stroke();
+    // 발광 심장
+    ctx.save(); ctx.globalCompositeOperation = 'lighter';
+    const ca = eyeGlow > 0 ? Math.min(1, eyeGlow) : 0.6;
+    const _e = (eyeColor || '#e6ffff').replace('#', ''); const _en = parseInt(_e, 16); const ergb = `${(_en >> 16) & 255},${(_en >> 8) & 255},${_en & 255}`;
+    const hg = ctx.createRadialGradient(0, my, 0, 0, my, S * 0.6);
+    hg.addColorStop(0, `rgba(255,255,255,${0.6 * ca})`); hg.addColorStop(0.5, `rgba(${ergb},${0.5 * ca})`); hg.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = hg; ctx.beginPath(); ctx.arc(0, my, S * 0.6, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+  }
+  // 👁 공허의 눈 — 회전 고리 + 구체 눈알 + 홍채/동공 안광 + 두리번
+  function drawVoidEyeShape(ctx, s, fill, edge, eyeGlow, eyeColor) {
+    const _t = (typeof state !== 'undefined' && state && state.t) || 0;
+    const dark = darkenHex(fill, 0.5), edgeC = edge || darkenHex(fill, 0.6);
+    const _e = (eyeColor || '#ff5ad0').replace('#', ''); const _en = parseInt(_e, 16); const ergb = `${(_en >> 16) & 255},${(_en >> 8) & 255},${_en & 255}`;
+    // 바깥 에너지 고리 (가산 회전 호)
+    ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.lineWidth = 2;
+    for (let k = 0; k < 6; k++) { const a0 = _t * 0.03 + k * Math.PI / 3; ctx.strokeStyle = `rgba(${ergb},0.3)`; ctx.beginPath(); ctx.arc(0, 0, s * 1.45, a0, a0 + 0.5); ctx.stroke(); }
+    ctx.restore();
+    // 속눈썹 가시 8개
+    ctx.fillStyle = dark;
+    for (let k = 0; k < 8; k++) { const a = k * Math.PI / 4 + _t * 0.004; ctx.save(); ctx.rotate(a); ctx.beginPath(); ctx.moveTo(-s * 0.1, -s * 1.08); ctx.lineTo(s * 0.1, -s * 1.08); ctx.lineTo(0, -s * 1.4); ctx.closePath(); ctx.fill(); ctx.restore(); }
+    // 눈알 (구체 음영)
+    const bg = ctx.createRadialGradient(-s * 0.35, -s * 0.35, s * 0.1, 0, 0, s * 1.05);
+    bg.addColorStop(0, lightenHex(fill, 0.35)); bg.addColorStop(0.55, fill); bg.addColorStop(1, dark);
+    ctx.fillStyle = bg; ctx.beginPath(); ctx.arc(0, 0, s * 1.0, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = edgeC; ctx.lineWidth = 1.5; ctx.stroke();
+    // 두리번 + 홍채/동공
+    const lookX = Math.sin(_t * 0.02) * s * 0.18, lookY = Math.cos(_t * 0.017) * s * 0.12, ir = s * 0.5;
+    ctx.save(); ctx.translate(lookX, lookY);
+    const ig = ctx.createRadialGradient(0, 0, ir * 0.2, 0, 0, ir);
+    ig.addColorStop(0, eyeColor || '#ff5ad0'); ig.addColorStop(1, darkenHex(eyeColor || '#ff5ad0', 0.5));
+    ctx.fillStyle = ig; ctx.beginPath(); ctx.arc(0, 0, ir, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = `rgba(${ergb},0.5)`; ctx.lineWidth = 1;
+    for (let k = 0; k < 12; k++) { const a = k * Math.PI / 6; ctx.beginPath(); ctx.moveTo(Math.cos(a) * ir * 0.3, Math.sin(a) * ir * 0.3); ctx.lineTo(Math.cos(a) * ir, Math.sin(a) * ir); ctx.stroke(); }
+    const pup = ir * (0.45 + 0.1 * Math.sin(_t * 0.1));
+    ctx.fillStyle = '#050208'; ctx.beginPath(); ctx.arc(0, 0, pup, 0, Math.PI * 2); ctx.fill();
+    if (eyeGlow > 0) { ctx.save(); ctx.globalCompositeOperation = 'lighter'; const pg = ctx.createRadialGradient(0, 0, 0, 0, 0, pup * 1.5); pg.addColorStop(0, `rgba(${ergb},${0.5 * Math.min(1, eyeGlow)})`); pg.addColorStop(1, 'rgba(0,0,0,0)'); ctx.fillStyle = pg; ctx.beginPath(); ctx.arc(0, 0, pup * 1.5, 0, Math.PI * 2); ctx.fill(); ctx.restore(); }
+    ctx.fillStyle = 'rgba(255,255,255,0.8)'; ctx.beginPath(); ctx.arc(-ir * 0.35, -ir * 0.35, ir * 0.14, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+  }
+  // ☀ 초신성 코어 — 코로나 플레어 + 구체 별 + 흑점 + 핫코어
+  function drawSupernovaShape(ctx, s, fill, edge, eyeGlow, eyeColor) {
+    const _t = (typeof state !== 'undefined' && state && state.t) || 0;
+    const pulse = 1 + Math.sin(_t * 0.1) * 0.06;
+    const _f = (fill || '#ff9a3a').replace('#', ''); const fn = parseInt(_f, 16); const frgb = `${(fn >> 16) & 255},${(fn >> 8) & 255},${fn & 255}`;
+    const _e = (eyeColor || '#fff0a0').replace('#', ''); const _en = parseInt(_e, 16); const ergb = `${(_en >> 16) & 255},${(_en >> 8) & 255},${_en & 255}`;
+    // 코로나 플레어 (가산 회전)
+    ctx.save(); ctx.globalCompositeOperation = 'lighter';
+    for (let k = 0; k < 12; k++) {
+      const a = k * Math.PI / 6 + _t * 0.01, len = s * (1.5 + 0.3 * Math.sin(_t * 0.08 + k));
+      const grd = ctx.createLinearGradient(0, 0, Math.cos(a) * len, Math.sin(a) * len);
+      grd.addColorStop(0, `rgba(${frgb},0.4)`); grd.addColorStop(1, `rgba(${frgb},0)`);
+      ctx.strokeStyle = grd; ctx.lineWidth = (k % 2 ? 2 : 4);
+      ctx.beginPath(); ctx.moveTo(Math.cos(a) * s * 0.6, Math.sin(a) * s * 0.6); ctx.lineTo(Math.cos(a) * len, Math.sin(a) * len); ctx.stroke();
+    }
+    const hg = ctx.createRadialGradient(0, 0, s * 0.3, 0, 0, s * 1.5);
+    hg.addColorStop(0, `rgba(${frgb},0.28)`); hg.addColorStop(1, `rgba(${frgb},0)`);
+    ctx.fillStyle = hg; ctx.beginPath(); ctx.arc(0, 0, s * 1.5, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+    // 별 본체 (구체 음영)
+    const R = s * 1.0 * pulse;
+    const bg = ctx.createRadialGradient(-R * 0.2, -R * 0.2, R * 0.1, 0, 0, R);
+    bg.addColorStop(0, '#fff8e0'); bg.addColorStop(0.4, lightenHex(fill, 0.15)); bg.addColorStop(0.8, fill); bg.addColorStop(1, darkenHex(fill, 0.42));
+    ctx.fillStyle = bg; ctx.beginPath(); ctx.arc(0, 0, R, 0, Math.PI * 2); ctx.fill();
+    // 흑점
+    ctx.fillStyle = darkenHex(fill, 0.45); ctx.globalAlpha = 0.5;
+    const spots = [[R * 0.25, -R * 0.1], [-R * 0.3, R * 0.2], [R * 0.1, R * 0.35]];
+    for (const [sx, sy] of spots) { ctx.beginPath(); ctx.arc(sx, sy, R * 0.12, 0, Math.PI * 2); ctx.fill(); }
+    ctx.globalAlpha = 1;
+    // 핫코어 (가산 맥동)
+    ctx.save(); ctx.globalCompositeOperation = 'lighter';
+    const cp = 0.6 + 0.4 * Math.sin(_t * 0.12);
+    const hc = ctx.createRadialGradient(0, 0, 0, 0, 0, R * 0.6);
+    hc.addColorStop(0, `rgba(255,255,255,${0.75 * cp})`); hc.addColorStop(0.5, `rgba(${ergb},${0.45 * cp})`); hc.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = hc; ctx.beginPath(); ctx.arc(0, 0, R * 0.6, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+  }
   const SPECIAL_BOSS_DEFS = {
     leviathan: { name: '우주 레비아탄', icon: '🦈', color: '#3aa0d0', edge: '#16415c', eye: '#7dffff',
                  gimmick: 'split', draw: drawLeviathanShape, hpMul: 1.15 },
     reaper:    { name: '우주 사신',     icon: '💀', color: '#9a6ad0', edge: '#3a1f5c', eye: '#ff7ac0',
                  gimmick: 'seal',  draw: drawReaperShape, hpMul: 1.0 },
+    kraken:    { name: '우주 크라켄',   icon: '🐙', color: '#6a3ac0', edge: '#2a1550', eye: '#a0e0ff',
+                 gimmick: 'devour', draw: drawKrakenShape, hpMul: 1.1 },
+    crystal:   { name: '수정 군주',     icon: '💎', color: '#5ec8dc', edge: '#1a4a5c', eye: '#e6ffff',
+                 gimmick: 'shieldPhase', draw: drawCrystalShape, hpMul: 1.2 },
+    voidEye:   { name: '공허의 눈',     icon: '👁', color: '#3a2a5c', edge: '#160e2c', eye: '#ff5ad0',
+                 gimmick: 'blink', draw: drawVoidEyeShape, hpMul: 1.0 },
+    supernova: { name: '초신성 코어',   icon: '☀', color: '#ff9a3a', edge: '#7a3410', eye: '#fff0a0',
+                 gimmick: 'deathNova', draw: drawSupernovaShape, hpMul: 1.05 },
   };
   const SPECIAL_BOSS_IDS = Object.keys(SPECIAL_BOSS_DEFS);
 
@@ -17562,7 +18291,7 @@
   //     110~155: 그림자 스르륵 페이드아웃
   //     130~175: 보스 이름 경고 텍스트 펄스
   //   탭하면 스킵 (introSkip)
-  const BOSS_INTRO_DUR = 540;   // 🎬 v269 — 9초 (그림자 점점 커지는 풀 연출)
+  const BOSS_INTRO_DUR = 120;   // 🎬 v315 — 2초 (짧은 등장 연출 → 보스가 라운드 시작 직후 합류, 때릴 시간 ↑). 기존 9초는 너무 늦게 등장했음
   function updateBossIntro() {
     if (!state.bossIntro) return;
     // 스킵 시 빠르게 마무리 (남은 프레임 가속) — 보스 스폰 시점도 당겨짐
@@ -17572,66 +18301,159 @@
       state.bossIntro = null;   // 연출 종료 (보스는 bossSpawns 시점에 정상 등장)
     }
   }
+  // 🎬 v326 — 특수 보스별 고유 등장 연출. 정규화 진행도 p(0~1) 기반 → 길이 바뀌어도 안정.
+  function _introEc(def) { const h = (def.eye || '#ffffff').replace('#', ''); const n = parseInt(h, 16); return `${(n >> 16) & 255},${(n >> 8) & 255},${n & 255}`; }
+  // 🦈 레비아탄 — 화면 밖에서 헤엄쳐 들어오는 거대 그림자 + 물살 자국
+  function introLeviathan(f, p, fade, def, ec) {
+    const ease = p * p * (3 - 2 * p);
+    const x = W * 0.14 + (CX - W * 0.14) * ease + Math.sin(f * 0.05) * W * 0.05 * (1 - ease);
+    const y = H * 0.92 + (CY - H * 0.92) * ease;
+    const scale = 0.32 + ease * 1.45;
+    const ang = Math.atan2(CY - y, CX - x);
+    const eg = 0.4 + ease * 1.0 + 0.3 * Math.sin(f * 0.3);
+    // 물살 자국 (뒤로 퍼지는 호)
+    ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = 0.18 * ease * fade;
+    ctx.strokeStyle = `rgba(${ec},0.5)`; ctx.lineWidth = 2;
+    for (let k = 1; k <= 3; k++) { ctx.beginPath(); ctx.arc(x - Math.cos(ang) * 30 * k, y - Math.sin(ang) * 30 * k, 18 * k + 10, ang - 0.6, ang + 0.6); ctx.stroke(); }
+    ctx.restore();
+    ctx.save(); ctx.globalAlpha = Math.min(1, 0.35 + ease) * fade; ctx.translate(x, y); ctx.rotate(ang + Math.PI / 2);
+    def.draw(ctx, 46 * scale, '#06080f', '#0e1426', eg, def.eye); ctx.restore();
+  }
+  // 💀 사신 — 아래에서 스르륵 떠오르는 후드 그림자 + 낫 섬광 가로 스윕
+  function introReaper(f, p, fade, def, ec) {
+    const ease = p * p * (3 - 2 * p);
+    const y = H * 1.06 - (H * 1.06 - CY) * ease;
+    const x = CX + Math.sin(p * Math.PI * 2) * W * 0.04;
+    const scale = 0.6 + ease * 1.15;
+    const eg = (p > 0.4 ? (p - 0.4) / 0.6 : 0) * 1.3 + 0.2 * Math.sin(f * 0.3);
+    ctx.save(); ctx.globalAlpha = Math.min(1, ease * 1.3) * fade; ctx.translate(x, y);
+    def.draw(ctx, 46 * scale, '#06070f', '#0e0a1a', eg, def.eye); ctx.restore();
+    // 낫 섬광 — 대각선 빛줄기 한 번 스윕
+    if (p > 0.42 && p < 0.7) { const sp = (p - 0.42) / 0.28; const lx = W * sp; ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = Math.sin(sp * Math.PI) * 0.7 * fade; ctx.strokeStyle = 'rgba(225,235,255,0.95)'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(lx - 50, CY - 70); ctx.lineTo(lx + 50, CY + 70); ctx.stroke(); ctx.restore(); }
+  }
+  // 🐙 크라켄 — 화면 가장자리 어둠에서 촉수들이 안쪽으로 뻗어옴 → 중앙 안광 점등
+  function introKraken(f, p, fade, def, ec) {
+    const ease = p * p * (3 - 2 * p);
+    const D = Math.max(W, H) * 0.62;
+    ctx.save(); ctx.lineCap = 'round';
+    const NT = 6;
+    for (let i = 0; i < NT; i++) {
+      const a = i * Math.PI * 2 / NT + 0.4;
+      const reach = Math.max(0, Math.min(1, ease * 1.35 - i * 0.04));
+      if (reach <= 0) continue;
+      const ox = CX + Math.cos(a) * D, oy = CY + Math.sin(a) * D;
+      const tipx = ox + (CX - ox) * reach * 0.82, tipy = oy + (CY - oy) * reach * 0.82;
+      const wob = Math.sin(f * 0.05 + i) * 70 * (1 - reach * 0.5);
+      const midx = (ox + tipx) / 2 + Math.cos(a + 1.5) * wob, midy = (oy + tipy) / 2 + Math.sin(a + 1.5) * wob;
+      ctx.globalAlpha = Math.min(1, reach * 1.5) * fade;
+      ctx.strokeStyle = '#08060f'; ctx.lineWidth = 30 * (0.45 + reach * 0.55);
+      ctx.beginPath(); ctx.moveTo(ox, oy); ctx.quadraticCurveTo(midx, midy, tipx, tipy); ctx.stroke();
+      // 빨판 글로우 (촉수 따라 점점이)
+      ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = reach * 0.4 * fade; ctx.fillStyle = `rgba(${ec},0.7)`;
+      for (let k = 1; k <= 3; k++) { const tt = k / 4; const sx = ox + (tipx - ox) * tt, sy = oy + (tipy - oy) * tt; ctx.beginPath(); ctx.arc(sx, sy, 3, 0, Math.PI * 2); ctx.fill(); }
+      ctx.restore();
+    }
+    ctx.lineCap = 'butt'; ctx.restore();
+    // 중앙 안광 2개 — 어둠 속에서 점등 (후반)
+    if (p > 0.5) {
+      const ep = (p - 0.5) / 0.5; ctx.save(); ctx.globalCompositeOperation = 'lighter';
+      for (const sx of [-22, 22]) {
+        ctx.globalAlpha = ep * (0.6 + 0.4 * Math.sin(f * 0.3)) * fade;
+        const g = ctx.createRadialGradient(CX + sx, CY, 0, CX + sx, CY, 26);
+        g.addColorStop(0, `rgba(${ec},0.9)`); g.addColorStop(1, `rgba(${ec},0)`);
+        ctx.fillStyle = g; ctx.beginPath(); ctx.arc(CX + sx, CY, 26, 0, Math.PI * 2); ctx.fill();
+      }
+      ctx.restore();
+    }
+  }
+  // 💎 수정 군주 — 바닥에서 결정이 솟아오르며 조립 + 빛 굴절 반짝임
+  function introCrystal(f, p, fade, def, ec) {
+    const ease = p * p * (3 - 2 * p);
+    ctx.save(); ctx.translate(CX, CY);
+    // 솟아오르는 파편들 (방사)
+    for (let i = 0; i < 8; i++) {
+      const a = i * Math.PI / 4 + 0.2; const d = ease * 110; const rp = Math.max(0, Math.min(1, ease * 1.3 - i * 0.03));
+      if (rp <= 0) continue;
+      ctx.save(); ctx.translate(Math.cos(a) * d, Math.sin(a) * d); ctx.rotate(a); ctx.globalAlpha = rp * fade;
+      const sh = 16 * rp; ctx.fillStyle = lightenHex(def.color, 0.1); ctx.beginPath(); ctx.moveTo(0, -sh); ctx.lineTo(sh * 0.5, 0); ctx.lineTo(0, sh); ctx.lineTo(-sh * 0.5, 0); ctx.closePath(); ctx.fill();
+      ctx.restore();
+    }
+    // 중앙 결정 본체 (솟아오름)
+    ctx.globalAlpha = Math.min(1, ease * 1.3) * fade; ctx.scale(1, ease);
+    def.draw(ctx, 44 * (0.5 + ease * 0.6), def.color, def.edge, ease, def.eye);
+    ctx.restore();
+    // 빛 굴절 번쩍 (p~0.5)
+    if (p > 0.4 && p < 0.62) { const sp = (p - 0.4) / 0.22; ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = Math.sin(sp * Math.PI) * 0.5 * fade; ctx.strokeStyle = `rgba(${ec},0.9)`; ctx.lineWidth = 2; for (let i = 0; i < 4; i++) { const a = i * Math.PI / 2 + sp; ctx.beginPath(); ctx.moveTo(CX + Math.cos(a) * 30, CY + Math.sin(a) * 30); ctx.lineTo(CX + Math.cos(a) * 160, CY + Math.sin(a) * 160); ctx.stroke(); } ctx.restore(); }
+  }
+  // 👁 공허의 눈 — 어둠 속에서 눈꺼풀이 갈라지며 눈이 떠짐 + 고리 가동
+  function introVoidEye(f, p, fade, def, ec) {
+    const open = Math.min(1, p / 0.62);              // 세로 개안 진행
+    const eg = open * 1.3 + 0.2 * Math.sin(f * 0.3);
+    ctx.save(); ctx.translate(CX, CY);
+    // 개안 마스크 (세로로 열리는 타원 클립)
+    ctx.save();
+    ctx.beginPath(); ctx.ellipse(0, 0, 84, 84 * Math.max(0.04, open), 0, 0, Math.PI * 2); ctx.clip();
+    ctx.globalAlpha = fade;
+    def.draw(ctx, 50, def.color, def.edge, eg, def.eye);
+    ctx.restore();
+    // 눈꺼풀 가장자리 빛선 (위/아래)
+    const lidY = 84 * Math.max(0.04, open);
+    ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = (1 - open * 0.4) * 0.6 * fade;
+    ctx.strokeStyle = `rgba(${ec},0.8)`; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.ellipse(0, 0, 84, lidY, 0, Math.PI, Math.PI * 2); ctx.stroke();
+    ctx.beginPath(); ctx.ellipse(0, 0, 84, lidY, 0, 0, Math.PI); ctx.stroke();
+    ctx.restore();
+  }
+  // ☀ 초신성 코어 — 빛 수렴(붕괴) → 섬광 → 별 점화 + 충격파
+  function introSupernova(f, p, fade, def, ec) {
+    ctx.save(); ctx.translate(CX, CY);
+    if (p < 0.5) {
+      const cp = p / 0.5; ctx.globalCompositeOperation = 'lighter';
+      // 외곽에서 중앙으로 수렴하는 광선
+      ctx.strokeStyle = `rgba(${ec},${0.5 * cp * fade})`; ctx.lineWidth = 2;
+      for (let i = 0; i < 16; i++) { const a = i * Math.PI / 8; const r0 = 220 * (1 - cp) + 50, r1 = 30; ctx.beginPath(); ctx.moveTo(Math.cos(a) * (r0 + 50), Math.sin(a) * (r0 + 50)); ctx.lineTo(Math.cos(a) * r1, Math.sin(a) * r1); ctx.stroke(); }
+      // 응축 코어
+      const g = ctx.createRadialGradient(0, 0, 0, 0, 0, 50 + cp * 30); g.addColorStop(0, `rgba(255,255,235,${cp * fade})`); g.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, 0, 80, 0, Math.PI * 2); ctx.fill();
+    } else {
+      const cp = (p - 0.5) / 0.5; ctx.globalCompositeOperation = 'lighter';
+      // 섬광 (짧고 강하게, 0.45 상한)
+      if (cp < 0.3) { ctx.globalAlpha = (1 - cp / 0.3) * 0.45 * fade; ctx.fillStyle = '#fff6dc'; ctx.fillRect(-W, -H, W * 2, H * 2); ctx.globalAlpha = 1; }
+      // 충격파 링
+      const rr = cp * Math.max(W, H) * 0.5; ctx.strokeStyle = `rgba(${ec},${0.6 * (1 - cp) * fade})`; ctx.lineWidth = 4 * (1 - cp) + 1; ctx.beginPath(); ctx.arc(0, 0, rr, 0, Math.PI * 2); ctx.stroke();
+      // 별 점화
+      ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = Math.min(1, cp * 1.5) * fade;
+      def.draw(ctx, 46, def.color, def.edge, cp, def.eye);
+    }
+    ctx.restore();
+  }
   function drawBossIntro() {
     const bi = state.bossIntro;
     if (!bi) return;
     const def = SPECIAL_BOSS_DEFS[bi.special];
     if (!def) return;
-    const f = bi.frame;            // 0 ~ 540 (9초)
+    const f = bi.frame;
+    const p = Math.min(1, f / BOSS_INTRO_DUR);     // 0~1 정규화 진행도
+    const fade = p > 0.85 ? Math.max(0, 1 - (p - 0.85) / 0.15) : 1;   // 끝 페이드아웃
+    const ec = _introEc(def);
     ctx.save();
-    // 1) 🌫 배경 비네팅만 살짝 (게임은 계속 보임 — 화면 안 가림)
-    //    위/아래 가장자리에 은은한 어둠으로 "뭔가 다가온다" 분위기만
+    // 공통 비네팅 (다가오는 분위기)
     let vig = 0;
-    if (f < 70) vig = (f / 70) * 0.30;
-    else if (f > 490) vig = Math.max(0, 0.30 * (1 - (f - 490) / 50));
-    else vig = 0.30;
-    if (vig > 0) {
-      const vg = ctx.createRadialGradient(CX, CY, Math.min(W, H) * 0.35, CX, CY, Math.max(W, H) * 0.75);
-      vg.addColorStop(0, 'rgba(3,4,10,0)');
-      vg.addColorStop(1, `rgba(3,4,10,${vig})`);
-      ctx.fillStyle = vg;
-      ctx.fillRect(0, 0, W, H);
-    }
-    // 2) 🌊 거대 그림자 — "뒤에서 헤엄쳐 다가오는" 연출 (배경 레이어, 게임 위에 반투명)
-    //    멀리서 작고 흐릿하게 좌우로 유영 → 점점 가까워지며 커지고 선명해짐 → 중앙 수렴
-    const grS = 40, grE = 500;
-    if (f >= grS && f <= grE) {
-      const gp = Math.min(1, (f - grS) / (470 - grS));   // 0~1 접근 진행도
-      const eased = Math.pow(gp, 1.7);                   // 가속 (가까울수록 빠르게 큼)
-      const baseScale = Math.min(W, H) * 0.0042;
-      const scale = baseScale * (0.18 + eased * 1.7);    // 멀땐 0.18배 → 가까이 ~1.9배
-      // 🌊 유영 경로 — 멀땐 화면 좌우로 크게 누비다 가까울수록 중앙 수렴
-      const swayX = Math.sin(f * 0.045) * W * 0.40 * (1 - eased);
-      const swayY = Math.cos(f * 0.032) * H * 0.16 * (1 - eased) + (1 - gp) * H * 0.10;
-      const cx = CX + swayX, cy = CY + swayY;
-      // 깊이감: 멀땐 흐릿 → 가까울수록 선명
-      let shAlpha = (0.12 + eased * 0.85);
-      if (f > 470) shAlpha *= Math.max(0, 1 - (f - 470) / 30);
-      // 안광 — 가까울수록 강해지고 후반 강렬 펄스
-      let eyeGlow = 0.3 + eased * 0.8;
-      eyeGlow *= (0.65 + 0.35 * Math.sin(f * 0.16));
-      if (f > 360) eyeGlow = Math.min(1.5, eyeGlow + (f - 360) / 130);
-      // 🦈 v278 — 위에서 본 시점: 좌우 이동 방향으로 살짝 기울임 (머리는 위 향함)
-      const tilt = Math.cos(f * 0.045) * 0.25 * (1 - eased);
-      ctx.save();
-      ctx.globalAlpha = Math.min(1, shAlpha);
-      ctx.translate(cx, cy);
-      ctx.rotate(tilt);
-      def.draw(ctx, 50 * scale, '#06070f', '#101428', eyeGlow, def.eye);
-      ctx.restore();
-    }
-    // 3) 보스 이름 경고 텍스트 — 화면 상단 (게임 플레이 영역 안 가림)
-    if (f >= 60) {
-      const tp = Math.min(1, (f - 60) / 40) * (f > 490 ? Math.max(0, 1 - (f - 490) / 50) : 1);
-      const pulse = 0.7 + 0.3 * Math.sin(f * 0.18);
-      ctx.textAlign = 'center';
-      ctx.fillStyle = def.eye;
-      ctx.shadowColor = def.eye; ctx.shadowBlur = 18;
-      ctx.font = 'bold 22px Jua, sans-serif';
-      ctx.globalAlpha = tp * pulse;
-      ctx.fillText(`⚠ ${def.icon} ${def.name} 접근 중...`, CX, 40);
-      ctx.shadowBlur = 0;
-      ctx.globalAlpha = 0;
+    if (p < 0.25) vig = (p / 0.25) * 0.32; else if (p > 0.8) vig = Math.max(0, 0.32 * (1 - (p - 0.8) / 0.2)); else vig = 0.32;
+    if (vig > 0) { const vg = ctx.createRadialGradient(CX, CY, Math.min(W, H) * 0.32, CX, CY, Math.max(W, H) * 0.72); vg.addColorStop(0, 'rgba(3,4,10,0)'); vg.addColorStop(1, `rgba(3,4,10,${vig})`); ctx.fillStyle = vg; ctx.fillRect(0, 0, W, H); }
+    // 보스별 고유 연출
+    if (bi.special === 'leviathan') introLeviathan(f, p, fade, def, ec);
+    else if (bi.special === 'reaper') introReaper(f, p, fade, def, ec);
+    else if (bi.special === 'kraken') introKraken(f, p, fade, def, ec);
+    else if (bi.special === 'crystal') introCrystal(f, p, fade, def, ec);
+    else if (bi.special === 'voidEye') introVoidEye(f, p, fade, def, ec);
+    else if (bi.special === 'supernova') introSupernova(f, p, fade, def, ec);
+    else { ctx.save(); ctx.globalAlpha = Math.min(1, p * 1.5) * fade; ctx.translate(CX, CY); def.draw(ctx, 46, '#06070f', '#101428', p * 1.2, def.eye); ctx.restore(); }
+    // 공통 경고 텍스트 (상단)
+    if (p >= 0.3) {
+      const tp = Math.min(1, (p - 0.3) / 0.2) * fade; const pulse = 0.7 + 0.3 * Math.sin(f * 0.18);
+      ctx.textAlign = 'center'; ctx.fillStyle = def.eye; ctx.shadowColor = def.eye; ctx.shadowBlur = 18; ctx.font = 'bold 22px Jua, sans-serif';
+      ctx.globalAlpha = tp * pulse; ctx.fillText(`⚠ ${def.icon} ${def.name} 접근 중...`, CX, 40); ctx.shadowBlur = 0; ctx.globalAlpha = 1;
     }
     ctx.restore();
     ctx.textAlign = 'start';
@@ -17662,15 +18484,34 @@
       // 🎬 등장 애니메이션
       const fx = bossSpawnFx(e);
       if (fx) { ctx.globalAlpha = fx.alpha; ctx.scale(fx.scale, fx.scale); }
-      // 외곽 오라 (은은한 펄스)
+      // 🌌 외곽 글로우 헤일로 (가산, 부드러운 다단계 — 존재감)
       const pulse = 1 + Math.sin(state.t * 0.08) * 0.12;
-      const auraA = (fx ? fx.alpha : 1) * 0.16 * pulse;
-      ctx.globalAlpha = auraA;
-      ctx.fillStyle = slow ? '#88bbee' : def.eye;
-      ctx.beginPath(); ctx.arc(0, 0, s * 1.6, 0, Math.PI*2); ctx.fill();
+      const _ha = (fx ? fx.alpha : 1);
+      let _gc;
+      if (slow) { _gc = '136,187,238'; }
+      else { const _eh = (def.eye || '#ffffff').replace('#',''); const _en = parseInt(_eh, 16); _gc = `${(_en>>16)&255},${(_en>>8)&255},${_en&255}`; }
+      ctx.save(); ctx.globalCompositeOperation = 'lighter';
+      const _glow = ctx.createRadialGradient(0, 0, s * 0.3, 0, 0, s * 1.85 * pulse);
+      _glow.addColorStop(0, `rgba(${_gc},${0.22 * _ha})`); _glow.addColorStop(0.5, `rgba(${_gc},${0.10 * _ha})`); _glow.addColorStop(1, `rgba(${_gc},0)`);
+      ctx.fillStyle = _glow; ctx.beginPath(); ctx.arc(0, 0, s * 1.85 * pulse, 0, Math.PI*2); ctx.fill();
+      ctx.restore();
       ctx.globalAlpha = fx ? fx.alpha : 1;
+      // 👁 점멸 무적 중 — 깜빡임
+      if (e.blinkInvulnUntil && e.blinkInvulnUntil > state.t) ctx.globalAlpha *= 0.35 + 0.3 * Math.sin(state.t * 0.9);
       const bodyColor = slow ? '#4a6a88' : def.color;
-      def.draw(ctx, s, bodyColor, def.edge, 0, def.eye);
+      const _eg = 0.55 + 0.45 * Math.sin(state.t * 0.12);   // 👁 인게임에서도 눈이 살아있게 (펄스 안광)
+      def.draw(ctx, s, bodyColor, def.edge, _eg, def.eye);
+      // 💎 수정 군주 — 결정 보호막 활성 중 방벽 링 (육각 + 원형 글로우)
+      if (e.shieldPhaseUntil && e.shieldPhaseUntil > state.t) {
+        ctx.save(); ctx.globalCompositeOperation = 'lighter';
+        const sa = 0.5 + 0.3 * Math.sin(state.t * 0.2);
+        ctx.strokeStyle = `rgba(180,240,255,${0.55 * sa})`; ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        for (let k = 0; k < 6; k++) { const a = k * Math.PI / 3 + state.t * 0.02; const px = Math.cos(a) * s * 1.7, py = Math.sin(a) * s * 1.7; k ? ctx.lineTo(px, py) : ctx.moveTo(px, py); }
+        ctx.closePath(); ctx.stroke();
+        ctx.strokeStyle = `rgba(230,255,255,${0.3 * sa})`; ctx.lineWidth = 1.2; ctx.beginPath(); ctx.arc(0, 0, s * 1.55, 0, Math.PI * 2); ctx.stroke();
+        ctx.restore();
+      }
       ctx.restore();
       return;
     }
@@ -17680,10 +18521,14 @@
     const fx = bossSpawnFx(e);
     if (fx) { ctx.globalAlpha = fx.alpha; ctx.scale(fx.scale, fx.scale); }
     ctx.rotate(e.rotation);
-    // 외곽 펄스 오라 (덜 강하게)
+    // 외곽 글로우 헤일로 (가산, 부드러운 다단계 — 존재감 + 바닥에 빛이 깔리는 느낌)
     const pulse = 1 + Math.sin(state.t * 0.09) * 0.12;
-    ctx.fillStyle = slow ? 'rgba(120, 180, 240, 0.18)' : 'rgba(220, 50, 80, 0.22)';
-    ctx.beginPath(); ctx.arc(0, 0, s + 6 * pulse, 0, Math.PI*2); ctx.fill();
+    const _hc = slow ? '120,180,240' : '255,70,95';
+    ctx.save(); ctx.globalCompositeOperation = 'lighter';
+    const _halo = ctx.createRadialGradient(0, 0, s*0.3, 0, 0, s*1.9*pulse);
+    _halo.addColorStop(0, `rgba(${_hc},0.22)`); _halo.addColorStop(0.5, `rgba(${_hc},0.10)`); _halo.addColorStop(1, `rgba(${_hc},0)`);
+    ctx.fillStyle = _halo; ctx.beginPath(); ctx.arc(0, 0, s*1.9*pulse, 0, Math.PI*2); ctx.fill();
+    ctx.restore();
     // 색상
     const base = slow ? '#385878' : '#601a28';
     const edge = slow ? '#1c2d44' : '#2a0a12';
@@ -17807,7 +18652,8 @@
     const S = 32, c = document.createElement('canvas'); c.width = c.height = S;
     const g = c.getContext('2d');
     const rg = g.createRadialGradient(S/2, S/2, 0, S/2, S/2, S/2);
-    rg.addColorStop(0, '#ffffff'); rg.addColorStop(0.32, col); rg.addColorStop(1, 'rgba(0,0,0,0)');
+    // 🌙 v315 — 흰 코어 살짝 낮춤(0.9) + 색을 더 일찍 채움 → 겹쳐도 눈부심 완화
+    rg.addColorStop(0, 'rgba(255,255,255,0.9)'); rg.addColorStop(0.28, col); rg.addColorStop(1, 'rgba(0,0,0,0)');
     g.fillStyle = rg; g.beginPath(); g.arc(S/2, S/2, S/2, 0, Math.PI*2); g.fill();
     _glowSprite[col] = c; return c;
   }
@@ -18396,12 +19242,12 @@
       _bctx.clearRect(0, 0, bw, bh);
       // 🌟 선택적 블룸 — brightness/contrast로 어두운 부분을 검정으로 눌러 "밝은 이펙트만" 추출 후 블러.
       //   → 배경은 가산해도 0(안 번짐=눈 편함), 효과만 강하게 빛남(세련된 네온 글로우).
-      _bctx.filter = 'brightness(1.25) contrast(3) blur(' + (IS_MOBILE ? 4 : 6) + 'px)';
+      _bctx.filter = 'brightness(1.2) contrast(2.7) blur(' + (IS_MOBILE ? 4 : 6) + 'px)';
       _bctx.drawImage(canvas, 0, 0, bw, bh);
       _bctx.filter = 'none';
       ctx.save();
       ctx.globalCompositeOperation = 'lighter';
-      ctx.globalAlpha = IS_MOBILE ? 0.55 : 0.7;   // 강하게 — 단 밝은 곳에만 적용되므로 배경은 그대로
+      ctx.globalAlpha = IS_MOBILE ? 0.36 : 0.46;   // 🌙 v315 — 겹침 시 눈부심 완화 (0.55/0.7 → 0.36/0.46)
       ctx.drawImage(_bloomCv, 0, 0, W, H);
       ctx.restore();
     } catch (e) {}
@@ -20301,7 +21147,7 @@
     // (디펜스/클래식 둘 다 모드 선택 화면으로)
     state.gameOver = true;   // 진행 상태 무효화 (이어하기 차단)
     paused = true;
-    showScreen('mode');
+    goToCharacterSelect();
   };
   document.getElementById('menuBtn').onclick = () => {
     // 게임 상태 유지 + 자동 일시정지 (다시 들어왔을 때 이어하기)
@@ -20327,7 +21173,7 @@
     if (state.gameOver) {
       if (e.code === 'KeyR') {
         // 🔁 다시하기 → 모드 선택 화면
-        showScreen('mode');
+        goToCharacterSelect();
       }
       if (e.code === 'Escape') { document.getElementById('menuBtn').click(); }
       return;
@@ -20424,7 +21270,7 @@
         if (x >= b.x && x <= b.x + b.w && y >= b.y && y <= b.y + b.h) {
           // 🔁 다시하기 → 모드 선택 화면 (모드/캐릭터 둘 다 재선택 가능)
           SFX.click();
-          showScreen('mode');
+          goToCharacterSelect();
           return;
         }
       }
@@ -20800,6 +21646,15 @@
       ? allScreens.find(s => s.classList.contains('show'))
       : null;
     currentScreen = name;
+    // 🔴 해당 화면 진입 시 NEW 해제 + 게임 외 전환 시 보상 패널 닫기
+    if (META.unseen) {
+      let _cl = false;
+      if (name === 'character' && META.unseen.chars) { META.unseen.chars = 0; _cl = true; }
+      if (name === 'achievements' && META.unseen.achs) { META.unseen.achs = 0; _cl = true; }
+      if (name === 'codex' && META.unseen.abilities) { META.unseen.abilities = 0; _cl = true; }
+      if (_cl) saveMeta();
+    }
+    if (name !== 'game') { const _rs = document.getElementById('rewardSummary'); if (_rs) _rs.classList.remove('show'); }
     menuEl.classList.toggle('show', name === 'menu');
     codexEl.classList.toggle('show', name === 'codex');
     recordsEl.classList.toggle('show', name === 'records');
@@ -20884,12 +21739,11 @@
     }
     if (qsPreview) {
       if (!inProgress) {   // 진행 중일 땐 미리보기 숨김
-        const modeLabel = effectiveMode === 'defense' ? '🏰 디펜스' : '⚔️ 표준';
         const char = CHARACTERS[selectedCharacter] || CHARACTERS.standard;
         const ascLabel = (typeof ascensionLabel === 'function')
           ? ascensionLabel(getSelectedAscension())
           : `승천 ${getSelectedAscension() || 0}`;
-        qsPreview.innerHTML = `<span class="qs-val">${modeLabel}</span> · <span class="qs-val" style="color:${char.color || '#cfd6e3'}">${char.name}</span> · <span class="qs-val">${ascLabel}</span>`;
+        qsPreview.innerHTML = `<span class="qs-val" style="color:${char.color || '#cfd6e3'}">${char.name}</span> · <span class="qs-val">${ascLabel}</span>`;
         qsPreview.style.display = '';
       } else {
         qsPreview.style.display = 'none';
@@ -20898,10 +21752,35 @@
     // 🚀 v252 — 설정 변경 버튼: 진행 중에도 항상 노출 (이어하기/처음부터다시 옆에서도 모드 변경 가능)
     if (changeBtn) {
       changeBtn.style.display = '';
-      changeBtn.textContent = inProgress ? '⚙ 모드/캐릭 변경' : '⚙ 설정 변경';
+      changeBtn.textContent = inProgress ? '⚙ 캐릭터 변경' : '⚙ 캐릭터 변경';
     }
     // 🎰 가챠 원형 버튼 갱신
     if (typeof refreshGachaCircleBtn === 'function') refreshGachaCircleBtn();
+    // 🔴 메뉴 NEW 뱃지 — 안 본 해금 표시
+    (function updateNewDots() {
+      const u = META.unseen || {};
+      const setDot = (id, n) => {
+        const btn = document.getElementById(id);
+        if (!btn) return;
+        let dot = btn.querySelector(':scope > .menu-new-dot');
+        if (n > 0) {
+          if (!dot) { dot = document.createElement('span'); dot.className = 'menu-new-dot'; btn.appendChild(dot); }
+          dot.textContent = n > 9 ? '9+' : String(n);
+        } else if (dot) { dot.remove(); }
+      };
+      setDot('charCollectionBtn', u.chars || 0);
+      setDot('achievementsBtn', u.achs || 0);
+      setDot('codexBtn', u.abilities || 0);
+      const nd = document.getElementById('nickname-display');
+      if (nd) {
+        let dot = nd.querySelector(':scope > .menu-new-dot');
+        const n = u.titles || 0;
+        if (n > 0) {
+          if (!dot) { dot = document.createElement('span'); dot.className = 'menu-new-dot'; nd.appendChild(dot); }
+          dot.textContent = n > 9 ? '9+' : String(n);
+        } else if (dot) { dot.remove(); }
+      }
+    })();
     // 🔄 다기기 동기화 섹션 — 로그인 상태에서만 노출 (설정 모달 안)
     const syncSec = document.getElementById('settingsSyncSection');
     if (syncSec) syncSec.style.display = (typeof isAccountLoggedIn === 'function' && isAccountLoggedIn()) ? '' : 'none';
@@ -21159,21 +22038,9 @@
     if (quickMode && charOk) {
       // 마지막 설정 그대로 즉시 게임 시작 (모드 없으면 standard 디폴트)
       SFX.click();
-      const useMode = META.lastSelectedMode || 'standard';
-      // 첫 플레이로 lastSelectedMode 비어있으면 standard 로 저장
-      if (!META.lastSelectedMode) {
-        META.lastSelectedMode = 'standard';
-        saveMeta();
-      }
-      // 디펜스 모드는 캐릭터 무관 → 빈 값으로 진행
-      if (useMode === 'defense') {
-        const savedChar = selectedCharacter;
-        selectedCharacter = 'standard';
-        reset();
-        selectedCharacter = savedChar;
-      } else {
-        reset();
-      }
+      // 🚫 디펜스 비활성화 — 항상 클래식. 과거 디펜스 선택값도 standard로 정리.
+      if (META.lastSelectedMode !== 'standard') { META.lastSelectedMode = 'standard'; saveMeta(); }
+      reset();
       paused = false;
       const pauseBtn = document.getElementById('pauseBtn');
       if (pauseBtn) pauseBtn.textContent = '⏸ 일시정지';
@@ -21181,7 +22048,7 @@
       showScreen('game');
     } else {
       // 잠긴 캐릭터 → 모드 선택부터
-      showScreen('mode');
+      goToCharacterSelect();
     }
   };
   // 🚀 v223 — 설정 변경 버튼: 모드 선택부터 정상 흐름
@@ -21189,7 +22056,7 @@
   if (_changeBtn) {
     _changeBtn.onclick = () => {
       SFX.click();
-      showScreen('mode');
+      goToCharacterSelect();
     };
   }
   // ▶ 이어하기 — 진행 중인 게임 재개
@@ -21246,6 +22113,15 @@
     if (title) title.textContent = _characterScreenMode === 'collection' ? '캐릭터 도감' : '캐릭터 선택';
     // 도감 모드에선 하단 "▶ 게임 시작" 플로팅 바 숨김 (보기 전용)
     if (floatBar) floatBar.style.display = _characterScreenMode === 'collection' ? 'none' : '';
+  }
+  // 🚫 디펜스 비활성화 — 모드 선택 화면을 건너뛰고 바로 캐릭터 선택으로 (새 게임/다시하기 공통 진입)
+  function goToCharacterSelect() {
+    if (META.lastSelectedMode !== 'standard') { META.lastSelectedMode = 'standard'; try { saveMeta(); } catch (e) {} }
+    _characterScreenMode = 'select';
+    if (typeof _applyCharScreenMode === 'function') _applyCharScreenMode();
+    buildCharacterList();
+    updateCharStartButton();
+    showScreen('character');
   }
   const _charCollBtn = document.getElementById('charCollectionBtn');
   if (_charCollBtn) {
@@ -21323,6 +22199,7 @@
   }
   document.getElementById('nickname-display').onclick = () => openNicknameModal(false);
   document.getElementById('nicknameSubmit').onclick = submitNickname;
+  { const _xb = document.getElementById('nicknameCloseBtn'); if (_xb) { _xb.onclick = closeNicknameModal; _xb.onmouseenter = () => { _xb.style.background = '#33405a'; _xb.style.color = '#fff'; }; _xb.onmouseleave = () => { _xb.style.background = '#222a3a'; _xb.style.color = '#9aa3b3'; }; } }
   document.getElementById('nicknameInput').addEventListener('keydown', (e) => {
     if (e.key === 'Enter') { e.preventDefault(); submitNickname(); }
     else if (e.key === 'Escape') { closeNicknameModal(); }
@@ -21816,6 +22693,13 @@
     };
   });
   document.getElementById('achievementsBtn').onclick = () => { buildAchievements(); showScreen('achievements'); };
+  // 🎁 보상 패널 닫기 (확인 버튼 + 배경 클릭)
+  (function wireRewardSummary() {
+    const ok = document.getElementById('rewardOk');
+    const overlay = document.getElementById('rewardSummary');
+    if (ok) ok.onclick = hideRewardSummary;
+    if (overlay) overlay.addEventListener('click', e => { if (e.target === overlay) hideRewardSummary(); });
+  })();
   document.getElementById('achievementsBack').onclick = () => showScreen('menu');
 
   // 개발용: 데이터 초기화 — localStorage 전체 비움
@@ -21828,7 +22712,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 313;
+  const APP_VERSION = 327;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
