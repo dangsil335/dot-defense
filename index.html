@@ -2175,6 +2175,8 @@
   .char-card .char-lock { font-size: 11px; color: #ff8a98; margin-top: 6px; }
   .char-card .char-selected-tag { font-size: 11px; color: #ffd479; margin-top: 6px; font-weight: bold; }
   .char-card .char-start { font-size: 11px; color: #9aa3b3; margin-top: 6px; }
+  .char-card .char-passive { font-size: 11px; color: #b0b8c5; margin-top: 4px; line-height: 1.45; }
+  .char-card .char-passive b { color: #cfd6e3; font-weight: 700; }
 
   /* ===== 업적 화면 ===== */
   #achievementsScreen { padding: 24px; align-items: stretch; }
@@ -22751,7 +22753,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 331;
+  const APP_VERSION = 332;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
@@ -23045,6 +23047,10 @@
     const imgHTML = imgSrc
       ? `<div class="hero-img-wrap"><img src="${imgSrc}" alt="${char.name}" onerror="this.parentElement.style.display='none'"/></div>`
       : '';
+    const heroStartAbs = (char.startAbilities || []).map(aid => { const d = ABILITY_DEFS[aid]; return d ? `<span style="color:${d.color}">${d.name}</span>` : aid; }).join(', ');
+    const heroPassive = charPassiveSummary(char);
+    const heroInfo = `시작 능력: ${heroStartAbs || '<span style="color:#7a8090">없음 (레벨업으로 획득)</span>'}`
+      + (heroPassive ? `<br><span style="color:#b0b8c5"><b style="color:#cfd6e3">효과</b> ${heroPassive}</span>` : '');
     el.innerHTML = `
       ${rarityTag}
       ${imgHTML}
@@ -23053,13 +23059,26 @@
         <div class="hero-name-row">
           <span class="hero-name" style="color:${char.color || '#7ad7ff'};">${char.name}</span>
         </div>
-        <div class="hero-desc">${char.desc}</div>
+        <div class="hero-desc">${heroInfo}</div>
         ${starsHTML}
       </div>
     `;
     el.style.display = '';
   }
 
+  // 캐릭터 패시브 효과를 간결한 스탯 줄로 자동 요약 (프로즈 설명 대체)
+  function charPassiveSummary(char) {
+    const p = char.passive || {};
+    const parts = [];
+    const pct = v => (v >= 0 ? '+' : '') + Math.round(v) + '%';
+    if (p.dmgMul && p.dmgMul !== 1) parts.push(`데미지 ${pct((p.dmgMul - 1) * 100)}`);
+    if (p.bossDmgMul && p.bossDmgMul !== 1) parts.push(`보스 ${pct((p.bossDmgMul - 1) * 100)}`);
+    if (p.slotMod) parts.push(`슬롯 ${p.slotMod > 0 ? '+' : ''}${p.slotMod}`);
+    if (p.levelUpMul && p.levelUpMul !== 1) parts.push(`레벨업 ${pct((p.levelUpMul - 1) * 100)}`);
+    if (p.slowMul && p.slowMul !== 1) parts.push(`슬로우 ${pct((p.slowMul - 1) * 100)}`);
+    if (p.enhanceMul && p.enhanceMul !== 1) parts.push(`강화비용 ${pct((p.enhanceMul - 1) * 100)}`);
+    return parts.join(' · ');
+  }
   function buildCharacterList() {
     refreshCharacterHero();   // 🎴 v221 — 상단 hero 카드 갱신
     const list = document.getElementById('character-list');
@@ -23111,7 +23130,9 @@
         const d = ABILITY_DEFS[aid];
         return d ? `<span style="color:${d.color}">${d.name}</span>` : aid;
       }).join(', ');
-      const startInfo = startAbs ? `<div class="char-start">시작 능력: ${startAbs}</div>` : '';
+      const startInfo = `<div class="char-start">시작 능력: ${startAbs || '<span style="color:#7a8090">없음 (레벨업으로 획득)</span>'}</div>`;
+      const passiveSummary = charPassiveSummary(char);
+      const passiveLine = passiveSummary ? `<div class="char-passive"><b>효과</b> ${passiveSummary}</div>` : '';
       // 등급 배지 (가챠 캐릭터만) — 이름 옆 인라인
       let rarityPill = '';
       if (char.rarity) {
@@ -23232,8 +23253,8 @@
             </div>
           </div>
         </div>
-        <div class="char-desc">${char.desc}</div>
         ${startInfo}
+        ${passiveLine}
         ${starInfo}
         ${lockText}${selText}
       `;
@@ -23842,7 +23863,7 @@
           ${starsHTML}
         </div>
       </div>
-      <div class="char-codex-desc">${char.desc}</div>
+      ${(() => { const ps = charPassiveSummary(char); return ps ? `<div class="char-codex-section"><div class="char-codex-section-title">효과</div><div class="char-codex-section-body">${ps}</div></div>` : ''; })()}
       ${startAbs ? `
         <div class="char-codex-section">
           <div class="char-codex-section-title">시작 능력</div>
