@@ -19272,19 +19272,25 @@
     }
   }
   // 🌟 블룸(발광) — 월드를 축소+블러 후 가산 합성. 밝은 부분만 자연스럽게 빛남(어두운 곳은 거의 영향 없음)
-  let _bloomCv = null, _bctx = null;
+  let _bloomCv = null, _bctx = null, _bloomFrame = 0, _bloomReady = false;
   function applyBloom() {
     try {
       const q = IS_MOBILE ? 0.32 : 0.5;
       const bw = Math.max(1, Math.round(W * q)), bh = Math.max(1, Math.round(H * q));
       if (!_bloomCv) { _bloomCv = document.createElement('canvas'); _bctx = _bloomCv.getContext('2d'); }
-      if (_bloomCv.width !== bw || _bloomCv.height !== bh) { _bloomCv.width = bw; _bloomCv.height = bh; }
-      _bctx.clearRect(0, 0, bw, bh);
+      if (_bloomCv.width !== bw || _bloomCv.height !== bh) { _bloomCv.width = bw; _bloomCv.height = bh; _bloomReady = false; }
       // 🌟 선택적 블룸 — brightness/contrast로 어두운 부분을 검정으로 눌러 "밝은 이펙트만" 추출 후 블러.
       //   → 배경은 가산해도 0(안 번짐=눈 편함), 효과만 강하게 빛남(세련된 네온 글로우).
-      _bctx.filter = 'brightness(1.2) contrast(2.7) blur(' + (IS_MOBILE ? 4 : 6) + 'px)';
-      _bctx.drawImage(canvas, 0, 0, bw, bh);
-      _bctx.filter = 'none';
+      // 🔥 모바일 과열 완화 — 가장 비싼 연산(필터+풀캔버스 드로우)은 격프레임만 재계산.
+      //   합성(아래 drawImage)은 매 프레임 → 글로우는 깜빡임 없이 안정적으로 보임.
+      _bloomFrame++;
+      if (!IS_MOBILE || !_bloomReady || (_bloomFrame & 1) === 0) {
+        _bctx.clearRect(0, 0, bw, bh);
+        _bctx.filter = 'brightness(1.2) contrast(2.7) blur(' + (IS_MOBILE ? 4 : 6) + 'px)';
+        _bctx.drawImage(canvas, 0, 0, bw, bh);
+        _bctx.filter = 'none';
+        _bloomReady = true;
+      }
       ctx.save();
       ctx.globalCompositeOperation = 'lighter';
       ctx.globalAlpha = IS_MOBILE ? 0.36 : 0.46;   // 🌙 v315 — 겹침 시 눈부심 완화 (0.55/0.7 → 0.36/0.46)
@@ -22753,7 +22759,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 332;
+  const APP_VERSION = 333;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
@@ -24236,13 +24242,21 @@
     }
   });
 
-  (function loop(){
+  // 🔥 60fps 상한 — 고주사율(90/120Hz) 폰의 과열 + 프레임기반(state.t++) 2배속 방지.
+  //   60Hz는 항상 통과, 120Hz는 격프레임만 실행 → 모든 기기에서 동일한 ~60fps 속도.
+  let _lastFrameT = 0;
+  const _FRAME_MS = 1000 / 60;
+  (function loop(now){
+    requestAnimationFrame(loop);
+    if (now === undefined) now = (typeof performance !== 'undefined' && performance.now) ? performance.now() : 0;
+    // 직전 렌더로부터 ~13.3ms 미만이면 이번 콜백은 스킵 (60Hz는 여유 있게 통과, 120Hz는 절반만)
+    if (_lastFrameT && (now - _lastFrameT) < _FRAME_MS * 0.8) return;
+    _lastFrameT = now;
     if (currentScreen === 'game') {
       const steps = paused || state.gameOver ? 1 : gameSpeed;
       for (let i = 0; i < steps; i++) update();
       render();
     }
-    requestAnimationFrame(loop);
   })();
 })();
 </script>
