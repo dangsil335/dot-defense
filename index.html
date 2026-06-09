@@ -21733,6 +21733,22 @@
     { title: '💀 약화의 낙인', text: '"거대한 것 앞에서, 너는 무력하다."',
       apply() { state.metaMods.bossDmgMul = (state.metaMods.bossDmgMul || 1) * 0.88; return '보스 데미지 -12% (영구).'; } },
   ];
+  // 💀 NPC별 저주 대사 — 저주가 떠도 그 NPC가 컨셉에 맞는 한 줄을 직접 말한다 (효과는 CURSE_DEFS 그대로)
+  const CURSE_LINES = {
+    wheel: '"운이 등을 돌렸군. …이번 판은 네가 졌어."',
+    devil: '"계약서 작은 글씨, 안 읽었지? 대가는 받아간다."',
+    star: '"별이 흐려요… 오늘 당신의 운세는, 흉(凶)이에요."',
+    sun: '"어라, 구름이 꼈네. 햇살이 잠깐 가려지겠어."',
+    fool: '"어이쿠… 이번 건 함정이었나 봐. 미안!"',
+    magician: '"실험이 빗나갔군. 부작용은… 자네 몫이야."',
+    hierophant: '"오만은 죄. 시련으로 그대를 단련하겠소."',
+    justice: '"심판이 내려졌다. 합당한 대가를 치르도록."',
+    empress: '"풍요엔 책임이 따르는 법. 조금 거둬가마."',
+    world: '"한 막이 저뭅니다. 무대엔 그림자도 깃들죠."',
+    lovers: '"사랑은 가끔 아픈 법… 큐피드의 화살이 빗나갔어."',
+    strength: '"방심했군. 힘이란 건 양날의 검이야."',
+    chariot: '"과속이었어. 잠깐 고삐가 풀렸다."',
+  };
   function _setEventPortrait(key) {
     const npc = EVENT_NPCS[key] || EVENT_NPCS.wheel;
     const portrait = document.getElementById('eventNpcPortrait');
@@ -21838,7 +21854,10 @@
     let npcKey, title, text;
     if (isCurse) {
       const c = CURSE_DEFS[Math.floor(Math.random() * CURSE_DEFS.length)];
-      _activeEvent = { _curse: true, def: c }; npcKey = 'curse'; title = c.title; text = c.text;
+      // 🩹 등장한 그 NPC가 그대로 저주를 건다 — 컷인/카드와 얼굴이 어긋나지 않게 (유효 NPC 없을 때만 '저주의 그림자')
+      const _validNpc = npc && npc.events && npc.events.length;
+      _activeEvent = { _curse: true, def: c }; npcKey = _validNpc ? key : 'curse'; title = c.title;
+      text = (_validNpc && CURSE_LINES[key]) ? CURSE_LINES[key] : c.text;   // 그 NPC의 컨셉 저주 대사
     } else {
       const ev = npc.events[Math.floor(Math.random() * npc.events.length)]();
       _activeEvent = ev; ev._curse = false; npcKey = key; title = ev.title; text = ev.text;
@@ -23621,7 +23640,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 357;
+  const APP_VERSION = 359;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
