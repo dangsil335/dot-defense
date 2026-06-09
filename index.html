@@ -3224,19 +3224,46 @@
   .event-choice .ec-label { font-size: 14px; font-weight: bold; }
   .event-choice .ec-desc { font-size: 11.5px; color: #9aa3b3; line-height: 1.4; margin-top: 3px; }
   .event-outcome { font-size: 13.5px; line-height: 1.6; color: #ffe070; background: #161a10; border: 1px solid #3a3a20; border-radius: 10px; padding: 13px 14px; white-space: pre-wrap; animation: rewardIn .25s ease; }
+  /* 🔮 유물 획득 피드백 */
+  .relic-reveal { display: flex; align-items: center; gap: 14px; padding: 15px 16px; border-radius: 14px; background: linear-gradient(180deg,#1a2132,#10141f); border: 2px solid var(--rc,#888); box-shadow: 0 0 24px var(--rg,rgba(255,255,255,.25)), inset 0 0 18px rgba(0,0,0,.4); animation: rewardIn .3s cubic-bezier(.2,1.4,.5,1); }
+  .relic-reveal .rr-icon { flex: 0 0 64px; width: 64px; height: 64px; display: flex; align-items: center; justify-content: center; font-size: 44px; filter: drop-shadow(0 0 10px var(--rg,rgba(255,255,255,.3))); }
+  .relic-reveal .rr-icon img { width: 60px; height: 60px; image-rendering: pixelated; object-fit: contain; }
+  .relic-reveal .rr-info { min-width: 0; }
+  .relic-reveal .rr-rar { font-size: 11px; font-weight: 800; letter-spacing: 1.5px; color: var(--rc,#cdd); text-transform: uppercase; }
+  .relic-reveal .rr-name { font-size: 17px; font-weight: bold; color: #fff; margin: 2px 0 4px; }
+  .relic-reveal .rr-desc { font-size: 12px; color: #9aa3b3; line-height: 1.45; }
+  /* ⚡ 기습 이벤트 컷인 (A: 사이드 슬라이드) */
+  .ambush-scene { display: none; position: fixed; inset: 0; z-index: 9995; overflow: hidden; align-items: center; justify-content: center; background: rgba(6,8,14,0); transition: background .25s ease; }
+  .ambush-scene.show { display: flex; background: rgba(6,8,14,0.6); }
+  .ambush-scene.out { background: rgba(6,8,14,0); }
+  .ambush-bg { position: absolute; inset: -20%; opacity: 0; background: repeating-linear-gradient(112deg, transparent 0 16px, var(--ac,#7ad7ff) 16px 19px); mix-blend-mode: screen; animation: ambushBg .55s ease forwards; }
+  @keyframes ambushBg { 0% { opacity: 0; transform: scale(1.5) } 35% { opacity: .16 } 100% { opacity: .07; transform: scale(1) } }
+  .ambush-glow { position: absolute; width: 130vmin; height: 130vmin; border-radius: 50%; background: radial-gradient(circle, var(--ag,rgba(122,215,255,.45)) 0%, transparent 62%); opacity: 0; animation: ambushGlow .6s ease forwards; }
+  @keyframes ambushGlow { 0% { opacity: 0; transform: scale(.55) } 50% { opacity: 1 } 100% { opacity: .5; transform: scale(1) } }
+  .ambush-illus { position: relative; max-height: 80vh; max-width: 62vw; object-fit: contain; transform: translateX(62vw); opacity: 0; filter: drop-shadow(0 10px 32px rgba(0,0,0,.65)); image-rendering: auto; animation: ambushSlide .55s cubic-bezier(.18,1.45,.42,1) .06s forwards; }
+  .ambush-scene.out .ambush-illus { animation: ambushExit .28s ease forwards; }
+  @keyframes ambushSlide { 0% { transform: translateX(62vw); opacity: 0 } 55% { opacity: 1 } 100% { transform: translateX(0); opacity: 1 } }
+  @keyframes ambushExit { to { transform: translateX(-12vw) scale(.94); opacity: 0 } }
+  .ambush-name { position: absolute; left: 0; bottom: 24%; transform: skewY(-3deg) translateX(-115%); padding: 9px 30px 9px 18px; background: linear-gradient(90deg, var(--ac,#7ad7ff) 0%, var(--ac,#7ad7ff) 70%, transparent 100%); box-shadow: 0 4px 18px rgba(0,0,0,.5); opacity: 0; animation: ambushName .4s cubic-bezier(.2,.9,.3,1.1) .34s forwards; }
+  .ambush-name .an-name { font-size: 22px; font-weight: 900; color: #0b0e14; text-shadow: 0 1px 0 rgba(255,255,255,.35); letter-spacing: .5px; }
+  @keyframes ambushName { to { transform: skewY(-3deg) translateX(0); opacity: 1 } }
+  .ambush-line { position: absolute; left: 7%; right: 7%; bottom: 12%; max-width: 80vw; margin: 0 auto; font-size: 16px; font-weight: 600; color: #fff; text-align: center; text-shadow: 0 2px 10px #000, 0 0 4px #000; opacity: 0; animation: ambushLine .35s ease .56s forwards; }
+  @keyframes ambushLine { from { opacity: 0; transform: translateY(10px) } to { opacity: 1; transform: translateY(0) } }
+  .ambush-flash { position: absolute; inset: 0; background: #fff; opacity: 0; pointer-events: none; animation: ambushFlash .4s ease forwards; }
+  @keyframes ambushFlash { 0% { opacity: 0 } 7% { opacity: .55 } 100% { opacity: 0 } }
   /* 🎴 카드 드래프트 */
   .draft-inner { margin: auto; display: flex; flex-direction: column; align-items: center; gap: 18px; padding: 20px; }
   .draft-title { font-size: 21px; font-weight: bold; color: #ffd479; text-shadow: 0 0 16px rgba(255,212,121,0.4); }
   .draft-hint { font-size: 13px; color: #9aa3b3; min-height: 18px; }
-  .draft-row { display: flex; gap: 14px; }
-  .draft-card { width: 120px; height: 180px; border-radius: 12px; cursor: pointer; position: relative; overflow: hidden; border: 2px solid #3a4256; background: linear-gradient(160deg,#1a2440,#0c1020); transition: transform .15s, box-shadow .15s, opacity .2s; }
+  .draft-row { display: flex; gap: 12px; justify-content: center; width: min(92vw, 540px); }
+  .draft-card { flex: 1 1 0; min-width: 0; max-width: 170px; aspect-ratio: 2 / 3; border-radius: 12px; cursor: pointer; position: relative; overflow: hidden; border: 2px solid #3a4256; background: linear-gradient(160deg,#1a2440,#0c1020); transition: transform .15s, box-shadow .15s, opacity .2s; }
   .draft-card:hover:not(.revealed):not(.dim) { transform: translateY(-8px) scale(1.04); box-shadow: 0 10px 26px rgba(122,215,255,0.35); border-color: #7ad7ff; }
   .draft-card img { width: 100%; height: 100%; object-fit: cover; display: block; }
   .draft-card .dc-face { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 46px; }
   .draft-card.revealed { cursor: default; border-color: #ffd479; box-shadow: 0 0 28px rgba(255,212,121,0.55); }
   .draft-card.dim { opacity: 0.3; transform: scale(0.9); }
   .draft-card .dc-name { position: absolute; left: 0; right: 0; bottom: 0; padding: 6px 4px; background: linear-gradient(0deg, rgba(8,10,16,0.95), transparent); color: #fff; font-size: 11px; font-weight: bold; text-align: center; }
-  @media (max-width: 520px) { .npc-scene-inner { max-height: 88vh; } .npc-portrait { flex: 0 0 30%; } .npc-panel { padding: 12px; } .shop-item { padding: 8px; } .event-text { max-height: 34%; } .draft-card { width: 96px; height: 144px; } .draft-row { gap: 9px; } .draft-title { font-size: 18px; } }
+  @media (max-width: 520px) { .npc-scene-inner { max-height: 88vh; } .npc-portrait { flex: 0 0 30%; } .npc-panel { padding: 12px; } .shop-item { padding: 8px; } .event-text { max-height: 34%; } .draft-row { gap: 8px; width: 96vw; } .draft-title { font-size: 18px; } }
 </style>
 <div id="shopScene" class="npc-scene">
   <div class="npc-scene-inner">
@@ -3280,6 +3307,9 @@
     <div class="draft-hint" id="draftHint">한 장을 선택하세요</div>
   </div>
 </div>
+
+<!-- ⚡ 기습 이벤트 컷인 — 라운드 중 NPC 난입 연출 (A: 사이드 슬라이드). 내용은 JS에서 주입 -->
+<div id="ambushScene" class="ambush-scene"></div>
 
 <div id="rewardSummary" class="reward-overlay">
   <div class="reward-card">
@@ -12010,12 +12040,11 @@
       return;
     }
     planRound();
-    // 🧪🧪 [테스트용 — 확인 후 제거] 매 라운드 강제 등장: 짝수=상점, 홀수=이벤트(카드 드래프트)
-    //    되돌리기: 아래 _TEST_EVENTS 를 false 로 바꾸면 원래(저확률 상점 + 특수보스 이벤트)로 복귀.
+    // 🧪🧪 [테스트용 토글] true 면 매 라운드 강제로 기습 이벤트(NPC 난입 컷인) 등장. 평소엔 false.
+    //    false = 정상(저확률 상점 + 라운드 12% 기습 이벤트).
     const _TEST_EVENTS = false;
     if (_TEST_EVENTS && state.mode !== 'defense' && !state.gameOver && !state.levelUpChoices && state.round > 1) {
-      if (state.round % 2 === 0) { if (typeof openShop === 'function') openShop(); }
-      else if (typeof openBossEvent === 'function') { openBossEvent(); }
+      if (typeof openAmbushEvent === 'function') openAmbushEvent();
     }
     // 🛒 특별 상점 — "운 좋은 만남". 낮은 확률 + 한 판 최대 4회 + 쿨다운 → 보통 2~4번, 많아야 4번만 등장.
     //    ⚙ 튜닝: 0.04(라운드당 확률) · 4(한 판 최대 횟수) · 4(최소 라운드 간격).
@@ -12025,6 +12054,12 @@
       state._lastShopRound = state.round;
       state._shopCount = (state._shopCount || 0) + 1;
       if (typeof openShop === 'function') openShop();
+    }
+    // ⚡ 라운드 랜덤 이벤트 (A) — 상점이 안 뜬 라운드에 12% 확률로 기습 이벤트(NPC 난입) 등장 (보스 이벤트와 별개, 쿨다운 2라운드)
+    else if (!_TEST_EVENTS && state.mode !== 'defense' && !state.gameOver && !state.levelUpChoices && state.round >= 3 &&
+        (state.round - (state._lastEventRound || -99)) >= 2 && Math.random() < 0.12) {
+      state._lastEventRound = state.round;
+      if (typeof openAmbushEvent === 'function') openAmbushEvent();
     }
     // 💎 유물 효과 — 라운드 시작 시 발동
     const re = state.relicEffects;
@@ -15655,16 +15690,12 @@
             toast(`⏳ 다음 라운드 자동 클리어! (남은 충전: ${state.relicEffects.skipRoundCharges})`);
           }
         }
-        // 💎 유물 제안 (확률적) — 단, 특수보스는 유물 대신 랜덤 이벤트 (저주는 낮은 확률로 강제)
-        if (!state.relicOffering) {
-          if (e.special && !e.isMiniBoss && typeof openBossEvent === 'function') {
-            openBossEvent();   // 🎭 특수보스 처치 → 이벤트 즉시 등장
+        // 🎭 보스 처치 → 이벤트 (등급 분리): 특수보스=강화 이벤트, 일반 보스=유물 선택 이벤트. 미니보스 제외.
+        if (!state.relicOffering && !_activeEvent && !e.isMiniBoss) {
+          if (e.special) {
+            if (typeof openBossEvent === 'function') openBossEvent();   // 특수보스 → 강화 이벤트(카드 드래프트)
           } else {
-            const offering = rollRelicOffering();
-            if (offering && offering.length > 0) {
-              state.relicOffering = offering;
-              paused = true;  // 선택 대기
-            }
+            if (typeof openBossRelicEvent === 'function') openBossRelicEvent(); // 일반보스 → 카드 드래프트 → 유물 이벤트
           }
         }
       } else {
@@ -21472,8 +21503,8 @@
     devil: { name: '악마 · 마몬', fb: '😈', art: 'devil', color: '#aa88ff', events: [
       () => ({ title: '😈 피의 계약', text: '"힘이 필요하지. 값은 네 황금의 절반. …싸지 않나?"',
         choices: [
-          { label: '계약한다', desc: '골드 -50% · 데미지 +20% 영구', disabled: state.gold < 10,
-            resolve() { const lost = Math.floor(state.gold * 0.5); state.gold -= lost; _evClampGold(); state.relicEffects.aoeDmgMul *= 1.20; return `🩸 -${lost}G, 데미지 +20% 영구!`; } },
+          { label: '계약한다', desc: '골드 -50% · 데미지 +30% 영구', disabled: state.gold < 10,
+            resolve() { const lost = Math.floor(state.gold * 0.5); state.gold -= lost; _evClampGold(); state.relicEffects.aoeDmgMul *= 1.30; return `🩸 -${lost}G, 데미지 +30% 영구!`; } },
           { label: '거절한다', desc: '영혼은 안 판다', resolve() { return '악마가 사라진다.'; } },
         ] }),
       () => ({ title: '😈 영혼의 거래', text: '"유물 하나 가져가. 대신 들어올 황금이 조금씩 새어나갈 뿐이야."',
@@ -21484,17 +21515,17 @@
         ] }),
       () => ({ title: '😈 금단의 힘', text: '"거대한 것을 부수는 힘이다. 약간의 위험쯤은, 감수하겠지?"',
         choices: [
-          { label: '받아들인다', desc: '보스 +18% · 30% 저주',
-            resolve() { state.metaMods.bossDmgMul = (state.metaMods.bossDmgMul || 1) * 1.18; if (Math.random() < 0.30) { state.relicEffects.aoeDmgMul *= 0.93; return '🔥 보스 +18%! …허나 데미지 -7% 저주.'; } return '🔥 보스 데미지 +18% 영구!'; } },
+          { label: '받아들인다', desc: '보스 +28% · 30% 저주',
+            resolve() { state.metaMods.bossDmgMul = (state.metaMods.bossDmgMul || 1) * 1.28; if (Math.random() < 0.30) { state.relicEffects.aoeDmgMul *= 0.93; return '🔥 보스 +28%! …허나 데미지 -7% 저주.'; } return '🔥 보스 데미지 +28% 영구!'; } },
           { label: '거절한다', desc: '함정 같다', resolve() { return '악마가 돌아간다.'; } },
         ] }),
     ]},
     star: { name: '별 · 셀레네', fb: '🔮', art: 'star', color: '#88ccff', events: [
       () => ({ title: '⭐ 별자리 점', text: '"별이 세 갈래 길을 비추는군요. 어느 빛을 따르시겠어요?"',
         choices: [
-          { label: '⚔ 힘의 별', desc: '데미지 +8% 영구', resolve() { state.relicEffects.aoeDmgMul *= 1.08; return '⚔ 데미지 +8% 영구!'; } },
-          { label: '💰 황금의 별', desc: '획득 골드 +8% 영구', resolve() { state.metaMods.goldMul = (state.metaMods.goldMul || 1) * 1.08; return '💰 골드 +8% 영구!'; } },
-          { label: '👹 사냥의 별', desc: '보스 +12% 영구', resolve() { state.metaMods.bossDmgMul = (state.metaMods.bossDmgMul || 1) * 1.12; return '👹 보스 +12% 영구!'; } },
+          { label: '⚔ 힘의 별', desc: '데미지 +14% 영구', resolve() { state.relicEffects.aoeDmgMul *= 1.14; return '⚔ 데미지 +14% 영구!'; } },
+          { label: '💰 황금의 별', desc: '획득 골드 +15% 영구', resolve() { state.metaMods.goldMul = (state.metaMods.goldMul || 1) * 1.15; return '💰 골드 +15% 영구!'; } },
+          { label: '👹 사냥의 별', desc: '보스 +20% 영구', resolve() { state.metaMods.bossDmgMul = (state.metaMods.bossDmgMul || 1) * 1.20; return '👹 보스 +20% 영구!'; } },
         ] }),
       () => ({ title: '⭐ 타로 점', text: '"카드 한 장. 오늘의 운을 읽어 드릴게요."',
         choices: [
@@ -21550,7 +21581,7 @@
     magician: { name: '마법사 · 연금술사', fb: '🪄', art: 'magician', color: '#7ad7ff', events: [
       () => { const cost = _evUnit() * 2; return { title: '🪄 연금 변환', text: '"황금을 힘으로 바꿔주지. 등가교환이야."',
         choices: [
-          { label: `변환한다 (${cost}G)`, desc: '데미지 +10% 영구', disabled: state.gold < cost, resolve() { state.gold -= cost; state.relicEffects.aoeDmgMul *= 1.10; return '🪄 데미지 +10% 영구!'; } },
+          { label: `변환한다 (${cost}G)`, desc: '데미지 +16% 영구', disabled: state.gold < cost, resolve() { state.gold -= cost; state.relicEffects.aoeDmgMul *= 1.16; return '🪄 데미지 +16% 영구!'; } },
           { label: '사양한다', desc: '필요 없다', resolve() { return '연금술사가 끄덕인다.'; } },
         ] }; },
       () => ({ title: '🪄 능력 재단', text: '"가진 걸 다시 벼려보자. 더 날카로워질 거다."',
@@ -21560,7 +21591,7 @@
         ] }),
       () => ({ title: '🪄 원소 폭주', text: '"위험한 실험이지만… 성공하면 값지지."',
         choices: [
-          { label: '폭주시킨다', desc: '60%: +14% · 40%: -5%', resolve() { if (Math.random() < 0.6) { state.relicEffects.aoeDmgMul *= 1.14; return '💥 성공! 데미지 +14% 영구!'; } state.relicEffects.aoeDmgMul *= 0.95; return '💥 실패… 데미지 -5%.'; } },
+          { label: '폭주시킨다', desc: '60%: +22% · 40%: -5%', resolve() { if (Math.random() < 0.6) { state.relicEffects.aoeDmgMul *= 1.22; return '💥 성공! 데미지 +22% 영구!'; } state.relicEffects.aoeDmgMul *= 0.95; return '💥 실패… 데미지 -5%.'; } },
           { label: '사양한다', desc: '위험해', resolve() { return '연금술사가 아쉬워한다.'; } },
         ] }),
     ]},
@@ -21572,7 +21603,7 @@
         ] }),
       () => ({ title: '📿 신성한 축복', text: '"그대의 길에 가호가 함께하길."',
         choices: [
-          { label: '축복받는다', desc: '데미지 +6% 영구', resolve() { state.relicEffects.aoeDmgMul *= 1.06; return '✨ 데미지 +6% 영구!'; } },
+          { label: '축복받는다', desc: '데미지 +12% 영구', resolve() { state.relicEffects.aoeDmgMul *= 1.12; return '✨ 데미지 +12% 영구!'; } },
           { label: '사양한다', desc: '괜찮다', resolve() { return '사제가 고개를 숙인다.'; } },
         ] }),
       () => { const cost = _evUnit() * 3; return { title: '📿 헌금', text: '"정성을 바치면, 합당한 보답이 따르는 법."',
@@ -21584,11 +21615,11 @@
     justice: { name: '정의 · 심판관', fb: '⚖', art: 'justice', color: '#88aaff', events: [
       () => { const cost = _evUnit() * 2; return { title: '⚖ 공정한 교환', text: '"등가 교환이오. 값을 치르면, 그만한 힘을 주지."',
         choices: [
-          { label: `교환한다 (${cost}G)`, desc: '보스 데미지 +10% 영구', disabled: state.gold < cost, resolve() { state.gold -= cost; state.metaMods.bossDmgMul = (state.metaMods.bossDmgMul || 1) * 1.10; return '⚖ 보스 +10% 영구!'; } },
+          { label: `교환한다 (${cost}G)`, desc: '보스 데미지 +18% 영구', disabled: state.gold < cost, resolve() { state.gold -= cost; state.metaMods.bossDmgMul = (state.metaMods.bossDmgMul || 1) * 1.18; return '⚖ 보스 +18% 영구!'; } },
           { label: '사양한다', desc: '필요 없다', resolve() { return '저울을 거둔다.'; } },
         ] }; },
       () => ({ title: '⚖ 심판', text: '"여기까지 온 그대의 공적을 셈하겠소."',
-        choices: [ { label: '평가받는다', desc: '도달 라운드 비례 골드', resolve() { const g = Math.round((state.round || 1) * 6); state.gold += g; return `⚖ 공적 보상! +${g}G!`; } } ] }),
+        choices: [ { label: '평가받는다', desc: '도달 라운드 비례 골드', resolve() { const g = Math.round((state.round || 1) * 10); state.gold += g; return `⚖ 공적 보상! +${g}G!`; } } ] }),
       () => ({ title: '⚖ 정지의 심판', text: '"전부 멈춰라. 질서를 되돌릴 시간이다."',
         choices: [ { label: '심판한다', desc: '모든 적 장시간 둔화', resolve() { const n = _evSlowAll(600); return n ? `⚖ ${n}마리 둔화! 잠시 질서가 깃든다.` : '⚖ 멈출 적이 없다.'; } } ] }),
     ]},
@@ -21606,8 +21637,8 @@
     world: { name: '세계 · 완성의 무희', fb: '🌍', art: 'world', color: '#88ffcc', events: [
       () => ({ title: '🌍 위대한 보상', text: '"여정의 끝에 어울리는 선물을. 하나만 고르세요."',
         choices: [
-          { label: '⚔ 힘', desc: '데미지 +10% 영구', resolve() { state.relicEffects.aoeDmgMul *= 1.10; return '⚔ 데미지 +10% 영구!'; } },
-          { label: '👹 사냥', desc: '보스 +14% 영구', resolve() { state.metaMods.bossDmgMul = (state.metaMods.bossDmgMul || 1) * 1.14; return '👹 보스 +14% 영구!'; } },
+          { label: '⚔ 힘', desc: '데미지 +18% 영구', resolve() { state.relicEffects.aoeDmgMul *= 1.18; return '⚔ 데미지 +18% 영구!'; } },
+          { label: '👹 사냥', desc: '보스 +24% 영구', resolve() { state.metaMods.bossDmgMul = (state.metaMods.bossDmgMul || 1) * 1.24; return '👹 보스 +24% 영구!'; } },
           { label: '🔮 유물', desc: '유물 확정', resolve() { const nm = _evGiveRelic(); return nm ? `🔮 ${nm}!` : '유물이 동났다…'; } },
         ] }),
       () => ({ title: '🌍 세계의 보물', text: '"세계가 그대에게 보물을 건넵니다."',
@@ -21622,38 +21653,38 @@
           { label: '사양한다', desc: '다음에', resolve() { return '큐피드가 윙크한다.'; } },
         ] }),
       () => ({ title: '💕 결속', text: '"혼자보다 둘이 강한 법이지."',
-        choices: [ { label: '결속한다', desc: '데미지 +5% · 보스 +6% 영구', resolve() { state.relicEffects.aoeDmgMul *= 1.05; state.metaMods.bossDmgMul = (state.metaMods.bossDmgMul || 1) * 1.06; return '💞 데미지 +5%, 보스 +6%!'; } } ] }),
+        choices: [ { label: '결속한다', desc: '데미지 +10% · 보스 +12% 영구', resolve() { state.relicEffects.aoeDmgMul *= 1.10; state.metaMods.bossDmgMul = (state.metaMods.bossDmgMul || 1) * 1.12; return '💞 데미지 +10%, 보스 +12%!'; } } ] }),
       () => ({ title: '💕 두 갈래 길', text: '"어느 길을 함께 걸을래? 열정, 아니면 풍요."',
         choices: [
-          { label: '❤ 열정', desc: '데미지 +8% 영구', resolve() { state.relicEffects.aoeDmgMul *= 1.08; return '❤ 데미지 +8% 영구!'; } },
+          { label: '❤ 열정', desc: '데미지 +14% 영구', resolve() { state.relicEffects.aoeDmgMul *= 1.14; return '❤ 데미지 +14% 영구!'; } },
           { label: '💛 풍요', desc: '큰 골드', resolve() { const g = _evUnit() * 6; state.gold += g; return `💛 +${g}G!`; } },
         ] }),
     ]},
     strength: { name: '힘 · 레오', fb: '🦁', art: 'strength', color: '#ff8800', events: [
       () => ({ title: '🦁 내면의 힘', text: '"진짜 힘은 안에서 나와. 끌어올려 봐."',
-        choices: [ { label: '끌어올린다', desc: '데미지 +7% 영구', resolve() { state.relicEffects.aoeDmgMul *= 1.07; return '🦁 데미지 +7% 영구!'; } } ] }),
+        choices: [ { label: '끌어올린다', desc: '데미지 +13% 영구', resolve() { state.relicEffects.aoeDmgMul *= 1.13; return '🦁 데미지 +13% 영구!'; } } ] }),
       () => ({ title: '🦁 야수 길들이기', text: '"큰 놈일수록, 더 세게 후려치면 돼."',
-        choices: [ { label: '길들인다', desc: '보스 +12% 영구', resolve() { state.metaMods.bossDmgMul = (state.metaMods.bossDmgMul || 1) * 1.12; return '🦁 보스 +12% 영구!'; } } ] }),
+        choices: [ { label: '길들인다', desc: '보스 +20% 영구', resolve() { state.metaMods.bossDmgMul = (state.metaMods.bossDmgMul || 1) * 1.20; return '🦁 보스 +20% 영구!'; } } ] }),
       () => ({ title: '🦁 불굴', text: '"버텨. 버티는 쪽이 이기는 거야."',
-        choices: [ { label: '단련한다', desc: '데미지 +4% · 골드', resolve() { state.relicEffects.aoeDmgMul *= 1.04; const g = _evUnit() * 3; state.gold += g; return `🦁 데미지 +4%, +${g}G!`; } } ] }),
+        choices: [ { label: '단련한다', desc: '데미지 +8% · 골드', resolve() { state.relicEffects.aoeDmgMul *= 1.08; const g = _evUnit() * 4; state.gold += g; return `🦁 데미지 +8%, +${g}G!`; } } ] }),
     ]},
     chariot: { name: '전차 · 빅토르', fb: '🏇', art: 'chariot', color: '#ffe070', events: [
       () => ({ title: '🏇 돌격', text: '"멈추지 마. 앞으로."',
-        choices: [ { label: '돌격한다', desc: '보스 +10% 영구', resolve() { state.metaMods.bossDmgMul = (state.metaMods.bossDmgMul || 1) * 1.10; return '🏇 보스 +10% 영구!'; } } ] }),
+        choices: [ { label: '돌격한다', desc: '보스 +18% 영구', resolve() { state.metaMods.bossDmgMul = (state.metaMods.bossDmgMul || 1) * 1.18; return '🏇 보스 +18% 영구!'; } } ] }),
       () => ({ title: '🏇 승리 쟁취', text: '"위험을 무는 자가 영광을 가져간다."',
         choices: [
-          { label: '쟁취한다', desc: '55%: +12% · 45%: -4%', resolve() { if (Math.random() < 0.55) { state.relicEffects.aoeDmgMul *= 1.12; return '🏆 영광! 데미지 +12% 영구!'; } state.relicEffects.aoeDmgMul *= 0.96; return '🏇 후퇴… 데미지 -4%.'; } },
+          { label: '쟁취한다', desc: '55%: +20% · 45%: -4%', resolve() { if (Math.random() < 0.55) { state.relicEffects.aoeDmgMul *= 1.20; return '🏆 영광! 데미지 +20% 영구!'; } state.relicEffects.aoeDmgMul *= 0.96; return '🏇 후퇴… 데미지 -4%.'; } },
           { label: '물러난다', desc: '안전하게', resolve() { return '전차가 멈춘다.'; } },
         ] }),
       () => { const cost = _evUnit() * 2; return { title: '🏇 폭주', text: '"전차를 가속해. 값은 좀 치러야겠지만."',
         choices: [
-          { label: `가속한다 (${cost}G)`, desc: '데미지 +9% 영구', disabled: state.gold < cost, resolve() { state.gold -= cost; state.relicEffects.aoeDmgMul *= 1.09; return '🏇 데미지 +9% 영구!'; } },
+          { label: `가속한다 (${cost}G)`, desc: '데미지 +16% 영구', disabled: state.gold < cost, resolve() { state.gold -= cost; state.relicEffects.aoeDmgMul *= 1.16; return '🏇 데미지 +16% 영구!'; } },
           { label: '사양한다', desc: '아끼자', resolve() { return '전차가 늦춘다.'; } },
         ] }; },
     ]},
     curse: { name: '저주의 그림자', fb: '💀', art: 'devil', color: '#ff6b6b' },
   };
-  function _evUnit() { return Math.round(15 + (state.round || 1) * 3.5); }
+  function _evUnit() { return Math.round(28 + (state.round || 1) * 6); }
   function _evClampGold() { if (state.gold < 0) state.gold = 0; }
   function _evBuff(id) { _shopBuff(id); }
   // 무작위 새 능력 획득 (미보유 우선, 없으면 강화) → 결과 문구
@@ -21667,8 +21698,9 @@
   }
   function _evGiveRelic() {
     const owned = (state.activeRelics || []).map(r => r.id);
-    let pool = RELIC_IDS.filter(rid => { const r = RELICS[rid]; const rr = r && RELIC_RARITY[r.rarity]; return rr && rr.weight > 0 && !r.unlockBy && owned.indexOf(rid) < 0; });
-    if (!pool.length) pool = RELIC_IDS.filter(rid => { const r = RELICS[rid]; const rr = r && RELIC_RARITY[r.rarity]; return rr && rr.weight > 0 && !r.unlockBy; });
+    const _disc = (typeof getDiscoveredRelics === 'function') ? getDiscoveredRelics() : RELIC_IDS.filter(id => !RELICS[id].unlockBy);
+    let pool = _disc.filter(rid => { const rr = RELIC_RARITY[RELICS[rid].rarity]; return rr && rr.weight > 0 && owned.indexOf(rid) < 0; });
+    if (!pool.length) pool = _disc.filter(rid => { const rr = RELIC_RARITY[RELICS[rid].rarity]; return rr && rr.weight > 0; });
     if (!pool.length) return null;
     let total = pool.reduce((s, rid) => s + (RELIC_RARITY[RELICS[rid].rarity].weight || 1), 0);
     let roll = Math.random() * total, pick = pool[0];
@@ -21730,16 +21762,41 @@
     if (typeof renderPanel === 'function') renderPanel();
   }
   let _activeEvent = null, _lastEventOutcome = null;
+  // ⚡ 기습(라운드) 이벤트는 보스 이벤트와 동일하되 영구 버프 "수치만" 낮게 — 적용 후 변화량(델타)을 배율로 축소.
+  //    골드/도박/유물/능력은 건드리지 않음 (relicEffects · metaMods 의 영구 버프 스탯만 스케일).
+  let _eventBuffScale = 1;
+  const AMBUSH_BUFF_SCALE = 0.6;   // 기습 이벤트 영구 버프 효과 배율 (보스 이벤트=1.0)
+  const _AMBUSH_BUFF_FIELDS = [    // [상태객체, 필드, 항등값]
+    ['relicEffects', 'aoeDmgMul', 1],
+    ['relicEffects', 'killGoldBonus', 0],
+    ['metaMods', 'dmgMul', 1],
+    ['metaMods', 'goldMul', 1],
+    ['metaMods', 'bossDmgMul', 1],
+  ];
+  function _scaleBuffDelta(scale, fn) {
+    if (!(scale > 0) || scale === 1) return fn();
+    const before = _AMBUSH_BUFF_FIELDS.map(([o, k, id]) => { const ob = state[o] || {}; return (typeof ob[k] === 'number') ? ob[k] : id; });
+    const out = fn();
+    _AMBUSH_BUFF_FIELDS.forEach(([o, k, id], idx) => {
+      const ob = state[o]; if (!ob) return;
+      const oldv = before[idx];
+      const cur = (typeof ob[k] === 'number') ? ob[k] : id;
+      if (cur !== oldv) ob[k] = oldv + (cur - oldv) * scale;   // 버프·디버프 모두 같은 비율로 축소
+    });
+    return out;
+  }
   // 🎴 카드 드래프트 — 특수보스 처치 → 13 NPC 중 3장(뒷면) → 선택 → 공개 → 그 NPC 이벤트 (저주 12%)
-  function openBossEvent() { openCardDraft(); }
-  function openCardDraft() {
+  function openBossEvent() { openCardDraft('buff'); }        // 특수보스/라운드 → 강화 이벤트
+  function openBossRelicEvent() { openCardDraft('relic'); }  // 일반보스 → 유물 이벤트
+  function _draftResolve(key, mode) { if (mode === 'relic') openRelicEventForNpc(key); else openEventForNpc(key); }
+  function openCardDraft(mode) {
     if (!state.tower || state.gameOver) return;
     paused = true;
     const keys = Object.keys(EVENT_NPCS).filter(k => EVENT_NPCS[k].events && EVENT_NPCS[k].events.length);
     const pick3 = keys.slice().sort(() => Math.random() - 0.5).slice(0, 3);
     const row = document.getElementById('draftRow');
     const hint = document.getElementById('draftHint');
-    if (!row || !pick3.length) { openEventForNpc(pick3[0] || keys[0]); return; }
+    if (!row || !pick3.length) { _draftResolve(pick3[0] || keys[0], mode); return; }
     if (hint) hint.textContent = '한 장을 선택하세요';
     row.innerHTML = '';
     let chosen = false;
@@ -21763,19 +21820,21 @@
         const nm = document.createElement('div'); nm.className = 'dc-name'; nm.textContent = npc.name; card.appendChild(nm);
         if (hint) hint.textContent = npc.name;
         if (SFX && SFX.click) try { SFX.click(); } catch (e) {}
-        setTimeout(() => { closeCardDraft(); openEventForNpc(key); }, 850);
+        setTimeout(() => { closeCardDraft(); _draftResolve(key, mode); }, 850);
       };
       row.appendChild(card);
     });
     const sc = document.getElementById('cardDraftScene'); if (sc) sc.classList.add('show');
   }
   function closeCardDraft() { const sc = document.getElementById('cardDraftScene'); if (sc) sc.classList.remove('show'); }
-  function openEventForNpc(key) {
+  function openEventForNpc(key, scale) {
     if (!state.tower || state.gameOver) return;
     paused = true;
     _lastEventOutcome = null;
+    _eventBuffScale = (typeof scale === 'number' && scale > 0) ? scale : 1;   // 기습이면 <1 (영구 버프 수치만 축소)
+    const _ambush = _eventBuffScale !== 1;
     const npc = EVENT_NPCS[key];
-    const isCurse = Math.random() < 0.12 || !npc || !npc.events || !npc.events.length;
+    const isCurse = Math.random() < 0.06 || !npc || !npc.events || !npc.events.length;
     let npcKey, title, text;
     if (isCurse) {
       const c = CURSE_DEFS[Math.floor(Math.random() * CURSE_DEFS.length)];
@@ -21784,6 +21843,7 @@
       const ev = npc.events[Math.floor(Math.random() * npc.events.length)]();
       _activeEvent = ev; ev._curse = false; npcKey = key; title = ev.title; text = ev.text;
     }
+    if (_ambush) title = '⚡ ' + title;   // 기습 이벤트 표식 (보스 이벤트와 구분)
     _setEventPortrait(npcKey);
     const te = document.getElementById('eventTitle'); if (te) te.textContent = title;
     const ge = document.getElementById('eventGold'); if (ge) ge.textContent = String(Math.floor(state.gold));
@@ -21791,7 +21851,7 @@
     const choicesEl = document.getElementById('eventChoices'); if (choicesEl) choicesEl.innerHTML = '';
     const foot = document.getElementById('eventFoot'); if (foot) foot.style.display = 'none';
     if (isCurse) {
-      let out = ''; try { out = _activeEvent.def.apply() || ''; } catch (e) {}
+      let out = ''; try { out = _scaleBuffDelta(_eventBuffScale, () => _activeEvent.def.apply()) || ''; } catch (e) {}
       _showEventOutcome(out, true);
     } else {
       _activeEvent.choices.forEach((ch, i) => {
@@ -21811,7 +21871,7 @@
     if (!ev || ev._curse || ev._resolved) return;
     const ch = ev.choices[i]; if (!ch) return;
     ev._resolved = true;
-    let out = ''; try { out = ch.resolve() || ''; } catch (e) { out = '…'; }
+    let out = ''; try { out = _scaleBuffDelta(_eventBuffScale, () => ch.resolve()) || ''; } catch (e) { out = '…'; }
     if (SFX && SFX.click) try { SFX.click(); } catch (e) {}
     _showEventOutcome(out, false);
   }
@@ -21821,6 +21881,139 @@
     paused = false;
     const pb = document.getElementById('pauseBtn'); if (pb) pb.textContent = '⏸ 일시정지';
     if (_lastEventOutcome) { try { toast('✨ ' + _lastEventOutcome); } catch (e) {} _lastEventOutcome = null; }
+  }
+  // 🔮 유물 세트 수집 — 뽑은 NPC 전용 세트에서 "가장 낮은 등급 미보유부터" 확정 1개 지급 (중복 X, 세트 모으기)
+  const NPC_RELICS = {
+    wheel:      ['luckCoin', 'cloverGreat', 'fateScale'],
+    devil:      ['darkPact', 'reaperHand', 'vampireMantle', 'deathPromise'],
+    star:       ['starlight', 'cosmicDust', 'oracleOrb', 'starAvatar'],
+    sun:        ['vitalCharm', 'angelMantle', 'eternityLight'],
+    fool:       ['sandHourglass', 'seaEcho', 'timeWarp'],
+    magician:   ['staticSpark', 'flameEssence', 'thunderGod'],
+    hierophant: ['monkRosary', 'crown', 'godsWill'],
+    justice:    ['deadCharm', 'vintageWine', 'handOfByzantium'],
+    empress:    ['goldBag', 'gemHunter', 'looterBag'],
+    world:      ['timeStopClock', 'apocalypseClock', 'dimensionDragon'],
+    lovers:     ['magnetHand', 'cloneEngine', 'echoBell'],
+    strength:   ['forgeHammer', 'trainBanner', 'wolfFang', 'odinSpear'],
+    chariot:    ['aoeBanner', 'tombWreath', 'leechKiss'],
+  };
+  const _RELIC_RANK = { common: 0, rare: 1, epic: 2, legendary: 3, ancient: 9 };
+  function openRelicEventForNpc(key) {
+    if (!state.tower || state.gameOver) return;
+    paused = true;
+    _lastEventOutcome = null;
+    const npcKey = (key && EVENT_NPCS[key]) ? key : 'star';
+    const npc = EVENT_NPCS[npcKey] || { name: '상인' };
+    const ownedSet = new Set((state.activeRelics || []).map(r => r.id));
+    // 1) 이 NPC 세트 ∩ 해금된 것
+    let set = (NPC_RELICS[npcKey] || []).filter(id => RELICS[id] && (typeof isRelicUnlocked !== 'function' || isRelicUnlocked(id)));
+    // 2) 세트가 비면(전부 미해금 등) 전체 해금 풀로 폴백
+    if (!set.length) {
+      const disc = (typeof getDiscoveredRelics === 'function') ? getDiscoveredRelics() : RELIC_IDS.filter(id => !RELICS[id].unlockBy);
+      set = disc.filter(id => RELICS[id] && RELIC_RARITY[RELICS[id].rarity] && RELIC_RARITY[RELICS[id].rarity].weight > 0);
+    }
+    // 3) 미보유를 등급 오름차순(나쁜 것부터) 정렬 → 확정 1개
+    const unowned = set.filter(id => !ownedSet.has(id))
+      .sort((a, b) => (_RELIC_RANK[RELICS[a].rarity] || 0) - (_RELIC_RANK[RELICS[b].rarity] || 0));
+    let grantId = null, isStack = false;
+    if (unowned.length) {
+      grantId = unowned[0];                      // 세트에서 가장 낮은 등급 미보유부터
+    } else if (set.length) {                     // 세트 완성 → 가장 높은 등급 1개 강화(스택)
+      grantId = set.slice().sort((a, b) => (_RELIC_RANK[RELICS[b].rarity] || 0) - (_RELIC_RANK[RELICS[a].rarity] || 0))[0];
+      isStack = true;
+    }
+    if (grantId) { try { acquireRelic(grantId); } catch (e) {} }
+
+    // ===== 화면 피드백 =====
+    _setEventPortrait(npcKey);
+    const te = document.getElementById('eventTitle'); if (te) te.textContent = isStack ? '🔮 유물 강화' : '🔮 유물 획득';
+    const ge = document.getElementById('eventGold'); if (ge) ge.textContent = String(Math.floor(state.gold));
+    const tx = document.getElementById('eventText');
+    const choicesEl = document.getElementById('eventChoices');
+    if (grantId) {
+      const r = RELICS[grantId]; const rr = RELIC_RARITY[r.rarity] || {};
+      if (tx) tx.textContent = `${npc.name}: ${isStack ? '같은 힘이 겹쳐 더 단단해진다.' : '그대의 손에 어울리는 물건이군.'}`;
+      if (choicesEl) choicesEl.innerHTML =
+        `<div class="relic-reveal" style="--rc:${rr.color || '#cdd6e3'};--rg:${rr.glow || 'rgba(255,255,255,.25)'}">`
+        + `<div class="rr-icon">${getRelicImageHtml(grantId, 60)}</div>`
+        + `<div class="rr-info"><div class="rr-rar">${rr.label || ''}${isStack ? ' · 강화 +1' : ''}</div>`
+        + `<div class="rr-name">${r.name}</div>`
+        + `<div class="rr-desc">${(r.desc || '').replace(/\.$/, '')}</div></div></div>`;
+      _lastEventOutcome = `${r.name} ${isStack ? '강화' : '획득'}!`;
+    } else {
+      const g = _evUnit() * 6; state.gold += g;
+      if (tx) tx.textContent = `${npc.name}: 마침 줄 게 없군. 이거라도 받게.`;
+      if (choicesEl) choicesEl.innerHTML =
+        `<div class="relic-reveal" style="--rc:#ffd479;--rg:rgba(255,212,121,.3)">`
+        + `<div class="rr-icon">💰</div><div class="rr-info"><div class="rr-rar">보상</div>`
+        + `<div class="rr-name">골드 +${g}</div><div class="rr-desc">받을 유물이 없어 골드를 지급했다</div></div></div>`;
+      _lastEventOutcome = `골드 +${g}`;
+    }
+    _activeEvent = { _curse: false, choices: [], _resolved: true };
+    const foot = document.getElementById('eventFoot'); if (foot) foot.style.display = '';
+    const _cb = document.getElementById('eventCloseBtn'); if (_cb) _cb.textContent = '계속 ▶';
+    const sc = document.getElementById('eventScene'); if (sc) sc.classList.add('show');
+  }
+
+  // ⚡ 기습 이벤트 — 카드 선택 없이 NPC가 난입(컷인 연출) 후 바로 이벤트 진행 (라운드 확률 발생용)
+  const AMBUSH_LINES = {
+    wheel: '잠깐, 그냥 지나가시려고? 운을 한 번 시험해보지.',
+    devil: '흥미로운 영혼이군. 거래를 하나 제안하지.',
+    star: '별이 그대를 가리켰다. 잠시 시간을 내어주겠나.',
+    sun: '여어, 좋은 기운이 느껴져서 들렀어.',
+    fool: '오, 여행자. 재밌는 걸 하나 보여줄게.',
+    magician: '실험에 딱 맞는 손님이 왔군. 이리 와보게.',
+    hierophant: '그대에게 전할 가르침이 있네.',
+    justice: '잠깐. 그대의 무게를 저울에 달아보지.',
+    empress: '고생이 많구나. 내 것을 좀 나눠주마.',
+    world: '여정의 한 막이 끝났군. 선물을 주지.',
+    lovers: '둘이 하나일 때 강해지는 법. 보여줄게.',
+    strength: '강해지고 싶나? 그럼 따라와.',
+    chariot: '멈추지 마라. 더 빠르게 갈 길이 있다.',
+  };
+  let _ambushTimer = null;
+  function _hexA(hex, a) {
+    if (typeof hex !== 'string') return 'rgba(122,215,255,' + a + ')';
+    let h = hex.trim().replace('#', '');
+    if (h.length === 3) h = h.split('').map(c => c + c).join('');
+    const n = parseInt(h, 16);
+    if (h.length < 6 || isNaN(n)) return hex;   // 비-hex 색이면 원본 그대로 사용
+    return 'rgba(' + ((n >> 16) & 255) + ',' + ((n >> 8) & 255) + ',' + (n & 255) + ',' + a + ')';
+  }
+  function openAmbushEvent() {
+    if (!state.tower || state.gameOver) return;
+    const keys = Object.keys(EVENT_NPCS).filter(k => EVENT_NPCS[k].events && EVENT_NPCS[k].events.length);
+    if (!keys.length) return;
+    const key = keys[Math.floor(Math.random() * keys.length)];
+    const npc = EVENT_NPCS[key];
+    const sc = document.getElementById('ambushScene');
+    if (!sc || !npc) { openEventForNpc(key, AMBUSH_BUFF_SCALE); return; }   // 컷인 불가 시 바로 이벤트(수치 ↓)
+    paused = true;
+    const col = npc.color || '#7ad7ff';
+    sc.style.setProperty('--ac', col);
+    sc.style.setProperty('--ag', _hexA(col, 0.45));
+    const line = AMBUSH_LINES[key] || '잠깐, 거기 너.';
+    const art = npc.art || key;
+    sc.classList.remove('out');
+    sc.innerHTML =
+      '<div class="ambush-flash"></div>'
+      + '<div class="ambush-bg"></div>'
+      + '<div class="ambush-glow"></div>'
+      + '<img class="ambush-illus" alt="' + npc.name + '" src="./icons/npc/' + art + '.png" '
+      + 'onerror="this.onerror=null;this.src=\'./icons/card/' + art + '.png\';">'
+      + '<div class="ambush-name"><span class="an-name">' + npc.name + '</span></div>'
+      + '<div class="ambush-line">' + npc.name + ': "' + line + '"</div>';
+    sc.classList.add('show');
+    if (_ambushTimer) clearTimeout(_ambushTimer);
+    // 컷인 유지 → 퇴장 페이드 → 이벤트 패널 전환
+    _ambushTimer = setTimeout(() => {
+      sc.classList.add('out');
+      _ambushTimer = setTimeout(() => {
+        sc.classList.remove('show'); sc.classList.remove('out'); sc.innerHTML = '';
+        openEventForNpc(key, AMBUSH_BUFF_SCALE);   // 기습: 동일 이벤트, 영구 버프 수치만 ↓
+      }, 280);
+    }, 1300);
   }
 
   // ===== 배속 (단일 순환 버튼) =====
@@ -23428,7 +23621,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 350;
+  const APP_VERSION = 357;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
