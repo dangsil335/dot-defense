@@ -12012,7 +12012,7 @@
     planRound();
     // 🧪🧪 [테스트용 — 확인 후 제거] 매 라운드 강제 등장: 짝수=상점, 홀수=이벤트(카드 드래프트)
     //    되돌리기: 아래 _TEST_EVENTS 를 false 로 바꾸면 원래(저확률 상점 + 특수보스 이벤트)로 복귀.
-    const _TEST_EVENTS = true;
+    const _TEST_EVENTS = false;
     if (_TEST_EVENTS && state.mode !== 'defense' && !state.gameOver && !state.levelUpChoices && state.round > 1) {
       if (state.round % 2 === 0) { if (typeof openShop === 'function') openShop(); }
       else if (typeof openBossEvent === 'function') { openBossEvent(); }
@@ -23428,7 +23428,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 349;
+  const APP_VERSION = 350;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
