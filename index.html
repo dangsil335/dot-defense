@@ -3251,6 +3251,21 @@
   @keyframes ambushLine { from { opacity: 0; transform: translateY(10px) } to { opacity: 1; transform: translateY(0) } }
   .ambush-flash { position: absolute; inset: 0; background: #fff; opacity: 0; pointer-events: none; animation: ambushFlash .4s ease forwards; }
   @keyframes ambushFlash { 0% { opacity: 0 } 7% { opacity: .55 } 100% { opacity: 0 } }
+  /* 🏮 상점 등장 — 등불 점등 연출 (기습과 정반대: 암전 → 따뜻한 불빛) */
+  .shop-cutin { display: none; position: fixed; inset: 0; z-index: 9995; overflow: hidden; align-items: center; justify-content: center; background: rgba(4,4,8,0); transition: background .3s ease; }
+  .shop-cutin.show { display: flex; background: rgba(4,4,8,0.92); }
+  .shop-cutin.out { background: rgba(4,4,8,0); }
+  .sc-glow { position: absolute; left: 50%; top: 52%; width: 125vmin; height: 125vmin; transform: translate(-50%,-50%); border-radius: 50%; background: radial-gradient(circle, rgba(255,186,96,0.55) 0%, rgba(255,150,60,0.22) 32%, transparent 62%); opacity: 0; animation: lanternFlicker .95s ease forwards; }
+  @keyframes lanternFlicker { 0% { opacity: 0 } 12% { opacity: .35 } 20% { opacity: .08 } 32% { opacity: .62 } 44% { opacity: .22 } 60% { opacity: .85 } 100% { opacity: .68 } }
+  .sc-merchant { position: relative; max-height: 72vh; max-width: 60vw; object-fit: contain; filter: brightness(.05) drop-shadow(0 8px 30px rgba(0,0,0,.7)); opacity: .12; transform: translateY(8px); image-rendering: auto; animation: merchantLit .8s ease .18s forwards; }
+  .shop-cutin.out .sc-merchant { animation: merchantDim .28s ease forwards; }
+  @keyframes merchantLit { 0% { filter: brightness(.05); opacity: .12; transform: translateY(8px) } 32% { filter: brightness(.4); opacity: .5 } 100% { filter: brightness(1); opacity: 1; transform: translateY(0) } }
+  @keyframes merchantDim { to { opacity: 0; transform: scale(.97) } }
+  .sc-lantern { position: absolute; left: 50%; bottom: 13%; transform: translateX(-50%); font-size: 38px; opacity: 0; filter: drop-shadow(0 0 14px rgba(255,180,80,.95)); animation: lanternPop .5s cubic-bezier(.2,1.4,.5,1) .08s forwards; }
+  @keyframes lanternPop { 0% { opacity: 0; transform: translateX(-50%) scale(.3) } 60% { opacity: 1 } 100% { opacity: 1; transform: translateX(-50%) scale(1) } }
+  .sc-name { position: absolute; left: 0; right: 0; bottom: 27%; text-align: center; font-size: 22px; font-weight: 900; color: #ffcf8a; text-shadow: 0 0 18px rgba(255,160,60,.6), 0 2px 4px #000; opacity: 0; animation: scFade .42s ease .62s forwards; }
+  .sc-line { position: absolute; left: 7%; right: 7%; bottom: 20%; text-align: center; font-size: 16px; font-weight: 600; color: #fff; text-shadow: 0 2px 10px #000; opacity: 0; animation: scFade .42s ease .76s forwards; }
+  @keyframes scFade { from { opacity: 0; transform: translateY(8px) } to { opacity: 1; transform: translateY(0) } }
   /* 🎴 카드 드래프트 */
   .draft-inner { margin: auto; display: flex; flex-direction: column; align-items: center; gap: 18px; padding: 20px; }
   .draft-title { font-size: 21px; font-weight: bold; color: #ffd479; text-shadow: 0 0 16px rgba(255,212,121,0.4); }
@@ -3263,7 +3278,17 @@
   .draft-card.revealed { cursor: default; border-color: #ffd479; box-shadow: 0 0 28px rgba(255,212,121,0.55); }
   .draft-card.dim { opacity: 0.3; transform: scale(0.9); }
   .draft-card .dc-name { position: absolute; left: 0; right: 0; bottom: 0; padding: 6px 4px; background: linear-gradient(0deg, rgba(8,10,16,0.95), transparent); color: #fff; font-size: 11px; font-weight: bold; text-align: center; }
-  @media (max-width: 520px) { .npc-scene-inner { max-height: 88vh; } .npc-portrait { flex: 0 0 30%; } .npc-panel { padding: 12px; } .shop-item { padding: 8px; } .event-text { max-height: 34%; } .draft-row { gap: 8px; width: 96vw; } .draft-title { font-size: 18px; } }
+  /* 📱 모바일(세로): NPC 상단 / 내용 하단으로 세로 정렬 (shop·event 공통) */
+  @media (max-width: 600px) {
+    .npc-scene { padding: 10px; }
+    .npc-scene-inner { flex-direction: column; max-height: 90vh; }
+    .npc-portrait { flex: 0 0 38vh; width: 100%; min-height: 0; }
+    .npc-panel { flex: 1 1 auto; min-height: 0; padding: 12px; }
+    .shop-item { padding: 8px; }
+    .event-text { max-height: 22vh; }
+    .draft-row { gap: 8px; width: 96vw; }
+    .draft-title { font-size: 18px; }
+  }
 </style>
 <div id="shopScene" class="npc-scene">
   <div class="npc-scene-inner">
@@ -3310,6 +3335,9 @@
 
 <!-- ⚡ 기습 이벤트 컷인 — 라운드 중 NPC 난입 연출 (A: 사이드 슬라이드). 내용은 JS에서 주입 -->
 <div id="ambushScene" class="ambush-scene"></div>
+
+<!-- 🏮 상점 등장 컷인 — 등불 점등 연출. 내용은 JS에서 주입 -->
+<div id="shopCutin" class="shop-cutin"></div>
 
 <div id="rewardSummary" class="reward-overlay">
   <div class="reward-card">
@@ -12053,7 +12081,7 @@
         (state.round - (state._lastShopRound || -99)) >= 4 && Math.random() < 0.04) {
       state._lastShopRound = state.round;
       state._shopCount = (state._shopCount || 0) + 1;
-      if (typeof openShop === 'function') openShop();
+      if (typeof openShopCutin === 'function') openShopCutin(); else if (typeof openShop === 'function') openShop();
     }
     // ⚡ 라운드 랜덤 이벤트 (A) — 상점이 안 뜬 라운드에 12% 확률로 기습 이벤트(NPC 난입) 등장 (보스 이벤트와 별개, 쿨다운 2라운드)
     else if (!_TEST_EVENTS && state.mode !== 'defense' && !state.gameOver && !state.levelUpChoices && state.round >= 3 &&
@@ -21469,6 +21497,30 @@
     paused = false;
     const pb = document.getElementById('pauseBtn'); if (pb) pb.textContent = '⏸ 일시정지';
   }
+  // 🏮 상점 등장 연출 — 암전 → 등불이 켜지며 상인이 어둠 속에서 드러난 뒤 상점 패널 오픈
+  let _shopCutinTimer = null;
+  function openShopCutin() {
+    if (state.mode === 'defense' || !state.tower || state.gameOver) return;
+    const sc = document.getElementById('shopCutin');
+    if (!sc) { openShop(); return; }   // 연출 불가 시 바로 상점
+    paused = true;
+    sc.classList.remove('out');
+    sc.innerHTML =
+      '<div class="sc-glow"></div>'
+      + '<img class="sc-merchant" alt="" src="./icons/npc/merchant.png" onerror="this.style.display=\'none\'">'
+      + '<div class="sc-lantern">🏮</div>'
+      + '<div class="sc-name">' + SHOP_NPC_NAME + '</div>'
+      + '<div class="sc-line">"쉿— 좋은 물건 있는데. 구경만 해도 괜찮아."</div>';
+    sc.classList.add('show');
+    if (_shopCutinTimer) clearTimeout(_shopCutinTimer);
+    _shopCutinTimer = setTimeout(() => {
+      sc.classList.add('out');
+      _shopCutinTimer = setTimeout(() => {
+        sc.classList.remove('show'); sc.classList.remove('out'); sc.innerHTML = '';
+        openShop();
+      }, 300);
+    }, 1400);
+  }
 
   // ===== 🎭 특수보스 처치 이벤트 — NPC 서사 + 선택 (저주는 낮은 확률로 강제) =====
   // 🃏 13 타로 NPC — 각 NPC = 카드 1장, NPC당 이벤트 3개. (curse는 카드 아님, 강제 디버프 전용)
@@ -23640,7 +23692,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 359;
+  const APP_VERSION = 361;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
