@@ -3182,6 +3182,105 @@
 </div>
 
 <!-- 🎁 게임 결과 — 획득 보상 패널 (body 레벨 — 게임 컨테이너 transform/display 영향 차단) -->
+<!-- 🛒 특별 상점 — 라운드마다 낮은 확률로 등장 (좌 NPC 일러스트 + 우 상품 그리드) -->
+<style>
+  .npc-scene { display: none; position: fixed; inset: 0; z-index: 9994; background: rgba(6,8,14,0.45); backdrop-filter: blur(2px); align-items: stretch; justify-content: center; padding: 14px; box-sizing: border-box; }
+  .npc-scene.show { display: flex; }
+  .npc-scene-inner { display: flex; width: 100%; max-width: 740px; max-height: 80vh; margin: auto; background: linear-gradient(180deg,#1a2030,#0e1119); border: 1px solid #3a4256; border-radius: 16px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.6), 0 0 40px rgba(122,215,255,0.08); animation: rewardIn .3s cubic-bezier(.2,.9,.3,1.1); }
+  .npc-portrait { position: relative; flex: 0 0 34%; min-width: 0; background: radial-gradient(ellipse at 50% 28%, #243049, #0c0e16); display: flex; align-items: flex-end; justify-content: center; overflow: hidden; }
+  .npc-portrait img { width: 100%; height: 100%; object-fit: contain; object-position: center bottom; image-rendering: auto; }
+  .npc-portrait .npc-fallback { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 60px; opacity: 0.85; }
+  .npc-portrait .npc-name { position: absolute; left: 0; right: 0; bottom: 0; padding: 8px 10px; background: linear-gradient(0deg, rgba(8,10,16,0.94), transparent); color: #fff; font-weight: bold; font-size: 14px; text-align: center; text-shadow: 0 1px 3px #000; }
+  .npc-panel { flex: 1; min-width: 0; display: flex; flex-direction: column; padding: 16px; box-sizing: border-box; }
+  .npc-panel-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; gap: 8px; }
+  .npc-panel-title { font-size: 18px; font-weight: bold; color: #ffd479; text-shadow: 0 0 14px rgba(255,212,121,0.35); }
+  .npc-panel-gold { font-size: 13px; color: #ffd479; background:#0e1320; border:1px solid #2a3140; border-radius:999px; padding:5px 12px; white-space:nowrap; }
+  .shop-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; overflow-y: auto; flex: 1; min-height: 0; padding: 2px; }
+  .shop-item { display: flex; flex-direction: column; gap: 3px; padding: 10px; background: linear-gradient(180deg,#1c2333,#141a28); border:1px solid #2a3140; border-radius: 11px; cursor: pointer; transition: border-color .12s, transform .08s, box-shadow .12s; }
+  .shop-item:hover:not(.soldout):not(.cant) { border-color:#ffd479; transform: translateY(-1px); box-shadow:0 4px 14px rgba(0,0,0,0.4); }
+  .shop-item .si-top { display:flex; align-items:center; gap:8px; }
+  .shop-item .si-icon { width:30px; height:30px; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:18px; background:#0e1320; border-radius:8px; }
+  .shop-item .si-icon img { width:100%; height:100%; object-fit:contain; border-radius:6px; }
+  .shop-item .si-name { font-size:13px; font-weight:bold; color:#e8eaf0; }
+  .shop-item .si-desc { font-size:11px; color:#9aa3b3; line-height:1.35; min-height:28px; }
+  .shop-item .si-price { font-size:13px; font-weight:bold; color:#ffd479; }
+  .shop-item .si-rar { font-size:9px; font-weight:800; letter-spacing:1px; margin-top:1px; }
+  .shop-item.rar-legendary:not(.soldout) { animation: shopLeg 1.5s ease-in-out infinite; }
+  .shop-item.rar-epic:not(.soldout) { animation: shopLeg 2.3s ease-in-out infinite; }
+  @keyframes shopLeg { 0%,100% { filter: brightness(1); } 50% { filter: brightness(1.22); } }
+  .shop-item.cant .si-price { color:#ff6b6b; }
+  .shop-item.soldout { opacity:0.45; cursor:default; }
+  .shop-item.soldout .si-price { color:#6b7283; }
+  .npc-panel-foot { margin-top: 10px; }
+  .npc-btn { width: 100%; padding: 12px; font-family: inherit; font-size: 15px; font-weight: bold; cursor: pointer; border-radius: 11px; background: linear-gradient(180deg,#44598a,#2a3550); color:#fff; border:1px solid #6a82b8; box-shadow: 0 0 14px rgba(122,215,255,0.18); transition: transform .08s, box-shadow .12s; touch-action: manipulation; }
+  .npc-btn:hover { box-shadow: 0 0 20px rgba(122,215,255,0.3); }
+  .npc-btn:active { transform: scale(.985); }
+  /* 🎭 특수보스 처치 이벤트 패널 */
+  .event-text { flex: 0 0 auto; font-size: 13.5px; line-height: 1.62; color: #cdd5e3; background: #0e1320; border: 1px solid #232a3a; border-radius: 10px; padding: 12px 13px; margin-bottom: 10px; max-height: 40%; overflow-y: auto; white-space: pre-wrap; }
+  .event-choices { display: flex; flex-direction: column; gap: 8px; overflow-y: auto; flex: 1; min-height: 0; padding: 2px; }
+  .event-choice { text-align: left; padding: 11px 13px; background: linear-gradient(180deg,#1c2333,#141a28); border: 1px solid #2a3140; border-radius: 11px; cursor: pointer; transition: border-color .12s, transform .08s, box-shadow .12s; color: #e8eaf0; font-family: inherit; }
+  .event-choice:hover:not(:disabled) { border-color: #7ad7ff; transform: translateY(-1px); box-shadow: 0 4px 14px rgba(0,0,0,0.4); }
+  .event-choice:disabled { opacity: 0.42; cursor: default; }
+  .event-choice .ec-label { font-size: 14px; font-weight: bold; }
+  .event-choice .ec-desc { font-size: 11.5px; color: #9aa3b3; line-height: 1.4; margin-top: 3px; }
+  .event-outcome { font-size: 13.5px; line-height: 1.6; color: #ffe070; background: #161a10; border: 1px solid #3a3a20; border-radius: 10px; padding: 13px 14px; white-space: pre-wrap; animation: rewardIn .25s ease; }
+  /* 🎴 카드 드래프트 */
+  .draft-inner { margin: auto; display: flex; flex-direction: column; align-items: center; gap: 18px; padding: 20px; }
+  .draft-title { font-size: 21px; font-weight: bold; color: #ffd479; text-shadow: 0 0 16px rgba(255,212,121,0.4); }
+  .draft-hint { font-size: 13px; color: #9aa3b3; min-height: 18px; }
+  .draft-row { display: flex; gap: 14px; }
+  .draft-card { width: 120px; height: 180px; border-radius: 12px; cursor: pointer; position: relative; overflow: hidden; border: 2px solid #3a4256; background: linear-gradient(160deg,#1a2440,#0c1020); transition: transform .15s, box-shadow .15s, opacity .2s; }
+  .draft-card:hover:not(.revealed):not(.dim) { transform: translateY(-8px) scale(1.04); box-shadow: 0 10px 26px rgba(122,215,255,0.35); border-color: #7ad7ff; }
+  .draft-card img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .draft-card .dc-face { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 46px; }
+  .draft-card.revealed { cursor: default; border-color: #ffd479; box-shadow: 0 0 28px rgba(255,212,121,0.55); }
+  .draft-card.dim { opacity: 0.3; transform: scale(0.9); }
+  .draft-card .dc-name { position: absolute; left: 0; right: 0; bottom: 0; padding: 6px 4px; background: linear-gradient(0deg, rgba(8,10,16,0.95), transparent); color: #fff; font-size: 11px; font-weight: bold; text-align: center; }
+  @media (max-width: 520px) { .npc-scene-inner { max-height: 88vh; } .npc-portrait { flex: 0 0 30%; } .npc-panel { padding: 12px; } .shop-item { padding: 8px; } .event-text { max-height: 34%; } .draft-card { width: 96px; height: 144px; } .draft-row { gap: 9px; } .draft-title { font-size: 18px; } }
+</style>
+<div id="shopScene" class="npc-scene">
+  <div class="npc-scene-inner">
+    <div class="npc-portrait" id="shopNpcPortrait"></div>
+    <div class="npc-panel">
+      <div class="npc-panel-head">
+        <span class="npc-panel-title">🛒 떠돌이 상점</span>
+        <span class="npc-panel-gold">💰 <span id="shopGold">0</span> G</span>
+      </div>
+      <div class="shop-grid" id="shopGrid"></div>
+      <div class="npc-panel-foot">
+        <button class="npc-btn" id="shopCloseBtn">다음 단계로 ▶</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 🎭 특수보스 처치 이벤트 — 좌 NPC + 우 서사/선택 (.npc-scene 재사용) -->
+<div id="eventScene" class="npc-scene">
+  <div class="npc-scene-inner">
+    <div class="npc-portrait" id="eventNpcPortrait"></div>
+    <div class="npc-panel">
+      <div class="npc-panel-head">
+        <span class="npc-panel-title" id="eventTitle">✦ 사건</span>
+        <span class="npc-panel-gold">💰 <span id="eventGold">0</span> G</span>
+      </div>
+      <div class="event-text" id="eventText"></div>
+      <div class="event-choices" id="eventChoices"></div>
+      <div class="npc-panel-foot" id="eventFoot" style="display:none;">
+        <button class="npc-btn" id="eventCloseBtn">계속 ▶</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 🎴 카드 드래프트 — 특수보스 처치 시 3장 뒷면 → 선택 → 공개 → 이벤트 -->
+<div id="cardDraftScene" class="npc-scene">
+  <div class="draft-inner">
+    <div class="draft-title">🔮 운명의 카드</div>
+    <div class="draft-row" id="draftRow"></div>
+    <div class="draft-hint" id="draftHint">한 장을 선택하세요</div>
+  </div>
+</div>
+
 <div id="rewardSummary" class="reward-overlay">
   <div class="reward-card">
     <div class="reward-head">
@@ -3207,6 +3306,8 @@
       <div class="row secondary"><span class="label">점수</span><span id="s-score">0</span></div>
       <div class="row secondary"><span class="label">적</span><span id="s-enemies">0 / 80</span></div>
       <div class="bar"><i id="s-enemybar" style="width:0%"></i></div>
+      <!-- ✨ 누적 강화(버프) — 이벤트/상점/유물 효과 상시 표시 -->
+      <div class="row secondary" id="s-buffs" style="display:none;"><span class="label">강화</span><span id="s-buffs-val" style="font-size:11px; text-align:right; line-height:1.3; white-space:normal;"></span></div>
       <!-- 🏰 디펜스 모드 (TD) 전용: 본진 HP -->
       <div id="s-defense-block" style="display:none;">
         <div class="row primary" style="border-left-color:#ff5b6e;">
@@ -11909,6 +12010,22 @@
       return;
     }
     planRound();
+    // 🧪🧪 [테스트용 — 확인 후 제거] 매 라운드 강제 등장: 짝수=상점, 홀수=이벤트(카드 드래프트)
+    //    되돌리기: 아래 _TEST_EVENTS 를 false 로 바꾸면 원래(저확률 상점 + 특수보스 이벤트)로 복귀.
+    const _TEST_EVENTS = true;
+    if (_TEST_EVENTS && state.mode !== 'defense' && !state.gameOver && !state.levelUpChoices && state.round > 1) {
+      if (state.round % 2 === 0) { if (typeof openShop === 'function') openShop(); }
+      else if (typeof openBossEvent === 'function') { openBossEvent(); }
+    }
+    // 🛒 특별 상점 — "운 좋은 만남". 낮은 확률 + 한 판 최대 4회 + 쿨다운 → 보통 2~4번, 많아야 4번만 등장.
+    //    ⚙ 튜닝: 0.04(라운드당 확률) · 4(한 판 최대 횟수) · 4(최소 라운드 간격).
+    if (!_TEST_EVENTS && state.mode !== 'defense' && !state.gameOver && !state.levelUpChoices && state.round >= 3 &&
+        (state._shopCount || 0) < 4 &&
+        (state.round - (state._lastShopRound || -99)) >= 4 && Math.random() < 0.04) {
+      state._lastShopRound = state.round;
+      state._shopCount = (state._shopCount || 0) + 1;
+      if (typeof openShop === 'function') openShop();
+    }
     // 💎 유물 효과 — 라운드 시작 시 발동
     const re = state.relicEffects;
     if (re) {
@@ -15538,12 +15655,16 @@
             toast(`⏳ 다음 라운드 자동 클리어! (남은 충전: ${state.relicEffects.skipRoundCharges})`);
           }
         }
-        // 💎 유물 제안 (확률적)
+        // 💎 유물 제안 (확률적) — 단, 특수보스는 유물 대신 랜덤 이벤트 (저주는 낮은 확률로 강제)
         if (!state.relicOffering) {
-          const offering = rollRelicOffering();
-          if (offering && offering.length > 0) {
-            state.relicOffering = offering;
-            paused = true;  // 선택 대기
+          if (e.special && !e.isMiniBoss && typeof openBossEvent === 'function') {
+            openBossEvent();   // 🎭 특수보스 처치 → 이벤트 즉시 등장
+          } else {
+            const offering = rollRelicOffering();
+            if (offering && offering.length > 0) {
+              state.relicOffering = offering;
+              paused = true;  // 선택 대기
+            }
           }
         }
       } else {
@@ -20888,6 +21009,19 @@
     _setText($('s-score'), state.score.toLocaleString());
     const _maxA = getMaxAlive();
     _setText($('s-enemies'), `${state.enemies.length} / ${_maxA}`);
+    // ✨ 누적 강화 표시 — 이벤트/상점/유물/승천 효과를 상시 확인
+    const _re = state.relicEffects || {}, _mm = state.metaMods || {};
+    const _dmgP = Math.round(((_re.aoeDmgMul || 1) * (_mm.dmgMul || 1) - 1) * 100);
+    const _bossP = Math.round(((_mm.bossDmgMul || 1) - 1) * 100);
+    const _goldP = Math.round(((_mm.goldMul || 1) - 1) * 100);
+    const _kg = _re.killGoldBonus || 0;
+    const _bp = [];
+    if (_dmgP) _bp.push(`데미지 ${_dmgP > 0 ? '+' : ''}${_dmgP}%`);
+    if (_bossP) _bp.push(`보스 ${_bossP > 0 ? '+' : ''}${_bossP}%`);
+    if (_goldP) _bp.push(`골드 ${_goldP > 0 ? '+' : ''}${_goldP}%`);
+    if (_kg) _bp.push(`처치골드 +${_kg}`);
+    const _bel = $('s-buffs');
+    if (_bel) { if (_bp.length) { _bel.style.display = ''; _setText($('s-buffs-val'), _bp.join(' · ')); } else { _bel.style.display = 'none'; } }
     const pl = $('s-plevel');
     if (pl) _setText(pl, `Lv${state.playerLevel} (${state.kills}/${state.killsToNextLevel} kills)`);
     const tk = $('s-totalkills');
@@ -21156,6 +21290,539 @@
     toastTimer = setTimeout(() => elToast.classList.remove('show'), 1200);
   }
 
+  // ===== 🛒 특별 상점 — 라운드마다 낮은 확률로 등장 (index 능력 모델에 맞춤) =====
+  const SHOP_NPC_NAME = '떠돌이 상인 · 핀';
+  // 능력 획득 — 미보유면 새 능력(슬롯 여유 시), 보유면 +1 강화, 슬롯 꽉 차면 보유 능력 강화로 대체
+  function _shopGainAbility(id) {
+    if (!ABILITY_DEFS[id]) return;
+    const existing = state.tower.abilities.find(a => a.id === id);
+    if (existing) {
+      if (!isAtMax(existing)) { existing.level = Math.min(existing.level + 1, maxLvFor(id)); if (existing.level >= maxLvFor(id)) checkAncientAwakening(id); }
+      return;
+    }
+    const def = ABILITY_DEFS[id];
+    const slotFree = def.isPassive ? (passiveCount() < maxPassiveSlots()) : (activeCount() < maxActiveSlots());
+    if (!slotFree) { _shopUpgradeRandom(1); return; }
+    const ab = { id, level: 1, acquiredRound: state.round || 1, _isNew: true };
+    def.init(ab);
+    state.tower.abilities.push(ab);
+    unlockAbility(id);
+  }
+  // 무작위 비-max 능력 +n 강화 → 능력 이름 반환
+  function _shopUpgradeRandom(n) {
+    n = n || 1;
+    const pool = state.tower.abilities.filter(a => !isAtMax(a));
+    if (!pool.length) return null;
+    const a = pool[Math.floor(Math.random() * pool.length)];
+    a.level = Math.min(a.level + n, maxLvFor(a.id));
+    if (a.level >= maxLvFor(a.id)) checkAncientAwakening(a.id);
+    return ABILITY_DEFS[a.id].name;
+  }
+  // 영구 버프 (어센던트) 적용
+  function _shopBuff(aid) {
+    const t = ASCENDANT_BY_ID[aid]; if (!t) return;
+    try { t.apply(state); } catch (e) {}
+    if (!state.ascendantStacks) state.ascendantStacks = {};
+    state.ascendantStacks[aid] = (state.ascendantStacks[aid] || 0) + 1;
+  }
+  function buildShopStock() {
+    const round = state.round || 1;
+    const roundMul = 1 + round * 0.12;
+    const ownedIds = [...new Set(state.tower.abilities.map(a => a.id))];
+    const allowed = (typeof getUnlockedAbilityIds === 'function') ? getUnlockedAbilityIds() : new Set(RANDOM_POOL_IDS);
+    const unowned = RANDOM_POOL_IDS.filter(id => allowed.has(id) && !ownedIds.includes(id));
+    const hasUpgradable = state.tower.abilities.some(a => !isAtMax(a));
+    const cands = [];
+    // 🟣 유물 — 등급 가중 무작위 3 (미보유·해금조건 없음·weight>0 → 고대 제외)
+    const ownedR = (state.activeRelics || []).map(r => r.id);
+    const relicPool = RELIC_IDS.filter(rid => { const r = RELICS[rid]; const rr = r && RELIC_RARITY[r.rarity]; return rr && rr.weight > 0 && !r.unlockBy && ownedR.indexOf(rid) < 0; });
+    const usedRelic = new Set();
+    for (let n = 0; n < 3 && relicPool.length; n++) {
+      let total = relicPool.reduce((s, rid) => s + (RELIC_RARITY[RELICS[rid].rarity].weight || 1), 0);
+      let roll = Math.random() * total, rid = relicPool[0];
+      for (const id of relicPool) { roll -= RELIC_RARITY[RELICS[id].rarity].weight || 1; if (roll <= 0) { rid = id; break; } }
+      if (usedRelic.has(rid)) continue; usedRelic.add(rid);
+      const r = RELICS[rid];
+      cands.push({ relicId: rid, name: r.name, desc: (r.desc || '').replace(/\.$/, '').slice(0, 38), rarity: r.rarity, baseCost: 55, weight: RELIC_RARITY[r.rarity].weight, apply: () => acquireRelic(rid) });
+    }
+    // 🎴 새 능력 — 미보유 2 (슬롯 여유 있으면 새로, 없으면 강화로 대체됨)
+    const uShuf = unowned.slice().sort(() => Math.random() - 0.5).slice(0, 2);
+    for (const id of uShuf) {
+      const d = ABILITY_DEFS[id]; if (!d) continue;
+      const rarity = d.isTriple ? 'epic' : (d.isCombo ? 'rare' : 'common');
+      cands.push({ abIcon: id, name: d.name, desc: d.isPassive ? '새 패시브 능력 획득' : '새 능력 획득', rarity, baseCost: 45, weight: 75, apply: () => _shopGainAbility(id) });
+    }
+    // ⬆ 강화 +1 / ✨ 럭키 강화 +3
+    if (hasUpgradable) {
+      cands.push({ icon: '⬆', name: '능력 강화', desc: '무작위 능력 +1 레벨', rarity: 'common', baseCost: 30, weight: 70, apply: () => _shopUpgradeRandom(1) });
+      cands.push({ icon: '✨', name: '럭키 강화', desc: '무작위 능력 +3 레벨', rarity: 'epic', baseCost: 65, weight: 26, apply: () => _shopUpgradeRandom(3) });
+    }
+    // ⚔ 영구 버프 (어센던트)
+    cands.push({ icon: '⚔', name: '신성한 일격', desc: '모든 데미지 영구 +5%', rarity: 'rare', baseCost: 55, weight: 38, apply: () => _shopBuff('asc_damage') });
+    cands.push({ icon: '👹', name: '거대 사냥꾼', desc: '보스 데미지 영구 +8%', rarity: 'epic', baseCost: 60, weight: 24, apply: () => _shopBuff('asc_bossDmg') });
+    cands.push({ icon: '💰', name: '황금의 손길', desc: '획득 골드 영구 +5%', rarity: 'rare', baseCost: 45, weight: 36, apply: () => _shopBuff('asc_gold') });
+    // 가중 무작위 6개 (중복 없이) — 등급 높을수록 비쌈
+    const RAR_COST = { common: 1, rare: 1.5, epic: 2.3, legendary: 3.6, ancient: 5 };
+    const stock = []; let guard = 0;
+    while (stock.length < 8 && cands.length && guard++ < 60) {
+      let total = cands.reduce((s, c) => s + (c.weight || 1), 0);
+      let roll = Math.random() * total, idx = 0;
+      for (let i = 0; i < cands.length; i++) { roll -= (cands[i].weight || 1); if (roll <= 0) { idx = i; break; } }
+      const pick = cands.splice(idx, 1)[0];
+      const cost = Math.ceil(pick.baseCost * roundMul * (RAR_COST[pick.rarity] || 1));
+      stock.push({ icon: pick.icon, abIcon: pick.abIcon, relicId: pick.relicId, name: pick.name, desc: pick.desc, rarity: pick.rarity, cost, bought: false, apply: pick.apply });
+    }
+    return stock;
+  }
+  function buildShopUI() {
+    const ge = document.getElementById('shopGold'); if (ge) ge.textContent = String(Math.floor(state.gold));
+    const grid = document.getElementById('shopGrid'); if (!grid) return;
+    grid.innerHTML = '';
+    (state._shopStock || []).forEach((it, i) => {
+      const rar = RELIC_RARITY[it.rarity] || RELIC_RARITY.common;
+      const can = state.gold >= it.cost && !it.bought;
+      let iconInner;
+      if (it.abIcon) iconInner = iconHtml(it.abIcon, 26);
+      else if (it.relicId) iconInner = getRelicImageHtml(it.relicId, 26);
+      else iconInner = it.icon || '❓';
+      const el = document.createElement('div');
+      el.className = 'shop-item rar-' + it.rarity + (it.bought ? ' soldout' : (state.gold < it.cost ? ' cant' : ''));
+      if (!it.bought) {
+        const glowR = it.rarity === 'legendary' ? 18 : it.rarity === 'epic' ? 13 : it.rarity === 'rare' ? 9 : 5;
+        el.style.borderColor = rar.color;
+        el.style.boxShadow = `0 0 ${glowR}px ${rar.glow}, inset 0 1px 0 rgba(255,255,255,0.05)`;
+        el.style.background = `linear-gradient(180deg, ${rar.color}22, #131825)`;
+      }
+      el.innerHTML = `<div class="si-top"><div class="si-icon">${iconInner}</div>
+          <div style="min-width:0;">
+            <div class="si-name" style="color:${it.bought ? '#7a8090' : rar.color}">${it.name}</div>
+            <div class="si-rar" style="color:${rar.color}">${rar.label}</div>
+          </div></div>
+        <div class="si-desc">${it.desc}</div>
+        <div class="si-price">${it.bought ? '✓ 구매함' : it.cost + ' G'}</div>`;
+      if (can) el.onclick = () => buyShopItem(i);
+      grid.appendChild(el);
+    });
+  }
+  function buyShopItem(i) {
+    const it = (state._shopStock || [])[i];
+    if (!it || it.bought || state.gold < it.cost) return;
+    state.gold -= it.cost;
+    try { it.apply(); } catch (e) {}
+    it.bought = true;
+    if (SFX && SFX.click) SFX.click();
+    for (let k = 0; k < 10; k++) spawnParticles(CX, CY, '#ffd479', 1);
+    toast(`🛒 ${it.name} 구매!`);
+    buildShopUI();
+    renderPanel();
+  }
+  function openShop() {
+    if (state.mode === 'defense' || !state.tower || state.gameOver) return;
+    paused = true;
+    const portrait = document.getElementById('shopNpcPortrait');
+    if (portrait) {
+      portrait.innerHTML = '';
+      const img = document.createElement('img');
+      img.alt = '';
+      img.onerror = () => { const ex = portrait.querySelector('img'); if (ex) ex.remove(); if (!portrait.querySelector('.npc-fallback')) { const fb = document.createElement('div'); fb.className = 'npc-fallback'; fb.textContent = '🛒'; portrait.prepend(fb); } };
+      img.src = './icons/npc/merchant.png';
+      portrait.appendChild(img);
+      const nm = document.createElement('div'); nm.className = 'npc-name'; nm.textContent = SHOP_NPC_NAME; portrait.appendChild(nm);
+    }
+    state._shopStock = buildShopStock();
+    buildShopUI();
+    const sc = document.getElementById('shopScene'); if (sc) sc.classList.add('show');
+  }
+  function closeShop() {
+    const sc = document.getElementById('shopScene'); if (sc) sc.classList.remove('show');
+    paused = false;
+    const pb = document.getElementById('pauseBtn'); if (pb) pb.textContent = '⏸ 일시정지';
+  }
+
+  // ===== 🎭 특수보스 처치 이벤트 — NPC 서사 + 선택 (저주는 낮은 확률로 강제) =====
+  // 🃏 13 타로 NPC — 각 NPC = 카드 1장, NPC당 이벤트 3개. (curse는 카드 아님, 강제 디버프 전용)
+  const EVENT_NPCS = {
+    wheel: { name: '운명의 수레바퀴 · 카이', fb: '🎲', art: 'wheel', color: '#ffd479', events: [
+      () => { const stake = Math.floor(state.gold * 0.4); return {
+        title: '🎲 동전 던지기', text: '"앞면이면 두 배, 뒷면이면 절반. …쫄려?"',
+        choices: [
+          { label: `건다 (${stake}G)`, desc: `50%: +${stake}G · 50%: -${stake}G`, disabled: stake < 5,
+            resolve() { if (Math.random() < 0.5) { state.gold += stake; return `✦ 앞면! +${stake}G!`; } state.gold -= stake; _evClampGold(); return `✧ 뒷면… -${stake}G.`; } },
+          { label: '거절한다', desc: '그냥 지나간다', resolve() { return '카이가 휘파람을 분다.'; } },
+        ] }; },
+      () => ({ title: '🎰 운명의 룰렛', text: '"한 판은 서비스야. 뭐가 걸릴진 나도 몰라."',
+        choices: [
+          { label: '돌린다 (무료)', desc: '무작위 결과', resolve() {
+              const r = Math.random();
+              if (r < 0.35) { const g = _evUnit() * 4; state.gold += g; return `🪙 잭팟! +${g}G!`; }
+              if (r < 0.60) { _evBuff('asc_damage'); return '⚔ 데미지 +5% 영구!'; }
+              if (r < 0.80) { return '🎴 ' + _evGainAbility(1); }
+              if (r < 0.95) { return '··· 꽝!'; }
+              state.relicEffects.aoeDmgMul *= 0.95; return '💀 불운! 데미지 -5%.'; } },
+          { label: '사양한다', desc: '위험은 싫다', resolve() { return '룰렛이 멈춘다.'; } },
+        ] }),
+      () => { const g = state.gold; return {
+        title: '🃏 전부 아니면 전무', text: '"전 재산 걸어. 2.5배로 돌려주든가, 빈손으로 보내주든가."',
+        choices: [
+          { label: `전부 건다 (${g}G)`, desc: '42%: ×2.5 · 58%: 전부 잃음', disabled: g < 10,
+            resolve() { if (Math.random() < 0.42) { const win = Math.floor(g * 2.5); state.gold = win; return `💰 대박! ${win}G!`; } state.gold = 0; return '💸 파산…'; } },
+          { label: '거절한다', desc: '목숨이 중요하다', resolve() { return '"현명하군."'; } },
+        ] }; },
+    ]},
+    devil: { name: '악마 · 마몬', fb: '😈', art: 'devil', color: '#aa88ff', events: [
+      () => ({ title: '😈 피의 계약', text: '"힘이 필요하지. 값은 네 황금의 절반. …싸지 않나?"',
+        choices: [
+          { label: '계약한다', desc: '골드 -50% · 데미지 +20% 영구', disabled: state.gold < 10,
+            resolve() { const lost = Math.floor(state.gold * 0.5); state.gold -= lost; _evClampGold(); state.relicEffects.aoeDmgMul *= 1.20; return `🩸 -${lost}G, 데미지 +20% 영구!`; } },
+          { label: '거절한다', desc: '영혼은 안 판다', resolve() { return '악마가 사라진다.'; } },
+        ] }),
+      () => ({ title: '😈 영혼의 거래', text: '"유물 하나 가져가. 대신 들어올 황금이 조금씩 새어나갈 뿐이야."',
+        choices: [
+          { label: '거래한다', desc: '유물 획득 · 획득 골드 -10% 영구',
+            resolve() { const nm = _evGiveRelic(); state.metaMods.goldMul = (state.metaMods.goldMul || 1) * 0.90; return nm ? `🔮 ${nm}! (골드 -10%)` : '골드 -10%만 적용.'; } },
+          { label: '거절한다', desc: '필요 없다', resolve() { return '악마가 혀를 찬다.'; } },
+        ] }),
+      () => ({ title: '😈 금단의 힘', text: '"거대한 것을 부수는 힘이다. 약간의 위험쯤은, 감수하겠지?"',
+        choices: [
+          { label: '받아들인다', desc: '보스 +18% · 30% 저주',
+            resolve() { state.metaMods.bossDmgMul = (state.metaMods.bossDmgMul || 1) * 1.18; if (Math.random() < 0.30) { state.relicEffects.aoeDmgMul *= 0.93; return '🔥 보스 +18%! …허나 데미지 -7% 저주.'; } return '🔥 보스 데미지 +18% 영구!'; } },
+          { label: '거절한다', desc: '함정 같다', resolve() { return '악마가 돌아간다.'; } },
+        ] }),
+    ]},
+    star: { name: '별 · 셀레네', fb: '🔮', art: 'star', color: '#88ccff', events: [
+      () => ({ title: '⭐ 별자리 점', text: '"별이 세 갈래 길을 비추는군요. 어느 빛을 따르시겠어요?"',
+        choices: [
+          { label: '⚔ 힘의 별', desc: '데미지 +8% 영구', resolve() { state.relicEffects.aoeDmgMul *= 1.08; return '⚔ 데미지 +8% 영구!'; } },
+          { label: '💰 황금의 별', desc: '획득 골드 +8% 영구', resolve() { state.metaMods.goldMul = (state.metaMods.goldMul || 1) * 1.08; return '💰 골드 +8% 영구!'; } },
+          { label: '👹 사냥의 별', desc: '보스 +12% 영구', resolve() { state.metaMods.bossDmgMul = (state.metaMods.bossDmgMul || 1) * 1.12; return '👹 보스 +12% 영구!'; } },
+        ] }),
+      () => ({ title: '⭐ 타로 점', text: '"카드 한 장. 오늘의 운을 읽어 드릴게요."',
+        choices: [
+          { label: '뒤집는다', desc: '무작위 영구 축복',
+            resolve() { const ids = ['asc_damage','asc_gold','asc_bossDmg','asc_might','asc_killGold']; const id = ids[Math.floor(Math.random()*ids.length)]; const d = ASCENDANT_BY_ID[id]; _evBuff(id); return `${d.icon} ${d.name} — ${d.desc} 영구!`; } },
+          { label: '사양한다', desc: '모르는 게 낫다', resolve() { return '셀레네가 카드를 거둔다.'; } },
+        ] }),
+      () => { const cost = _evUnit() * 2; return {
+        title: '⭐ 수정구의 인도', text: `"수정구가 길을 보여줘요. 새 인연이든, 흩어진 힘을 모으는 길이든."`,
+        choices: [
+          { label: `새 능력 (${cost}G)`, desc: '무작위 능력 획득', disabled: state.gold < cost, resolve() { state.gold -= cost; return '🎴 ' + _evGainAbility(1); } },
+          { label: `힘을 모은다 (${cost}G)`, desc: '무작위 능력 +2 강화', disabled: state.gold < cost, resolve() { state.gold -= cost; const nm = _shopUpgradeRandom(2); return nm ? `🔗 ${nm} +2!` : '강화할 능력이 없었다.'; } },
+          { label: '거절한다', desc: '필요 없다', resolve() { return '빛이 사그라든다.'; } },
+        ] }; },
+    ]},
+    sun: { name: '태양 · 솔', fb: '☀️', art: 'sun', color: '#ffcc44', events: [
+      () => ({ title: '☀ 햇살의 축복', text: '"고생했어. 이 정도 햇살은 받아도 돼."',
+        choices: [ { label: '받는다', desc: '골드 획득 (가끔 대박!)', resolve() { const big = Math.random() < 0.2; const g = _evUnit() * (big ? 6 : 3); state.gold += g; return big ? `☀✨ 대박! +${g}G!` : `☀ +${g}G!`; } } ] }),
+      () => ({ title: '☀ 빛의 샘', text: '"소원 하나. 황금이든 축복이든 골라."',
+        choices: [
+          { label: '💰 황금', desc: '골드 획득', resolve() { const g = _evUnit() * 5; state.gold += g; return `+${g}G!`; } },
+          { label: '✨ 축복', desc: '무작위 영구 버프', resolve() { const ids = ['asc_damage','asc_gold','asc_bossDmg']; const id = ids[Math.floor(Math.random()*ids.length)]; const d = ASCENDANT_BY_ID[id]; _evBuff(id); return `${d.icon} ${d.name} 영구!`; } },
+        ] }),
+      () => ({ title: '☀ 온기', text: '"새 힘을 데려왔어. 같이 갈래?"',
+        choices: [
+          { label: '받는다', desc: '무작위 능력 획득', resolve() { return '🎴 ' + _evGainAbility(1); } },
+          { label: '사양한다', desc: '대신 골드', resolve() { const g = _evUnit() * 2; state.gold += g; return `+${g}G.`; } },
+        ] }),
+    ]},
+    fool: { name: '바보 · 방랑자', fb: '🃏', art: 'fool', color: '#9ad0ff', events: [
+      () => ({ title: '🃏 수상한 상자', text: '길에 상자가 있네. …열어볼까?',
+        choices: [
+          { label: '열어본다', desc: '대박? 함정?', resolve() { const r = Math.random();
+              if (r < 0.40) { const g = _evUnit() * 5; state.gold += g; return `🪙 +${g}G!`; }
+              if (r < 0.65) { const nm = _evGiveRelic(); return nm ? `🔮 유물 ${nm}!` : '유물 발견!'; }
+              if (r < 0.85) { return '🎴 ' + _evGainAbility(1); }
+              state.relicEffects.aoeDmgMul *= 0.93; return '💥 미믹! 데미지 -7%.'; } },
+          { label: '두고 간다', desc: '수상하다', resolve() { return '상자를 지나친다.'; } },
+        ] }),
+      () => { const cost = _evUnit() * 3; return {
+        title: '🃏 잠긴 보물상자', text: '자물쇠가 단단한데. 열쇠값은 좀 들겠어.',
+        choices: [
+          { label: `연다 (${cost}G)`, desc: '유물/큰 골드 확정', disabled: state.gold < cost, resolve() { state.gold -= cost; if (Math.random() < 0.5) { const nm = _evGiveRelic(); if (nm) return `🔮 유물 ${nm}!`; } const g = _evUnit() * 8; state.gold += g; return `💰 +${g}G!`; } },
+          { label: '두고 간다', desc: '아깝다', resolve() { return '상자를 두고 떠난다.'; } },
+        ] }; },
+      () => { const lucky = Math.random() < 0.5; return {
+        title: '🃏 믿음의 도약', text: '하나엔 보물, 하나엔 허탕. 감으로 골라.',
+        choices: [
+          { label: '◀ 왼쪽', desc: '두근두근…', resolve() { if (lucky) { const g = _evUnit() * 6; state.gold += g; return `🎉 정답! +${g}G!`; } return '텅… 비었다.'; } },
+          { label: '오른쪽 ▶', desc: '두근두근…', resolve() { if (!lucky) { const g = _evUnit() * 6; state.gold += g; return `🎉 정답! +${g}G!`; } return '텅… 비었다.'; } },
+        ] }; },
+    ]},
+    magician: { name: '마법사 · 연금술사', fb: '🪄', art: 'magician', color: '#7ad7ff', events: [
+      () => { const cost = _evUnit() * 2; return { title: '🪄 연금 변환', text: '"황금을 힘으로 바꿔주지. 등가교환이야."',
+        choices: [
+          { label: `변환한다 (${cost}G)`, desc: '데미지 +10% 영구', disabled: state.gold < cost, resolve() { state.gold -= cost; state.relicEffects.aoeDmgMul *= 1.10; return '🪄 데미지 +10% 영구!'; } },
+          { label: '사양한다', desc: '필요 없다', resolve() { return '연금술사가 끄덕인다.'; } },
+        ] }; },
+      () => ({ title: '🪄 능력 재단', text: '"가진 걸 다시 벼려보자. 더 날카로워질 거다."',
+        choices: [
+          { label: '재단한다', desc: '무작위 능력 +2 강화', resolve() { const nm = _shopUpgradeRandom(2); return nm ? `🔧 ${nm} +2!` : '강화할 능력이 없었다.'; } },
+          { label: '사양한다', desc: '그대로 둔다', resolve() { return '화로가 식는다.'; } },
+        ] }),
+      () => ({ title: '🪄 원소 폭주', text: '"위험한 실험이지만… 성공하면 값지지."',
+        choices: [
+          { label: '폭주시킨다', desc: '60%: +14% · 40%: -5%', resolve() { if (Math.random() < 0.6) { state.relicEffects.aoeDmgMul *= 1.14; return '💥 성공! 데미지 +14% 영구!'; } state.relicEffects.aoeDmgMul *= 0.95; return '💥 실패… 데미지 -5%.'; } },
+          { label: '사양한다', desc: '위험해', resolve() { return '연금술사가 아쉬워한다.'; } },
+        ] }),
+    ]},
+    hierophant: { name: '교황 · 사제', fb: '📿', art: 'hierophant', color: '#ffe070', events: [
+      () => ({ title: '📿 비기 전수', text: '"내 가르침을 받으시오. 헛되지 않을 겁니다."',
+        choices: [
+          { label: '전수받는다', desc: '무작위 능력 +1 강화', resolve() { const nm = _shopUpgradeRandom(1); return nm ? `📖 ${nm} +1!` : '강화할 능력이 없었다.'; } },
+          { label: '사양한다', desc: '다음에', resolve() { return '사제가 미소짓는다.'; } },
+        ] }),
+      () => ({ title: '📿 신성한 축복', text: '"그대의 길에 가호가 함께하길."',
+        choices: [
+          { label: '축복받는다', desc: '데미지 +6% 영구', resolve() { state.relicEffects.aoeDmgMul *= 1.06; return '✨ 데미지 +6% 영구!'; } },
+          { label: '사양한다', desc: '괜찮다', resolve() { return '사제가 고개를 숙인다.'; } },
+        ] }),
+      () => { const cost = _evUnit() * 3; return { title: '📿 헌금', text: '"정성을 바치면, 합당한 보답이 따르는 법."',
+        choices: [
+          { label: `헌금한다 (${cost}G)`, desc: '유물 확정', disabled: state.gold < cost, resolve() { state.gold -= cost; const nm = _evGiveRelic(); return nm ? `🔮 유물 ${nm} 하사!` : '보물이 동났다…'; } },
+          { label: '사양한다', desc: '다음에', resolve() { return '사제가 축복을 거둔다.'; } },
+        ] }; },
+    ]},
+    justice: { name: '정의 · 심판관', fb: '⚖', art: 'justice', color: '#88aaff', events: [
+      () => { const cost = _evUnit() * 2; return { title: '⚖ 공정한 교환', text: '"등가 교환이오. 값을 치르면, 그만한 힘을 주지."',
+        choices: [
+          { label: `교환한다 (${cost}G)`, desc: '보스 데미지 +10% 영구', disabled: state.gold < cost, resolve() { state.gold -= cost; state.metaMods.bossDmgMul = (state.metaMods.bossDmgMul || 1) * 1.10; return '⚖ 보스 +10% 영구!'; } },
+          { label: '사양한다', desc: '필요 없다', resolve() { return '저울을 거둔다.'; } },
+        ] }; },
+      () => ({ title: '⚖ 심판', text: '"여기까지 온 그대의 공적을 셈하겠소."',
+        choices: [ { label: '평가받는다', desc: '도달 라운드 비례 골드', resolve() { const g = Math.round((state.round || 1) * 6); state.gold += g; return `⚖ 공적 보상! +${g}G!`; } } ] }),
+      () => ({ title: '⚖ 정지의 심판', text: '"전부 멈춰라. 질서를 되돌릴 시간이다."',
+        choices: [ { label: '심판한다', desc: '모든 적 장시간 둔화', resolve() { const n = _evSlowAll(600); return n ? `⚖ ${n}마리 둔화! 잠시 질서가 깃든다.` : '⚖ 멈출 적이 없다.'; } } ] }),
+    ]},
+    empress: { name: '여황제 · 여제', fb: '🌹', art: 'empress', color: '#ff88bb', events: [
+      () => ({ title: '🌹 풍요의 선물', text: '"지친 그대에게. 이 풍요를 나누지."',
+        choices: [ { label: '받는다', desc: '큰 골드 획득', resolve() { const g = _evUnit() * 7; state.gold += g; return `🌹 +${g}G!`; } } ] }),
+      () => ({ title: '🌹 양육', text: '"네 힘을 더 키워주마. 자랄 여지가 보여."',
+        choices: [
+          { label: '키운다', desc: '무작위 능력 +1 강화', resolve() { const nm = _shopUpgradeRandom(1); return nm ? `🌱 ${nm} +1!` : '강화할 능력이 없었다.'; } },
+          { label: '사양한다', desc: '괜찮다', resolve() { return '여제가 미소짓는다.'; } },
+        ] }),
+      () => ({ title: '🌹 황금빛 밀밭', text: '"씨를 뿌려두렴. 벨 때마다 황금이 열릴 거야."',
+        choices: [ { label: '심는다', desc: '처치당 골드 +1 (영구 누적)', resolve() { _evBuff('asc_killGold'); return '🌾 처치당 +1 골드 (영구)!'; } } ] }),
+    ]},
+    world: { name: '세계 · 완성의 무희', fb: '🌍', art: 'world', color: '#88ffcc', events: [
+      () => ({ title: '🌍 위대한 보상', text: '"여정의 끝에 어울리는 선물을. 하나만 고르세요."',
+        choices: [
+          { label: '⚔ 힘', desc: '데미지 +10% 영구', resolve() { state.relicEffects.aoeDmgMul *= 1.10; return '⚔ 데미지 +10% 영구!'; } },
+          { label: '👹 사냥', desc: '보스 +14% 영구', resolve() { state.metaMods.bossDmgMul = (state.metaMods.bossDmgMul || 1) * 1.14; return '👹 보스 +14% 영구!'; } },
+          { label: '🔮 유물', desc: '유물 확정', resolve() { const nm = _evGiveRelic(); return nm ? `🔮 ${nm}!` : '유물이 동났다…'; } },
+        ] }),
+      () => ({ title: '🌍 세계의 보물', text: '"세계가 그대에게 보물을 건넵니다."',
+        choices: [ { label: '받는다', desc: '유물 확정', resolve() { const nm = _evGiveRelic(); return nm ? `🔮 ${nm}!` : '유물이 동났다…'; } } ] }),
+      () => ({ title: '🌍 월드 댄스', text: '"춤이 시작되면, 잡것들은 빛으로 흩어지죠."',
+        choices: [ { label: '춤춘다', desc: '필드의 일반 적 전부 제거 + 점수', resolve() { const n = _evClearField(); const s = n * Math.ceil((state.round || 1) * 2); state.score += s; return n ? `🌍 일반 적 ${n}마리 일소! +${s.toLocaleString()}점!` : '🌍 필드가 이미 비어 있다.'; } } ] }),
+    ]},
+    lovers: { name: '연인 · 큐피드', fb: '💕', art: 'lovers', color: '#ff66aa', events: [
+      () => ({ title: '💕 인연 맺기', text: '"두 힘을 묶어줄게. 잘 어울리는 한 쌍으로."',
+        choices: [
+          { label: '엮는다', desc: '무작위 능력 +2 강화', resolve() { const nm = _shopUpgradeRandom(2); return nm ? `💞 ${nm} +2!` : '엮을 능력이 없었다.'; } },
+          { label: '사양한다', desc: '다음에', resolve() { return '큐피드가 윙크한다.'; } },
+        ] }),
+      () => ({ title: '💕 결속', text: '"혼자보다 둘이 강한 법이지."',
+        choices: [ { label: '결속한다', desc: '데미지 +5% · 보스 +6% 영구', resolve() { state.relicEffects.aoeDmgMul *= 1.05; state.metaMods.bossDmgMul = (state.metaMods.bossDmgMul || 1) * 1.06; return '💞 데미지 +5%, 보스 +6%!'; } } ] }),
+      () => ({ title: '💕 두 갈래 길', text: '"어느 길을 함께 걸을래? 열정, 아니면 풍요."',
+        choices: [
+          { label: '❤ 열정', desc: '데미지 +8% 영구', resolve() { state.relicEffects.aoeDmgMul *= 1.08; return '❤ 데미지 +8% 영구!'; } },
+          { label: '💛 풍요', desc: '큰 골드', resolve() { const g = _evUnit() * 6; state.gold += g; return `💛 +${g}G!`; } },
+        ] }),
+    ]},
+    strength: { name: '힘 · 레오', fb: '🦁', art: 'strength', color: '#ff8800', events: [
+      () => ({ title: '🦁 내면의 힘', text: '"진짜 힘은 안에서 나와. 끌어올려 봐."',
+        choices: [ { label: '끌어올린다', desc: '데미지 +7% 영구', resolve() { state.relicEffects.aoeDmgMul *= 1.07; return '🦁 데미지 +7% 영구!'; } } ] }),
+      () => ({ title: '🦁 야수 길들이기', text: '"큰 놈일수록, 더 세게 후려치면 돼."',
+        choices: [ { label: '길들인다', desc: '보스 +12% 영구', resolve() { state.metaMods.bossDmgMul = (state.metaMods.bossDmgMul || 1) * 1.12; return '🦁 보스 +12% 영구!'; } } ] }),
+      () => ({ title: '🦁 불굴', text: '"버텨. 버티는 쪽이 이기는 거야."',
+        choices: [ { label: '단련한다', desc: '데미지 +4% · 골드', resolve() { state.relicEffects.aoeDmgMul *= 1.04; const g = _evUnit() * 3; state.gold += g; return `🦁 데미지 +4%, +${g}G!`; } } ] }),
+    ]},
+    chariot: { name: '전차 · 빅토르', fb: '🏇', art: 'chariot', color: '#ffe070', events: [
+      () => ({ title: '🏇 돌격', text: '"멈추지 마. 앞으로."',
+        choices: [ { label: '돌격한다', desc: '보스 +10% 영구', resolve() { state.metaMods.bossDmgMul = (state.metaMods.bossDmgMul || 1) * 1.10; return '🏇 보스 +10% 영구!'; } } ] }),
+      () => ({ title: '🏇 승리 쟁취', text: '"위험을 무는 자가 영광을 가져간다."',
+        choices: [
+          { label: '쟁취한다', desc: '55%: +12% · 45%: -4%', resolve() { if (Math.random() < 0.55) { state.relicEffects.aoeDmgMul *= 1.12; return '🏆 영광! 데미지 +12% 영구!'; } state.relicEffects.aoeDmgMul *= 0.96; return '🏇 후퇴… 데미지 -4%.'; } },
+          { label: '물러난다', desc: '안전하게', resolve() { return '전차가 멈춘다.'; } },
+        ] }),
+      () => { const cost = _evUnit() * 2; return { title: '🏇 폭주', text: '"전차를 가속해. 값은 좀 치러야겠지만."',
+        choices: [
+          { label: `가속한다 (${cost}G)`, desc: '데미지 +9% 영구', disabled: state.gold < cost, resolve() { state.gold -= cost; state.relicEffects.aoeDmgMul *= 1.09; return '🏇 데미지 +9% 영구!'; } },
+          { label: '사양한다', desc: '아끼자', resolve() { return '전차가 늦춘다.'; } },
+        ] }; },
+    ]},
+    curse: { name: '저주의 그림자', fb: '💀', art: 'devil', color: '#ff6b6b' },
+  };
+  function _evUnit() { return Math.round(15 + (state.round || 1) * 3.5); }
+  function _evClampGold() { if (state.gold < 0) state.gold = 0; }
+  function _evBuff(id) { _shopBuff(id); }
+  // 무작위 새 능력 획득 (미보유 우선, 없으면 강화) → 결과 문구
+  function _evGainAbility(n) {
+    n = n || 1;
+    const ownedIds = [...new Set(state.tower.abilities.map(a => a.id))];
+    const allowed = (typeof getUnlockedAbilityIds === 'function') ? getUnlockedAbilityIds() : new Set(RANDOM_POOL_IDS);
+    const unowned = RANDOM_POOL_IDS.filter(id => allowed.has(id) && !ownedIds.includes(id));
+    if (unowned.length) { const id = unowned[Math.floor(Math.random() * unowned.length)]; for (let i = 0; i < n; i++) _shopGainAbility(id); return `${ABILITY_DEFS[id].name}${n > 1 ? ' ×' + n : ''} 획득!`; }
+    const nm = _shopUpgradeRandom(n); return nm ? `${nm} +${n} 강화!` : '강화할 능력이 없었다.';
+  }
+  function _evGiveRelic() {
+    const owned = (state.activeRelics || []).map(r => r.id);
+    let pool = RELIC_IDS.filter(rid => { const r = RELICS[rid]; const rr = r && RELIC_RARITY[r.rarity]; return rr && rr.weight > 0 && !r.unlockBy && owned.indexOf(rid) < 0; });
+    if (!pool.length) pool = RELIC_IDS.filter(rid => { const r = RELICS[rid]; const rr = r && RELIC_RARITY[r.rarity]; return rr && rr.weight > 0 && !r.unlockBy; });
+    if (!pool.length) return null;
+    let total = pool.reduce((s, rid) => s + (RELIC_RARITY[RELICS[rid].rarity].weight || 1), 0);
+    let roll = Math.random() * total, pick = pool[0];
+    for (const id of pool) { roll -= RELIC_RARITY[RELICS[id].rarity].weight || 1; if (roll <= 0) { pick = id; break; } }
+    const nm = RELICS[pick] ? RELICS[pick].name : '유물';
+    try { acquireRelic(pick); } catch (e) {}
+    return nm;
+  }
+  // 필드의 일반 적 일소 → 제거 마릿수 반환
+  function _evClearField() {
+    let n = 0;
+    state.enemies = (state.enemies || []).filter(e => { if (e && !e.isBoss && e.hp > 0) { n++; return false; } return true; });
+    return n;
+  }
+  // 모든 생존 적 둔화 (frames) → 대상 마릿수 반환
+  function _evSlowAll(frames) {
+    let n = 0;
+    for (const e of (state.enemies || [])) { if (e && e.hp > 0) { e.slowFrames = Math.max(e.slowFrames || 0, frames); n++; } }
+    return n;
+  }
+  // (구 평면 EVENT_DEFS 제거됨 — 이벤트는 EVENT_NPCS[key].events 사용)
+  // 💀 저주 — 낮은 확률로 강제 발동 (선택 없이 디버프). apply()가 결과 문구 반환.
+  const CURSE_DEFS = [
+    { title: '💀 탐욕의 저주', text: '"가진 게 많을수록… 잃는 것도 많지."',
+      apply() { const lost = Math.floor(state.gold * 0.3); state.gold -= lost; _evClampGold(); return `골드의 30%(${lost}G)를 빼앗겼다.`; } },
+    { title: '💀 쇠약의 저주', text: '"네 힘이 천천히 스며 나간다."',
+      apply() { state.relicEffects.aoeDmgMul *= 0.92; return '모든 데미지 -8% (영구).'; } },
+    { title: '💀 빈곤의 봉인', text: '"황금이 너를 외면하리라."',
+      apply() { state.metaMods.goldMul = (state.metaMods.goldMul || 1) * 0.85; return '획득 골드 -15% (영구).'; } },
+    { title: '💀 약화의 낙인', text: '"거대한 것 앞에서, 너는 무력하다."',
+      apply() { state.metaMods.bossDmgMul = (state.metaMods.bossDmgMul || 1) * 0.88; return '보스 데미지 -12% (영구).'; } },
+  ];
+  function _setEventPortrait(key) {
+    const npc = EVENT_NPCS[key] || EVENT_NPCS.wheel;
+    const portrait = document.getElementById('eventNpcPortrait');
+    if (!portrait) return;
+    portrait.innerHTML = '';
+    const img = document.createElement('img'); img.alt = '';
+    // 대사 씬은 NPC 인물 일러(icons/npc) 우선 → 없으면 고딕 카드(icons/card) → 없으면 이모지
+    let _stage = 0;
+    img.onerror = () => {
+      _stage++;
+      if (_stage === 1) { img.src = `./icons/card/${npc.art}.png`; return; }
+      img.remove();
+      if (!portrait.querySelector('.npc-fallback')) { const fb = document.createElement('div'); fb.className = 'npc-fallback'; fb.textContent = npc.fb; portrait.prepend(fb); }
+    };
+    img.src = `./icons/npc/${npc.art}.png`;
+    portrait.appendChild(img);
+    const nm = document.createElement('div'); nm.className = 'npc-name'; nm.textContent = npc.name; portrait.appendChild(nm);
+  }
+  function _showEventOutcome(out, isCurse) {
+    _lastEventOutcome = out;
+    const choicesEl = document.getElementById('eventChoices');
+    if (choicesEl) choicesEl.innerHTML = `<div class="event-outcome"${isCurse ? ' style="color:#ff8a8a;background:#1a1012;border-color:#4a2030;"' : ''}>${out}</div>`;
+    const ge = document.getElementById('eventGold'); if (ge) ge.textContent = String(Math.floor(state.gold));
+    const foot = document.getElementById('eventFoot'); if (foot) foot.style.display = '';
+    const _cb = document.getElementById('eventCloseBtn'); if (_cb) _cb.textContent = '계속 ▶';
+    try { for (let k = 0; k < 10; k++) spawnParticles(CX, CY, isCurse ? '#ff6b6b' : '#ffd479', 1); } catch (e) {}
+    if (typeof renderPanel === 'function') renderPanel();
+  }
+  let _activeEvent = null, _lastEventOutcome = null;
+  // 🎴 카드 드래프트 — 특수보스 처치 → 13 NPC 중 3장(뒷면) → 선택 → 공개 → 그 NPC 이벤트 (저주 12%)
+  function openBossEvent() { openCardDraft(); }
+  function openCardDraft() {
+    if (!state.tower || state.gameOver) return;
+    paused = true;
+    const keys = Object.keys(EVENT_NPCS).filter(k => EVENT_NPCS[k].events && EVENT_NPCS[k].events.length);
+    const pick3 = keys.slice().sort(() => Math.random() - 0.5).slice(0, 3);
+    const row = document.getElementById('draftRow');
+    const hint = document.getElementById('draftHint');
+    if (!row || !pick3.length) { openEventForNpc(pick3[0] || keys[0]); return; }
+    if (hint) hint.textContent = '한 장을 선택하세요';
+    row.innerHTML = '';
+    let chosen = false;
+    pick3.forEach(key => {
+      const npc = EVENT_NPCS[key];
+      const card = document.createElement('div'); card.className = 'draft-card';
+      const back = document.createElement('div'); back.className = 'dc-face'; back.textContent = '🎴'; back.style.color = '#7ad7ff';
+      const backImg = document.createElement('img'); backImg.alt = ''; backImg.style.display = 'none';
+      backImg.onload = () => { back.style.display = 'none'; backImg.style.display = 'block'; };
+      backImg.src = './icons/card/back.png';
+      card.appendChild(backImg); card.appendChild(back);
+      card.onclick = () => {
+        if (chosen) return; chosen = true;
+        row.querySelectorAll('.draft-card').forEach(c => { if (c !== card) c.classList.add('dim'); });
+        card.classList.add('revealed'); card.innerHTML = '';
+        const fImg = document.createElement('img'); fImg.alt = '';
+        const fb = document.createElement('div'); fb.className = 'dc-face'; fb.textContent = npc.fb; fb.style.display = 'none'; fb.style.color = npc.color || '#fff';
+        fImg.onerror = () => { fImg.remove(); card.style.background = `linear-gradient(160deg, ${npc.color || '#444'}, #0c1020)`; fb.style.display = 'flex'; };
+        fImg.src = `./icons/card/${npc.art}.png`;
+        card.appendChild(fImg); card.appendChild(fb);
+        const nm = document.createElement('div'); nm.className = 'dc-name'; nm.textContent = npc.name; card.appendChild(nm);
+        if (hint) hint.textContent = npc.name;
+        if (SFX && SFX.click) try { SFX.click(); } catch (e) {}
+        setTimeout(() => { closeCardDraft(); openEventForNpc(key); }, 850);
+      };
+      row.appendChild(card);
+    });
+    const sc = document.getElementById('cardDraftScene'); if (sc) sc.classList.add('show');
+  }
+  function closeCardDraft() { const sc = document.getElementById('cardDraftScene'); if (sc) sc.classList.remove('show'); }
+  function openEventForNpc(key) {
+    if (!state.tower || state.gameOver) return;
+    paused = true;
+    _lastEventOutcome = null;
+    const npc = EVENT_NPCS[key];
+    const isCurse = Math.random() < 0.12 || !npc || !npc.events || !npc.events.length;
+    let npcKey, title, text;
+    if (isCurse) {
+      const c = CURSE_DEFS[Math.floor(Math.random() * CURSE_DEFS.length)];
+      _activeEvent = { _curse: true, def: c }; npcKey = 'curse'; title = c.title; text = c.text;
+    } else {
+      const ev = npc.events[Math.floor(Math.random() * npc.events.length)]();
+      _activeEvent = ev; ev._curse = false; npcKey = key; title = ev.title; text = ev.text;
+    }
+    _setEventPortrait(npcKey);
+    const te = document.getElementById('eventTitle'); if (te) te.textContent = title;
+    const ge = document.getElementById('eventGold'); if (ge) ge.textContent = String(Math.floor(state.gold));
+    const tx = document.getElementById('eventText'); if (tx) tx.textContent = text;
+    const choicesEl = document.getElementById('eventChoices'); if (choicesEl) choicesEl.innerHTML = '';
+    const foot = document.getElementById('eventFoot'); if (foot) foot.style.display = 'none';
+    if (isCurse) {
+      let out = ''; try { out = _activeEvent.def.apply() || ''; } catch (e) {}
+      _showEventOutcome(out, true);
+    } else {
+      _activeEvent.choices.forEach((ch, i) => {
+        const btn = document.createElement('button'); btn.className = 'event-choice'; btn.disabled = !!ch.disabled;
+        btn.innerHTML = `<div class="ec-label">${ch.label}</div><div class="ec-desc">${ch.desc || ''}</div>`;
+        if (!ch.disabled) btn.onclick = () => resolveEventChoice(i);
+        if (choicesEl) choicesEl.appendChild(btn);
+      });
+      // 아무것도 선택하지 않고 넘어가기 — 모든 이벤트에서 항상 가능 (저주 제외)
+      const _cb = document.getElementById('eventCloseBtn'); if (_cb) _cb.textContent = '넘어가기';
+      if (foot) foot.style.display = '';
+    }
+    const sc = document.getElementById('eventScene'); if (sc) sc.classList.add('show');
+  }
+  function resolveEventChoice(i) {
+    const ev = _activeEvent;
+    if (!ev || ev._curse || ev._resolved) return;
+    const ch = ev.choices[i]; if (!ch) return;
+    ev._resolved = true;
+    let out = ''; try { out = ch.resolve() || ''; } catch (e) { out = '…'; }
+    if (SFX && SFX.click) try { SFX.click(); } catch (e) {}
+    _showEventOutcome(out, false);
+  }
+  function closeEvent() {
+    const sc = document.getElementById('eventScene'); if (sc) sc.classList.remove('show');
+    _activeEvent = null;
+    paused = false;
+    const pb = document.getElementById('pauseBtn'); if (pb) pb.textContent = '⏸ 일시정지';
+    if (_lastEventOutcome) { try { toast('✨ ' + _lastEventOutcome); } catch (e) {} _lastEventOutcome = null; }
+  }
+
   // ===== 배속 (단일 순환 버튼) =====
   let gameSpeed = 1;
   function setSpeed(s) {
@@ -21176,6 +21843,8 @@
     document.getElementById('pauseBtn').textContent = paused ? '▶ 재개' : '⏸ 일시정지';
   }
   document.getElementById('pauseBtn').onclick = togglePause;
+  (function(){ const b = document.getElementById('shopCloseBtn'); if (b) b.onclick = () => { if (SFX && SFX.click) SFX.click(); closeShop(); }; })();
+  (function(){ const b = document.getElementById('eventCloseBtn'); if (b) b.onclick = () => { if (SFX && SFX.click) SFX.click(); closeEvent(); }; })();
   document.getElementById('resetBtn').onclick = () => {
     // 진행 중인 게임이면 확인 팝업 (실수 방지)
     const inProgress = state && !state.gameOver && state.tower &&
@@ -22759,7 +23428,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 333;
+  const APP_VERSION = 349;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
