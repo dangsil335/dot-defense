@@ -15272,7 +15272,10 @@
     }
     // 보스 스폰 큐. 일반: [], 보스 라운드: [60, +stagger, ...], 최종: [60, +50s, +100s]
     if (cfg.isFinal) {
-      state.bossSpawns = [60, 60 + 50 * FPS, 60 + 100 * FPS];
+      // ☠ 최종 보스 · 아바돈 — 전용 등장 연출(암전·강림) 후 단일 강림
+      state.pendingSpecialBoss = 'abaddon';
+      state.bossIntro = { special: 'abaddon', frame: 0, skip: false };
+      state.bossSpawns = [60 + BOSS_INTRO_DUR];
     } else if (cfg.isBoss) {
       // 메인 보스 1마리 + 추가 보스 (3초 간격으로 등장)
       state.bossSpawns = [60];
@@ -15667,6 +15670,13 @@
           const _cols = e.special ? ['#ffffff', '#ffd479', '#ff8a4a', '#ff6bd6'] : ['#ffffff', '#ffd479', '#ff8a4a'];
           burstFx(_fp[0], _fp[1], _cols, e.isMiniBoss ? 14 : (e.special ? 40 : 28), e.isMiniBoss ? 2.0 : 2.9);
           for (let _k = 0; _k < 6; _k++) state.particles.push({ x: _fp[0], y: _fp[1], vx: (Math.random() - 0.5) * 0.7, vy: (Math.random() - 0.5) * 0.7, life: 8 + Math.random() * 4, color: '#ffffff' }); }
+        // ☠ 아바돈 피날레 — 거대 폭발 + 잔여 잡몹 일소(웨이브 즉시 종료 → 승리 연출로)
+        if (e.special === 'abaddon') {
+          const _af = (typeof enemyXY === 'function') ? enemyXY(e) : [W / 2, H / 2];
+          burstFx(_af[0], _af[1], ['#ffffff', '#ff2a5a', '#aa3aff', '#ffd479'], 70, 3.4);
+          shake(28, 40);
+          if (typeof _evClearField === 'function') _evClearField();
+        }
         // 💎 유물 효과 — 보스 처치 시 발동
         if (state.relicEffects.bossKillResetCooldown) {
           for (const a of state.tower.abilities) { a.cooldown = 0; }
@@ -15745,7 +15755,7 @@
         }
         // 🎭 보스 처치 → 이벤트 (등급 분리): 특수보스=강화 이벤트, 일반 보스=유물 선택 이벤트. 미니보스 제외.
         //    🎆 보스 폭발 연출이 먼저 보이도록 ~0.42초 뒤에 이벤트 오픈 (보상 등장 전 한 박자).
-        if (!state.relicOffering && !_activeEvent && !e.isMiniBoss) {
+        if (!state.relicOffering && !_activeEvent && !e.isMiniBoss && e.special !== 'abaddon') {
           const _bossSpecial = !!e.special;
           const _openBossReward = () => {
             if (!state || state.gameOver || _activeEvent || state.relicOffering) return;
@@ -16622,11 +16632,11 @@
         angle: 0, radius: 0, targetRadius: 0, radiusChangeAt: 999999,
         angularSpeed: 0,
         hp: Math.ceil(cfg.bossHp * specialHpMul * crackMul), maxHp: Math.ceil(cfg.bossHp * specialHpMul * crackMul),
-        size: 18, goldDrop: Math.ceil(cfg.bossGold * (special ? 1.5 : 1)),
+        size: Math.round(18 * ((specialDef && specialDef.sizeMul) || 1)), goldDrop: Math.ceil(cfg.bossGold * (special ? 1.5 : 1)),
         slowFrames: 0, isBoss: true,
         type: 'boss', seed: Math.random() * 1000,
         rotation: 0, rotSpeed: special ? 0 : 0.012,   // 특수 보스는 회전 X (외형 인식)
-        pattern: pickBossPattern(state.round),
+        pattern: special === 'abaddon' ? 'finale' : pickBossPattern(state.round),
         patternCD: 180,
         enraged: false,
         shieldHp: 0,
@@ -16658,11 +16668,11 @@
       radiusChangeAt: 240,
       angularSpeed: cfg.enemySpeed * (Math.random() < 0.5 ? 1 : -1) * 0.4,
       hp: Math.ceil(cfg.bossHp * specialHpMul * crackMul), maxHp: Math.ceil(cfg.bossHp * specialHpMul * crackMul),
-      size: 18, goldDrop: Math.ceil(cfg.bossGold * (special ? 1.5 : 1)),
+      size: Math.round(18 * ((specialDef && specialDef.sizeMul) || 1)), goldDrop: Math.ceil(cfg.bossGold * (special ? 1.5 : 1)),
       slowFrames: 0, isBoss: true,
       type: 'boss', seed: Math.random() * 1000,
       rotation: 0, rotSpeed: special ? 0 : 0.012,
-      pattern: pickBossPattern(state.round),
+      pattern: special === 'abaddon' ? 'finale' : pickBossPattern(state.round),
       patternCD: 180,    // 보스 능력 쿨다운
       enraged: false,
       shieldHp: 0,
@@ -16726,6 +16736,30 @@
         spawnParticles(bx, by, '#88ccff', 16);
         toast('🛡 보스 실드 발동!');
         SFX.bossSpawn();
+      }
+      // ☠ 종말 · 아바돈 — 최종보스 3페이즈(HP 임계값) + 페이즈 비례 소환 + 보호막 + 회복 압박
+      if (e.special === 'abaddon') {
+        if (e.phase === undefined) { e.phase = 1; e.abadCD = 240; }
+        const hpR = e.hp / e.maxHp;
+        if (e.phase === 1 && hpR <= 0.66) {
+          e.phase = 2; e.shieldHp = Math.max(e.shieldHp || 0, 30); e.angularSpeed *= 1.3;
+          const [bx, by] = enemyXY(e); spawnParticles(bx, by, '#aa3aff', 22);
+          shake(18, 24); SFX.bossSpawn(); state.comboFlash = 36; state.comboFlashColor = '#aa3aff'; toast('☠ 아바돈 — 각성 (2페이즈)');
+        } else if (e.phase === 2 && hpR <= 0.33) {
+          e.phase = 3; e.angularSpeed *= 1.35; e.rotSpeed *= 2; e.size = Math.ceil(e.size * 1.08);
+          const [bx, by] = enemyXY(e); spawnParticles(bx, by, '#ff2a5a', 26);
+          shake(24, 30); SFX.bossSpawn(); state.comboFlash = 44; state.comboFlashColor = '#ff2a5a'; toast('☠ 아바돈 — 발악 (최종 페이즈)');
+        }
+        if (--e.abadCD <= 0) {
+          e.abadCD = e.phase === 3 ? 150 : (e.phase === 2 ? 240 : 330);
+          const n = e.phase + 1; const [bx, by] = enemyXY(e);
+          for (let k = 0; k < n; k++) { spawnEnemy({ angle: e.angle + (k - n / 2) * 0.25, radius: e.radius, behavior: null, size: 6 }); const last = state.enemies[state.enemies.length - 1]; if (last) last.radius = e.radius - 20; }
+          spawnParticles(bx, by, '#aa3aff', 12); SFX.combo();
+        }
+        if (state.t % 60 === 0 && e.hp < e.maxHp) {   // 잡몹 살아있으면 초당 소량 회복(빨리 처치 유도, 상한 5)
+          let adds = 0; for (const x of state.enemies) { if (!x.isBoss && x.hp > 0) adds++; }
+          if (adds > 0) e.hp = Math.min(e.maxHp, e.hp + Math.ceil(e.maxHp * 0.003 * Math.min(adds, 5)));
+        }
       }
       // 💀 v267 — 우주 사신: HP 50% 이하 시 1회, 2.5초간 능력 봉인 (공허 컨셉)
       if (e.special === 'reaper' && !e.sealUsed && e.hp < e.maxHp * 0.5) {
@@ -18496,6 +18530,60 @@
     ctx.fillStyle = 'rgba(255,255,255,0.8)'; ctx.beginPath(); ctx.arc(-ir * 0.35, -ir * 0.35, ir * 0.14, 0, Math.PI * 2); ctx.fill();
     ctx.restore();
   }
+  // ☠ 종말·아바돈 — 가시 왕관 + 각진 본체 + 불타는 핵 + 세로 슬릿 눈 + 궤도 위성 눈 (전용 최종보스 외형)
+  function drawAbaddonShape(ctx, s, fill, edge, eyeGlow, eyeColor) {
+    const _t = (typeof state !== 'undefined' && state && state.t) || 0;
+    const dark = darkenHex(fill, 0.5), edgeC = edge || darkenHex(fill, 0.65);
+    const _e = (eyeColor || '#ff2a5a').replace('#', ''); const _en = parseInt(_e, 16); const ergb = `${(_en >> 16) & 255},${(_en >> 8) & 255},${_en & 255}`;
+    const pulse = 1 + Math.sin(_t * 0.09) * 0.06;
+    const glowI = (eyeGlow && eyeGlow > 0) ? Math.min(1.5, eyeGlow) : 1;
+    // 외곽 회전 에너지 호 (가산)
+    ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.lineWidth = 2.4;
+    for (let k = 0; k < 5; k++) { const a0 = -_t * 0.025 + k * (Math.PI * 2 / 5); ctx.strokeStyle = `rgba(${ergb},${0.26 * glowI})`; ctx.beginPath(); ctx.arc(0, 0, s * 1.6 * pulse, a0, a0 + 0.7); ctx.stroke(); }
+    ctx.restore();
+    // 가시 왕관 (12뿔, 회전) — 3개마다 길게
+    ctx.save(); ctx.rotate(_t * 0.006);
+    for (let k = 0; k < 12; k++) {
+      ctx.save(); ctx.rotate(k * (Math.PI * 2 / 12));
+      const tip = s * (k % 3 === 0 ? 1.78 : 1.46);
+      ctx.fillStyle = dark; ctx.beginPath(); ctx.moveTo(-s * 0.14, -s * 1.0); ctx.lineTo(s * 0.14, -s * 1.0); ctx.lineTo(0, -tip); ctx.closePath(); ctx.fill();
+      ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.fillStyle = `rgba(${ergb},${0.5 * glowI})`; ctx.beginPath(); ctx.arc(0, -tip, s * 0.07, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+      ctx.restore();
+    }
+    ctx.restore();
+    // 각진 본체 (12각 첨탑)
+    ctx.save(); ctx.rotate(-_t * 0.004);
+    const bg = ctx.createRadialGradient(-s * 0.3, -s * 0.3, s * 0.1, 0, 0, s * 1.05);
+    bg.addColorStop(0, lightenHex(fill, 0.22)); bg.addColorStop(0.6, fill); bg.addColorStop(1, dark);
+    ctx.fillStyle = bg; ctx.strokeStyle = edgeC; ctx.lineWidth = 2;
+    ctx.beginPath(); for (let k = 0; k < 12; k++) { const a = k * Math.PI / 6 - Math.PI / 2; const rr = (k % 2 ? s * 0.7 : s * 1.04); const px = Math.cos(a) * rr, py = Math.sin(a) * rr; k ? ctx.lineTo(px, py) : ctx.moveTo(px, py); } ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.restore();
+    // 불타는 핵
+    ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = Math.min(1, glowI);
+    const cg = ctx.createRadialGradient(0, 0, s * 0.04, 0, 0, s * 0.72 * pulse);
+    cg.addColorStop(0, '#fff'); cg.addColorStop(0.3, eyeColor || '#ff2a5a'); cg.addColorStop(0.75, darkenHex(eyeColor || '#ff2a5a', 0.4)); cg.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = cg; ctx.beginPath(); ctx.arc(0, 0, s * 0.72 * pulse, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+    // 세로 슬릿 눈
+    const blink = 0.45 + 0.55 * Math.abs(Math.sin(_t * 0.045));
+    ctx.fillStyle = '#070207'; ctx.beginPath(); ctx.ellipse(0, 0, s * 0.46, s * 0.66, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = Math.min(1, glowI);
+    const ig = ctx.createRadialGradient(0, 0, 0, 0, 0, s * 0.42);
+    ig.addColorStop(0, '#fff'); ig.addColorStop(0.4, eyeColor || '#ff2a5a'); ig.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = ig; ctx.beginPath(); ctx.ellipse(0, 0, s * 0.2, s * 0.58 * blink, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+    ctx.fillStyle = '#050005'; ctx.beginPath(); ctx.ellipse(0, 0, s * 0.06, s * 0.4 * blink, 0, 0, Math.PI * 2); ctx.fill();
+    // 궤도 위성 눈 3개
+    for (let k = 0; k < 3; k++) {
+      const a = _t * 0.02 + k * (Math.PI * 2 / 3); const ox = Math.cos(a) * s * 0.82, oy = Math.sin(a) * s * 0.82;
+      ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = Math.min(1, glowI);
+      const eg2 = ctx.createRadialGradient(ox, oy, 0, ox, oy, s * 0.17);
+      eg2.addColorStop(0, `rgba(${ergb},0.9)`); eg2.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = eg2; ctx.beginPath(); ctx.arc(ox, oy, s * 0.17, 0, Math.PI * 2); ctx.fill();
+      ctx.restore();
+      ctx.fillStyle = '#0a0208'; ctx.beginPath(); ctx.arc(ox, oy, s * 0.05, 0, Math.PI * 2); ctx.fill();
+    }
+  }
   // ☀ 초신성 코어 — 코로나 플레어 + 구체 별 + 흑점 + 핫코어
   function drawSupernovaShape(ctx, s, fill, edge, eyeGlow, eyeColor) {
     const _t = (typeof state !== 'undefined' && state && state.t) || 0;
@@ -18546,8 +18634,11 @@
                  gimmick: 'blink', draw: drawVoidEyeShape, hpMul: 1.0 },
     supernova: { name: '초신성 코어',   icon: '☀', color: '#ff9a3a', edge: '#7a3410', eye: '#fff0a0',
                  gimmick: 'deathNova', draw: drawSupernovaShape, hpMul: 1.05 },
+    // ☠ R100 전용 최종보스 — 거대·고체력·3페이즈
+    abaddon:   { name: '종말 · 아바돈',  icon: '☠', color: '#1e0a2e', edge: '#08020e', eye: '#ff2a5a',
+                 gimmick: 'finale', draw: drawAbaddonShape, hpMul: 2.8, sizeMul: 1.7, isFinal: true },
   };
-  const SPECIAL_BOSS_IDS = Object.keys(SPECIAL_BOSS_DEFS);
+  const SPECIAL_BOSS_IDS = Object.keys(SPECIAL_BOSS_DEFS).filter(k => !SPECIAL_BOSS_DEFS[k].isFinal);  // 아바돈은 랜덤 풀 제외 (R100 전용)
 
   // 🌌 v267 — 특수 보스 등장 연출 (3초). 정신없지 않게 부드러운 페이드 위주.
   //   타임라인 (180프레임 = 3초):
@@ -18669,6 +18760,48 @@
     ctx.beginPath(); ctx.ellipse(0, 0, 84, lidY, 0, 0, Math.PI); ctx.stroke();
     ctx.restore();
   }
+  // ☠ 종말·아바돈 — 전용 강림 시네마틱: 붉은 심박 전조 → 아래에서 부상·개안 → 섬광·충격파 → 타이틀 슬램
+  function introAbaddon(f, p, fade, def, ec) {
+    ctx.save(); ctx.translate(CX, CY);
+    // 1) 전조 — 붉은 심장박동 + 균열 광선
+    if (p < 0.45) {
+      const hb = Math.pow(Math.abs(Math.sin(f * 0.12)), 3);
+      ctx.save(); ctx.globalCompositeOperation = 'lighter';
+      const g = ctx.createRadialGradient(0, 0, 0, 0, 0, 220);
+      g.addColorStop(0, `rgba(${ec},${(0.10 + 0.34 * hb) * Math.min(1, p / 0.12) * fade})`); g.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = g; ctx.fillRect(-W, -H, W * 2, H * 2);
+      ctx.strokeStyle = `rgba(${ec},${0.28 * hb * fade})`; ctx.lineWidth = 2;
+      for (let i = 0; i < 8; i++) { const a = i * Math.PI / 4 + f * 0.002; ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(Math.cos(a) * (60 + hb * 130), Math.sin(a) * (60 + hb * 130)); ctx.stroke(); }
+      ctx.restore();
+    }
+    // 2) 강림 — 아래에서 부상 + 코어 점화
+    if (p >= 0.3 && p < 0.84) {
+      const rp = Math.min(1, (p - 0.3) / 0.5);
+      ctx.save(); ctx.translate(0, (1 - rp) * 190); ctx.scale(0.6 + rp * 0.55, 0.6 + rp * 0.55);
+      ctx.globalAlpha = Math.min(1, rp * 1.7) * fade;
+      def.draw(ctx, 54, def.color, def.edge, rp * 1.4, def.eye);
+      ctx.restore();
+    }
+    // 3) 개안 완성 → 섬광 + 충격파
+    if (p >= 0.78 && p < 0.93) {
+      const cp = (p - 0.78) / 0.15;
+      if (cp < 0.35) { ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = (1 - cp / 0.35) * 0.6 * fade; ctx.fillStyle = '#ffe0e8'; ctx.fillRect(-W, -H, W * 2, H * 2); ctx.restore(); }
+      ctx.save(); ctx.globalCompositeOperation = 'lighter'; const rr = cp * Math.max(W, H) * 0.55;
+      ctx.strokeStyle = `rgba(${ec},${0.7 * (1 - cp) * fade})`; ctx.lineWidth = 5 * (1 - cp) + 1; ctx.beginPath(); ctx.arc(0, 0, rr, 0, Math.PI * 2); ctx.stroke(); ctx.restore();
+    }
+    // 4) 타이틀 슬램
+    if (p >= 0.62) {
+      const tp = Math.min(1, (p - 0.62) / 0.12), slam = 1 + (1 - tp) * 0.6;
+      ctx.save(); ctx.globalAlpha = tp * fade; ctx.scale(slam, slam); ctx.textAlign = 'center';
+      ctx.shadowColor = def.eye; ctx.shadowBlur = 26; ctx.fillStyle = '#fff'; ctx.font = 'bold 38px Jua, sans-serif'; ctx.fillText('종말 · 아바돈', 0, -6);
+      ctx.shadowBlur = 0; ctx.fillStyle = `rgba(${ec},${tp})`; ctx.font = 'bold 14px Jua, sans-serif'; ctx.fillText('— THE END —', 0, 22);
+      ctx.restore();
+    }
+    ctx.restore();
+    ctx.textAlign = 'start';
+    if (f === Math.round(BOSS_INTRO_DUR * 0.3)) shake(10, 16);
+    if (f === Math.round(BOSS_INTRO_DUR * 0.78)) shake(26, 30);
+  }
   // ☀ 초신성 코어 — 빛 수렴(붕괴) → 섬광 → 별 점화 + 충격파
   function introSupernova(f, p, fade, def, ec) {
     ctx.save(); ctx.translate(CX, CY);
@@ -18713,12 +18846,13 @@
     else if (bi.special === 'crystal') introCrystal(f, p, fade, def, ec);
     else if (bi.special === 'voidEye') introVoidEye(f, p, fade, def, ec);
     else if (bi.special === 'supernova') introSupernova(f, p, fade, def, ec);
+    else if (bi.special === 'abaddon') introAbaddon(f, p, fade, def, ec);
     else { ctx.save(); ctx.globalAlpha = Math.min(1, p * 1.5) * fade; ctx.translate(CX, CY); def.draw(ctx, 46, '#06070f', '#101428', p * 1.2, def.eye); ctx.restore(); }
-    // 공통 경고 텍스트 (상단)
-    if (p >= 0.3) {
+    // 공통 경고 텍스트 (상단) — 아바돈은 전용 타이틀 슬램이 따로 있어 생략
+    if (p >= 0.3 && bi.special !== 'abaddon') {
       const tp = Math.min(1, (p - 0.3) / 0.2) * fade; const pulse = 0.7 + 0.3 * Math.sin(f * 0.18);
       ctx.textAlign = 'center'; ctx.fillStyle = def.eye; ctx.shadowColor = def.eye; ctx.shadowBlur = 18; ctx.font = 'bold 22px Jua, sans-serif';
-      ctx.globalAlpha = tp * pulse; ctx.fillText(`⚠ ${def.icon} ${def.name} 접근 중...`, CX, 40); ctx.shadowBlur = 0; ctx.globalAlpha = 1;
+      ctx.globalAlpha = tp * pulse; ctx.fillText(bi.special === 'abaddon' ? `☠ 최종 — ${def.name} 강림` : `⚠ ${def.icon} ${def.name} 접근 중...`, CX, 40); ctx.shadowBlur = 0; ctx.globalAlpha = 1;
     }
     ctx.restore();
     ctx.textAlign = 'start';
@@ -21648,7 +21782,7 @@
           { label: '사양한다', desc: '대신 골드', resolve() { const g = _evUnit() * 2; state.gold += g; return `+${g}G.`; } },
         ] }),
     ]},
-    fool: { name: '바보 · 방랑자', fb: '🃏', art: 'fool', color: '#9ad0ff', events: [
+    fool: { name: '바보 · 단테', fb: '🃏', art: 'fool', color: '#9ad0ff', events: [
       () => ({ title: '🃏 수상한 상자', text: '길에 상자가 있네. …열어볼까?',
         choices: [
           { label: '열어본다', desc: '대박? 함정?', resolve() { const r = Math.random();
@@ -21671,7 +21805,7 @@
           { label: '오른쪽 ▶', desc: '두근두근…', resolve() { if (!lucky) { const g = _evUnit() * 6; state.gold += g; return `🎉 정답! +${g}G!`; } return '텅… 비었다.'; } },
         ] }; },
     ]},
-    magician: { name: '마법사 · 연금술사', fb: '🪄', art: 'magician', color: '#7ad7ff', events: [
+    magician: { name: '마법사 · 메를린', fb: '🪄', art: 'magician', color: '#7ad7ff', events: [
       () => ({ title: '🪄 변성', text: '"마음에 안 드는 힘? 같은 격으로, 다른 걸 빚어주지."',
         choices: [
           { label: '변성시킨다', desc: '능력 하나를 같은 레벨의 다른 능력으로', resolve() { return _evTransmute(); } },
@@ -21688,7 +21822,7 @@
           { label: '사양한다', desc: '위험해', resolve() { return '연금술사가 아쉬워한다.'; } },
         ] }),
     ]},
-    hierophant: { name: '교황 · 사제', fb: '📿', art: 'hierophant', color: '#ffe070', events: [
+    hierophant: { name: '교황 · 그레고르', fb: '📿', art: 'hierophant', color: '#ffe070', events: [
       () => ({ title: '📿 비기 전수', text: '"부족한 곳부터 채우는 게 가르침이지요."',
         choices: [
           { label: '전수받는다', desc: '가장 낮은 능력 +1 강화', resolve() { const ns = _evAwakenLowest(1); return ns.length ? `📖 ${ns[0]} +1!` : '강화할 능력이 없었다.'; } },
@@ -21705,7 +21839,7 @@
           { label: '사양한다', desc: '다음에', resolve() { return '사제가 축복을 거둔다.'; } },
         ] }; },
     ]},
-    justice: { name: '정의 · 심판관', fb: '⚖', art: 'justice', color: '#88aaff', events: [
+    justice: { name: '정의 · 테미스', fb: '⚖', art: 'justice', color: '#88aaff', events: [
       () => { const cost = _evUnit() * 2; return { title: '⚖ 공정한 교환', text: '"등가 교환이오. 값을 치르면, 그만한 힘을 주지."',
         choices: [
           { label: `교환한다 (${cost}G)`, desc: '보스 데미지 +18% 영구', disabled: state.gold < cost, resolve() { state.gold -= cost; state.metaMods.bossDmgMul = (state.metaMods.bossDmgMul || 1) * 1.18; return '⚖ 보스 +18% 영구!'; } },
@@ -21716,7 +21850,7 @@
       () => ({ title: '⚖ 정지의 심판', text: '"전부 멈춰라. 질서를 되돌릴 시간이다."',
         choices: [ { label: '심판한다', desc: '모든 적 장시간 둔화', resolve() { const n = _evSlowAll(600); return n ? `⚖ ${n}마리 둔화! 잠시 질서가 깃든다.` : '⚖ 멈출 적이 없다.'; } } ] }),
     ]},
-    empress: { name: '여황제 · 여제', fb: '🌹', art: 'empress', color: '#ff88bb', events: [
+    empress: { name: '여황제 · 헤라', fb: '🌹', art: 'empress', color: '#ff88bb', events: [
       () => ({ title: '🌹 어머니의 손길', text: '"덜 자란 아이부터 한 뼘씩 키워주마."',
         choices: [
           { label: '맡긴다', desc: '가장 낮은 능력 2개 +1 강화', resolve() { const ns = _evAwakenLowest(2); return ns.length ? `🌱 ${ns.join(' · ')} +1!` : '키울 능력이 없었다.'; } },
@@ -21727,7 +21861,7 @@
       () => ({ title: '🌹 황금빛 밀밭', text: '"씨를 뿌려두렴. 벨 때마다 황금이 열릴 거야."',
         choices: [ { label: '심는다', desc: '처치당 골드 +1 (영구 누적)', resolve() { _evBuff('asc_killGold'); return '🌾 처치당 +1 골드 (영구)!'; } } ] }),
     ]},
-    world: { name: '세계 · 완성의 무희', fb: '🌍', art: 'world', color: '#88ffcc', events: [
+    world: { name: '세계 · 테라', fb: '🌍', art: 'world', color: '#88ffcc', events: [
       () => ({ title: '🌍 위대한 보상', text: '"여정의 끝에 어울리는 선물을. 하나만 고르세요."',
         choices: [
           { label: '⚔ 힘', desc: '데미지 +18% 영구', resolve() { state.relicEffects.aoeDmgMul *= 1.18; return '⚔ 데미지 +18% 영구!'; } },
@@ -23820,7 +23954,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 367;
+  const APP_VERSION = 370;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
