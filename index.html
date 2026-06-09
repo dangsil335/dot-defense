@@ -3291,6 +3291,14 @@
   .draft-card { animation: dealIn .42s cubic-bezier(.2,.95,.3,1.25) backwards; }
   @keyframes dealIn { from { opacity: 0; transform: translateY(48px) scale(.82); } to { opacity: 1; transform: none; } }
   .draft-hint { display: none; }
+  /* ✨ 대박 / 💀 저주 — 이벤트 패널 테두리 연출 */
+  @keyframes jackpotGlow { 0%,100% { box-shadow: 0 0 26px rgba(255,210,74,.55), 0 20px 60px rgba(0,0,0,.6); } 50% { box-shadow: 0 0 52px rgba(255,210,74,1), 0 0 92px rgba(255,170,40,.55); } }
+  #eventScene.jackpot .npc-scene-inner { border-color: #ffd24a; animation: jackpotGlow 1s ease-in-out infinite; }
+  @keyframes curseGlow { 0%,100% { box-shadow: 0 0 18px rgba(180,40,60,.4), 0 20px 60px rgba(0,0,0,.78); } 50% { box-shadow: 0 0 42px rgba(220,30,50,.9); } }
+  #eventScene.curse .npc-scene-inner { border-color: #b0203a; animation: curseGlow .7s ease-in-out infinite; }
+  #eventScene.curse .npc-panel-title { color: #ff8a8a; text-shadow: 0 0 14px rgba(220,40,60,.6); }
+  .draft-card.jackpot { box-shadow: 0 0 42px rgba(255,210,74,.95), 0 0 84px rgba(255,170,40,.55) !important; }
+  .draft-card.jackpot .dc-front { border-color: #ffd24a; }
   /* 📱 모바일(세로): NPC 상단 / 내용 하단으로 세로 정렬 (shop·event 공통) */
   @media (max-width: 600px) {
     .npc-scene { padding: 10px; }
@@ -5310,19 +5318,24 @@
     },
     gravityWell: {
       name: '중력장', baseCost: 75, color: '#8866cc',
-      desc: lv => `타워 주변 영구 슬로우 필드 · DMG ${1+lv}/주기 · 반경 ${120+lv*12}`,
-      // 변경: 끌어당김 X → 정적 슬로우 필드 (적 통과 시 강한 슬로우)
+      desc: lv => `중앙으로 천천히 끌어당기는 중력장 · 슬로우 · DMG ${1+lv}/주기 · 반경 ${120+lv*12}`,
+      // 🪐 중앙(타워)으로 천천히 흡인 + 슬로우. 중앙 타워는 무적이라 끌어모을수록 이득. 레벨업할수록 인력 ↑.
       init(ab) { ab.tickT = 20; },
       tick(ab) {
         const radius = 120 + ab.level * 12;
         const dmg = 1 + ab.level;
+        const pull = 0.2 + ab.level * 0.06;   // 많이 천천히 → 레벨업할수록 조금씩 빨라짐
         ab.tickT--;
         for (const e of state.enemies) {
           if (e.hp <= 0) continue;
           const [ex, ey] = enemyXY(e);
           if ((ex-CX)*(ex-CX) + (ey-CY)*(ey-CY) < radius*radius) {
-            // 지속 갱신 슬로우 (필드 안에 있는 동안 계속 느려짐)
             e.slowFrames = Math.max(e.slowFrames || 0, 40);
+            // 🪐 중앙으로 천천히 흡인 (라디얼 적만 — TD 경로 적은 경로 유지)
+            if (!e._cart && e.radius !== undefined) {
+              e.radius = Math.max(22, e.radius - pull);
+              if (e.targetRadius !== undefined) e.targetRadius = e.radius;
+            }
           }
         }
         if (ab.tickT <= 0) {
@@ -11787,8 +11800,10 @@
       }
     }
     // 🛡 v259 — v251 엔드리스 +6%/round 롤백: enemyHpFor() 가 이미 R100+ 에서 ×1.5^(n-100) 가속 → 추가 보정 불필요 (이중 가속이라 너무 가팔라짐)
-    const hp = Math.ceil(baseHp * asc.enemyHpMul * tdHpMul);
-    const bossHp = Math.ceil(baseHp * (isFinal ? 13 : 10) * asc.bossHpMul * relicBossHp * tdBossHpMul);
+    // 🎁 이벤트/대박 보상 누적 보정 — 보상이 라운드마다 쌓여 후반이 쉬워지므로, 라운드 비례로 적·보스 HP 상향 (초반 그대로)
+    const eventComp = 1 + Math.min(0.5, Math.max(0, n - 5) * 0.01);   // R5부터 +1%/R, 최대 +50% (튜닝 가능)
+    const hp = Math.ceil(baseHp * asc.enemyHpMul * tdHpMul * eventComp);
+    const bossHp = Math.ceil(baseHp * (isFinal ? 13 : 10) * asc.bossHpMul * relicBossHp * tdBossHpMul * eventComp);
     const baseTime = isFinal ? 180 : 30;
     const duration = Math.max(15, Math.floor((baseTime + (mm.roundTimeBonus || 0)) * asc.roundTimeMul)) * FPS;
     const baseSpawn = isFinal ? 30 : (isBoss ? 10 : 20);
@@ -14750,7 +14765,7 @@
     // ===== 🎰 가챠 SR 캐릭터 (2명) =====
     sakura: {
       name: '🌸 사쿠라', color: '#ff88bb',
-      desc: '[SR] 벚꽃검으로 시작. 데미지 +35% / 보스 +35% / 레벨업 -10%. 벚꽃검 + 검 = 벚꽃폭풍.',
+      desc: '[SR] 벚꽃검으로 시작. 데미지 +35% / 보스 데미지 +35% / 레벨업 -10%. 벚꽃검 + 검 = 벚꽃폭풍.',
       startAbilities: ['sakuraSlash'],
       passive: { dmgMul: 1.35, bossDmgMul: 1.35, slotMod: 0, levelUpMul: 0.90, slowMul: 1 },
       unlockBy: 'gacha:sakura',
@@ -14767,7 +14782,7 @@
     // ===== 🎰 가챠 SSR 캐릭터 (2명) — 승천 13~15 클리어용 핵심 픽 =====
     aria: {
       name: '🌟 아리아', color: '#ffe070',
-      desc: '[SSR] 별의노래로 시작. 데미지 +60% / 보스 +80% / 레벨업 -30% / 강화 -25%. 별의노래 + 노바 = 우주합창.',
+      desc: '[SSR] 별의노래로 시작. 데미지 +60% / 보스 데미지 +80% / 레벨업 -30% / 강화 -25%. 별의노래 + 노바 = 우주합창.',
       startAbilities: ['starSong'],
       passive: { dmgMul: 1.60, bossDmgMul: 1.80, slotMod: 0, levelUpMul: 0.70, slowMul: 1, enhanceMul: 0.75 },
       unlockBy: 'gacha:aria',
@@ -21255,9 +21270,9 @@
     const _kg = _re.killGoldBonus || 0;
     const _bp = [];
     if (_dmgP) _bp.push(`데미지 ${_dmgP > 0 ? '+' : ''}${_dmgP}%`);
-    if (_bossP) _bp.push(`보스 ${_bossP > 0 ? '+' : ''}${_bossP}%`);
-    if (_goldP) _bp.push(`골드 ${_goldP > 0 ? '+' : ''}${_goldP}%`);
-    if (_kg) _bp.push(`처치골드 +${_kg}`);
+    if (_bossP) _bp.push(`보스 데미지 ${_bossP > 0 ? '+' : ''}${_bossP}%`);
+    if (_goldP) _bp.push(`획득 골드 ${_goldP > 0 ? '+' : ''}${_goldP}%`);
+    if (_kg) _bp.push(`처치당 골드 +${_kg}`);
     const _bel = $('s-buffs');
     if (_bel) { if (_bp.length) { _bel.style.display = ''; _setText($('s-buffs-val'), _bp.join(' · ')); } else { _bel.style.display = 'none'; } }
     const pl = $('s-plevel');
@@ -21745,8 +21760,8 @@
         ] }),
       () => ({ title: '😈 금단의 힘', text: '"거대한 것을 부수는 힘이다. 약간의 위험쯤은, 감수하겠지?"',
         choices: [
-          { label: '받아들인다', desc: '보스 +24% · 30% 저주',
-            resolve() { state.metaMods.bossDmgMul = (state.metaMods.bossDmgMul || 1) * 1.24; if (Math.random() < 0.30) { state.relicEffects.aoeDmgMul *= 0.93; return '🔥 보스 +24%! …허나 데미지 -7% 저주.'; } return '🔥 보스 데미지 +24% 영구!'; } },
+          { label: '받아들인다', desc: '보스 데미지 +24% · 30% 저주',
+            resolve() { state.metaMods.bossDmgMul = (state.metaMods.bossDmgMul || 1) * 1.24; if (Math.random() < 0.30) { state.relicEffects.aoeDmgMul *= 0.93; return '🔥 보스 데미지 +24%! …허나 데미지 -7% 저주.'; } return '🔥 보스 데미지 +24% 영구!'; } },
           { label: '거절한다', desc: '함정 같다', resolve() { return '악마가 돌아간다.'; } },
         ] }),
     ]},
@@ -21754,8 +21769,8 @@
       () => ({ title: '⭐ 별자리 점', text: '"별이 세 갈래 길을 비추는군요. 어느 빛을 따르시겠어요?"',
         choices: [
           { label: '⚔ 힘의 별', desc: '데미지 +14% 영구', resolve() { state.relicEffects.aoeDmgMul *= 1.14; return '⚔ 데미지 +14% 영구!'; } },
-          { label: '💰 황금의 별', desc: '획득 골드 +15% 영구', resolve() { state.metaMods.goldMul = (state.metaMods.goldMul || 1) * 1.15; return '💰 골드 +15% 영구!'; } },
-          { label: '👹 사냥의 별', desc: '보스 +20% 영구', resolve() { state.metaMods.bossDmgMul = (state.metaMods.bossDmgMul || 1) * 1.20; return '👹 보스 +20% 영구!'; } },
+          { label: '💰 황금의 별', desc: '획득 골드 +15% 영구', resolve() { state.metaMods.goldMul = (state.metaMods.goldMul || 1) * 1.15; return '💰 획득 골드 +15% 영구!'; } },
+          { label: '👹 사냥의 별', desc: '보스 데미지 +20% 영구', resolve() { state.metaMods.bossDmgMul = (state.metaMods.bossDmgMul || 1) * 1.20; return '👹 보스 데미지 +20% 영구!'; } },
         ] }),
       () => ({ title: '⭐ 타로 점', text: '"카드 한 장. 오늘의 운을 읽어 드릴게요."',
         choices: [
@@ -21842,7 +21857,7 @@
     justice: { name: '정의 · 테미스', fb: '⚖', art: 'justice', color: '#88aaff', events: [
       () => { const cost = _evUnit() * 2; return { title: '⚖ 공정한 교환', text: '"등가 교환이오. 값을 치르면, 그만한 힘을 주지."',
         choices: [
-          { label: `교환한다 (${cost}G)`, desc: '보스 데미지 +18% 영구', disabled: state.gold < cost, resolve() { state.gold -= cost; state.metaMods.bossDmgMul = (state.metaMods.bossDmgMul || 1) * 1.18; return '⚖ 보스 +18% 영구!'; } },
+          { label: `교환한다 (${cost}G)`, desc: '보스 데미지 +18% 영구', disabled: state.gold < cost, resolve() { state.gold -= cost; state.metaMods.bossDmgMul = (state.metaMods.bossDmgMul || 1) * 1.18; return '⚖ 보스 데미지 +18% 영구!'; } },
           { label: '사양한다', desc: '필요 없다', resolve() { return '저울을 거둔다.'; } },
         ] }; },
       () => ({ title: '⚖ 심판', text: '"여기까지 온 그대의 공적을 셈하겠소."',
@@ -21865,7 +21880,7 @@
       () => ({ title: '🌍 위대한 보상', text: '"여정의 끝에 어울리는 선물을. 하나만 고르세요."',
         choices: [
           { label: '⚔ 힘', desc: '데미지 +18% 영구', resolve() { state.relicEffects.aoeDmgMul *= 1.18; return '⚔ 데미지 +18% 영구!'; } },
-          { label: '👹 사냥', desc: '보스 +24% 영구', resolve() { state.metaMods.bossDmgMul = (state.metaMods.bossDmgMul || 1) * 1.24; return '👹 보스 +24% 영구!'; } },
+          { label: '👹 사냥', desc: '보스 데미지 +24% 영구', resolve() { state.metaMods.bossDmgMul = (state.metaMods.bossDmgMul || 1) * 1.24; return '👹 보스 데미지 +24% 영구!'; } },
           { label: '🔮 유물', desc: '유물 확정', resolve() { const nm = _evGiveRelic(); return nm ? `🔮 ${nm}!` : '유물이 동났다…'; } },
         ] }),
       () => ({ title: '🌍 공명', text: '"그대가 모아 온 것들이… 서로 공명하는군요."',
@@ -21887,7 +21902,7 @@
           { label: '사양한다', desc: '다음에', resolve() { return '큐피드가 윙크한다.'; } },
         ] }),
       () => ({ title: '💕 결속', text: '"혼자보다 둘이 강한 법이지."',
-        choices: [ { label: '결속한다', desc: '데미지 +10% · 보스 +12% 영구', resolve() { state.relicEffects.aoeDmgMul *= 1.10; state.metaMods.bossDmgMul = (state.metaMods.bossDmgMul || 1) * 1.12; return '💞 데미지 +10%, 보스 +12%!'; } } ] }),
+        choices: [ { label: '결속한다', desc: '데미지 +10% · 보스 데미지 +12% 영구', resolve() { state.relicEffects.aoeDmgMul *= 1.10; state.metaMods.bossDmgMul = (state.metaMods.bossDmgMul || 1) * 1.12; return '💞 데미지 +10%, 보스 데미지 +12%!'; } } ] }),
       () => ({ title: '💕 공명', text: '"네 곁의 인연이 깊을수록, 더 크게 울린단다."',
         choices: [ { label: '함께한다', desc: '보유 능력 수에 비례한 영구 데미지', resolve() { return _evResonanceAbilities(); } } ] }),
     ]},
@@ -21895,13 +21910,13 @@
       () => ({ title: '🦁 내면의 힘', text: '"진짜 힘은 안에서 나와. 끌어올려 봐."',
         choices: [ { label: '끌어올린다', desc: '데미지 +13% 영구', resolve() { state.relicEffects.aoeDmgMul *= 1.13; return '🦁 데미지 +13% 영구!'; } } ] }),
       () => ({ title: '🦁 야수 길들이기', text: '"큰 놈일수록, 더 세게 후려치면 돼."',
-        choices: [ { label: '길들인다', desc: '보스 +20% 영구', resolve() { state.metaMods.bossDmgMul = (state.metaMods.bossDmgMul || 1) * 1.20; return '🦁 보스 +20% 영구!'; } } ] }),
+        choices: [ { label: '길들인다', desc: '보스 데미지 +20% 영구', resolve() { state.metaMods.bossDmgMul = (state.metaMods.bossDmgMul || 1) * 1.20; return '🦁 보스 데미지 +20% 영구!'; } } ] }),
       () => ({ title: '🦁 다음 보스 균열', text: '"다음에 나올 거수(巨獸), 내가 약점을 내주지. 단숨에 부숴."',
         choices: [ { label: '받는다', desc: '다음 보스에게만 데미지 대폭 (1회)', resolve() { state._bossCrack = true; return '🦁 다음 보스의 급소가 드러났다!'; } } ] }),
     ]},
     chariot: { name: '전차 · 빅토르', fb: '🏇', art: 'chariot', color: '#ffe070', events: [
       () => ({ title: '🏇 돌격', text: '"멈추지 마. 앞으로."',
-        choices: [ { label: '돌격한다', desc: '보스 +18% 영구', resolve() { state.metaMods.bossDmgMul = (state.metaMods.bossDmgMul || 1) * 1.18; return '🏇 보스 +18% 영구!'; } } ] }),
+        choices: [ { label: '돌격한다', desc: '보스 데미지 +18% 영구', resolve() { state.metaMods.bossDmgMul = (state.metaMods.bossDmgMul || 1) * 1.18; return '🏇 보스 데미지 +18% 영구!'; } } ] }),
       () => ({ title: '🏇 승리 쟁취', text: '"위험을 무는 자가 영광을 가져간다."',
         choices: [
           { label: '쟁취한다', desc: '55%: +20% · 45%: -4%', resolve() { if (Math.random() < 0.55) { state.relicEffects.aoeDmgMul *= 1.20; return '🏆 영광! 데미지 +20% 영구!'; } state.relicEffects.aoeDmgMul *= 0.96; return '🏇 후퇴… 데미지 -4%.'; } },
@@ -22013,6 +22028,23 @@
     state.relicEffects.aoeDmgMul *= (1 + bonus);
     return `🔗 능력 ${cnt}개 공명 → 데미지 +${Math.round(bonus * 100)}% 영구!`;
   }
+  // ✨ 대박 — 등급 높은(영웅·전설 우선) 미보유 유물 1개 지급 → 이름 반환
+  function _evGiveTopRelic() {
+    const RANK = { common: 0, rare: 1, epic: 2, legendary: 3 };
+    const owned = new Set((state.activeRelics || []).map(r => r.id));
+    const disc = (typeof getDiscoveredRelics === 'function') ? getDiscoveredRelics() : RELIC_IDS.filter(id => !RELICS[id].unlockBy);
+    let pool = disc.filter(id => RELICS[id] && RELIC_RARITY[RELICS[id].rarity] && RELIC_RARITY[RELICS[id].rarity].weight > 0 && !owned.has(id));
+    const high = pool.filter(id => (RANK[RELICS[id].rarity] || 0) >= 2);
+    if (high.length) pool = high;
+    if (!pool.length) pool = disc.filter(id => RELICS[id] && RELIC_RARITY[RELICS[id].rarity] && RELIC_RARITY[RELICS[id].rarity].weight > 0);
+    if (!pool.length) return null;
+    pool.sort((a, b) => (RANK[RELICS[b].rarity] || 0) - (RANK[RELICS[a].rarity] || 0));
+    const topR = RELICS[pool[0]].rarity;
+    const top = pool.filter(id => RELICS[id].rarity === topR);
+    const pick = top[Math.floor(Math.random() * top.length)];
+    try { acquireRelic(pick); } catch (e) {}
+    return RELICS[pick] ? RELICS[pick].name : '유물';
+  }
   // 🆕 가장 낮은 능력 n개 +1 → 강화된 이름 배열
   function _evAwakenLowest(n) {
     const pool = (state.tower.abilities || []).filter(a => !isAtMax(a));
@@ -22103,7 +22135,7 @@
   // 🎴 카드 드래프트 — 특수보스 처치 → 13 NPC 중 3장(뒷면) → 선택 → 공개 → 그 NPC 이벤트 (저주 12%)
   function openBossEvent() { openCardDraft('buff'); }        // 특수보스/라운드 → 강화 이벤트
   function openBossRelicEvent() { openCardDraft('relic'); }  // 일반보스 → 유물 이벤트
-  function _draftResolve(key, mode) { if (mode === 'relic') openRelicEventForNpc(key); else openEventForNpc(key); }
+  function _draftResolve(key, mode, jackpot) { if (mode === 'relic') openRelicEventForNpc(key, jackpot); else openEventForNpc(key, 1, jackpot); }
   function openCardDraft(mode) {
     if (!state.tower || state.gameOver) return;
     paused = true;
@@ -22137,11 +22169,13 @@
       card.appendChild(inner);
       card.onclick = () => {
         if (chosen) return; chosen = true;
+        const jp = Math.random() < 0.08;   // ✨ 낮은 확률 대박
         row.querySelectorAll('.draft-card').forEach(c => { if (c !== card) c.classList.add('dim'); });
         card.classList.add('revealed');   // CSS가 dc-inner를 rotateY(180°)로 플립 → 앞면 공개
+        if (jp) card.classList.add('jackpot');   // ✨ 대박: 카드만 황금빛으로 (텍스트 없이 이펙트로만)
         if (SFX && SFX.click) try { SFX.click(); } catch (e) {}
-        // 플립(0.6s) + 앞면 감상 시간을 충분히 둔 뒤 이벤트로 전환
-        setTimeout(() => { closeCardDraft(); _draftResolve(key, mode); }, 1600);
+        // 플립 + 감상 후 이벤트 전환 (대박이면 조금 더 음미)
+        setTimeout(() => { closeCardDraft(); _draftResolve(key, mode, jp); }, jp ? 2100 : 1600);
       };
       row.appendChild(card);
     });
@@ -22157,14 +22191,15 @@
       setTimeout(next, 2500);   // 초기 페이지 로드 방해 안 하게 살짝 뒤, 백그라운드로 트리클
     } catch (e) {}
   })();
-  function openEventForNpc(key, scale) {
+  function openEventForNpc(key, scale, jackpot) {
     if (!state.tower || state.gameOver) return;
     paused = true;
     _lastEventOutcome = null;
-    _eventBuffScale = (typeof scale === 'number' && scale > 0) ? scale : 1;   // 기습이면 <1 (영구 버프 수치만 축소)
-    const _ambush = _eventBuffScale !== 1;
+    _eventBuffScale = jackpot ? 1 : ((typeof scale === 'number' && scale > 0) ? scale : 1);   // 대박/보스=full, 기습=축소
     const npc = EVENT_NPCS[key];
-    const isCurse = Math.random() < 0.06 || !npc || !npc.events || !npc.events.length;
+    const _jp = !!jackpot && npc && typeof NPC_JACKPOTS[key] === 'function';   // ✨ 대박
+    const _ambush = !_jp && _eventBuffScale !== 1;
+    const isCurse = !_jp && (Math.random() < 0.06 || !npc || !npc.events || !npc.events.length);
     let npcKey, title, text;
     if (isCurse) {
       const c = CURSE_DEFS[Math.floor(Math.random() * CURSE_DEFS.length)];
@@ -22172,11 +22207,17 @@
       const _validNpc = npc && npc.events && npc.events.length;
       _activeEvent = { _curse: true, def: c }; npcKey = _validNpc ? key : 'curse'; title = c.title;
       text = (_validNpc && CURSE_LINES[key]) ? CURSE_LINES[key] : c.text;   // 그 NPC의 컨셉 저주 대사
+    } else if (_jp) {
+      const ev = NPC_JACKPOTS[key](); _activeEvent = ev; ev._curse = false; npcKey = key; title = ev.title; text = ev.text;
     } else {
       const ev = npc.events[Math.floor(Math.random() * npc.events.length)]();
       _activeEvent = ev; ev._curse = false; npcKey = key; title = ev.title; text = ev.text;
     }
     if (_ambush) title = '⚡ ' + title;   // 기습 이벤트 표식 (보스 이벤트와 구분)
+    const _scn = document.getElementById('eventScene');
+    if (_scn) { _scn.classList.toggle('jackpot', !!_jp); _scn.classList.toggle('curse', !!isCurse); }
+    if (isCurse) { try { shake(12, 20); } catch (e) {} }                 // 💀 저주 — 불길한 진동
+    else if (_jp) { try { if (SFX && SFX.victory) SFX.victory(); } catch (e) {} }   // ✨ 대박 효과음
     _setEventPortrait(npcKey);
     const te = document.getElementById('eventTitle'); if (te) te.textContent = title;
     const ge = document.getElementById('eventGold'); if (ge) ge.textContent = String(Math.floor(state.gold));
@@ -22209,7 +22250,7 @@
     _showEventOutcome(out, false);
   }
   function closeEvent() {
-    const sc = document.getElementById('eventScene'); if (sc) sc.classList.remove('show');
+    const sc = document.getElementById('eventScene'); if (sc) sc.classList.remove('show', 'jackpot', 'curse');
     _activeEvent = null;
     paused = false;
     const pb = document.getElementById('pauseBtn'); if (pb) pb.textContent = '⏸ 일시정지';
@@ -22231,8 +22272,37 @@
     strength:   ['forgeHammer', 'trainBanner', 'wolfFang', 'odinSpear'],
     chariot:    ['aoeBanner', 'tombWreath', 'leechKiss'],
   };
+  // ✨ NPC별 대박 이벤트 — 낮은 확률로 등장하는 초대형 보상 (수치 큼, full magnitude)
+  const NPC_JACKPOTS = {
+    wheel: () => ({ title: '🎲 운명의 정점', text: '"…판이 완벽하게 맞아떨어졌군. 크게 받아가."',
+      choices: [{ label: '쓸어담는다', desc: '골드 대량 + 데미지 +35%', resolve() { const g = _evUnit() * 16; state.gold += g; state.relicEffects.aoeDmgMul *= 1.35; return `🎲 +${g}G · 데미지 +35%!`; } }] }),
+    devil: () => ({ title: '😈 악마의 변덕', text: '"오늘은 기분이 좋군. 대가는… 받지 않겠다. 이번만."',
+      choices: [{ label: '받는다', desc: '전설급 유물 + 데미지 +40%', resolve() { const nm = _evGiveTopRelic(); state.relicEffects.aoeDmgMul *= 1.40; return nm ? `😈 ${nm}! · 데미지 +40%!` : '😈 데미지 +40%!'; } }] }),
+    star: () => ({ title: '⭐ 대길(大吉)', text: '"별이 일제히 당신을 비춰요. 이런 점괘는 처음이에요."',
+      choices: [{ label: '받든다', desc: '데미지+25 · 보스데미지+30 · 획득골드+25', resolve() { state.relicEffects.aoeDmgMul *= 1.25; state.metaMods.bossDmgMul = (state.metaMods.bossDmgMul || 1) * 1.30; state.metaMods.goldMul = (state.metaMods.goldMul || 1) * 1.25; return '⭐ 데미지+25%·보스데미지+30%·획득골드+25%!'; } }] }),
+    sun: () => ({ title: '☀ 태양의 대관식', text: '"오늘만큼은 네가 태양이야. 다 가져가!"',
+      choices: [{ label: '받는다', desc: '골드 대량 + 능력 3개 강화', resolve() { const g = _evUnit() * 13; state.gold += g; const ns = _evAwakenLowest(3); return `☀ +${g}G${ns.length ? ' · ' + ns.join('·') + ' +1' : ''}!`; } }] }),
+    fool: () => ({ title: '🃏 뜻밖의 행운', text: '"오, 이건 나도 처음 봐. 통째로 가져!"',
+      choices: [{ label: '잡는다', desc: '유물 + 새 능력 + 골드', resolve() { const nm = _evGiveRelic(); const ab = _evGainAbility(1); const g = _evUnit() * 10; state.gold += g; return `🃏 ${nm || '유물'} · ${ab} · +${g}G!`; } }] }),
+    magician: () => ({ title: '🪄 현자의 돌', text: '"…완성했다. 전설의 현자의 돌. 가져가게, 자네가 적임자야."',
+      choices: [{ label: '받는다', desc: '전설급 유물 + 데미지 +30%', resolve() { const nm = _evGiveTopRelic(); state.relicEffects.aoeDmgMul *= 1.30; return nm ? `🪄 ${nm}! · 데미지 +30%!` : '🪄 데미지 +30%!'; } }] }),
+    hierophant: () => ({ title: '📿 대신탁', text: '"하늘이 응답하셨다. 이런 계시는 백 년에 한 번이오."',
+      choices: [{ label: '받든다', desc: '전설급 유물 + 정화 + 데미지 +22%', resolve() { const nm = _evGiveTopRelic(); _evPurify(); state.relicEffects.aoeDmgMul *= 1.22; return nm ? `📿 ${nm}! · 정화 · 데미지 +22%!` : '📿 정화 · 데미지 +22%!'; } }] }),
+    justice: () => ({ title: '⚖ 황금의 심판', text: '"그대의 모든 공적을 황금으로 환산하겠소. …엄청난 액수군."',
+      choices: [{ label: '받는다', desc: '골드 대량 + 보스데미지 +30%', resolve() { const g = _evUnit() * 18; state.gold += g; state.metaMods.bossDmgMul = (state.metaMods.bossDmgMul || 1) * 1.30; return `⚖ +${g}G · 보스데미지 +30%!`; } }] }),
+    empress: () => ({ title: '🌹 대풍년', text: '"올해 수확은 역대급이구나. 곳간을 통째로 내어주마."',
+      choices: [{ label: '받는다', desc: '골드 대량 + 처치골드 + 획득골드 +20%', resolve() { const g = _evUnit() * 15; state.gold += g; _evBuff('asc_killGold'); state.metaMods.goldMul = (state.metaMods.goldMul || 1) * 1.20; return `🌹 +${g}G · 처치골드+1 · 획득골드 +20%!`; } }] }),
+    world: () => ({ title: '🌍 세계의 축복', text: '"여정의 정점에, 세계가 가진 모든 것을 건넵니다."',
+      choices: [{ label: '받든다', desc: '유물 + 데미지 +30% + 필드 일소', resolve() { const nm = _evGiveTopRelic(); state.relicEffects.aoeDmgMul *= 1.30; const n = _evClearField(); return `🌍 ${nm || '유물'}! · 데미지 +30%${n ? ` · ${n}마리 일소` : ''}!`; } }] }),
+    lovers: () => ({ title: '💕 천생연분', text: '"이런 인연은 운명이에요. 둘 다 활짝 피워줄게요."',
+      choices: [{ label: '받든다', desc: '능력 3개 강화 + 데미지 +20%', resolve() { const ns = _evAwakenLowest(3); state.relicEffects.aoeDmgMul *= 1.20; return `💞 ${ns.length ? ns.join('·') + ' +1 · ' : ''}데미지 +20%!`; } }] }),
+    strength: () => ({ title: '🦁 초월', text: '"한계를 넘었다. 이게 진짜 네 힘이야."',
+      choices: [{ label: '받는다', desc: '데미지 +40% · 보스데미지 +40%', resolve() { state.relicEffects.aoeDmgMul *= 1.40; state.metaMods.bossDmgMul = (state.metaMods.bossDmgMul || 1) * 1.40; return '🦁 데미지 +40% · 보스데미지 +40%!'; } }] }),
+    chariot: () => ({ title: '🏇 대질주', text: '"바람을 뚫었다! 멈추지 않는 자에게 영광을!"',
+      choices: [{ label: '받는다', desc: '데미지+25 · 보스데미지+25 · 골드 대량', resolve() { state.relicEffects.aoeDmgMul *= 1.25; state.metaMods.bossDmgMul = (state.metaMods.bossDmgMul || 1) * 1.25; const g = _evUnit() * 10; state.gold += g; return `🏇 데미지+25%·보스데미지+25%·+${g}G!`; } }] }),
+  };
   const _RELIC_RANK = { common: 0, rare: 1, epic: 2, legendary: 3, ancient: 9 };
-  function openRelicEventForNpc(key) {
+  function openRelicEventForNpc(key, jackpot) {
     if (!state.tower || state.gameOver) return;
     paused = true;
     _lastEventOutcome = null;
@@ -22250,9 +22320,16 @@
     const unowned = set.filter(id => !ownedSet.has(id))
       .sort((a, b) => (_RELIC_RANK[RELICS[a].rarity] || 0) - (_RELIC_RANK[RELICS[b].rarity] || 0));
     let grantId = null, isStack = false;
-    if (unowned.length) {
+    if (jackpot) {   // ✨ 대박 — 등급 높은(영웅·전설 우선) 미보유 유물 (운빨 고등급!)
+      const disc = (typeof getDiscoveredRelics === 'function') ? getDiscoveredRelics() : RELIC_IDS.filter(id => !RELICS[id].unlockBy);
+      let pool = disc.filter(id => RELICS[id] && RELIC_RARITY[RELICS[id].rarity] && RELIC_RARITY[RELICS[id].rarity].weight > 0 && !ownedSet.has(id));
+      const high = pool.filter(id => (_RELIC_RANK[RELICS[id].rarity] || 0) >= 2);
+      if (high.length) pool = high;
+      if (pool.length) { pool.sort((a, b) => (_RELIC_RANK[RELICS[b].rarity] || 0) - (_RELIC_RANK[RELICS[a].rarity] || 0)); const topR = RELICS[pool[0]].rarity; const top = pool.filter(id => RELICS[id].rarity === topR); grantId = top[Math.floor(Math.random() * top.length)]; }
+    }
+    if (!grantId && unowned.length) {
       grantId = unowned[0];                      // 세트에서 가장 낮은 등급 미보유부터
-    } else if (set.length) {                     // 세트 완성 → 가장 높은 등급 1개 강화(스택)
+    } else if (!grantId && set.length) {         // 세트 완성 → 가장 높은 등급 1개 강화(스택)
       grantId = set.slice().sort((a, b) => (_RELIC_RANK[RELICS[b].rarity] || 0) - (_RELIC_RANK[RELICS[a].rarity] || 0))[0];
       isStack = true;
     }
@@ -22260,7 +22337,8 @@
 
     // ===== 화면 피드백 =====
     _setEventPortrait(npcKey);
-    const te = document.getElementById('eventTitle'); if (te) te.textContent = isStack ? '🔮 유물 강화' : '🔮 유물 획득';
+    const _scnR = document.getElementById('eventScene'); if (_scnR) { _scnR.classList.toggle('jackpot', !!jackpot); _scnR.classList.remove('curse'); }
+    const te = document.getElementById('eventTitle'); if (te) te.textContent = isStack ? '🔮 유물 강화' : '🔮 유물 획득';   // 대박은 금테 글로우 + 고등급 유물(자체 광채)로만 표현
     const ge = document.getElementById('eventGold'); if (ge) ge.textContent = String(Math.floor(state.gold));
     const tx = document.getElementById('eventText');
     const choicesEl = document.getElementById('eventChoices');
@@ -22320,14 +22398,16 @@
     if (!keys.length) return;
     const key = keys[Math.floor(Math.random() * keys.length)];
     const npc = EVENT_NPCS[key];
+    const jp = Math.random() < 0.08;   // ✨ 낮은 확률 대박 조우
     const sc = document.getElementById('ambushScene');
-    if (!sc || !npc) { openEventForNpc(key, AMBUSH_BUFF_SCALE); return; }   // 컷인 불가 시 바로 이벤트(수치 ↓)
+    if (!sc || !npc) { openEventForNpc(key, AMBUSH_BUFF_SCALE, jp); return; }   // 컷인 불가 시 바로 이벤트
     paused = true;
-    const col = npc.color || '#7ad7ff';
+    const col = jp ? '#ffd24a' : (npc.color || '#7ad7ff');   // 대박이면 황금빛 난입
     sc.style.setProperty('--ac', col);
-    sc.style.setProperty('--ag', _hexA(col, 0.45));
-    const line = AMBUSH_LINES[key] || '잠깐, 거기 너.';
+    sc.style.setProperty('--ag', _hexA(col, jp ? 0.6 : 0.45));
+    const line = AMBUSH_LINES[key] || '잠깐, 거기 너.';   // 대박이어도 대사·이름은 평소대로 (이펙트로만 표현)
     const art = npc.art || key;
+    const nameTxt = npc.name;
     sc.classList.remove('out');
     sc.innerHTML =
       '<div class="ambush-flash"></div>'
@@ -22335,7 +22415,7 @@
       + '<div class="ambush-glow"></div>'
       + '<img class="ambush-illus" alt="' + npc.name + '" src="./icons/npc/' + art + '.png" '
       + 'onerror="this.onerror=null;this.src=\'./icons/card/' + art + '.png\';">'
-      + '<div class="ambush-name"><span class="an-name">' + npc.name + '</span></div>'
+      + '<div class="ambush-name"><span class="an-name">' + nameTxt + '</span></div>'
       + '<div class="ambush-line">' + npc.name + ': "' + line + '"</div>';
     sc.classList.add('show');
     if (_ambushTimer) clearTimeout(_ambushTimer);
@@ -22344,9 +22424,9 @@
       sc.classList.add('out');
       _ambushTimer = setTimeout(() => {
         sc.classList.remove('show'); sc.classList.remove('out'); sc.innerHTML = '';
-        openEventForNpc(key, AMBUSH_BUFF_SCALE);   // 기습: 동일 이벤트, 영구 버프 수치만 ↓
+        openEventForNpc(key, AMBUSH_BUFF_SCALE, jp);   // 대박이면 full magnitude
       }, 280);
-    }, 1300);
+    }, jp ? 1700 : 1300);
   }
 
   // ===== 배속 (단일 순환 버튼) =====
@@ -23954,7 +24034,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 370;
+  const APP_VERSION = 374;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
@@ -24273,7 +24353,7 @@
     const parts = [];
     const pct = v => (v >= 0 ? '+' : '') + Math.round(v) + '%';
     if (p.dmgMul && p.dmgMul !== 1) parts.push(`데미지 ${pct((p.dmgMul - 1) * 100)}`);
-    if (p.bossDmgMul && p.bossDmgMul !== 1) parts.push(`보스 ${pct((p.bossDmgMul - 1) * 100)}`);
+    if (p.bossDmgMul && p.bossDmgMul !== 1) parts.push(`보스 데미지 ${pct((p.bossDmgMul - 1) * 100)}`);
     if (p.slotMod) parts.push(`슬롯 ${p.slotMod > 0 ? '+' : ''}${p.slotMod}`);
     if (p.levelUpMul && p.levelUpMul !== 1) parts.push(`레벨업 ${pct((p.levelUpMul - 1) * 100)}`);
     if (p.slowMul && p.slowMul !== 1) parts.push(`슬로우 ${pct((p.slowMul - 1) * 100)}`);
