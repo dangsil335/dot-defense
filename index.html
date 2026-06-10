@@ -3234,6 +3234,18 @@
   .event-choice .ec-label { font-size: 14px; font-weight: bold; }
   .event-choice .ec-desc { font-size: 11.5px; color: #9aa3b3; line-height: 1.4; margin-top: 3px; }
   .event-outcome { font-size: 13.5px; line-height: 1.6; color: #ffe070; background: #161a10; border: 1px solid #3a3a20; border-radius: 10px; padding: 13px 14px; white-space: pre-wrap; animation: rewardIn .25s ease; }
+  /* 🆕 이벤트 결과 능력 아이콘 (삭제/획득/강화) */
+  .eo-icons { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-bottom: 10px; animation: rewardIn .25s ease; }
+  .eo-icon { position: relative; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 6px 8px 5px; background: #11141c; border: 2px solid #888; border-radius: 10px; min-width: 56px; }
+  .eo-icon img { width: 40px; height: 40px; image-rendering: auto; border-radius: 6px; }
+  .eo-badge { position: absolute; top: -7px; right: -7px; width: 18px; height: 18px; border-radius: 50%; color: #0b0e14; font-weight: 900; font-size: 13px; line-height: 18px; text-align: center; box-shadow: 0 1px 4px rgba(0,0,0,.5); }
+  .eo-name { font-size: 10px; color: #cfd6e3; font-weight: bold; max-width: 64px; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  /* ⬆ 상점 강화 결과 팝업 행 */
+  .shop-confirm .sc-up-row { display: flex; align-items: center; justify-content: center; gap: 12px; margin: 10px 0 4px; }
+  .shop-confirm .sc-up-row img { width: 48px; height: 48px; image-rendering: auto; border-radius: 8px; border: 2px solid #ffaa55; }
+  .shop-confirm .sc-up-info { text-align: left; }
+  .shop-confirm .sc-up-name { font-weight: bold; font-size: 15px; }
+  .shop-confirm .sc-up-lv { font-size: 13px; color: #ffd479; margin-top: 2px; }
   /* 🔮 유물 획득 피드백 */
   .relic-reveal { display: flex; align-items: center; gap: 14px; padding: 15px 16px; border-radius: 14px; background: linear-gradient(180deg,#1a2132,#10141f); border: 2px solid var(--rc,#888); box-shadow: 0 0 24px var(--rg,rgba(255,255,255,.25)), inset 0 0 18px rgba(0,0,0,.4); animation: rewardIn .3s cubic-bezier(.2,1.4,.5,1); }
   .relic-reveal .rr-icon { flex: 0 0 64px; width: 64px; height: 64px; display: flex; align-items: center; justify-content: center; font-size: 44px; filter: drop-shadow(0 0 10px var(--rg,rgba(255,255,255,.3))); }
@@ -21748,13 +21760,16 @@
     unlockAbility(id);
   }
   // 무작위 비-max 능력 +n 강화 → 능력 이름 반환
+  let _lastUpgraded = null;   // ⬆ 직전 강화된 능력 기록 (상점 결과 팝업 / 이벤트 아이콘용)
   function _shopUpgradeRandom(n) {
     n = n || 1;
     const pool = state.tower.abilities.filter(a => !isAtMax(a));
-    if (!pool.length) return null;
+    if (!pool.length) { _lastUpgraded = null; return null; }
     const a = pool[Math.floor(Math.random() * pool.length)];
+    const _before = a.level;
     a.level = Math.min(a.level + n, maxLvFor(a.id));
     if (a.level >= maxLvFor(a.id)) checkAncientAwakening(a.id);
+    _lastUpgraded = { id: a.id, level: a.level, delta: a.level - _before };
     return ABILITY_DEFS[a.id].name;
   }
   // 영구 버프 (어센던트) 적용
@@ -21847,13 +21862,34 @@
     const it = (state._shopStock || [])[i];
     if (!it || it.bought || state.gold < it.cost) return;
     state.gold -= it.cost;
+    _lastUpgraded = null;
     try { it.apply(); } catch (e) {}
     it.bought = true;
     if (SFX && SFX.click) SFX.click();
     for (let k = 0; k < 10; k++) spawnParticles(CX, CY, '#ffd479', 1);
-    toast(`🛒 ${it.name} 구매!`);
+    if (_lastUpgraded) _showShopUpgradeResult(_lastUpgraded);   // ⬆ 어떤 능력이 강화됐는지 결과 팝업
+    else toast(`🛒 ${it.name} 구매!`);
     buildShopUI();
     renderPanel();
+  }
+  // ⬆ 능력 강화 결과 팝업 — 어떤 능력이 +몇 레벨 됐는지 아이콘과 함께
+  function _showShopUpgradeResult(up) {
+    const def = ABILITY_DEFS[up.id];
+    const sc = document.getElementById('shopScene');
+    if (!def || !sc) { toast(def ? `⬆ ${def.name} Lv${up.level}!` : '⬆ 강화 완료!'); return; }
+    const old = document.getElementById('shopUpResult'); if (old) old.remove();
+    const dlg = document.createElement('div'); dlg.id = 'shopUpResult'; dlg.className = 'shop-confirm';
+    dlg.innerHTML = '<div class="sc-box">'
+      + '<div class="sc-q">⬆ 강화 완료!</div>'
+      + '<div class="sc-up-row">' + iconHtml(up.id, 48)
+      + '<div class="sc-up-info"><div class="sc-up-name" style="color:' + (def.color || '#ffd479') + ';">' + def.name + '</div>'
+      + '<div class="sc-up-lv">Lv ' + up.level + (up.delta > 0 ? ' <span style="color:#88ff9a;">(+' + up.delta + ')</span>' : '') + '</div></div></div>'
+      + '<div class="sc-btns"><button class="npc-btn" id="shopUpOk">확인</button></div>'
+      + '</div>';
+    sc.appendChild(dlg);
+    const close = () => { const d = document.getElementById('shopUpResult'); if (d) d.remove(); };
+    dlg.onclick = (e) => { if (e.target === dlg) close(); };
+    const ok = document.getElementById('shopUpOk'); if (ok) ok.onclick = close;
   }
   // 🛒 구매 확인 팝업 — 클릭 즉시 구매 방지 (오구매 방지)
   function _shopConfirm(i) {
@@ -22104,7 +22140,7 @@
               const pool = state.tower.abilities.filter(a => !isAtMax(a));
               if (!pool.length) return '엮을 능력이 없었다.';
               const picks = pool.slice().sort(() => Math.random() - 0.5).slice(0, Math.min(2, pool.length));
-              const names = picks.map(a => { a.level = Math.min(a.level + 1, maxLvFor(a.id)); if (a.level >= maxLvFor(a.id)) checkAncientAwakening(a.id); return ABILITY_DEFS[a.id].name; });
+              const names = picks.map(a => { a.level = Math.min(a.level + 1, maxLvFor(a.id)); if (a.level >= maxLvFor(a.id)) checkAncientAwakening(a.id); _evIconPush(a.id, 'up'); return ABILITY_DEFS[a.id].name; });
               return `💞 ${names.join(' · ')} — 한 쌍으로 강화!`;
             } },
           { label: '사양한다', desc: '다음에', resolve() { return '큐피드가 윙크한다.'; } },
@@ -22142,6 +22178,9 @@
   function _evClampGold() { if (state.gold < 0) state.gold = 0; }
   function _evBuff(id) { _shopBuff(id); }
   // 무작위 새 능력 획득 (미보유 우선, 없으면 강화) → 결과 문구
+  // 🆕 이벤트 결과에 표시할 능력 아이콘 [{id, tag:'lost'|'gained'|'up'}] — resolve 직전 초기화, 결과 패널에서 렌더
+  let _evIconFx = [];
+  function _evIconPush(id, tag) { if (id && ABILITY_DEFS[id]) _evIconFx.push({ id: id, tag: tag }); }
   function _evGainAbility(n) {
     n = n || 1;
     const ownedIds = [...new Set(state.tower.abilities.map(a => a.id))];
@@ -22161,9 +22200,10 @@
         expanded = true;
       }
       for (let i = 0; i < n; i++) _shopGainAbility(id);
+      _evIconPush(id, 'gained');
       return `${def.name}${n > 1 ? ' ×' + n : ''} 획득!` + (expanded ? ` (${isPassive ? '패시브' : '액티브'} 최대 칸 +1!)` : '');
     }
-    const nm = _shopUpgradeRandom(n); return nm ? `${nm} +${n} 강화!` : '강화할 능력이 없었다.';
+    const nm = _shopUpgradeRandom(n); if (nm && _lastUpgraded) _evIconPush(_lastUpgraded.id, 'up'); return nm ? `${nm} +${n} 강화!` : '강화할 능력이 없었다.';
   }
   function _evGiveRelic() {
     const owned = (state.activeRelics || []).map(r => r.id);
@@ -22209,6 +22249,7 @@
     ab.level = Math.min(lv, maxLvFor(newId));
     owned.push(ab);
     if (typeof unlockAbility === 'function') unlockAbility(newId);
+    _evIconPush(target.id, 'lost'); _evIconPush(newId, 'gained');
     return `🔁 ${ABILITY_DEFS[target.id].name} → ${ABILITY_DEFS[newId].name} (Lv${ab.level})`;
   }
   // 🆕 정화 — 쌓인 저주/디버프(1 미만 배율) 복구. 정화 항목 수 반환
@@ -22224,7 +22265,7 @@
   function _evSacrificeRebirth() {
     const owned = (state.tower.abilities || []);
     let lost = '';
-    if (owned.length) { const i = Math.floor(Math.random() * owned.length); lost = (ABILITY_DEFS[owned[i].id] || {}).name || '능력'; owned.splice(i, 1); }
+    if (owned.length) { const i = Math.floor(Math.random() * owned.length); const _lid = owned[i].id; lost = (ABILITY_DEFS[_lid] || {}).name || '능력'; _evIconPush(_lid, 'lost'); owned.splice(i, 1); }
     const a = _evGainAbility(1), b = _evGainAbility(1);
     return lost ? `💀 ${lost} 희생 → ${a} · ${b}` : `✨ ${a} · ${b}`;
   }
@@ -22273,7 +22314,7 @@
     const pool = (state.tower.abilities || []).filter(a => !isAtMax(a));
     if (!pool.length) return [];
     pool.sort((a, b) => a.level - b.level);
-    return pool.slice(0, Math.min(n, pool.length)).map(a => { a.level = Math.min(a.level + 1, maxLvFor(a.id)); if (a.level >= maxLvFor(a.id)) checkAncientAwakening(a.id); return ABILITY_DEFS[a.id].name; });
+    return pool.slice(0, Math.min(n, pool.length)).map(a => { a.level = Math.min(a.level + 1, maxLvFor(a.id)); if (a.level >= maxLvFor(a.id)) checkAncientAwakening(a.id); _evIconPush(a.id, 'up'); return ABILITY_DEFS[a.id].name; });
   }
   // (구 평면 EVENT_DEFS 제거됨 — 이벤트는 EVENT_NPCS[key].events 사용)
   // 💀 저주 — 낮은 확률로 강제 발동 (선택 없이 디버프). apply()가 결과 문구 반환.
@@ -22324,7 +22365,16 @@
   function _showEventOutcome(out, isCurse) {
     _lastEventOutcome = out;
     const choicesEl = document.getElementById('eventChoices');
-    if (choicesEl) choicesEl.innerHTML = `<div class="event-outcome"${isCurse ? ' style="color:#ff8a8a;background:#1a1012;border-color:#4a2030;"' : ''}>${out}</div>`;
+    // 🆕 능력 변동 아이콘 (삭제/획득/강화) — 텍스트 위에 표시
+    let iconRow = '';
+    if (_evIconFx && _evIconFx.length) {
+      const TAG = { lost: { c: '#ff8a8a', s: '−' }, gained: { c: '#88ff9a', s: '+' }, up: { c: '#ffd479', s: '▲' } };
+      iconRow = '<div class="eo-icons">' + _evIconFx.map(fx => {
+        const t = TAG[fx.tag] || TAG.gained; const d = ABILITY_DEFS[fx.id] || {};
+        return '<div class="eo-icon" style="border-color:' + t.c + ';">' + iconHtml(fx.id, 40) + '<div class="eo-badge" style="background:' + t.c + ';">' + t.s + '</div><div class="eo-name">' + (d.name || '') + '</div></div>';
+      }).join('') + '</div>';
+    }
+    if (choicesEl) choicesEl.innerHTML = iconRow + `<div class="event-outcome"${isCurse ? ' style="color:#ff8a8a;background:#1a1012;border-color:#4a2030;"' : ''}>${out}</div>`;
     const ge = document.getElementById('eventGold'); if (ge) ge.textContent = String(Math.floor(state.gold));
     const foot = document.getElementById('eventFoot'); if (foot) foot.style.display = '';
     const _cb = document.getElementById('eventCloseBtn'); if (_cb) _cb.textContent = '계속 ▶';
@@ -22454,6 +22504,7 @@
     const choicesEl = document.getElementById('eventChoices'); if (choicesEl) choicesEl.innerHTML = '';
     const foot = document.getElementById('eventFoot'); if (foot) foot.style.display = 'none';
     if (isCurse) {
+      _evIconFx = [];
       let out = ''; try { out = (_activeEvent.def.apply()) || ''; } catch (e) {}   // 🐛 스케일은 헬퍼(_evDmg 등)에서 처리 — 사후 _scaleBuffDelta 제거
       _showEventOutcome(out, true);
     } else {
@@ -22474,6 +22525,7 @@
     if (!ev || ev._curse || ev._resolved) return;
     const ch = ev.choices[i]; if (!ch) return;
     ev._resolved = true;
+    _evIconFx = [];   // 능력 아이콘 추적 초기화
     let out = ''; try { out = (ch.resolve()) || ''; } catch (e) { out = '…'; }   // 🐛 스케일은 헬퍼에서 처리
     if (SFX && SFX.click) try { SFX.click(); } catch (e) {}
     _showEventOutcome(out, false);
@@ -22727,9 +22779,9 @@
     if (!ABILITY_DEFS[id]) return '강화 실패.';
     const nm = ABILITY_DEFS[id].name;
     const ab = state.tower.abilities.find(a => a.id === id);
-    if (ab && !isAtMax(ab)) { ab.level = Math.min(ab.level + 1, maxLvFor(id)); if (ab.level >= maxLvFor(id)) checkAncientAwakening(id); return `🔧 ${nm} +1 (Lv${ab.level})!`; }
-    if (ab) { const r = _shopUpgradeRandom(1); return r ? `${nm}는 이미 최대! 대신 ${r} +1.` : `${nm}는 이미 최대 레벨!`; }
-    _shopGainAbility(id); return `🎴 ${nm} 재획득!`;
+    if (ab && !isAtMax(ab)) { ab.level = Math.min(ab.level + 1, maxLvFor(id)); if (ab.level >= maxLvFor(id)) checkAncientAwakening(id); _evIconPush(id, 'up'); return `🔧 ${nm} +1 (Lv${ab.level})!`; }
+    if (ab) { const r = _shopUpgradeRandom(1); if (r && _lastUpgraded) _evIconPush(_lastUpgraded.id, 'up'); return r ? `${nm}는 이미 최대! 대신 ${r} +1.` : `${nm}는 이미 최대 레벨!`; }
+    _shopGainAbility(id); _evIconPush(id, 'gained'); return `🎴 ${nm} 재획득!`;
   }
   // 🆕 가챠 캐릭터별 시그니처 능력 체인 (시작 능력 → 조합 → 트리플) — 조합 형성 시 본인 컷인 트리거용
   const CHAR_SIG_ABILITIES = {
@@ -24476,7 +24528,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 399;
+  const APP_VERSION = 400;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
