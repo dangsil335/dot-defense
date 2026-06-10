@@ -3211,7 +3211,17 @@
   .shop-item.cant .si-price { color:#ff6b6b; }
   .shop-item.soldout { opacity:0.45; cursor:default; }
   .shop-item.soldout .si-price { color:#6b7283; }
-  .npc-panel-foot { margin-top: 10px; }
+  .npc-panel-foot { margin-top: 10px; flex-shrink: 0; }
+  /* 🛒 모바일 상점 — 나가기 버튼이 스크롤 없이 항상 하단에 떠 있도록 (그리드는 그 위에서 스크롤) */
+  #shopScene .npc-panel-foot { position: sticky; bottom: 0; background: linear-gradient(0deg, #0e1119 72%, rgba(14,17,25,0)); padding-top: 8px; z-index: 3; }
+  /* 🛒 상점 구매 확인 팝업 */
+  .shop-confirm { position: absolute; inset: 0; z-index: 6; display: flex; align-items: center; justify-content: center; background: rgba(4,6,12,0.55); padding: 16px; }
+  .shop-confirm .sc-box { background: linear-gradient(180deg,#1c2434,#10141f); border: 1px solid #3a4660; border-radius: 14px; padding: 18px 20px; min-width: 220px; max-width: 86%; text-align: center; box-shadow: 0 14px 44px rgba(0,0,0,0.6); animation: rewardIn .2s ease; }
+  .shop-confirm .sc-q { font-size: 15px; color: #e8eaf0; line-height: 1.5; }
+  .shop-confirm .sc-cost { font-size: 21px; font-weight: bold; color: #ffd479; margin: 8px 0 14px; }
+  .shop-confirm .sc-btns { display: flex; gap: 10px; }
+  .shop-confirm .sc-btns .npc-btn { flex: 1; padding: 11px; }
+  .shop-confirm .sc-no { background: linear-gradient(180deg,#3a3f4c,#262a36); border-color: #555c6e; box-shadow: none; }
   .npc-btn { width: 100%; padding: 12px; font-family: inherit; font-size: 15px; font-weight: bold; cursor: pointer; border-radius: 11px; background: linear-gradient(180deg,#44598a,#2a3550); color:#fff; border:1px solid #6a82b8; box-shadow: 0 0 14px rgba(122,215,255,0.18); transition: transform .08s, box-shadow .12s; touch-action: manipulation; }
   .npc-btn:hover { box-shadow: 0 0 20px rgba(122,215,255,0.3); }
   .npc-btn:active { transform: scale(.985); }
@@ -12106,14 +12116,14 @@
     //    ⚙ 튜닝: 0.04(라운드당 확률) · 4(한 판 최대 횟수) · 4(최소 라운드 간격).
     if (!_TEST_EVENTS && state.mode !== 'defense' && !state.gameOver && !state.levelUpChoices && state.round >= 3 &&
         (state._shopCount || 0) < 4 &&
-        (state.round - (state._lastShopRound || -99)) >= 4 && Math.random() < 0.04) {
+        (state.round - (state._lastShopRound || -99)) >= 4 && Math.random() < 0.02) {
       state._lastShopRound = state.round;
       state._shopCount = (state._shopCount || 0) + 1;
       if (typeof openShopCutin === 'function') openShopCutin(); else if (typeof openShop === 'function') openShop();
     }
     // ⚡ 라운드 랜덤 이벤트 (A) — 상점이 안 뜬 라운드에 12% 확률로 기습 이벤트(NPC 난입) 등장 (보스 이벤트와 별개, 쿨다운 2라운드)
     else if (!_TEST_EVENTS && state.mode !== 'defense' && !state.gameOver && !state.levelUpChoices && state.round >= 3 &&
-        (state.round - (state._lastEventRound || -99)) >= 2 && Math.random() < 0.12) {
+        (state.round - (state._lastEventRound || -99)) >= 2 && Math.random() < 0.09) {
       state._lastEventRound = state.round;
       if (typeof openAmbushEvent === 'function') openAmbushEvent();
     }
@@ -15772,14 +15782,18 @@
         //    🎆 보스 폭발 연출이 먼저 보이도록 ~0.42초 뒤에 이벤트 오픈 (보상 등장 전 한 박자).
         if (!state.relicOffering && !_activeEvent && !e.isMiniBoss && e.special !== 'abaddon') {
           const _bossSpecial = !!e.special;
-          const _openBossReward = () => {
-            if (!state || state.gameOver || _activeEvent || state.relicOffering) return;
-            // 🃏 레벨업/무료 카드(게임화면 선택)가 떠 있으면 먼저 고르게 두고, 끝난 뒤 보스 카드 드래프트 → 화면 겹침 방지
-            if (state.levelUpChoices) { setTimeout(_openBossReward, 300); return; }
-            if (_bossSpecial) { if (typeof openBossEvent === 'function') openBossEvent(); }     // 특수보스 → 강화 이벤트
-            else { if (typeof openBossRelicEvent === 'function') openBossRelicEvent(); }         // 일반보스 → 유물 이벤트
-          };
-          setTimeout(_openBossReward, 420);
+          // 🎁 일반보스는 50%만 유물 이벤트 등장 (유물 과다 지급 완화). 특수보스 강화 이벤트는 항상.
+          const _giveReward = _bossSpecial || (Math.random() < 0.5);
+          if (_giveReward) {
+            const _openBossReward = () => {
+              if (!state || state.gameOver || _activeEvent || state.relicOffering) return;
+              // 🃏 레벨업/무료 카드(게임화면 선택)가 떠 있으면 먼저 고르게 두고, 끝난 뒤 보스 카드 드래프트 → 화면 겹침 방지
+              if (state.levelUpChoices) { setTimeout(_openBossReward, 300); return; }
+              if (_bossSpecial) { if (typeof openBossEvent === 'function') openBossEvent(); }     // 특수보스 → 강화 이벤트
+              else { if (typeof openBossRelicEvent === 'function') openBossRelicEvent(); }         // 일반보스 → 유물 이벤트
+            };
+            setTimeout(_openBossReward, 420);
+          }
         }
       } else {
         shake(4, 4);
@@ -21653,7 +21667,7 @@
           </div></div>
         <div class="si-desc">${it.desc}</div>
         <div class="si-price">${it.bought ? '✓ 구매함' : it.cost + ' G'}</div>`;
-      if (can) el.onclick = () => buyShopItem(i);
+      if (can) el.onclick = () => _shopConfirm(i);
       grid.appendChild(el);
     });
   }
@@ -21668,6 +21682,27 @@
     toast(`🛒 ${it.name} 구매!`);
     buildShopUI();
     renderPanel();
+  }
+  // 🛒 구매 확인 팝업 — 클릭 즉시 구매 방지 (오구매 방지)
+  function _shopConfirm(i) {
+    const it = (state._shopStock || [])[i];
+    if (!it || it.bought || state.gold < it.cost) return;
+    const sc = document.getElementById('shopScene');
+    if (!sc) { buyShopItem(i); return; }
+    const old = document.getElementById('shopConfirm'); if (old) old.remove();
+    const rr = (typeof RELIC_RARITY !== 'undefined' && RELIC_RARITY[it.rarity]) || {};
+    const dlg = document.createElement('div'); dlg.id = 'shopConfirm'; dlg.className = 'shop-confirm';
+    dlg.innerHTML =
+      '<div class="sc-box">'
+      + '<div class="sc-q">「<b style="color:' + (rr.color || '#ffd479') + '">' + it.name + '</b>」 구매할까요?</div>'
+      + '<div class="sc-cost">💰 ' + it.cost + ' G</div>'
+      + '<div class="sc-btns"><button class="npc-btn sc-no" id="shopConfNo">취소</button><button class="npc-btn" id="shopConfYes">구매 ▶</button></div>'
+      + '</div>';
+    sc.appendChild(dlg);
+    const close = () => { const d = document.getElementById('shopConfirm'); if (d) d.remove(); };
+    dlg.onclick = (e) => { if (e.target === dlg) close(); };   // 바깥 탭 → 취소
+    const noB = document.getElementById('shopConfNo'); if (noB) noB.onclick = () => { if (SFX && SFX.click) try { SFX.click(); } catch (e) {} close(); };
+    const yesB = document.getElementById('shopConfYes'); if (yesB) yesB.onclick = () => { close(); buyShopItem(i); };
   }
   function openShop() {
     if (state.mode === 'defense' || !state.tower || state.gameOver) return;
@@ -21687,6 +21722,7 @@
     const sc = document.getElementById('shopScene'); if (sc) sc.classList.add('show');
   }
   function closeShop() {
+    const _cf = document.getElementById('shopConfirm'); if (_cf) _cf.remove();
     const sc = document.getElementById('shopScene'); if (sc) sc.classList.remove('show');
     paused = false;
     const pb = document.getElementById('pauseBtn'); if (pb) pb.textContent = '⏸ 일시정지';
@@ -22329,9 +22365,17 @@
     }
     if (!grantId && unowned.length) {
       grantId = unowned[0];                      // 세트에서 가장 낮은 등급 미보유부터
-    } else if (!grantId && set.length) {         // 세트 완성 → 가장 높은 등급 1개 강화(스택)
-      grantId = set.slice().sort((a, b) => (_RELIC_RANK[RELICS[b].rarity] || 0) - (_RELIC_RANK[RELICS[a].rarity] || 0))[0];
-      isStack = true;
+    } else if (!grantId) {
+      // 이 NPC 세트는 다 모음 → 전체 해금 유물 중 미보유가 있으면 그걸 우선 (스택 전에 새 유물부터 — "더 못 먹음" 버그 방지)
+      const disc = (typeof getDiscoveredRelics === 'function') ? getDiscoveredRelics() : RELIC_IDS.filter(id => !RELICS[id].unlockBy);
+      const otherUnowned = disc.filter(id => RELICS[id] && RELIC_RARITY[RELICS[id].rarity] && RELIC_RARITY[RELICS[id].rarity].weight > 0 && !ownedSet.has(id))
+        .sort((a, b) => (_RELIC_RANK[RELICS[a].rarity] || 0) - (_RELIC_RANK[RELICS[b].rarity] || 0));
+      if (otherUnowned.length) {
+        grantId = otherUnowned[0];               // 다른 NPC의 미보유 해금 유물부터 (전부 모으기 전엔 스택 X)
+      } else if (set.length) {                   // 모든 해금 유물 보유 → 그때만 스택
+        grantId = set.slice().sort((a, b) => (_RELIC_RANK[RELICS[b].rarity] || 0) - (_RELIC_RANK[RELICS[a].rarity] || 0))[0];
+        isStack = true;
+      }
     }
     if (grantId) { try { acquireRelic(grantId); } catch (e) {} }
 
@@ -24034,7 +24078,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 374;
+  const APP_VERSION = 378;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
