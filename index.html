@@ -11561,6 +11561,10 @@
     if (!v || v === 'loading' || v === 'missing') return null;
     return v.dataUrl || v.src;
   }
+  // 🆕 이름 앞 이모지 제거 — 캐릭터 이미지가 함께 표시될 땐 이모지가 중복이라 뗌 (예: "🌊 마린" → "마린")
+  function charNameNoEmoji(name) {
+    return String(name || '').replace(/^[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{2B00}-\u{2BFF}\u{FE0F}\u{200D}]+\s*/u, '');
+  }
   function getCharacterImageMeta(charId) {
     const v = characterImages[charId];
     if (!v || v === 'loading' || v === 'missing') return null;
@@ -22687,14 +22691,36 @@
     const ability = { label: `🔧 ${nm} 강화`, desc: `${nm} +1 레벨`, resolve() { return _evBoostAbility(abId); } };
     return { title, text, choices: [buff, ability] };
   }
+  // 🆕 아리아/미사키 고유 유물(ariaHarp/misakiHourglass) 획득 — 별도 기습 이벤트(여러 이벤트 중 랜덤). 가챠 해금 + 미보유일 때만 풀에 포함.
+  function _ancientAvail(charId) {
+    const rid = (typeof ANCIENT_RELIC_BY_CHAR !== 'undefined') ? ANCIENT_RELIC_BY_CHAR[charId] : null;
+    if (!rid || typeof isAncientUnlocked !== 'function' || !isAncientUnlocked(rid)) return false;   // 가챠로 해금된 경우만
+    return !(state.activeRelics || []).some(r => r.id === rid);   // 이미 보유 중이면 풀에서 제외
+  }
+  function _charRelicEv(charId) {
+    const rid = ANCIENT_RELIC_BY_CHAR[charId];
+    const relic = RELICS[rid]; const rn = relic ? relic.name : '고유 유물';
+    const lore = {
+      aria:   { title: '🌌 천공의 하프', text: '"이 하프… 너라면 제대로 울려줄 수 있겠지. 받아."' },
+      misaki: { title: '🌌 시간의 모래시계', text: '"이 모래시계, 네 시간에 맞춰 돌아갈 거야. 가져."' },
+    };
+    const lo = lore[charId] || { title: `🌌 ${rn}`, text: '"이 유물, 너에게 어울려."' };
+    return { title: lo.title, text: lo.text, choices: [
+      { label: `🌌 ${rn} 획득`, desc: '고유 유물 획득 — 능력 각성', resolve() { try { acquireRelic(rid); } catch (e) {} return `🌌 ${rn}! 고유 능력이 각성한다.`; } },
+      { label: '사양한다', desc: '다음에', resolve() { return '유물이 빛을 거둔다.'; } },
+    ] };
+  }
+  // 캐릭터별 기습 이벤트 풀 — { avail?, make } 배열. openCharEvent에서 가능한 것 중 랜덤 하나.
   const CHAR_AMBUSH = {
-    marine:   () => _charEv('🌊 마린의 한류',     '"내 어뢰에 한기를 더 실을까, 아니면 어뢰 자체를 키울까?"',   'dmg',  20, 'torpedo'),
-    solar:    () => _charEv('☀️ 솔라의 흑점',     '"태양을 조금 떼어줄게. 화력? 아니면 흑점을 더 크게?"',       'dmg',  22, 'sunspot'),
-    gravitas: () => _charEv('🌀 그래비타스의 중력', '"거대한 적을 짓누르는 힘과, 인력장 강화 — 어느 쪽?"',       'boss', 24, 'pullField'),
-    sakura:   () => _charEv('🌸 사쿠라의 만개',     '"꽃잎처럼 흩날리는 칼날, 더 날카롭게 해줄까?"',             'dmg',  22, 'sakuraSlash'),
-    luna:     () => _charEv('🌙 루나의 월광',       '"달빛을 더 퍼뜨릴까, 월광탄을 더 키울까?"',                 'dmg',  18, 'moonShot'),
-    aria:     () => _charEv('🌟 아리아의 합창',     '"이 별의 노래, 너한테 맞춰 부를게. 어느 쪽이 좋아?"',       'dmg',  24, 'starSong'),
-    misaki:   () => _charEv('🦋 미사키의 시간',     '"시간을 멈춰 급소를 열까, 시공나비를 키울까?"',             'boss', 22, 'timeButterfly'),
+    marine:   [ { make: () => _charEv('🌊 마린의 한류',     '"내 어뢰에 한기를 더 실을까, 아니면 어뢰 자체를 키울까?"',   'dmg',  20, 'torpedo') } ],
+    solar:    [ { make: () => _charEv('☀️ 솔라의 흑점',     '"태양을 조금 떼어줄게. 화력? 아니면 흑점을 더 크게?"',       'dmg',  22, 'sunspot') } ],
+    gravitas: [ { make: () => _charEv('🌀 그래비타스의 중력', '"거대한 적을 짓누르는 힘과, 인력장 강화 — 어느 쪽?"',       'boss', 24, 'pullField') } ],
+    sakura:   [ { make: () => _charEv('🌸 사쿠라의 만개',     '"꽃잎처럼 흩날리는 칼날, 더 날카롭게 해줄까?"',             'dmg',  22, 'sakuraSlash') } ],
+    luna:     [ { make: () => _charEv('🌙 루나의 월광',       '"달빛을 더 퍼뜨릴까, 월광탄을 더 키울까?"',                 'dmg',  18, 'moonShot') } ],
+    aria:     [ { make: () => _charEv('🌟 아리아의 합창',     '"이 별의 노래, 너한테 맞춰 부를게. 어느 쪽이 좋아?"',       'dmg',  24, 'starSong') },
+                { avail: () => _ancientAvail('aria'),   make: () => _charRelicEv('aria') } ],
+    misaki:   [ { make: () => _charEv('🦋 미사키의 시간',     '"시간을 멈춰 급소를 열까, 시공나비를 키울까?"',             'boss', 22, 'timeButterfly') },
+                { avail: () => _ancientAvail('misaki'), make: () => _charRelicEv('misaki') } ],
   };
   // 시작능력 +1 강화 (없으면 재획득, 만렙이면 무작위 +1로 대체)
   function _evBoostAbility(id) {
@@ -22805,7 +22831,10 @@
     _lastEventOutcome = null;
     _eventBuffScale = (typeof scale === 'number' && scale > 0) ? scale : 1;   // 기습=0.6 (표시=적용 정직)
     const char = CHARACTERS[charId];
-    const ev = (CHAR_AMBUSH[charId]) ? CHAR_AMBUSH[charId]() : null;
+    // 🆕 캐릭터 기습 이벤트 풀에서 가능한 것 중 랜덤 하나 (아리아/미사키는 유물 이벤트 포함)
+    const _pool = (CHAR_AMBUSH[charId] || []).filter(e => !e.avail || e.avail());
+    const _entry = _pool.length ? _pool[Math.floor(Math.random() * _pool.length)] : null;
+    const ev = _entry ? _entry.make() : null;
     if (!char || !ev) { paused = false; return; }
     _activeEvent = { choices: ev.choices, _resolved: false };
     const _scn = document.getElementById('eventScene'); if (_scn) { _scn.classList.remove('jackpot', 'curse'); }
@@ -23566,7 +23595,7 @@
       ${imgHTML}
       <div class="preview-info">
         <div class="preview-label">선택된 설정</div>
-        <div class="preview-name" style="color:${char.color || '#7ad7ff'};">${char.name}</div>
+        <div class="preview-name" style="color:${char.color || '#7ad7ff'};">${imgSrc ? charNameNoEmoji(char.name) : char.name}</div>
         ${modeBadge}
         ${starsHTML}
       </div>
@@ -24447,7 +24476,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 396;
+  const APP_VERSION = 399;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
@@ -24751,7 +24780,7 @@
       <div class="hero-info">
         <div class="hero-label">현재 선택</div>
         <div class="hero-name-row">
-          <span class="hero-name" style="color:${char.color || '#7ad7ff'};">${char.name}</span>
+          <span class="hero-name" style="color:${char.color || '#7ad7ff'};">${imgSrc ? charNameNoEmoji(char.name) : char.name}</span>
         </div>
         <div class="hero-desc">${heroInfo}</div>
         ${starsHTML}
@@ -24942,7 +24971,7 @@
           ${portraitHTML}
           <div class="char-header-text">
             <div class="char-name-row">
-              <div class="char-name" style="color:${nameColor}">${char.name}</div>
+              <div class="char-name" style="color:${nameColor}">${charImgSrc ? charNameNoEmoji(char.name) : char.name}</div>
               ${rarityPill}
             </div>
           </div>
@@ -25551,7 +25580,7 @@
         ${imgHTML}
         <div class="char-codex-meta">
           <div class="char-codex-name-row">
-            <span class="char-codex-name" style="color:${char.color};">${char.name}</span>
+            <span class="char-codex-name" style="color:${char.color};">${imgSrc ? charNameNoEmoji(char.name) : char.name}</span>
             <span class="char-codex-rarity" style="color:${rColor};border-color:${rColor};">${char.rarity || 'R'}</span>
           </div>
           ${starsHTML}
