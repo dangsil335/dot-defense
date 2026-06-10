@@ -738,8 +738,8 @@
   .gacha-circle-btn:hover { box-shadow: 0 0 24px rgba(255, 200, 100, 0.7); transform: scale(1.05); }
   .gacha-circle-btn img {
     width: 100%; height: 100%;
-    object-fit: cover;
-    image-rendering: pixelated;
+    object-fit: contain;       /* 🐛 잘림 방지 — 캐릭터 전체 표시 */
+    image-rendering: auto;     /* 🐛 일러스트 부드럽게 (도트화 X) */
     border-radius: 50%;
   }
   .gacha-circle-btn #gachaCircleEmoji { font-size: 24px; }
@@ -834,8 +834,8 @@
   }
   .menu-char-preview .preview-img-wrap img {
     width: 100%; height: 100%;
-    object-fit: cover;
-    image-rendering: pixelated;
+    object-fit: contain;       /* 🐛 잘림 방지 */
+    image-rendering: auto;     /* 🐛 일러스트 부드럽게 */
   }
   .menu-char-preview .preview-info {
     flex: 1; min-width: 0;
@@ -2065,8 +2065,8 @@
   }
   .char-hero .hero-img-wrap img {
     width: 100%; height: 100%;
-    object-fit: cover;
-    image-rendering: pixelated;
+    object-fit: contain;       /* 🐛 잘림 방지 — 일러스트 전체 표시 (cover 크롭 X) */
+    image-rendering: auto;     /* 🐛 일러스트는 부드럽게 (pixelated 도트화 X) */
   }
   .char-hero .hero-info {
     flex: 1; min-width: 0;
@@ -3049,7 +3049,7 @@
     <!-- 상단 좌측: 배너 타이틀 + 픽업 표시 -->
     <div class="gacha-banner-top-overlay">
       <div id="gacha-banner-name" class="gacha-banner-name">🌟 아리아 픽업</div>
-      <div id="gacha-banner-pickup-info" class="gacha-banner-pickup-info">SSR 1.0% · SR 5% · R 94%</div>
+      <div id="gacha-banner-pickup-info" class="gacha-banner-pickup-info">SSR 1.0% · SR 5% · ⭐ 94%</div>
     </div>
     <!-- 🌌 v249 — 고대 유물 픽업 칩 (배너에 동봉된 ANCIENT 유물 표시) -->
     <div id="gacha-banner-ancient-chip" class="gacha-banner-ancient-chip" style="display:none;">
@@ -3261,6 +3261,17 @@
   @keyframes ambushLine { from { opacity: 0; transform: translateY(10px) } to { opacity: 1; transform: translateY(0) } }
   .ambush-flash { position: absolute; inset: 0; background: #fff; opacity: 0; pointer-events: none; animation: ambushFlash .4s ease forwards; }
   @keyframes ambushFlash { 0% { opacity: 0 } 7% { opacity: .55 } 100% { opacity: 0 } }
+  /* 🆕 가챠 캐릭터 조합 컷인 — 좌측에 본인 캐릭터가 잠깐 등장 (논블로킹, 게임 정지 X) */
+  .char-cutin { position: fixed; left: 0; bottom: 6%; z-index: 9990; pointer-events: none; display: flex; flex-direction: column; align-items: flex-start; }
+  .char-cutin-illus { max-height: 48vh; max-width: 46vw; object-fit: contain; transform: translateX(-115%); opacity: 0; filter: drop-shadow(0 8px 26px rgba(0,0,0,.6)); image-rendering: auto; animation: charCutinIn .5s cubic-bezier(.18,1.4,.42,1) forwards; }
+  .char-cutin.out .char-cutin-illus { animation: charCutinOut .35s ease forwards; }
+  @keyframes charCutinIn { 0% { transform: translateX(-115%); opacity: 0 } 60% { opacity: 1 } 100% { transform: translateX(0); opacity: 1 } }
+  @keyframes charCutinOut { to { transform: translateX(-115%); opacity: 0 } }
+  .char-cutin-name { margin: 4px 0 0 10px; padding: 5px 16px 5px 12px; background: linear-gradient(90deg, var(--cc,#7ad7ff) 0%, var(--cc,#7ad7ff) 75%, transparent 100%); color: #0b0e14; font-weight: 900; font-size: 15px; border-radius: 0 4px 4px 0; box-shadow: 0 3px 12px rgba(0,0,0,.5); transform: translateX(-115%); opacity: 0; animation: charCutinName .4s cubic-bezier(.2,.9,.3,1.1) .18s forwards; }
+  .char-cutin.out .char-cutin-name { opacity: 0; transition: opacity .2s; }
+  @keyframes charCutinName { to { transform: translateX(0); opacity: 1 } }
+  .char-cutin-line { margin: 6px 0 0 12px; max-width: 46vw; padding: 6px 14px; background: rgba(8,10,16,0.8); border-left: 3px solid var(--cc,#7ad7ff); color: #fff; font-size: 14px; font-weight: 600; text-shadow: 0 1px 4px #000; border-radius: 0 6px 6px 0; transform: translateX(-115%); opacity: 0; animation: charCutinName .4s cubic-bezier(.2,.9,.3,1.1) .3s forwards; }
+  .char-cutin.out .char-cutin-line { opacity: 0; transition: opacity .2s; }
   /* 🏮 상점 등장 — 등불 점등 연출 (기습과 정반대: 암전 → 따뜻한 불빛) */
   .shop-cutin { display: none; position: fixed; inset: 0; z-index: 9995; overflow: hidden; align-items: center; justify-content: center; background: rgba(4,4,8,0); transition: background .3s ease; }
   .shop-cutin.show { display: flex; background: rgba(4,4,8,0.92); }
@@ -8262,10 +8273,10 @@
     // 1. 마린의 부유어뢰
     torpedo: {
       name: '부유어뢰', baseCost: 65, color: '#5599cc', isGachaUnique: true,
-      desc: lv => `${2+lv}발 유도 어뢰 · DMG ${4+lv*2} · 광역 ${28+lv*5}`,
+      desc: lv => `${2+lv}발 유도 어뢰 · DMG ${9+lv*4} · 광역 ${28+lv*5}`,
       init(ab) { ab.cooldown = 80; ab.torpedoes = []; ab.explosions = []; },
       tick(ab) {
-        const dmg = 4 + ab.level * 2;
+        const dmg = 9 + ab.level * 4;   // 🆕 SR 승격 — 데미지 상향
         const exR = 28 + ab.level * 5;
         for (const e of ab.explosions) e.life--;
         compactInPlace(ab.explosions, _alivePredLife);
@@ -8348,13 +8359,13 @@
     // 2. 솔라의 태양흑점
     sunspot: {
       name: '태양흑점', baseCost: 65, color: '#ffaa44', isGachaUnique: true,
-      desc: lv => `타워 광역 폭발 · DMG ${2+lv*2} · 반경 ${90+lv*15}`,
+      desc: lv => `타워 광역 폭발 · DMG ${9+lv*5} · 반경 ${90+lv*15}`,
       init(ab) { ab.cooldown = 60; ab.fx = 0; },
       tick(ab) {
         if (ab.fx > 0) ab.fx--;
         if (--ab.cooldown > 0) return;
         const radius = 90 + ab.level * 15;
-        const dmg = 2 + ab.level * 2;
+        const dmg = 9 + ab.level * 5;   // 🆕 SR 승격 — 데미지 상향
         for (const e of state.enemies) {
           if (e.hp <= 0) continue;
           const [ex, ey] = enemyXY(e);
@@ -8387,7 +8398,7 @@
     // 3. 그래비타스의 인력장
     pullField: {
       name: '인력장', baseCost: 70, color: '#a070d0', isGachaUnique: true,
-      desc: lv => `정지 인력장 · DMG ${1+lv}/주기 · 적 끌어모음`,
+      desc: lv => `정지 인력장 · DMG ${3+lv*2}/주기 · 적 끌어모음`,
       init(ab) { ab.x = CX; ab.y = CY; ab.tickT = 16; ab.life = 0; },
       tick(ab) {
         ab.life--;
@@ -8402,7 +8413,7 @@
           ab.life = 200 + ab.level * 25;
         }
         const pullR = 140 + ab.level * 12;
-        const dmg = 1 + ab.level;
+        const dmg = 3 + ab.level * 2;   // 🆕 SR 승격 — 데미지 상향
         ab.tickT--;
         for (const e of state.enemies) {
           if (e.hp <= 0) continue;
@@ -8442,10 +8453,10 @@
     // ========== 🎰 가챠 R 조합 (3종) ==========
     frozenTorpedo: {
       name: '빙결어뢰', isCombo: true, baseCost: 150, color: '#88ccff',
-      desc: lv => `${4+lv}발 유도 어뢰 · DMG ${6+lv*4} · 슬로우 + 광역`,
+      desc: lv => `${4+lv}발 유도 어뢰 · DMG ${11+lv*6} · 슬로우 + 광역`,
       init(ab) { ab.cooldown = 75; ab.torpedoes = []; ab.explosions = []; },
       tick(ab) {
-        const dmg = 6 + ab.level * 4;
+        const dmg = 11 + ab.level * 6;   // 🆕 SR 조합 수준으로 상향
         const exR = 40 + ab.level * 6;
         const slowDur = 90 + ab.level * 12;
         for (const e of ab.explosions) e.life--;
@@ -8539,7 +8550,7 @@
     },
     solarStorm: {
       name: '태양폭풍', isCombo: true, baseCost: 130, color: '#ff8844',
-      desc: lv => `광역 폭발 + ${1+lv}곳 낙뢰 · DMG ${10+lv*7}`,
+      desc: lv => `광역 폭발 + ${1+lv}곳 낙뢰 · DMG ${14+lv*7}`,
       init(ab) { ab.cooldown = 55; ab.fx = 0; ab.bolts = []; },
       tick(ab) {
         if (ab.fx > 0) ab.fx--;
@@ -8547,8 +8558,8 @@
         compactInPlace(ab.bolts, _alivePredLife);
         if (--ab.cooldown > 0) return;
         const radius = 100 + ab.level * 15;
-        // 데미지 상향: 5+lv*3 → 10+lv*7 (lv5 = 45, 약 2.25배)
-        const dmg = 10 + ab.level * 7;
+        // 🆕 SR 조합 수준 — 14+lv*7
+        const dmg = 14 + ab.level * 7;
         // 광역
         for (const e of state.enemies) {
           if (e.hp <= 0) continue;
@@ -8601,7 +8612,7 @@
     },
     voidIceVortex: {
       name: '공허빙수렴', isCombo: true, baseCost: 160, color: '#aa88ff',
-      desc: lv => `강력 인력장 · DMG ${4+lv*3}/주기 · 빙결 갱신`,
+      desc: lv => `강력 인력장 · DMG ${7+lv*4}/주기 · 빙결 갱신`,
       init(ab) { ab.x = CX; ab.y = CY; ab.tickT = 12; ab.life = 0; },
       tick(ab) {
         ab.life--;
@@ -8615,7 +8626,7 @@
           ab.life = 180 + ab.level * 22;
         }
         const pullR = 170 + ab.level * 15;
-        const dmg = 4 + ab.level * 3;
+        const dmg = 7 + ab.level * 4;   // 🆕 SR 조합 수준으로 상향
         const slowDur = 80;
         ab.tickT--;
         for (const e of state.enemies) {
@@ -8661,10 +8672,10 @@
     // ========== 🎰 가챠 R 트리플 (3종) ==========
     deepSeaBarrage: {
       name: '심해폭격', isCombo: true, isTriple: true, baseCost: 240, color: '#3377cc',
-      desc: lv => `${8+lv*2}발 거대 어뢰 · DMG ${15+lv*8} · 강슬로우 + 거대 폭발`,
+      desc: lv => `${8+lv*2}발 거대 어뢰 · DMG ${20+lv*10} · 강슬로우 + 거대 폭발`,
       init(ab) { ab.cooldown = 100; ab.torpedoes = []; ab.explosions = []; },
       tick(ab) {
-        const dmg = 15 + ab.level * 8;
+        const dmg = 20 + ab.level * 10;   // 🆕 SR 트리플 수준으로 상향
         const exR = 70 + ab.level * 10;
         const slowDur = 160;
         for (const e of ab.explosions) e.life--;
@@ -8760,13 +8771,13 @@
     },
     stellarCollapse: {
       name: '항성붕괴', isCombo: true, isTriple: true, baseCost: 230, color: '#ff6633',
-      desc: lv => `초거대 광역 + ${3+lv}곳 운석 · DMG ${20+lv*10}`,
+      desc: lv => `초거대 광역 + ${3+lv}곳 운석 · DMG ${26+lv*13}`,
       init(ab) { ab.cooldown = 130; ab.fx = 0; ab.meteors = []; ab.craters = []; },
       tick(ab) {
         if (ab.fx > 0) ab.fx--;
         for (const c of ab.craters) c.life--;
         compactInPlace(ab.craters, _alivePredLife);
-        const dmg = 20 + ab.level * 10;
+        const dmg = 26 + ab.level * 13;   // 🆕 SR 트리플 수준으로 상향
         for (const m of ab.meteors) {
           m.t++;
           if (m.t >= m.fall) {
@@ -10080,7 +10091,7 @@
 
     voidStop: {
       name: '공허정지', isCombo: true, isTriple: true, baseCost: 250, color: '#9966ff',
-      desc: lv => `초강력 흡인장 + 주기 정지 · DMG ${8+lv*5}`,
+      desc: lv => `초강력 흡인장 + 주기 정지 · DMG ${14+lv*9}`,
       init(ab) { ab.x = CX; ab.y = CY; ab.tickT = 10; ab.life = 0; ab.stopT = 240; },
       tick(ab) {
         ab.life--;
@@ -10094,7 +10105,7 @@
           ab.life = 160 + ab.level * 20;
         }
         const pullR = 220 + ab.level * 20;
-        const dmg = 8 + ab.level * 5;
+        const dmg = 14 + ab.level * 9;   // 🆕 SR 트리플 수준으로 상향
         ab.tickT--;
         for (const e of state.enemies) {
           if (e.hp <= 0) continue;
@@ -11227,7 +11238,7 @@
   // 각각 무한 스택 — 같은 카드 반복 등장, 매번 +% 누적
   // ⚠ 게임에 실제 적용되는 필드만 사용 — rangeMul/cooldownMul 등은 state 선언만 있고 dead code
   const ASCENDANT_TYPES = [
-    { id: 'asc_damage',   icon: '⚔', name: '신성한 일격', desc: '모든 데미지 +5%',  color: '#ff6677', apply: (st) => { st.relicEffects.aoeDmgMul *= 1.05; } },
+    { id: 'asc_damage',   icon: '⚔', name: '신성한 일격', desc: '모든 데미지 +5%',  color: '#ff6677', apply: (st) => { st.metaMods.dmgMul = (st.metaMods.dmgMul || 1) * 1.05; } },
     { id: 'asc_might',    icon: '💪', name: '거인의 권능', desc: '주요 데미지 +5%',  color: '#ff8800', apply: (st) => { st.metaMods.dmgMul = (st.metaMods.dmgMul || 1) * 1.05; } },
     { id: 'asc_gold',     icon: '💰', name: '황금의 손길', desc: '획득 골드 +5%',    color: '#ffd479', apply: (st) => { st.metaMods.goldMul = (st.metaMods.goldMul || 1) * 1.05; } },
     { id: 'asc_killGold', icon: '🪙', name: '풍요의 시혜', desc: '처치당 +1 골드',   color: '#ffe070', apply: (st) => { st.relicEffects.killGoldBonus = (st.relicEffects.killGoldBonus || 0) + 1; } },
@@ -14149,12 +14160,16 @@
   // ===== 🎰 가챠 시스템 =====
   // 가챠 캐릭터 풀 (등급별)
   const GACHA_POOL = {
-    R:   ['marine', 'solar', 'gravitas'],
-    SR:  ['sakura', 'luna'],
+    R:   [],   // 🆕 R 등급 폐지 — 마린/솔라/그래비타스는 SR로 승격
+    SR:  ['sakura', 'luna', 'marine', 'solar', 'gravitas'],
     SSR: ['aria', 'misaki'],
   };
-  const GACHA_RATES = { R: 0.943, SR: 0.05, SSR: 0.007 };   // (구) 단일 배너 호환용
+  const GACHA_RATES = { SR: 0.05, SSR: 0.01 };   // (구) 단일 배너 호환용 — 나머지(0.94)는 스타더스트
   const GACHA_REFUND = { R: 150, SR: 400, SSR: 800 };  // 중복 시 스타더스트 환불
+  // 🆕 스타더스트 뽑기 (구 R 슬롯, ~94%) — 대부분 소량, 낮은 확률로 대박
+  const GACHA_STARDUST_SMALL = [20, 60];     // 일반 (랜덤 범위)
+  const GACHA_STARDUST_BIG   = [300, 600];   // ✨ 대박 (랜덤 범위)
+  const GACHA_STARDUST_JACKPOT = 0.05;       // 스타더스트 결과 중 대박 확률 (5%)
   const GACHA_COST = 1;       // 1뽑기 = 결정 1개
   const GACHA_COST_10 = 9;    // 10뽑기 = 결정 9개 (1개 할인)
 
@@ -14168,10 +14183,10 @@
       bannerImg: './icons/gacha-aria.png',
       pool: {
         SSR: ['aria'],                              // 픽업 단독
-        SR:  ['sakura', 'luna'],
-        R:   ['marine', 'solar', 'gravitas'],
+        SR:  ['sakura', 'luna', 'marine', 'solar', 'gravitas'],
+        R:   [],
       },
-      rates: { R: 0.94, SR: 0.05, SSR: 0.01 },     // SSR 픽업 1.0%
+      rates: { SR: 0.05, SSR: 0.01 },   // 나머지(0.94) = 스타더스트 (구 R 슬롯)     // SSR 픽업 1.0%
       featured: 'aria',                            // 픽업 캐릭터 ID
       ancientRelic: 'ariaHarp',                    // 🌌 v245 — 별도 뽑기 결과 (캐릭터 대신 출현)
       ancientRelicRate: 0.005,                     // 0.5% — 이 확률 적중 시 캐릭터 풀 진입 X, 유물만 등장
@@ -14183,10 +14198,10 @@
       bannerImg: './icons/gacha-misaki.png',
       pool: {
         SSR: ['misaki'],
-        SR:  ['sakura', 'luna'],
-        R:   ['marine', 'solar', 'gravitas'],
+        SR:  ['sakura', 'luna', 'marine', 'solar', 'gravitas'],
+        R:   [],
       },
-      rates: { R: 0.94, SR: 0.05, SSR: 0.01 },
+      rates: { SR: 0.05, SSR: 0.01 },   // 나머지(0.94) = 스타더스트 (구 R 슬롯)
       featured: 'misaki',
       ancientRelic: 'misakiHourglass',             // 🌌 v245 — 별도 뽑기 결과 (캐릭터 대신 출현)
       ancientRelicRate: 0.005,                     // 0.5% — 이 확률 적중 시 캐릭터 풀 진입 X, 유물만 등장
@@ -14358,13 +14373,20 @@
     let rarity;
     if (r < rates.SSR) rarity = 'SSR';
     else if (r < rates.SSR + rates.SR) rarity = 'SR';
-    else rarity = 'R';
+    else {
+      // 🆕 스타더스트 (구 R 슬롯, ~94%) — 대부분 소량, 낮은 확률로 대박
+      const jackpot = Math.random() < GACHA_STARDUST_JACKPOT;
+      const rng = jackpot ? GACHA_STARDUST_BIG : GACHA_STARDUST_SMALL;
+      const amt = rng[0] + Math.floor(Math.random() * (rng[1] - rng[0] + 1));
+      META.stardust = (META.stardust || 0) + amt;
+      META.stardustEarned = (META.stardustEarned || 0) + amt;
+      saveMeta();
+      return { isStardust: true, stardust: amt, isJackpot: jackpot };
+    }
     // 풀이 비어있으면 다른 등급으로 대체 (안전망)
     let pool = banner.pool[rarity];
-    if (!pool || pool.length === 0) {
-      rarity = 'R';
-      pool = banner.pool.R;
-    }
+    if (!pool || pool.length === 0) { rarity = 'SR'; pool = banner.pool.SR; }
+    if (!pool || pool.length === 0) { rarity = 'SSR'; pool = banner.pool.SSR; }
     const charId = pool[Math.floor(Math.random() * pool.length)];
     META.gachaUnlocked = META.gachaUnlocked || {};
     META.charStars = META.charStars || {};
@@ -14763,27 +14785,27 @@
     // ===== 🎰 가챠 캐릭터 (R 등급 — 3명) =====
     marine: {
       name: '🌊 마린', color: '#5599cc',
-      desc: '[R] 부유어뢰로 시작. 어뢰 + 빙결 = 빙결어뢰.',
+      desc: '[SR] 부유어뢰로 시작. 데미지 +25% / 슬로우 +45% / 보스 +15%. 어뢰 + 빙결 = 빙결어뢰.',
       startAbilities: ['torpedo'],
-      passive: { dmgMul: 1, bossDmgMul: 1, slotMod: 0, levelUpMul: 1, slowMul: 1.10 },
+      passive: { dmgMul: 1.25, bossDmgMul: 1.15, slotMod: 0, levelUpMul: 0.95, slowMul: 1.45 },
       unlockBy: 'gacha:marine',
-      isGacha: true, rarity: 'R',
+      isGacha: true, rarity: 'SR',
     },
     solar: {
       name: '☀️ 솔라', color: '#ffaa44',
-      desc: '[R] 태양흑점으로 시작. 흑점 + 벼락 = 태양폭풍.',
+      desc: '[SR] 태양흑점으로 시작. 데미지 +35% / 보스 데미지 +30% / 레벨업 -8%. 흑점 + 벼락 = 태양폭풍.',
       startAbilities: ['sunspot'],
-      passive: { dmgMul: 1, bossDmgMul: 1, slotMod: 0, levelUpMul: 1, slowMul: 1 },
+      passive: { dmgMul: 1.35, bossDmgMul: 1.30, slotMod: 0, levelUpMul: 0.92, slowMul: 1 },
       unlockBy: 'gacha:solar',
-      isGacha: true, rarity: 'R',
+      isGacha: true, rarity: 'SR',
     },
     gravitas: {
       name: '🌀 그래비타스', color: '#a070d0',
-      desc: '[R] 인력장으로 시작. 인력장 + 빙결파동 = 공허빙수렴.',
+      desc: '[SR] 인력장으로 시작. 데미지 +28% / 보스 데미지 +20% / 슬로우 +30%. 인력장 + 빙결파동 = 공허빙수렴.',
       startAbilities: ['pullField'],
-      passive: { dmgMul: 1, bossDmgMul: 1, slotMod: 0, levelUpMul: 1, slowMul: 1 },
+      passive: { dmgMul: 1.28, bossDmgMul: 1.20, slotMod: 0, levelUpMul: 0.95, slowMul: 1.30 },
       unlockBy: 'gacha:gravitas',
-      isGacha: true, rarity: 'R',
+      isGacha: true, rarity: 'SR',
     },
     // ===== 🎰 가챠 SR 캐릭터 (2명) =====
     sakura: {
@@ -16332,6 +16354,11 @@
           SFX.combo();
           toast(isTriple ? `🔥 트리플 조합! ${ABILITY_DEFS[c.id].name}` : `✨ ${ABILITY_DEFS[c.id].name} 조합 완성!`);
           unlockAbility(c.id);
+          // 🆕 가챠 SR/SSR 캐릭터 시그니처 능력 조합 → 본인 캐릭터 좌측 컷인 (논블로킹)
+          try {
+            const _sc = _charBySigAbility[recipe.parts[0]] || _charBySigAbility[recipe.parts[1]] || _charBySigAbility[c.id];
+            if (_sc && typeof showCharComboCutin === 'function') showCharComboCutin(_sc, c.id);
+          } catch (e) {}
         }
       }
     }
@@ -21412,12 +21439,14 @@
     _setText($('s-enemies'), `${state.enemies.length} / ${_maxA}`);
     // ✨ 누적 강화 표시 — 이벤트/상점/유물/승천 효과를 상시 확인
     const _re = state.relicEffects || {}, _mm = state.metaMods || {};
-    const _dmgP = Math.round(((_re.aoeDmgMul || 1) * (_mm.dmgMul || 1) - 1) * 100);
+    const _dmgP = Math.round(((_mm.dmgMul || 1) - 1) * 100);          // 모든 데미지 (dmgMul)
+    const _aoeP = Math.round(((_re.aoeDmgMul || 1) - 1) * 100);       // 광역 데미지만 (aoeDmgMul)
     const _bossP = Math.round(((_mm.bossDmgMul || 1) - 1) * 100);
     const _goldP = Math.round(((_mm.goldMul || 1) - 1) * 100);
     const _kg = _re.killGoldBonus || 0;
     const _bp = [];
     if (_dmgP) _bp.push(`데미지 ${_dmgP > 0 ? '+' : ''}${_dmgP}%`);
+    if (_aoeP) _bp.push(`광역 데미지 ${_aoeP > 0 ? '+' : ''}${_aoeP}%`);
     if (_bossP) _bp.push(`보스 데미지 ${_bossP > 0 ? '+' : ''}${_bossP}%`);
     if (_goldP) _bp.push(`획득 골드 ${_goldP > 0 ? '+' : ''}${_goldP}%`);
     if (_kg) _bp.push(`처치당 골드 +${_kg}`);
@@ -21910,7 +21939,7 @@
               if (r < 0.60) { _evBuff('asc_damage'); return '⚔ 데미지 +5% 영구!'; }
               if (r < 0.80) { return '🎴 ' + _evGainAbility(1); }
               if (r < 0.95) { return '··· 꽝!'; }
-              state.relicEffects.aoeDmgMul *= 0.95; return '💀 불운! 데미지 -5%.'; } },
+              const p = _evDmg(-5); return `💀 불운! 데미지 ${p}%.`; } },
           { label: '사양한다', desc: '위험은 싫다', resolve() { return '룰렛이 멈춘다.'; } },
         ] }),
       () => { const g = state.gold; return {
@@ -21924,8 +21953,8 @@
     devil: { name: '악마 · 마몬', fb: '😈', art: 'devil', color: '#aa88ff', events: [
       () => ({ title: '😈 피의 계약', text: '"힘이 필요하지. 값은 네 황금의 절반. …싸지 않나?"',
         choices: [
-          { label: '계약한다', desc: '골드 -50% · 데미지 +24% 영구', disabled: state.gold < 10,
-            resolve() { const lost = Math.floor(state.gold * 0.5); state.gold -= lost; _evClampGold(); state.relicEffects.aoeDmgMul *= 1.24; return `🩸 -${lost}G, 데미지 +24% 영구!`; } },
+          { label: '계약한다', desc: `골드 -50% · 데미지 +${_evP(24)}% 영구`, disabled: state.gold < 10,
+            resolve() { const lost = Math.floor(state.gold * 0.5); state.gold -= lost; _evClampGold(); const p = _evDmg(24); return `🩸 -${lost}G, 데미지 +${p}% 영구!`; } },
           { label: '거절한다', desc: '영혼은 안 판다', resolve() { return '악마가 사라진다.'; } },
         ] }),
       () => ({ title: '😈 금단의 재조합', text: '"낡은 힘 하나를 부수면, 새 힘 둘이 태어나지. …해볼 텐가?"',
@@ -21935,17 +21964,17 @@
         ] }),
       () => ({ title: '😈 금단의 힘', text: '"거대한 것을 부수는 힘이다. 약간의 위험쯤은, 감수하겠지?"',
         choices: [
-          { label: '받아들인다', desc: '보스 데미지 +24% · 30% 저주',
-            resolve() { state.metaMods.bossDmgMul = (state.metaMods.bossDmgMul || 1) * 1.24; if (Math.random() < 0.30) { state.relicEffects.aoeDmgMul *= 0.93; return '🔥 보스 데미지 +24%! …허나 데미지 -7% 저주.'; } return '🔥 보스 데미지 +24% 영구!'; } },
+          { label: '받아들인다', desc: `보스 데미지 +${_evP(24)}% · 30% 저주`,
+            resolve() { const pb = _evBoss(24); if (Math.random() < 0.30) { const pc = _evDmg(-7); return `🔥 보스 데미지 +${pb}%! …허나 데미지 ${pc}% 저주.`; } return `🔥 보스 데미지 +${pb}% 영구!`; } },
           { label: '거절한다', desc: '함정 같다', resolve() { return '악마가 돌아간다.'; } },
         ] }),
     ]},
     star: { name: '별 · 셀레네', fb: '🔮', art: 'star', color: '#88ccff', events: [
       () => ({ title: '⭐ 별자리 점', text: '"별이 세 갈래 길을 비추는군요. 어느 빛을 따르시겠어요?"',
         choices: [
-          { label: '⚔ 힘의 별', desc: '데미지 +14% 영구', resolve() { state.relicEffects.aoeDmgMul *= 1.14; return '⚔ 데미지 +14% 영구!'; } },
-          { label: '💰 황금의 별', desc: '획득 골드 +15% 영구', resolve() { state.metaMods.goldMul = (state.metaMods.goldMul || 1) * 1.15; return '💰 획득 골드 +15% 영구!'; } },
-          { label: '👹 사냥의 별', desc: '보스 데미지 +20% 영구', resolve() { state.metaMods.bossDmgMul = (state.metaMods.bossDmgMul || 1) * 1.20; return '👹 보스 데미지 +20% 영구!'; } },
+          { label: '⚔ 힘의 별', desc: `데미지 +${_evP(14)}% 영구`, resolve() { const p = _evDmg(14); return `⚔ 데미지 +${p}% 영구!`; } },
+          { label: '💰 황금의 별', desc: `획득 골드 +${_evP(15)}% 영구`, resolve() { const p = _evGold(15); return `💰 획득 골드 +${p}% 영구!`; } },
+          { label: '👹 사냥의 별', desc: `보스 데미지 +${_evP(20)}% 영구`, resolve() { const p = _evBoss(20); return `👹 보스 데미지 +${p}% 영구!`; } },
         ] }),
       () => ({ title: '⭐ 타로 점', text: '"카드 한 장. 오늘의 운을 읽어 드릴게요."',
         choices: [
@@ -21979,7 +22008,7 @@
               if (r < 0.40) { const g = _evUnit() * 5; state.gold += g; return `🪙 +${g}G!`; }
               if (r < 0.65) { const nm = _evGiveRelic(); return nm ? `🔮 유물 ${nm}!` : '유물 발견!'; }
               if (r < 0.85) { return '🎴 ' + _evGainAbility(1); }
-              state.relicEffects.aoeDmgMul *= 0.93; return '💥 미믹! 데미지 -7%.'; } },
+              const p = _evDmg(-7); return `💥 미믹! 데미지 ${p}%.`; } },
           { label: '두고 간다', desc: '수상하다', resolve() { return '상자를 지나친다.'; } },
         ] }),
       () => { const cost = _evUnit() * 3; return {
@@ -22003,12 +22032,12 @@
         ] }),
       () => ({ title: '🪄 등가교환', text: '"전 재산을 힘으로. 많이 바칠수록 강해져 — 한계는 있지만."',
         choices: [
-          { label: '바친다', desc: '골드 → 데미지 (최대 +18%)', disabled: state.gold < 5, resolve() { return _evGoldToDamage(); } },
+          { label: '바친다', desc: `골드 → 데미지 (최대 +${_evP(18)}%)`, disabled: state.gold < 5, resolve() { return _evGoldToDamage(); } },
           { label: '사양한다', desc: '돈이 아깝다', resolve() { return '화로가 식는다.'; } },
         ] }),
       () => ({ title: '🪄 원소 폭주', text: '"위험한 실험이지만… 성공하면 값지지."',
         choices: [
-          { label: '폭주시킨다', desc: '60%: +22% · 40%: -5%', resolve() { if (Math.random() < 0.6) { state.relicEffects.aoeDmgMul *= 1.22; return '💥 성공! 데미지 +22% 영구!'; } state.relicEffects.aoeDmgMul *= 0.95; return '💥 실패… 데미지 -5%.'; } },
+          { label: '폭주시킨다', desc: `60%: +${_evP(22)}% · 40%: ${_evP(-5)}%`, resolve() { if (Math.random() < 0.6) { const p = _evDmg(22); return `💥 성공! 데미지 +${p}% 영구!`; } const p2 = _evDmg(-5); return `💥 실패… 데미지 ${p2}%.`; } },
           { label: '사양한다', desc: '위험해', resolve() { return '연금술사가 아쉬워한다.'; } },
         ] }),
     ]},
@@ -22020,7 +22049,7 @@
         ] }),
       () => ({ title: '📿 사면', text: '"그대에게 드리운 업(業), 내가 씻어주겠소."',
         choices: [
-          { label: '사면받는다', desc: '저주·디버프 제거 + 데미지 +5%', resolve() { const n = _evPurify(); state.relicEffects.aoeDmgMul *= 1.05; return n ? `✨ 저주 ${n}개 사면! 데미지 +5%.` : '✨ 가호가 깃든다. 데미지 +5%!'; } },
+          { label: '사면받는다', desc: `저주·디버프 제거 + 데미지 +${_evP(5)}%`, resolve() { const n = _evPurify(); const p = _evDmg(5); return n ? `✨ 저주 ${n}개 사면! 데미지 +${p}%.` : `✨ 가호가 깃든다. 데미지 +${p}%!`; } },
           { label: '사양한다', desc: '괜찮다', resolve() { return '사제가 고개를 숙인다.'; } },
         ] }),
       () => { const cost = _evUnit() * 3; return { title: '📿 헌금', text: '"정성을 바치면, 합당한 보답이 따르는 법."',
@@ -22032,7 +22061,7 @@
     justice: { name: '정의 · 테미스', fb: '⚖', art: 'justice', color: '#88aaff', events: [
       () => { const cost = _evUnit() * 2; return { title: '⚖ 공정한 교환', text: '"등가 교환이오. 값을 치르면, 그만한 힘을 주지."',
         choices: [
-          { label: `교환한다 (${cost}G)`, desc: '보스 데미지 +18% 영구', disabled: state.gold < cost, resolve() { state.gold -= cost; state.metaMods.bossDmgMul = (state.metaMods.bossDmgMul || 1) * 1.18; return '⚖ 보스 데미지 +18% 영구!'; } },
+          { label: `교환한다 (${cost}G)`, desc: `보스 데미지 +${_evP(18)}% 영구`, disabled: state.gold < cost, resolve() { state.gold -= cost; const p = _evBoss(18); return `⚖ 보스 데미지 +${p}% 영구!`; } },
           { label: '사양한다', desc: '필요 없다', resolve() { return '저울을 거둔다.'; } },
         ] }; },
       () => ({ title: '⚖ 심판', text: '"여기까지 온 그대의 공적을 셈하겠소."',
@@ -22047,15 +22076,15 @@
           { label: '사양한다', desc: '괜찮다', resolve() { return '여제가 미소짓는다.'; } },
         ] }),
       () => ({ title: '🌹 풍년', text: '"올해는 풍년이야. 거둘 때마다 곳간이 차오르지."',
-        choices: [ { label: '받는다', desc: '획득 골드 +15% 영구', resolve() { state.metaMods.goldMul = (state.metaMods.goldMul || 1) * 1.15; return '🌾 획득 골드 +15% 영구!'; } } ] }),
+        choices: [ { label: '받는다', desc: `획득 골드 +${_evP(15)}% 영구`, resolve() { const p = _evGold(15); return `🌾 획득 골드 +${p}% 영구!`; } } ] }),
       () => ({ title: '🌹 황금빛 밀밭', text: '"씨를 뿌려두렴. 벨 때마다 황금이 열릴 거야."',
         choices: [ { label: '심는다', desc: '처치당 골드 +1 (영구 누적)', resolve() { _evBuff('asc_killGold'); return '🌾 처치당 +1 골드 (영구)!'; } } ] }),
     ]},
     world: { name: '세계 · 테라', fb: '🌍', art: 'world', color: '#88ffcc', events: [
       () => ({ title: '🌍 위대한 보상', text: '"여정의 끝에 어울리는 선물을. 하나만 고르세요."',
         choices: [
-          { label: '⚔ 힘', desc: '데미지 +18% 영구', resolve() { state.relicEffects.aoeDmgMul *= 1.18; return '⚔ 데미지 +18% 영구!'; } },
-          { label: '👹 사냥', desc: '보스 데미지 +24% 영구', resolve() { state.metaMods.bossDmgMul = (state.metaMods.bossDmgMul || 1) * 1.24; return '👹 보스 데미지 +24% 영구!'; } },
+          { label: '⚔ 힘', desc: `데미지 +${_evP(18)}% 영구`, resolve() { const p = _evDmg(18); return `⚔ 데미지 +${p}% 영구!`; } },
+          { label: '👹 사냥', desc: `보스 데미지 +${_evP(24)}% 영구`, resolve() { const p = _evBoss(24); return `👹 보스 데미지 +${p}% 영구!`; } },
           { label: '🔮 유물', desc: '유물 확정', resolve() { const nm = _evGiveRelic(); return nm ? `🔮 ${nm}!` : '유물이 동났다…'; } },
         ] }),
       () => ({ title: '🌍 공명', text: '"그대가 모아 온 것들이… 서로 공명하는군요."',
@@ -22077,29 +22106,29 @@
           { label: '사양한다', desc: '다음에', resolve() { return '큐피드가 윙크한다.'; } },
         ] }),
       () => ({ title: '💕 결속', text: '"혼자보다 둘이 강한 법이지."',
-        choices: [ { label: '결속한다', desc: '데미지 +10% · 보스 데미지 +12% 영구', resolve() { state.relicEffects.aoeDmgMul *= 1.10; state.metaMods.bossDmgMul = (state.metaMods.bossDmgMul || 1) * 1.12; return '💞 데미지 +10%, 보스 데미지 +12%!'; } } ] }),
+        choices: [ { label: '결속한다', desc: `데미지 +${_evP(10)}% · 보스 데미지 +${_evP(12)}% 영구`, resolve() { const pd = _evDmg(10); const pb = _evBoss(12); return `💞 데미지 +${pd}%, 보스 데미지 +${pb}%!`; } } ] }),
       () => ({ title: '💕 공명', text: '"네 곁의 인연이 깊을수록, 더 크게 울린단다."',
         choices: [ { label: '함께한다', desc: '보유 능력 수에 비례한 영구 데미지', resolve() { return _evResonanceAbilities(); } } ] }),
     ]},
     strength: { name: '힘 · 레오', fb: '🦁', art: 'strength', color: '#ff8800', events: [
       () => ({ title: '🦁 내면의 힘', text: '"진짜 힘은 안에서 나와. 끌어올려 봐."',
-        choices: [ { label: '끌어올린다', desc: '데미지 +13% 영구', resolve() { state.relicEffects.aoeDmgMul *= 1.13; return '🦁 데미지 +13% 영구!'; } } ] }),
+        choices: [ { label: '끌어올린다', desc: `데미지 +${_evP(13)}% 영구`, resolve() { const p = _evDmg(13); return `🦁 데미지 +${p}% 영구!`; } } ] }),
       () => ({ title: '🦁 야수 길들이기', text: '"큰 놈일수록, 더 세게 후려치면 돼."',
-        choices: [ { label: '길들인다', desc: '보스 데미지 +20% 영구', resolve() { state.metaMods.bossDmgMul = (state.metaMods.bossDmgMul || 1) * 1.20; return '🦁 보스 데미지 +20% 영구!'; } } ] }),
+        choices: [ { label: '길들인다', desc: `보스 데미지 +${_evP(20)}% 영구`, resolve() { const p = _evBoss(20); return `🦁 보스 데미지 +${p}% 영구!`; } } ] }),
       () => ({ title: '🦁 다음 보스 균열', text: '"다음에 나올 거수(巨獸), 내가 약점을 내주지. 단숨에 부숴."',
         choices: [ { label: '받는다', desc: '다음 보스에게만 데미지 대폭 (1회)', resolve() { state._bossCrack = true; return '🦁 다음 보스의 급소가 드러났다!'; } } ] }),
     ]},
     chariot: { name: '전차 · 빅토르', fb: '🏇', art: 'chariot', color: '#ffe070', events: [
       () => ({ title: '🏇 돌격', text: '"멈추지 마. 앞으로."',
-        choices: [ { label: '돌격한다', desc: '보스 데미지 +18% 영구', resolve() { state.metaMods.bossDmgMul = (state.metaMods.bossDmgMul || 1) * 1.18; return '🏇 보스 데미지 +18% 영구!'; } } ] }),
+        choices: [ { label: '돌격한다', desc: `보스 데미지 +${_evP(18)}% 영구`, resolve() { const p = _evBoss(18); return `🏇 보스 데미지 +${p}% 영구!`; } } ] }),
       () => ({ title: '🏇 승리 쟁취', text: '"위험을 무는 자가 영광을 가져간다."',
         choices: [
-          { label: '쟁취한다', desc: '55%: +20% · 45%: -4%', resolve() { if (Math.random() < 0.55) { state.relicEffects.aoeDmgMul *= 1.20; return '🏆 영광! 데미지 +20% 영구!'; } state.relicEffects.aoeDmgMul *= 0.96; return '🏇 후퇴… 데미지 -4%.'; } },
+          { label: '쟁취한다', desc: `55%: +${_evP(20)}% · 45%: ${_evP(-4)}%`, resolve() { if (Math.random() < 0.55) { const p = _evDmg(20); return `🏆 영광! 데미지 +${p}% 영구!`; } const p2 = _evDmg(-4); return `🏇 후퇴… 데미지 ${p2}%.`; } },
           { label: '물러난다', desc: '안전하게', resolve() { return '전차가 멈춘다.'; } },
         ] }),
       () => { const cost = _evUnit() * 2; return { title: '🏇 폭주', text: '"전차를 가속해. 값은 좀 치러야겠지만."',
         choices: [
-          { label: `가속한다 (${cost}G)`, desc: '데미지 +16% 영구', disabled: state.gold < cost, resolve() { state.gold -= cost; state.relicEffects.aoeDmgMul *= 1.16; return '🏇 데미지 +16% 영구!'; } },
+          { label: `가속한다 (${cost}G)`, desc: `데미지 +${_evP(16)}% 영구`, disabled: state.gold < cost, resolve() { state.gold -= cost; const p = _evDmg(16); return `🏇 데미지 +${p}% 영구!`; } },
           { label: '사양한다', desc: '아끼자', resolve() { return '전차가 늦춘다.'; } },
         ] }; },
     ]},
@@ -22201,8 +22230,8 @@
     const spent = Math.min(state.gold, capCost);
     if (spent < 1) return '바칠 골드가 없었다.';
     state.gold -= spent; _evClampGold();
-    const bonus = 0.18 * (spent / capCost);
-    state.relicEffects.aoeDmgMul *= (1 + bonus);
+    const bonus = 0.18 * (spent / capCost) * (_eventBuffScale || 1);
+    state.metaMods.dmgMul *= (1 + bonus);
     return `⚗ -${spent}G → 데미지 +${Math.round(bonus * 100)}% 영구!`;
   }
   // 🆕 공명(유물) — 보유 유물 수 × 골드 (최대 8)
@@ -22214,8 +22243,8 @@
   // 🆕 공명(능력) — 보유 능력 수 비례 데미지 (+2%×수, 최대 +12%)
   function _evResonanceAbilities() {
     const cnt = Math.min(6, (state.tower.abilities || []).length);
-    const bonus = 0.02 * Math.max(1, cnt);
-    state.relicEffects.aoeDmgMul *= (1 + bonus);
+    const bonus = 0.02 * Math.max(1, cnt) * (_eventBuffScale || 1);
+    state.metaMods.dmgMul *= (1 + bonus);
     return `🔗 능력 ${cnt}개 공명 → 데미지 +${Math.round(bonus * 100)}% 영구!`;
   }
   // ✨ 대박 — 등급 높은(영웅·전설 우선) 미보유 유물 1개 지급 → 이름 반환
@@ -22248,7 +22277,7 @@
     { title: '💀 탐욕의 저주', text: '"가진 게 많을수록… 잃는 것도 많지."',
       apply() { const lost = Math.floor(state.gold * 0.3); state.gold -= lost; _evClampGold(); return `골드의 30%(${lost}G)를 빼앗겼다.`; } },
     { title: '💀 쇠약의 저주', text: '"네 힘이 천천히 스며 나간다."',
-      apply() { state.relicEffects.aoeDmgMul *= 0.92; return '모든 데미지 -8% (영구).'; } },
+      apply() { state.metaMods.dmgMul *= 0.92; return '모든 데미지 -8% (영구).'; } },
     { title: '💀 빈곤의 봉인', text: '"황금이 너를 외면하리라."',
       apply() { state.metaMods.goldMul = (state.metaMods.goldMul || 1) * 0.85; return '획득 골드 -15% (영구).'; } },
     { title: '💀 약화의 낙인', text: '"거대한 것 앞에서, 너는 무력하다."',
@@ -22303,6 +22332,12 @@
   //    골드/도박/유물/능력은 건드리지 않음 (relicEffects · metaMods 의 영구 버프 스탯만 스케일).
   let _eventBuffScale = 1;
   const AMBUSH_BUFF_SCALE = 0.6;   // 기습 이벤트 영구 버프 효과 배율 (보스 이벤트=1.0)
+  // 🐛 v387 — 기습 "표시=적용" 일원화: base% 를 _eventBuffScale 반영한 정수%로 변환(표시) + 그 값을 실제 적용.
+  //    이전엔 _scaleBuffDelta가 적용값만 사후 0.6× 축소해 표시(원수치)와 어긋났음. 이제 한 곳(헬퍼)에서 처리.
+  function _evP(base)    { return Math.round(base * (_eventBuffScale || 1)); }
+  function _evDmg(base)  { const p = _evP(base); state.metaMods.dmgMul = (state.metaMods.dmgMul || 1) * (1 + p / 100); return p; }
+  function _evBoss(base) { const p = _evP(base); state.metaMods.bossDmgMul = (state.metaMods.bossDmgMul || 1) * (1 + p / 100); return p; }
+  function _evGold(base) { const p = _evP(base); state.metaMods.goldMul = (state.metaMods.goldMul || 1) * (1 + p / 100); return p; }
   const _AMBUSH_BUFF_FIELDS = [    // [상태객체, 필드, 항등값]
     ['relicEffects', 'aoeDmgMul', 1],
     ['relicEffects', 'killGoldBonus', 0],
@@ -22415,7 +22450,7 @@
     const choicesEl = document.getElementById('eventChoices'); if (choicesEl) choicesEl.innerHTML = '';
     const foot = document.getElementById('eventFoot'); if (foot) foot.style.display = 'none';
     if (isCurse) {
-      let out = ''; try { out = _scaleBuffDelta(_eventBuffScale, () => _activeEvent.def.apply()) || ''; } catch (e) {}
+      let out = ''; try { out = (_activeEvent.def.apply()) || ''; } catch (e) {}   // 🐛 스케일은 헬퍼(_evDmg 등)에서 처리 — 사후 _scaleBuffDelta 제거
       _showEventOutcome(out, true);
     } else {
       _activeEvent.choices.forEach((ch, i) => {
@@ -22435,7 +22470,7 @@
     if (!ev || ev._curse || ev._resolved) return;
     const ch = ev.choices[i]; if (!ch) return;
     ev._resolved = true;
-    let out = ''; try { out = _scaleBuffDelta(_eventBuffScale, () => ch.resolve()) || ''; } catch (e) { out = '…'; }
+    let out = ''; try { out = (ch.resolve()) || ''; } catch (e) { out = '…'; }   // 🐛 스케일은 헬퍼에서 처리
     if (SFX && SFX.click) try { SFX.click(); } catch (e) {}
     _showEventOutcome(out, false);
   }
@@ -22465,31 +22500,31 @@
   // ✨ NPC별 대박 이벤트 — 낮은 확률로 등장하는 초대형 보상 (수치 큼, full magnitude)
   const NPC_JACKPOTS = {
     wheel: () => ({ title: '🎲 운명의 정점', text: '"…판이 완벽하게 맞아떨어졌군. 크게 받아가."',
-      choices: [{ label: '쓸어담는다', desc: '골드 대량 + 데미지 +35%', resolve() { const g = _evUnit() * 16; state.gold += g; state.relicEffects.aoeDmgMul *= 1.35; return `🎲 +${g}G · 데미지 +35%!`; } }] }),
+      choices: [{ label: '쓸어담는다', desc: '골드 대량 + 데미지 +35%', resolve() { const g = _evUnit() * 16; state.gold += g; state.metaMods.dmgMul *= 1.35; return `🎲 +${g}G · 데미지 +35%!`; } }] }),
     devil: () => ({ title: '😈 악마의 변덕', text: '"오늘은 기분이 좋군. 대가는… 받지 않겠다. 이번만."',
-      choices: [{ label: '받는다', desc: '전설급 유물 + 데미지 +40%', resolve() { const nm = _evGiveTopRelic(); state.relicEffects.aoeDmgMul *= 1.40; return nm ? `😈 ${nm}! · 데미지 +40%!` : '😈 데미지 +40%!'; } }] }),
+      choices: [{ label: '받는다', desc: '전설급 유물 + 데미지 +40%', resolve() { const nm = _evGiveTopRelic(); state.metaMods.dmgMul *= 1.40; return nm ? `😈 ${nm}! · 데미지 +40%!` : '😈 데미지 +40%!'; } }] }),
     star: () => ({ title: '⭐ 대길(大吉)', text: '"별이 일제히 당신을 비춰요. 이런 점괘는 처음이에요."',
-      choices: [{ label: '받든다', desc: '데미지+25 · 보스데미지+30 · 획득골드+25', resolve() { state.relicEffects.aoeDmgMul *= 1.25; state.metaMods.bossDmgMul = (state.metaMods.bossDmgMul || 1) * 1.30; state.metaMods.goldMul = (state.metaMods.goldMul || 1) * 1.25; return '⭐ 데미지+25%·보스데미지+30%·획득골드+25%!'; } }] }),
+      choices: [{ label: '받든다', desc: '데미지+25 · 보스데미지+30 · 획득골드+25', resolve() { state.metaMods.dmgMul *= 1.25; state.metaMods.bossDmgMul = (state.metaMods.bossDmgMul || 1) * 1.30; state.metaMods.goldMul = (state.metaMods.goldMul || 1) * 1.25; return '⭐ 데미지+25%·보스데미지+30%·획득골드+25%!'; } }] }),
     sun: () => ({ title: '☀ 태양의 대관식', text: '"오늘만큼은 네가 태양이야. 다 가져가!"',
       choices: [{ label: '받는다', desc: '골드 대량 + 능력 3개 강화', resolve() { const g = _evUnit() * 13; state.gold += g; const ns = _evAwakenLowest(3); return `☀ +${g}G${ns.length ? ' · ' + ns.join('·') + ' +1' : ''}!`; } }] }),
     fool: () => ({ title: '🃏 뜻밖의 행운', text: '"오, 이건 나도 처음 봐. 통째로 가져!"',
       choices: [{ label: '잡는다', desc: '유물 + 새 능력 + 골드', resolve() { const nm = _evGiveRelic(); const ab = _evGainAbility(1); const g = _evUnit() * 10; state.gold += g; return `🃏 ${nm || '유물'} · ${ab} · +${g}G!`; } }] }),
     magician: () => ({ title: '🪄 현자의 돌', text: '"…완성했다. 전설의 현자의 돌. 가져가게, 자네가 적임자야."',
-      choices: [{ label: '받는다', desc: '전설급 유물 + 데미지 +30%', resolve() { const nm = _evGiveTopRelic(); state.relicEffects.aoeDmgMul *= 1.30; return nm ? `🪄 ${nm}! · 데미지 +30%!` : '🪄 데미지 +30%!'; } }] }),
+      choices: [{ label: '받는다', desc: '전설급 유물 + 데미지 +30%', resolve() { const nm = _evGiveTopRelic(); state.metaMods.dmgMul *= 1.30; return nm ? `🪄 ${nm}! · 데미지 +30%!` : '🪄 데미지 +30%!'; } }] }),
     hierophant: () => ({ title: '📿 대신탁', text: '"하늘이 응답하셨다. 이런 계시는 백 년에 한 번이오."',
-      choices: [{ label: '받든다', desc: '전설급 유물 + 정화 + 데미지 +22%', resolve() { const nm = _evGiveTopRelic(); _evPurify(); state.relicEffects.aoeDmgMul *= 1.22; return nm ? `📿 ${nm}! · 정화 · 데미지 +22%!` : '📿 정화 · 데미지 +22%!'; } }] }),
+      choices: [{ label: '받든다', desc: '전설급 유물 + 정화 + 데미지 +22%', resolve() { const nm = _evGiveTopRelic(); _evPurify(); state.metaMods.dmgMul *= 1.22; return nm ? `📿 ${nm}! · 정화 · 데미지 +22%!` : '📿 정화 · 데미지 +22%!'; } }] }),
     justice: () => ({ title: '⚖ 황금의 심판', text: '"그대의 모든 공적을 황금으로 환산하겠소. …엄청난 액수군."',
       choices: [{ label: '받는다', desc: '골드 대량 + 보스데미지 +30%', resolve() { const g = _evUnit() * 18; state.gold += g; state.metaMods.bossDmgMul = (state.metaMods.bossDmgMul || 1) * 1.30; return `⚖ +${g}G · 보스데미지 +30%!`; } }] }),
     empress: () => ({ title: '🌹 대풍년', text: '"올해 수확은 역대급이구나. 곳간을 통째로 내어주마."',
       choices: [{ label: '받는다', desc: '골드 대량 + 처치골드 + 획득골드 +20%', resolve() { const g = _evUnit() * 15; state.gold += g; _evBuff('asc_killGold'); state.metaMods.goldMul = (state.metaMods.goldMul || 1) * 1.20; return `🌹 +${g}G · 처치골드+1 · 획득골드 +20%!`; } }] }),
     world: () => ({ title: '🌍 세계의 축복', text: '"여정의 정점에, 세계가 가진 모든 것을 건넵니다."',
-      choices: [{ label: '받든다', desc: '유물 + 데미지 +30% + 필드 일소', resolve() { const nm = _evGiveTopRelic(); state.relicEffects.aoeDmgMul *= 1.30; const n = _evClearField(); return `🌍 ${nm || '유물'}! · 데미지 +30%${n ? ` · ${n}마리 일소` : ''}!`; } }] }),
+      choices: [{ label: '받든다', desc: '유물 + 데미지 +30% + 필드 일소', resolve() { const nm = _evGiveTopRelic(); state.metaMods.dmgMul *= 1.30; const n = _evClearField(); return `🌍 ${nm || '유물'}! · 데미지 +30%${n ? ` · ${n}마리 일소` : ''}!`; } }] }),
     lovers: () => ({ title: '💕 천생연분', text: '"이런 인연은 운명이에요. 둘 다 활짝 피워줄게요."',
-      choices: [{ label: '받든다', desc: '능력 3개 강화 + 데미지 +20%', resolve() { const ns = _evAwakenLowest(3); state.relicEffects.aoeDmgMul *= 1.20; return `💞 ${ns.length ? ns.join('·') + ' +1 · ' : ''}데미지 +20%!`; } }] }),
+      choices: [{ label: '받든다', desc: '능력 3개 강화 + 데미지 +20%', resolve() { const ns = _evAwakenLowest(3); state.metaMods.dmgMul *= 1.20; return `💞 ${ns.length ? ns.join('·') + ' +1 · ' : ''}데미지 +20%!`; } }] }),
     strength: () => ({ title: '🦁 초월', text: '"한계를 넘었다. 이게 진짜 네 힘이야."',
-      choices: [{ label: '받는다', desc: '데미지 +40% · 보스데미지 +40%', resolve() { state.relicEffects.aoeDmgMul *= 1.40; state.metaMods.bossDmgMul = (state.metaMods.bossDmgMul || 1) * 1.40; return '🦁 데미지 +40% · 보스데미지 +40%!'; } }] }),
+      choices: [{ label: '받는다', desc: '데미지 +40% · 보스데미지 +40%', resolve() { state.metaMods.dmgMul *= 1.40; state.metaMods.bossDmgMul = (state.metaMods.bossDmgMul || 1) * 1.40; return '🦁 데미지 +40% · 보스데미지 +40%!'; } }] }),
     chariot: () => ({ title: '🏇 대질주', text: '"바람을 뚫었다! 멈추지 않는 자에게 영광을!"',
-      choices: [{ label: '받는다', desc: '데미지+25 · 보스데미지+25 · 골드 대량', resolve() { state.relicEffects.aoeDmgMul *= 1.25; state.metaMods.bossDmgMul = (state.metaMods.bossDmgMul || 1) * 1.25; const g = _evUnit() * 10; state.gold += g; return `🏇 데미지+25%·보스데미지+25%·+${g}G!`; } }] }),
+      choices: [{ label: '받는다', desc: '데미지+25 · 보스데미지+25 · 골드 대량', resolve() { state.metaMods.dmgMul *= 1.25; state.metaMods.bossDmgMul = (state.metaMods.bossDmgMul || 1) * 1.25; const g = _evUnit() * 10; state.gold += g; return `🏇 데미지+25%·보스데미지+25%·+${g}G!`; } }] }),
   };
   const _RELIC_RANK = { common: 0, rare: 1, epic: 2, legendary: 3, ancient: 9 };
   function openRelicEventForNpc(key, jackpot) {
@@ -22592,6 +22627,11 @@
   }
   function openAmbushEvent() {
     if (!state.tower || state.gameOver) return;
+    // 🆕 가챠 캐릭터가 아니면 기습 이벤트 자체가 없음 (기습 = 가챠 캐릭 전용 콘텐츠)
+    const _sel = state.selectedCharacter || (typeof selectedCharacter !== 'undefined' ? selectedCharacter : null);
+    if (!(_sel && CHARACTERS[_sel] && CHARACTERS[_sel].isGacha)) return;
+    // 🆕 선택 가챠 캐릭터 전용 기습 (35%) — 본인이 직접 난입, 나머지는 타로 NPC 기습
+    if (CHAR_AMBUSH[_sel] && Math.random() < 0.35) { openCharAmbush(_sel); return; }
     const keys = Object.keys(EVENT_NPCS).filter(k => EVENT_NPCS[k].events && EVENT_NPCS[k].events.length);
     if (!keys.length) return;
     const key = keys[Math.floor(Math.random() * keys.length)];
@@ -22625,6 +22665,173 @@
         openEventForNpc(key, AMBUSH_BUFF_SCALE, jp);   // 대박이면 full magnitude
       }, 280);
     }, jp ? 1700 : 1300);
+  }
+
+  // ===== 🆕 선택 캐릭터 전용 기습 (가챠 캐릭터) — 본인이 난입해 버프/능력강화 택1 =====
+  const CHAR_AMBUSH_LINES = {
+    marine:   '바다 냄새 맡고 왔지! 같이 쓸어버리자.',
+    solar:    '태양은 늘 네 편이야 — 화력 좀 올려줄게!',
+    gravitas: '…무거운 적일수록, 더 깊이 가라앉지.',
+    sakura:   '한 송이, 베어줄게. 준비됐어?',
+    luna:     '달빛 아래선… 아무도 못 도망가.',
+    aria:     '이 무대의 주인공은 너야. 노래, 맞춰줄게!',
+    misaki:   '잠깐 시간을 빌릴게 — 금방 끝나.',
+  };
+  // 공통 빌더 — 버프(테마, 스케일 정직) + 시작능력 강화 택1
+  function _charEv(title, text, kind, base, abId) {
+    const nm = (ABILITY_DEFS[abId] && ABILITY_DEFS[abId].name) || '능력';
+    let buff;
+    if (kind === 'boss')      buff = { label: '👹 급소를 노린다', desc: `보스 데미지 +${_evP(base)}% 영구`, resolve() { const p = _evBoss(base); return `✨ 보스 데미지 +${p}% 영구!`; } };
+    else if (kind === 'gold') buff = { label: '💰 함께 거둔다',   desc: `획득 골드 +${_evP(base)}% 영구`, resolve() { const p = _evGold(base); return `✨ 획득 골드 +${p}% 영구!`; } };
+    else                      buff = { label: '⚔ 힘을 빌린다',   desc: `데미지 +${_evP(base)}% 영구`,    resolve() { const p = _evDmg(base); return `✨ 데미지 +${p}% 영구!`; } };
+    const ability = { label: `🔧 ${nm} 강화`, desc: `${nm} +1 레벨`, resolve() { return _evBoostAbility(abId); } };
+    return { title, text, choices: [buff, ability] };
+  }
+  const CHAR_AMBUSH = {
+    marine:   () => _charEv('🌊 마린의 한류',     '"내 어뢰에 한기를 더 실을까, 아니면 어뢰 자체를 키울까?"',   'dmg',  20, 'torpedo'),
+    solar:    () => _charEv('☀️ 솔라의 흑점',     '"태양을 조금 떼어줄게. 화력? 아니면 흑점을 더 크게?"',       'dmg',  22, 'sunspot'),
+    gravitas: () => _charEv('🌀 그래비타스의 중력', '"거대한 적을 짓누르는 힘과, 인력장 강화 — 어느 쪽?"',       'boss', 24, 'pullField'),
+    sakura:   () => _charEv('🌸 사쿠라의 만개',     '"꽃잎처럼 흩날리는 칼날, 더 날카롭게 해줄까?"',             'dmg',  22, 'sakuraSlash'),
+    luna:     () => _charEv('🌙 루나의 월광',       '"달빛을 더 퍼뜨릴까, 월광탄을 더 키울까?"',                 'dmg',  18, 'moonShot'),
+    aria:     () => _charEv('🌟 아리아의 합창',     '"이 별의 노래, 너한테 맞춰 부를게. 어느 쪽이 좋아?"',       'dmg',  24, 'starSong'),
+    misaki:   () => _charEv('🦋 미사키의 시간',     '"시간을 멈춰 급소를 열까, 시공나비를 키울까?"',             'boss', 22, 'timeButterfly'),
+  };
+  // 시작능력 +1 강화 (없으면 재획득, 만렙이면 무작위 +1로 대체)
+  function _evBoostAbility(id) {
+    if (!ABILITY_DEFS[id]) return '강화 실패.';
+    const nm = ABILITY_DEFS[id].name;
+    const ab = state.tower.abilities.find(a => a.id === id);
+    if (ab && !isAtMax(ab)) { ab.level = Math.min(ab.level + 1, maxLvFor(id)); if (ab.level >= maxLvFor(id)) checkAncientAwakening(id); return `🔧 ${nm} +1 (Lv${ab.level})!`; }
+    if (ab) { const r = _shopUpgradeRandom(1); return r ? `${nm}는 이미 최대! 대신 ${r} +1.` : `${nm}는 이미 최대 레벨!`; }
+    _shopGainAbility(id); return `🎴 ${nm} 재획득!`;
+  }
+  // 🆕 가챠 캐릭터별 시그니처 능력 체인 (시작 능력 → 조합 → 트리플) — 조합 형성 시 본인 컷인 트리거용
+  const CHAR_SIG_ABILITIES = {
+    marine:   ['torpedo', 'frozenTorpedo', 'deepSeaBarrage'],
+    solar:    ['sunspot', 'solarStorm', 'stellarCollapse'],
+    gravitas: ['pullField', 'voidIceVortex', 'voidStop'],
+    sakura:   ['sakuraSlash', 'sakuraStorm', 'sakuraInferno'],
+    luna:     ['moonShot', 'moonFrostArrow', 'moonBombardment'],
+    aria:     ['starSong', 'cosmicChorus', 'celestialSymphony'],
+    misaki:   ['timeButterfly', 'timePrison', 'eternalMoment'],
+  };
+  const _charBySigAbility = {};
+  for (const _cid in CHAR_SIG_ABILITIES) for (const _a of CHAR_SIG_ABILITIES[_cid]) _charBySigAbility[_a] = _cid;
+  // 🆕 조합별 컷인 대사 — 캐릭터 말투·컨셉 유지 (없으면 능력 이름으로 폴백)
+  const COMBO_CUTIN_LINES = {
+    // 🌊 마린 (밝은 항해사)
+    frozenTorpedo:    '꽁꽁 얼려서 바다 밑으로 가라앉혀 줄게!',
+    deepSeaBarrage:   '심해의 포문, 전부 개방—!',
+    // ☀️ 솔라 (밝고 따뜻)
+    solarStorm:       '태양이 폭발한다! 전부 타버려!',
+    stellarCollapse:  '별 하나, 통째로 떨어뜨려 줄게!',
+    // 🌀 그래비타스 (쿨·과묵)
+    voidIceVortex:    '…전부, 한 점으로 가라앉아.',
+    voidStop:         '…거기서. 시간도, 무게에 짓눌려.',
+    // 🌸 사쿠라 (우아한 검사)
+    sakuraStorm:      '벚꽃이 만개할 시간이야.',
+    sakuraInferno:    '흩날리는 칼날 — 한 송이도 못 피해.',
+    // 🌙 루나 (조용한 달 궁수)
+    moonFrostArrow:   '달빛에 얼어붙어… 도망은 없어.',
+    moonBombardment:  '달빛이 쏟아진다. 조용히 잠들렴.',
+    // 🌟 아리아 (노래하는 디바)
+    cosmicChorus:     '자—, 다 함께. 우주의 합창이야!',
+    celestialSymphony:'내 최고의 무대, 천체교향곡—!',
+    // 🦋 미사키 (신비로운 시간 마법사)
+    timePrison:       '시간 속에 가둬줄게… 영원히.',
+    eternalMoment:    '이 찰나가, 너희의 영원이 될 거야.',
+  };
+  // 🆕 조합 컷인 — 좌측에 본인 캐릭터 잠깐 등장 + 대사 (논블로킹: 정지 X, 패널 X, 자동 소멸)
+  function showCharComboCutin(charId, comboId) {
+    try {
+      const char = CHARACTERS[charId]; if (!char) return;
+      const wrap = document.createElement('div'); wrap.className = 'char-cutin';
+      wrap.style.setProperty('--cc', char.color || '#7ad7ff');
+      const img = _charPortraitImg(charId, 'char-cutin-illus');
+      const nm = document.createElement('div'); nm.className = 'char-cutin-name'; nm.textContent = char.name;
+      wrap.appendChild(img); wrap.appendChild(nm);
+      // 대사: 조합별 캐릭터 대사 우선, 없으면 능력 이름
+      let line = comboId ? COMBO_CUTIN_LINES[comboId] : '';
+      const quoted = !!line;
+      if (!line && comboId && ABILITY_DEFS[comboId]) line = ABILITY_DEFS[comboId].name;
+      if (line) { const ln = document.createElement('div'); ln.className = 'char-cutin-line'; ln.textContent = quoted ? ('"' + line + '"') : line; wrap.appendChild(ln); }
+      document.body.appendChild(wrap);
+      setTimeout(() => { wrap.classList.add('out'); setTimeout(() => { try { wrap.remove(); } catch (e) {} }, 420); }, 1600);
+    } catch (e) {}
+  }
+  // 🖼 캐릭터 전용 이벤트 일러스트 — icons/illust/<id>.png (도트와 별개 폴더). 없으면 이모지 폴백 (도트 안 씀)
+  function _charPortraitImg(charId, cls) {
+    const char = CHARACTERS[charId] || {};
+    const emoji = (char.name ? char.name.split(' ')[0] : '🎴') || '🎴';
+    const img = document.createElement('img'); if (cls) img.className = cls; img.alt = '';
+    img.onerror = () => {
+      const d = document.createElement('div'); if (cls) d.className = cls;
+      d.style.display = 'flex'; d.style.alignItems = 'center'; d.style.justifyContent = 'center'; d.style.fontSize = '72px';
+      d.textContent = emoji; img.replaceWith(d);
+    };
+    img.src = './icons/illust/' + charId + '.png';
+    return img;
+  }
+  // 캐릭터 컷인 → 전용 이벤트
+  function openCharAmbush(charId) {
+    const char = CHARACTERS[charId];
+    const sc = document.getElementById('ambushScene');
+    if (!sc || !char) { openCharEvent(charId, AMBUSH_BUFF_SCALE); return; }
+    paused = true;
+    const col = char.color || '#7ad7ff';
+    sc.style.setProperty('--ac', col);
+    sc.style.setProperty('--ag', _hexA(col, 0.5));
+    const line = CHAR_AMBUSH_LINES[charId] || '나도 함께 싸울게.';
+    sc.classList.remove('out');
+    sc.innerHTML =
+      '<div class="ambush-flash"></div><div class="ambush-bg"></div><div class="ambush-glow"></div>'
+      + '<div class="ambush-name"><span class="an-name">' + char.name + '</span></div>'
+      + '<div class="ambush-line">' + char.name + ': "' + line + '"</div>';
+    sc.insertBefore(_charPortraitImg(charId, 'ambush-illus'), sc.querySelector('.ambush-name'));
+    sc.classList.add('show');
+    if (_ambushTimer) clearTimeout(_ambushTimer);
+    _ambushTimer = setTimeout(() => {
+      sc.classList.add('out');
+      _ambushTimer = setTimeout(() => {
+        sc.classList.remove('show'); sc.classList.remove('out'); sc.innerHTML = '';
+        openCharEvent(charId, AMBUSH_BUFF_SCALE);
+      }, 280);
+    }, 1500);
+  }
+  // 전용 이벤트 패널 (캐릭터 포트레이트 + 버프/능력강화 택1) — 기존 이벤트 UI 재사용
+  function openCharEvent(charId, scale) {
+    if (!state.tower || state.gameOver) return;
+    paused = true;
+    _lastEventOutcome = null;
+    _eventBuffScale = (typeof scale === 'number' && scale > 0) ? scale : 1;   // 기습=0.6 (표시=적용 정직)
+    const char = CHARACTERS[charId];
+    const ev = (CHAR_AMBUSH[charId]) ? CHAR_AMBUSH[charId]() : null;
+    if (!char || !ev) { paused = false; return; }
+    _activeEvent = { choices: ev.choices, _resolved: false };
+    const _scn = document.getElementById('eventScene'); if (_scn) { _scn.classList.remove('jackpot', 'curse'); }
+    // 포트레이트 — 캐릭터 일러 (없으면 이모지 폴백)
+    const portrait = document.getElementById('eventNpcPortrait');
+    if (portrait) {
+      portrait.innerHTML = '';
+      portrait.appendChild(_charPortraitImg(charId));   // 일러스트(icons/illust/) — 없으면 이모지 폴백
+      const nm = document.createElement('div'); nm.className = 'npc-name'; nm.textContent = char.name; portrait.appendChild(nm);
+    }
+    const te = document.getElementById('eventTitle'); if (te) te.textContent = '⚡ ' + ev.title;   // 기습 표식
+    const tx = document.getElementById('eventText'); if (tx) tx.textContent = ev.text;
+    const ge = document.getElementById('eventGold'); if (ge) ge.textContent = String(Math.floor(state.gold));
+    const choicesEl = document.getElementById('eventChoices');
+    if (choicesEl) {
+      choicesEl.innerHTML = '';
+      ev.choices.forEach((ch, i) => {
+        const btn = document.createElement('button'); btn.className = 'event-choice'; btn.disabled = !!ch.disabled;
+        btn.innerHTML = `<div class="ec-label">${ch.label}</div><div class="ec-desc">${ch.desc || ''}</div>`;
+        if (!ch.disabled) btn.onclick = () => resolveEventChoice(i);
+        choicesEl.appendChild(btn);
+      });
+    }
+    const foot = document.getElementById('eventFoot'); if (foot) foot.style.display = '';
+    const _cb = document.getElementById('eventCloseBtn'); if (_cb) _cb.textContent = '넘어가기';
+    const sc = document.getElementById('eventScene'); if (sc) sc.classList.add('show');
   }
 
   // ===== 배속 (단일 순환 버튼) =====
@@ -23787,28 +23994,9 @@
   document.getElementById('gachaBtn').onclick = () => { buildGacha(); showScreen('gacha'); };
   // 🎰 가챠 원형 버튼 갱신 — 보유 캐릭터 중 최고 등급 이미지 표시
   function refreshGachaCircleBtn() {
+    // 🐛 버튼은 항상 슬롯머신 🎰 고정 (보유 캐릭터로 바뀌지 않게 — 가챠 진입 후 버튼이 변하면 어색)
     const btn = document.getElementById('gachaBtn');
     if (!btn) return;
-    if (typeof META === 'undefined') return;
-    const unlocked = META.gachaUnlocked || {};
-    // 최고 등급 우선 (SSR > SR > R)
-    let bestId = null;
-    for (const rarity of ['SSR', 'SR', 'R']) {
-      const pool = GACHA_POOL && GACHA_POOL[rarity];
-      if (!pool) continue;
-      for (const id of pool) {
-        if (unlocked[id] > 0) { bestId = id; break; }
-      }
-      if (bestId) break;
-    }
-    if (bestId) {
-      const src = getCharacterImageSrc(bestId);
-      if (src) {
-        btn.innerHTML = `<img src="${src}" alt="${bestId}" /><div class="gacha-circle-label">가챠</div>`;
-        return;
-      }
-    }
-    // fallback — 🎰 이모지
     btn.innerHTML = `<span id="gachaCircleEmoji">🎰</span><div class="gacha-circle-label">가챠</div>`;
   }
   // 🌟 능력 영구 강화 메뉴 버튼 → 별도 화면
@@ -23917,7 +24105,8 @@
       // 픽업 캐릭터 이름 표시 — 어떤 SSR이 픽업인지 명확히
       const featChar = banner.featured ? CHARACTERS[banner.featured] : null;
       const featName = featChar ? featChar.name : 'SSR';
-      let infoText = `픽업: ${featName} ${(r.SSR*100).toFixed(1)}% · SR ${(r.SR*100).toFixed(0)}% · R ${(r.R*100).toFixed(0)}%`;
+      const _sdRate = Math.max(0, 1 - (r.SSR || 0) - (r.SR || 0));
+      let infoText = `픽업: ${featName} ${(r.SSR*100).toFixed(1)}% · SR ${(r.SR*100).toFixed(0)}% · ⭐ ${(_sdRate*100).toFixed(0)}%`;
       // 🌌 v249 — 고대 유물 동봉 정보 추가
       if (banner.ancientRelic) {
         const rate = ((banner.ancientRelicRate || 0) * 100).toFixed(2);
@@ -24041,6 +24230,8 @@
     let starUpCount = 0;
     let bestRarity = 'R';
     let ancientCount = 0;
+    let totalStardust = 0;     // 🆕 스타더스트 합계
+    let stardustJackpot = false;
     const rarityRank = { R: 0, SR: 1, SSR: 2, ancient: 3 };
     for (const r of results) {
       const card = document.createElement('div');
@@ -24073,21 +24264,33 @@
         if (rarityRank.ancient > rarityRank[bestRarity]) bestRarity = 'ancient';
         continue;
       }
+      // 🆕 스타더스트 결과 카드 (구 R 슬롯) — 대박이면 골드 글로우
+      if (r.isStardust) {
+        const jp = r.isJackpot;
+        const col = jp ? '#ffd479' : '#88e0ff';
+        card.className = `gacha-result-card rarity-${jp ? 'ssr' : 'r'}`;
+        card.style.setProperty('--rarity-color', col);
+        if (jp) card.style.boxShadow = '0 0 24px rgba(255,212,121,0.7)';
+        card.innerHTML = `
+          <div class="card-rarity-tag" style="background:${col};color:#0b0d12;">${jp ? 'JACKPOT' : '⭐'}</div>
+          <div class="card-portrait" style="font-size:56px;">⭐</div>
+          <div class="card-name" style="color:${col};">${jp ? '스타더스트 대박!' : '스타더스트'}</div>
+          <div class="card-status"${jp ? ' style="color:#ffd479;font-weight:bold;"' : ''}>+${r.stardust} ⭐</div>
+        `;
+        cards.appendChild(card);
+        totalStardust += r.stardust;
+        if (jp) stardustJackpot = true;
+        continue;
+      }
       const c = CHARACTERS[r.charId];
       card.className = `gacha-result-card rarity-${r.rarity.toLowerCase()}`;
       const rarityColor = r.rarity === 'SSR' ? '#ffd479' : (r.rarity === 'SR' ? '#c084ff' : '#7ad7ff');
       card.style.setProperty('--rarity-color', rarityColor);
-      // 이미지 우선 (src 직접 사용, toDataURL 의존 X), 없으면 이모지 fallback
-      const charImgSrc = getCharacterImageSrc(r.charId);
-      let portraitHTML;
-      if (charImgSrc) {
-        portraitHTML = `<div class="card-portrait" style="background:#000;padding:0;overflow:hidden;">
-          <img src="${charImgSrc}" style="width:100%;height:100%;object-fit:contain;image-rendering:pixelated;" />
+      // 🖼 일러스트(icons/illust/) 우선 표시 — 폴백(도트→이모지)은 카드 생성 후 JS onerror로 부착
+      const emoji = (c.name.match(/^[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/u) || ['🎴'])[0];
+      const portraitHTML = `<div class="card-portrait" style="background:#0a0a12;padding:0;overflow:hidden;">
+          <img class="char-illust" src="./icons/illust/${r.charId}.png" style="width:100%;height:100%;object-fit:cover;object-position:center top;" />
         </div>`;
-      } else {
-        const emoji = (c.name.match(/^[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/u) || ['?'])[0];
-        portraitHTML = `<div class="card-portrait">${emoji}</div>`;
-      }
       // 결과 상태: 신규 / 별업 / 환불
       let status;
       if (r.isNew) {
@@ -24103,6 +24306,16 @@
         <div class="card-name">${c.name.replace(/^[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]\s*/u, '')}</div>
         ${status}
       `;
+      // 🖼 일러스트 로드 실패 시 도트(투명 dataURL)로, 그것도 없으면 이모지로 폴백 (dataURL을 HTML에 안 박음 — 가벼움)
+      const _illustImg = card.querySelector('.card-portrait img.char-illust');
+      if (_illustImg) {
+        _illustImg.onerror = function () {
+          this.onerror = null;
+          const d = (typeof getCharacterImageSrc === 'function') ? getCharacterImageSrc(r.charId) : null;
+          if (d) { this.src = d; this.style.objectFit = 'contain'; this.style.objectPosition = 'center'; this.style.imageRendering = 'pixelated'; }
+          else { const par = this.parentElement; this.remove(); if (par) par.innerHTML = '<span style="font-size:64px">' + emoji + '</span>'; }
+        };
+      }
       cards.appendChild(card);
       if (r.isNew) newCount++;
       else if (r.starUp) starUpCount++;
@@ -24120,6 +24333,8 @@
     else if (bestRarity === 'SSR') parts.unshift('<span style="color:#ffd479;font-weight:bold;">SSR 등장!</span>');
     else if (bestRarity === 'SR') parts.unshift('<span style="color:#c084ff;">SR 등장!</span>');
     if (ancientCount > 0 && bestRarity !== 'ancient') parts.push(`<span style="color:#ff88ff">🌌 ×${ancientCount}</span>`);
+    if (totalStardust > 0) parts.push(`<span style="color:#88e0ff">⭐ +${totalStardust}</span>`);
+    if (stardustJackpot) parts.unshift('<span style="color:#ffd479;font-weight:bold;text-shadow:0 0 8px rgba(255,212,121,0.7);">✨ 스타더스트 대박!</span>');
     summary.innerHTML = parts.join('  ·  ');
     // 🎬 v250 — 카드 순차 등장 (stagger). 10뽑은 빠르게, 1뽑은 즉시 (단일 = 지연 X)
     const cardEls = cards.querySelectorAll('.gacha-result-card');
@@ -24232,7 +24447,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 385;
+  const APP_VERSION = 396;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
