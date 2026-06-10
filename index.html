@@ -3751,6 +3751,8 @@
   // 역호환
   function activeMaxSlots() { return maxActiveSlots(); }
   const FPS = 60;
+  // 🚀 좌표·색이 전부 상수인 로컬좌표 그라디언트 캐시 (탄환 트레일류 — 매 프레임 재생성 제거)
+  let _missileTrailG = null, _blackholeGlowG = null, _tornadoCoreG = null, _eclipseCoronaG = null;
 
   // ===== 능력 정의 (각 능력은 독립적인 공격) =====
   // 각 ability instance: { id, level, cooldown, ...각 ability별 상태 }
@@ -3821,7 +3823,7 @@
             }
           }
         }
-        ab.waves = ab.waves.filter(w => w.r < ARENA_R + 30);
+        compactInPlace(ab.waves, _predWaveArena);
         if (--ab.cooldown > 0) return;
         ab.waves.push({ r: CORE_R, prevR: CORE_R, hit: new Set() });
         ab.cooldown = Math.max(50, 110 - ab.level * 6);
@@ -4027,7 +4029,7 @@
       init(ab) { ab.cooldown = 90; ab.fx = []; },
       tick(ab) {
         for (const e of ab.fx) e.life--;
-        ab.fx = ab.fx.filter(e => e.life > 0);
+        compactInPlace(ab.fx, _alivePredLife);
         if (--ab.cooldown > 0) return;
         let target = null, best = -1;
         for (const e of state.enemies) {
@@ -4067,7 +4069,7 @@
       init(ab) { ab.cooldown = 50; ab.bolts = []; },
       tick(ab) {
         for (const b of ab.bolts) b.life--;
-        ab.bolts = ab.bolts.filter(b => b.life > 0);
+        compactInPlace(ab.bolts, _alivePredLife);
         if (--ab.cooldown > 0) return;
         const count = 1 + ab.level;
         const dmg = 3 + ab.level * 2;
@@ -4176,7 +4178,7 @@
             }
           }
         }
-        ab.boomerangs = ab.boomerangs.filter(b => b.life > 0);
+        compactInPlace(ab.boomerangs, _alivePredLife);
         if (--ab.cooldown > 0) return;
         const count = 1 + ab.level;
         for (let i = 0; i < count; i++) {
@@ -4274,10 +4276,10 @@
           // 오비팅 위스프 점
           ctx.globalAlpha = 0.5; ctx.fillStyle = '#ddffee';
           for (let k = 0; k < 6; k++) { const a = t.rot * 3 + k*(Math.PI*2/6), r = 14 + (k%3)*8; ctx.beginPath(); ctx.arc(Math.cos(a)*r, Math.sin(a)*r, 1.6, 0, Math.PI*2); ctx.fill(); }
-          // 중심 글로우
+          // 중심 글로우 (로컬좌표 상수 — 캐시)
           ctx.globalAlpha = 1;
-          const g = ctx.createRadialGradient(0, 0, 0, 0, 0, 18); g.addColorStop(0, '#ddffee'); g.addColorStop(0.5, 'rgba(136,255,204,0.4)'); g.addColorStop(1, 'rgba(136,255,204,0)');
-          ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, 0, 18, 0, Math.PI*2); ctx.fill();
+          if (!_tornadoCoreG) { _tornadoCoreG = ctx.createRadialGradient(0, 0, 0, 0, 0, 18); _tornadoCoreG.addColorStop(0, '#ddffee'); _tornadoCoreG.addColorStop(0.5, 'rgba(136,255,204,0.4)'); _tornadoCoreG.addColorStop(1, 'rgba(136,255,204,0)'); }
+          ctx.fillStyle = _tornadoCoreG; ctx.beginPath(); ctx.arc(0, 0, 18, 0, Math.PI*2); ctx.fill();
           ctx.restore();
         }
         ctx.globalAlpha = 1;
@@ -4365,7 +4367,7 @@
             }
           }
         }
-        ab.waves = ab.waves.filter(w => w.r < maxR);
+        compactInPlace(ab.waves, w => w.r < maxR);
         if (--ab.cooldown > 0) return;
         ab.waves.push({ r: CORE_R, prevR: CORE_R, hit: new Set() });
         ab.cooldown = Math.max(45, 100 - ab.level * 5);
@@ -4451,7 +4453,7 @@
           }
           if ((m.x-CX)*(m.x-CX) + (m.y-CY)*(m.y-CY) > (ARENA_R+30)*(ARENA_R+30)) m.life = 0;
         }
-        ab.missiles = ab.missiles.filter(m => m.life > 0);
+        compactInPlace(ab.missiles, _alivePredLife);
         if (--ab.cooldown > 0) return;
         const count = 1 + Math.floor(ab.level / 2);
         for (let i = 0; i < count; i++) {
@@ -4469,10 +4471,9 @@
           const ang = Math.atan2(m.vy, m.vx);
           ctx.save(); ctx.translate(m.x, m.y); ctx.rotate(ang);
           ctx.save(); ctx.globalCompositeOperation = 'lighter';
-          // 화염 분사 꼬리
-          const tg = ctx.createLinearGradient(-4, 0, -18, 0);
-          tg.addColorStop(0, 'rgba(255,200,130,0.9)'); tg.addColorStop(1, 'rgba(255,120,40,0)');
-          ctx.fillStyle = tg; ctx.beginPath(); ctx.moveTo(-4, -3); ctx.lineTo(-18, 0); ctx.lineTo(-4, 3); ctx.closePath(); ctx.fill();
+          // 화염 분사 꼬리 (로컬좌표 상수 그라디언트 — 캐시)
+          if (!_missileTrailG) { _missileTrailG = ctx.createLinearGradient(-4, 0, -18, 0); _missileTrailG.addColorStop(0, 'rgba(255,200,130,0.9)'); _missileTrailG.addColorStop(1, 'rgba(255,120,40,0)'); }
+          ctx.fillStyle = _missileTrailG; ctx.beginPath(); ctx.moveTo(-4, -3); ctx.lineTo(-18, 0); ctx.lineTo(-4, 3); ctx.closePath(); ctx.fill();
           // 발광 탄두
           ctx.drawImage(getGlowSprite('#bb88ff'), -9, -8, 18, 18);
           ctx.restore();
@@ -4516,7 +4517,7 @@
           });
         }
         for (const p of ab.particles) { p.life--; p.y += p.vy; }
-        ab.particles = ab.particles.filter(p => p.life > 0);
+        compactInPlace(ab.particles, _alivePredLife);
       },
       draw(ab) {
         const radius = 100 + ab.level * 10;
@@ -4558,7 +4559,7 @@
           }
           if ((l.x-CX)*(l.x-CX) + (l.y-CY)*(l.y-CY) > (ARENA_R+30)*(ARENA_R+30)) l.life = 0;
         }
-        ab.lances = ab.lances.filter(l => l.life > 0);
+        compactInPlace(ab.lances, _alivePredLife);
         if (--ab.cooldown > 0) return;
         const target = findNearestEnemy(ARENA_R + 50);
         if (!target) return;
@@ -4593,7 +4594,7 @@
         const dmg = 4 + ab.level * 2;
         const explodeR = 40 + ab.level * 8;
         for (const e of ab.explosions) e.life--;
-        ab.explosions = ab.explosions.filter(e => e.life > 0);
+        compactInPlace(ab.explosions, _alivePredLife);
         for (const m of ab.mines) {
           for (const e of state.enemies) {
             if (e.hp <= 0) continue;
@@ -4613,7 +4614,7 @@
             }
           }
         }
-        ab.mines = ab.mines.filter(m => !m.exploded);
+        compactInPlace(ab.mines, _predNotExploded);
         const targetCount = 3 + ab.level;
         if (ab.mines.length < targetCount) {
           if (--ab.cooldown <= 0) {
@@ -4723,7 +4724,7 @@
       init(ab) { ab.cooldown = 180; ab.falling = []; ab.craters = []; },
       tick(ab) {
         for (const c of ab.craters) c.life--;
-        ab.craters = ab.craters.filter(c => c.life > 0);
+        compactInPlace(ab.craters, _alivePredLife);
         for (const f of ab.falling) {
           f.t++;
           if (f.t >= f.fall) {
@@ -4741,7 +4742,7 @@
             f.done = true;
           }
         }
-        ab.falling = ab.falling.filter(f => !f.done);
+        compactInPlace(ab.falling, _predNotDone);
         if (--ab.cooldown > 0) return;
         const a = Math.random() * Math.PI * 2;
         const r = Math.random() * (ARENA_R - 40);
@@ -4815,7 +4816,7 @@
               const newEy = ey + (dy/dist) * pullSpeed;
               e.angle = Math.atan2(newEy - CY, newEx - CX);
               e.radius = Math.hypot(newEx - CX, newEy - CY);
-              e.targetRadius = e.radius;
+              e.targetRadius = e.radius; e._xyT = -1; // 🚀 위치 메모 무효화
               if (h.tick <= 0 && dist < pullR * 0.7) {
                 damageEnemy(e, dmg);
                 spawnParticles(ex, ey, '#a060d0', 2);
@@ -4824,7 +4825,7 @@
           }
           if (h.tick <= 0) h.tick = 14;
         }
-        ab.holes = ab.holes.filter(h => h.life > 0);
+        compactInPlace(ab.holes, _alivePredLife);
         if (--ab.cooldown > 0) return;
         const a = Math.random() * Math.PI * 2;
         const r = 60 + Math.random() * (ARENA_R - 100);
@@ -4838,11 +4839,10 @@
           // 흡인 범위
           ctx.strokeStyle = 'rgba(160,96,208,0.12)'; ctx.lineWidth = 2;
           ctx.beginPath(); ctx.arc(0, 0, pullR, 0, Math.PI*2); ctx.stroke();
-          // 보라 강착 글로우 (탑다운, 회전 X) — 부드러운 라디얼
+          // 보라 강착 글로우 (탑다운, 회전 X) — 부드러운 라디얼 (로컬좌표 상수 — 캐시)
           ctx.save(); ctx.globalCompositeOperation = 'lighter';
-          const g = ctx.createRadialGradient(0, 0, 9, 0, 0, 32);
-          g.addColorStop(0, 'rgba(200,140,255,0.5)'); g.addColorStop(0.5, 'rgba(160,90,230,0.24)'); g.addColorStop(1, 'rgba(160,90,230,0)');
-          ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, 0, 32, 0, Math.PI*2); ctx.fill();
+          if (!_blackholeGlowG) { _blackholeGlowG = ctx.createRadialGradient(0, 0, 9, 0, 0, 32); _blackholeGlowG.addColorStop(0, 'rgba(200,140,255,0.5)'); _blackholeGlowG.addColorStop(0.5, 'rgba(160,90,230,0.24)'); _blackholeGlowG.addColorStop(1, 'rgba(160,90,230,0)'); }
+          ctx.fillStyle = _blackholeGlowG; ctx.beginPath(); ctx.arc(0, 0, 32, 0, Math.PI*2); ctx.fill();
           ctx.restore();
           // 사건의 지평선 (검정 + 보라 림)
           ctx.fillStyle = '#0a0410'; ctx.beginPath(); ctx.arc(0, 0, 13, 0, Math.PI*2); ctx.fill();
@@ -4910,7 +4910,7 @@
       init(ab) { ab.cooldown = 90; ab.stars = []; ab.flashes = []; },
       tick(ab) {
         for (const f of ab.flashes) f.life--;
-        ab.flashes = ab.flashes.filter(f => f.life > 0);
+        compactInPlace(ab.flashes, _alivePredLife);
         // 낙하 진행 — 부드러운 50프레임 동안 강하 (이전 30 → 60 으로 늘려 끊김 완화)
         const FALL_FRAMES = 50;
         for (const s of ab.stars) {
@@ -4930,7 +4930,7 @@
             s.done = true;
           }
         }
-        ab.stars = ab.stars.filter(s => !s.done);
+        compactInPlace(ab.stars, _predNotDone);
         if (--ab.cooldown > 0) return;
         const count = 3 + Math.ceil(ab.level / 2);
         const targetRange = 160 + ab.level * 8;
@@ -5052,7 +5052,7 @@
             }
           }
         }
-        ab.clones = ab.clones.filter(c => c.life > 0);
+        compactInPlace(ab.clones, _alivePredLife);
         if (--ab.spawnCD > 0) return;
         const want = 1 + Math.floor(ab.level / 2);
         if (ab.clones.length < want) {
@@ -5103,7 +5103,7 @@
                 const newEy = ey + (dy/d) * sp;
                 e.angle = Math.atan2(newEy - CY, newEx - CX);
                 e.radius = Math.hypot(newEx - CX, newEy - CY);
-                e.targetRadius = e.radius;
+                e.targetRadius = e.radius; e._xyT = -1; // 🚀 위치 메모 무효화
               }
             }
           }
@@ -5120,7 +5120,7 @@
             shake(10, 8);
           }
         }
-        ab.events = ab.events.filter(e => e.t < 80);
+        compactInPlace(ab.events, e => e.t < 80);
         if (--ab.cooldown > 0) return;
         const a = Math.random() * Math.PI * 2;
         const r = 60 + Math.random() * (ARENA_R - 100);
@@ -5296,7 +5296,7 @@
       init(ab) { ab.cooldown = 50; ab.fx = []; },
       tick(ab) {
         for (const f of ab.fx) f.life--;
-        ab.fx = ab.fx.filter(f => f.life > 0);
+        compactInPlace(ab.fx, _alivePredLife);
         if (--ab.cooldown > 0) return;
         const pool = state.enemies.filter(e => e.hp > 0);
         if (pool.length === 0) return;
@@ -5328,24 +5328,26 @@
     },
     gravityWell: {
       name: '중력장', baseCost: 75, color: '#8866cc',
-      desc: lv => `중앙으로 천천히 끌어당기는 중력장 · 슬로우 · DMG ${1+lv}/주기 · 반경 ${120+lv*12}`,
-      // 🪐 중앙(타워)으로 천천히 흡인 + 슬로우. 중앙 타워는 무적이라 끌어모을수록 이득. 레벨업할수록 인력 ↑.
+      desc: lv => `사정거리 밖 적을 가장자리로 끌어당기는 중력장 · 슬로우 · DMG ${1+lv}/주기 · 반경 ${120+lv*12}`,
+      // 🪐 사정거리 밖 적을 "가장자리까지만" 천천히 끌어당김(중앙으로 X) + 안에서 슬로우. 레벨업할수록 인력 ↑.
       init(ab) { ab.tickT = 20; },
       tick(ab) {
-        const radius = 120 + ab.level * 12;
+        const radius = 120 + ab.level * 12;       // 중력장 사정거리
+        const pullR = radius * 1.7;               // 흡인 범위 (이 밖은 영향 없음)
         const dmg = 1 + ab.level;
-        const pull = 0.2 + ab.level * 0.06;   // 많이 천천히 → 레벨업할수록 조금씩 빨라짐
+        const pull = 0.35 + ab.level * 0.1;       // 끌어당기는 속도 (가장자리까지만)
         ab.tickT--;
         for (const e of state.enemies) {
           if (e.hp <= 0) continue;
           const [ex, ey] = enemyXY(e);
-          if ((ex-CX)*(ex-CX) + (ey-CY)*(ey-CY) < radius*radius) {
-            e.slowFrames = Math.max(e.slowFrames || 0, 40);
-            // 🪐 중앙으로 천천히 흡인 (라디얼 적만 — TD 경로 적은 경로 유지)
-            if (!e._cart && e.radius !== undefined) {
-              e.radius = Math.max(22, e.radius - pull);
-              if (e.targetRadius !== undefined) e.targetRadius = e.radius;
-            }
+          const d2 = (ex - CX) * (ex - CX) + (ey - CY) * (ey - CY);
+          if (d2 < radius * radius) {
+            e.slowFrames = Math.max(e.slowFrames || 0, 40);   // 사정거리 안: 슬로우만 (중앙으로 더 안 당김)
+          } else if (d2 < pullR * pullR && !e._cart && e.radius !== undefined) {
+            // 사정거리 밖 → 가장자리(radius)까지만 끌어당김 (중앙으로는 안 끌고 감)
+            e.radius = Math.max(radius, e.radius - pull);
+            if (e.targetRadius !== undefined) e.targetRadius = Math.max(radius, e.targetRadius - pull);
+            e._xyT = -1; // 🚀 위치 메모 무효화
           }
         }
         if (ab.tickT <= 0) {
@@ -5402,7 +5404,7 @@
           }
           if ((b.x-CX)*(b.x-CX) + (b.y-CY)*(b.y-CY) > (ARENA_R+30)*(ARENA_R+30)) b.life = 0;
         }
-        ab.bolts = ab.bolts.filter(b => b.life > 0);
+        compactInPlace(ab.bolts, _alivePredLife);
         if (--ab.cooldown > 0) return;
         const n = 1 + ab.level;
         const target = findNearestEnemy(ARENA_R + 50);
@@ -5455,7 +5457,7 @@
             if (d >= w.prevR - 12 && d <= w.r + 12) { damageEnemy(e, dmg); w.hit.add(e); spawnParticles(ex, ey, '#aaee88', 3); }
           }
         }
-        ab.rings = ab.rings.filter(w => w.delay > 0 || w.r < maxR);
+        compactInPlace(ab.rings, w => w.delay > 0 || w.r < maxR);
         if (--ab.cooldown > 0) return;
         for (let k = 0; k < 3; k++) ab.rings.push({ r: CORE_R, prevR: CORE_R, delay: k * 7, hit: new Set() });
         ab.cooldown = Math.max(60, 130 - ab.level * 6);
@@ -5483,7 +5485,7 @@
         const dmg = 4 + ab.level * 3;
         const exR = 30 + ab.level * 5;
         for (const e of ab.explosions) e.life--;
-        ab.explosions = ab.explosions.filter(e => e.life > 0);
+        compactInPlace(ab.explosions, _alivePredLife);
         // 시간차 발사
         for (let i = ab.queue.length - 1; i >= 0; i--) {
           ab.queue[i].t++;
@@ -5518,7 +5520,7 @@
           }
           if ((r.x-CX)*(r.x-CX) + (r.y-CY)*(r.y-CY) > (ARENA_R+30)*(ARENA_R+30)) r.life = 0;
         }
-        ab.rockets = ab.rockets.filter(r => r.life > 0);
+        compactInPlace(ab.rockets, _alivePredLife);
         if (--ab.cooldown > 0) return;
         // 가장 적이 많은 방향 찾기 (8개 구역 검사)
         let bestAng = 0, bestCount = -1;
@@ -5572,7 +5574,7 @@
       init(ab) { ab.cooldown = 80; ab.slashes = []; },
       tick(ab) {
         for (const s of ab.slashes) s.life--;
-        ab.slashes = ab.slashes.filter(s => s.life > 0);
+        compactInPlace(ab.slashes, _alivePredLife);
         if (--ab.cooldown > 0) return;
         const dmg = 4 + ab.level * 3;
         const warps = 2 + ab.level;
@@ -5622,7 +5624,7 @@
         const dmg = 10 + ab.level * 7;
         const stunDur = Math.floor((2 + ab.level * 0.4) * 60);
         // 기절 추적 갱신 (죽음/만료 제거)
-        ab.stuns = ab.stuns.filter(s => s.e && s.e.hp > 0 && s.until > state.t);
+        compactInPlace(ab.stuns, _predStunAlive);
         for (const b of ab.bolts) {
           b.x += b.vx; b.y += b.vy; b.life--;
           for (const e of state.enemies) {
@@ -5644,7 +5646,7 @@
           }
           if ((b.x-CX)*(b.x-CX) + (b.y-CY)*(b.y-CY) > (ARENA_R+30)*(ARENA_R+30)) b.life = 0;
         }
-        ab.bolts = ab.bolts.filter(b => b.life > 0);
+        compactInPlace(ab.bolts, _alivePredLife);
         if (--ab.cooldown > 0) return;
         // 가장 강한 적 선택
         let target = null, best = -1;
@@ -5761,13 +5763,13 @@
     // ========== 패시브 능력 — 시각 효과 없음, state.metaMods 통해 전체 게임플레이에 영향 ==========
     precision: {
       name: '정확', isPassive: true, baseCost: 60, color: '#a0d8ff',
-      desc: lv => `모든 데미지 +${lv*7}%`,
+      desc: lv => `모든 데미지 +${lv*10}%`,
       init() {},
       tick(ab) {
         if (!state.metaMods) return;
         const perma = 1 + getAbilityPermaBonus('precision');   // 🌟 영구강화
         // 🛡 v256 — additive stacking
-        state.metaMods.precisionBonus += ab.level * 0.07 * perma;
+        state.metaMods.precisionBonus += ab.level * 0.10 * perma;
       },
     },
     haste: {
@@ -5873,15 +5875,15 @@
     },
     resilience: {
       name: '불굴', isPassive: true, baseCost: 65, color: '#88cc88',
-      // 50처치당 1스택 (lv 1당 +1.5%, 최대 lv당 +50%)
-      desc: lv => `누적 50처치마다 데미지 +${(lv*1.5).toFixed(1)}% (최대 +${lv*50}%)`,
+      // 50처치당 1스택 (lv 1당 +0.5%, 최대 lv당 +15%) — 과한 cap 너프
+      desc: lv => `누적 50처치마다 데미지 +${(lv*0.5).toFixed(1)}% (최대 +${lv*15}%)`,
       init(ab) { ab.bonus = 0; },
       tick(ab) {
         if (!state.metaMods) return;
         const perma = 1 + getAbilityPermaBonus('resilience');   // 🌟 영구강화
         const stacks = Math.floor((state.totalKills || 0) / 50);
-        const perStack = ab.level * 0.015 * perma;
-        const max = ab.level * 0.50 * perma;
+        const perStack = ab.level * 0.005 * perma;
+        const max = ab.level * 0.15 * perma;
         ab.bonus = Math.min(max, stacks * perStack);
         // 🛡 v256 — additive stacking
         state.metaMods.resilienceBonus += ab.bonus;
@@ -5896,7 +5898,7 @@
       init(ab) { ab.cooldown = 14; ab.explosions = []; },
       tick(ab) {
         for (const e of ab.explosions) e.life--;
-        ab.explosions = ab.explosions.filter(e => e.life > 0);
+        compactInPlace(ab.explosions, _alivePredLife);
         if (--ab.cooldown > 0) return;
         const target = findNearestEnemy(ARENA_R + 50);
         if (!target) return;
@@ -5966,9 +5968,9 @@
       init(ab) { ab.cooldown = 55; ab.bolts = []; ab.chains = []; },
       tick(ab) {
         for (const b of ab.bolts) b.life--;
-        ab.bolts = ab.bolts.filter(b => b.life > 0);
+        compactInPlace(ab.bolts, _alivePredLife);
         for (const c of ab.chains) c.life--;
-        ab.chains = ab.chains.filter(c => c.life > 0);
+        compactInPlace(ab.chains, _alivePredLife);
         if (--ab.cooldown > 0) return;
         const strikes = 2 + ab.level;
         const chainCount = 3 + ab.level;
@@ -6050,7 +6052,7 @@
             }
           }
         }
-        ab.waves = ab.waves.filter(w => w.r < maxR);
+        compactInPlace(ab.waves, w => w.r < maxR);
         if (--ab.cooldown > 0) return;
         ab.waves.push({ r: CORE_R, prevR: CORE_R, hit: new Set() });
         ab.cooldown = Math.max(28, 60 - ab.level * 4);
@@ -6227,7 +6229,7 @@
             }
           }
         }
-        ab.boomerangs = ab.boomerangs.filter(b => b.life > 0);
+        compactInPlace(ab.boomerangs, _alivePredLife);
         if (--ab.cooldown > 0) return;
         const count = 1 + ab.level;
         // 최강 적 추적
@@ -6266,7 +6268,7 @@
         while (ab.cooldowns.length > count) ab.cooldowns.pop();
         ab.angle += 0.005;
         for (const e of ab.explosions) e.life--;
-        ab.explosions = ab.explosions.filter(e => e.life > 0);
+        compactInPlace(ab.explosions, _alivePredLife);
         const radius = 55;
         // 발사
         for (let i = 0; i < count; i++) {
@@ -6336,7 +6338,7 @@
           }
           if ((m.x-CX)*(m.x-CX) + (m.y-CY)*(m.y-CY) > (ARENA_R+30)*(ARENA_R+30)) m.life = 0;
         }
-        ab.missiles = ab.missiles.filter(m => m.life > 0);
+        compactInPlace(ab.missiles, _alivePredLife);
       },
       draw(ab) {
         const count = 4 + ab.level;
@@ -6402,7 +6404,7 @@
           }
           if ((l.x-CX)*(l.x-CX) + (l.y-CY)*(l.y-CY) > (ARENA_R+30)*(ARENA_R+30)) l.life = 0;
         }
-        ab.lances = ab.lances.filter(l => l.life > 0);
+        compactInPlace(ab.lances, _alivePredLife);
         if (--ab.cooldown > 0) return;
         const target = findNearestEnemy(ARENA_R + 50);
         if (!target) return;
@@ -6450,7 +6452,7 @@
         const dmg = 8 + ab.level * 4;
         const explodeR = 60 + ab.level * 10;
         for (const e of ab.explosions) e.life--;
-        ab.explosions = ab.explosions.filter(e => e.life > 0);
+        compactInPlace(ab.explosions, _alivePredLife);
         for (const d of ab.drones) {
           if (!d.target || d.target.hp <= 0) {
             let best = Infinity, t = null;
@@ -6483,7 +6485,7 @@
           }
           d.x += d.vx; d.y += d.vy;
         }
-        ab.drones = ab.drones.filter(d => !d.exploded);
+        compactInPlace(ab.drones, _predNotExploded);
         const want = 2 + ab.level;
         if (ab.drones.length < want) {
           ab.spawnCooldown--;
@@ -6538,7 +6540,7 @@
                 const newEy = ey + (dy/dist) * pullSpeed;
                 e.angle = Math.atan2(newEy - CY, newEx - CX);
                 e.radius = Math.hypot(newEx - CX, newEy - CY);
-                e.targetRadius = e.radius;
+                e.targetRadius = e.radius; e._xyT = -1; // 🚀 위치 메모 무효화
               }
             }
           }
@@ -6553,7 +6555,7 @@
             }
           }
         }
-        ab.events = ab.events.filter(e => e.t < 130);
+        compactInPlace(ab.events, e => e.t < 130);
         if (--ab.cooldown > 0) return;
         let bestX = CX, bestY = CY;
         let highEnemy = null, highBest = -1;
@@ -6637,9 +6639,9 @@
       init(ab) { ab.cooldown = 60; ab.bolts = []; ab.chains = []; },
       tick(ab) {
         for (const b of ab.bolts) b.life--;
-        ab.bolts = ab.bolts.filter(b => b.life > 0);
+        compactInPlace(ab.bolts, _alivePredLife);
         for (const c of ab.chains) c.life--;
-        ab.chains = ab.chains.filter(c => c.life > 0);
+        compactInPlace(ab.chains, _alivePredLife);
         if (--ab.cooldown > 0) return;
         const strikes = 3 + ab.level;
         const chainCount = 4 + ab.level;
@@ -6731,7 +6733,7 @@
             }
           }
         }
-        ab.waves = ab.waves.filter(w => w.r < ARENA_R + 30);
+        compactInPlace(ab.waves, _predWaveArena);
         if (--ab.cooldown > 0) return;
         ab.waves.push({ r: CORE_R, prevR: CORE_R, hit: new Set(), type: ab.toggle === 0 ? 'frost' : 'fire' });
         ab.toggle = 1 - ab.toggle;
@@ -6755,7 +6757,7 @@
       init(ab) { ab.cooldown = 20; ab.explosions = []; },
       tick(ab) {
         for (const e of ab.explosions) e.life--;
-        ab.explosions = ab.explosions.filter(e => e.life > 0);
+        compactInPlace(ab.explosions, _alivePredLife);
         if (--ab.cooldown > 0) return;
         const target = findNearestEnemy(ARENA_R + 100);
         if (!target) return;
@@ -6858,7 +6860,7 @@
         const dmg = 70 + ab.level * 35;
         const exR = 100 + ab.level * 15;
         for (const e of ab.explosions) e.life--;
-        ab.explosions = ab.explosions.filter(e => e.life > 0);
+        compactInPlace(ab.explosions, _alivePredLife);
         for (const b of ab.boomerangs) {
           b.life--; b.rotation += 0.4;
           if (b.phase === 'out') {
@@ -6891,7 +6893,7 @@
             }
           }
         }
-        ab.boomerangs = ab.boomerangs.filter(b => b.life > 0);
+        compactInPlace(ab.boomerangs, _alivePredLife);
         if (--ab.cooldown > 0) return;
         let target = null, best = -1;
         for (const e of state.enemies) {
@@ -6998,7 +7000,7 @@
             }
           }
         }
-        ab.waves = ab.waves.filter(w => w.r < ARENA_R + 30);
+        compactInPlace(ab.waves, _predWaveArena);
         if (state.frenzyTrigger) ab.killBuf++;
         if (--ab.cooldown > 0) return;
         ab.waves.push({ r: CORE_R, prevR: CORE_R, hit: new Set() });
@@ -7026,7 +7028,7 @@
           state.metaMods.bonusGoldMul += ab.level * 0.12;  // 🛡 v256 — additive
         }
         for (const e of ab.fx) e.life--;
-        ab.fx = ab.fx.filter(e => e.life > 0);
+        compactInPlace(ab.fx, _alivePredLife);
         if (--ab.cooldown > 0) return;
         let target = null, best = -1;
         for (const e of state.enemies) { { const _s = e.isBoss ? e.hp + 1e9 : e.hp; if (_s > best) { best = _s; target = e; } } }
@@ -7074,7 +7076,7 @@
           state.metaMods.fortuneChance += ab.level * 0.08;  // 🛡 v256 — additive
         }
         for (const c of ab.chains) c.life--;
-        ab.chains = ab.chains.filter(c => c.life > 0);
+        compactInPlace(ab.chains, _alivePredLife);
         if (--ab.cooldown > 0) return;
         const first = findNearestEnemy(ARENA_R + 50);
         if (!first) return;
@@ -7247,7 +7249,7 @@
             }
           }
         }
-        ab.boomerangs = ab.boomerangs.filter(b => b.life > 0);
+        compactInPlace(ab.boomerangs, _alivePredLife);
         if (--ab.cooldown > 0) return;
         // 보스 우선, 없으면 최강 적
         let target = state.enemies.find(e => e.isBoss && e.hp > 0);
@@ -7370,7 +7372,7 @@
           }
         }
         for (const f of ab.flashes) f.life--;
-        ab.flashes = ab.flashes.filter(f => f.life > 0);
+        compactInPlace(ab.flashes, _alivePredLife);
         for (const s of ab.falling) {
           s.t++;
           if (s.t >= 30) {
@@ -7387,7 +7389,7 @@
             s.done = true;
           }
         }
-        ab.falling = ab.falling.filter(s => !s.done);
+        compactInPlace(ab.falling, _predNotDone);
         if (--ab.cooldown > 0) return;
         // TD: 적 위치 타격 / 클래식: 무작위
         const n = 4 + ab.level * 2;
@@ -7577,7 +7579,7 @@
           }
           if ((b.x-CX)*(b.x-CX) + (b.y-CY)*(b.y-CY) > (ARENA_R+30)*(ARENA_R+30)) b.life = 0;
         }
-        ab.bolts = ab.bolts.filter(b => b.life > 0);
+        compactInPlace(ab.bolts, _alivePredLife);
         if (--ab.cooldown > 0) return;
         const n = 2;
         const target = findNearestEnemy(ARENA_R + 50);
@@ -7620,7 +7622,7 @@
             if (d >= w.prevR - 16 && d <= w.r + 16) { damageEnemy(e, dmg); w.hit.add(e); spawnParticles(ex, ey, '#88ffaa', 4); }
           }
         }
-        ab.rings = ab.rings.filter(w => w.delay > 0 || w.r < maxR);
+        compactInPlace(ab.rings, w => w.delay > 0 || w.r < maxR);
         if (--ab.cooldown > 0) return;
         for (let k = 0; k < 4; k++) ab.rings.push({ r: CORE_R, prevR: CORE_R, delay: k * 6, hit: new Set() });
         ab.cooldown = Math.max(40, 95 - ab.level * 6);
@@ -7649,7 +7651,7 @@
         const dmg = 10 + ab.level * 8;
         const exR = 40 + ab.level * 7;
         for (const e of ab.explosions) e.life--;
-        ab.explosions = ab.explosions.filter(e => e.life > 0);
+        compactInPlace(ab.explosions, _alivePredLife);
         for (const r of ab.rockets) {
           r.x += r.vx; r.y += r.vy; r.life--;
           r.vx *= 1.03; r.vy *= 1.03;
@@ -7672,7 +7674,7 @@
           }
           if ((r.x-CX)*(r.x-CX) + (r.y-CY)*(r.y-CY) > (ARENA_R+30)*(ARENA_R+30)) r.life = 0;
         }
-        ab.rockets = ab.rockets.filter(r => r.life > 0);
+        compactInPlace(ab.rockets, _alivePredLife);
         if (--ab.cooldown > 0) return;
         const n = 10 + ab.level * 3;
         const off = Math.random() * Math.PI * 2;
@@ -7731,7 +7733,7 @@
         }
         // 슬래시 이펙트 갱신
         for (const s of ab.slashes) s.life--;
-        ab.slashes = ab.slashes.filter(s => s.life > 0);
+        compactInPlace(ab.slashes, _alivePredLife);
         if (--ab.cooldown > 0) return;
         // 워프 베기 (강력 강타 — 회전검 데미지의 2배)
         const warps = 3 + ab.level;
@@ -7804,7 +7806,7 @@
                 const newEy = ey + (dy/d) * sp;
                 e.angle = Math.atan2(newEy - CY, newEx - CX);
                 e.radius = Math.hypot(newEx - CX, newEy - CY);
-                e.targetRadius = e.radius;
+                e.targetRadius = e.radius; e._xyT = -1; // 🚀 위치 메모 무효화
               }
             }
           }
@@ -7824,7 +7826,7 @@
             shake(12, 10);
           }
         }
-        ab.events = ab.events.filter(e => e.t < 70);
+        compactInPlace(ab.events, e => e.t < 70);
         if (--ab.cooldown > 0) return;
         const a = Math.random() * Math.PI * 2;
         const r = 60 + Math.random() * (ARENA_R - 100);
@@ -7941,7 +7943,7 @@
           state.metaMods.executionerBonus += own;  // 🛡 v256 — additive
         }
         for (const e of ab.explosions) e.life--;
-        ab.explosions = ab.explosions.filter(e => e.life > 0);
+        compactInPlace(ab.explosions, _alivePredLife);
         if (--ab.cooldown > 0) return;
         // 임계값 상향: 10+lv*3 → 15+lv*5 (lv5 = 40%, 베이스 수확자 32% 초과)
         const threshold = (15 + ab.level * 5) / 100;
@@ -8025,7 +8027,7 @@
           });
         }
         for (const p of ab.particles) { p.life--; p.y += p.vy; }
-        ab.particles = ab.particles.filter(p => p.life > 0);
+        compactInPlace(ab.particles, _alivePredLife);
       },
       draw(ab) {
         const radius = 130 + ab.level * 15;
@@ -8051,7 +8053,7 @@
       tick(ab) {
         ab.angle += 0.05;
         for (const b of ab.bolts) b.life--;
-        ab.bolts = ab.bolts.filter(b => b.life > 0);
+        compactInPlace(ab.bolts, _alivePredLife);
         for (const [e, cd] of ab.hits) {
           if (cd <= 1 || e.hp <= 0) ab.hits.delete(e);
           else ab.hits.set(e, cd - 1);
@@ -8116,7 +8118,7 @@
         const dmg = 12 + ab.level * 7;
         const exR = 90 + ab.level * 12;
         for (const e of ab.explosions) e.life--;
-        ab.explosions = ab.explosions.filter(e => e.life > 0);
+        compactInPlace(ab.explosions, _alivePredLife);
         // 영구 슬로우 (필드 안 모든 적)
         for (const e of state.enemies) {
           if (e.hp <= 0) continue;
@@ -8266,7 +8268,7 @@
         const dmg = 4 + ab.level * 2;
         const exR = 28 + ab.level * 5;
         for (const e of ab.explosions) e.life--;
-        ab.explosions = ab.explosions.filter(e => e.life > 0);
+        compactInPlace(ab.explosions, _alivePredLife);
         for (const t of ab.torpedoes) {
           t.life--;
           if (!t.target || t.target.hp <= 0) {
@@ -8310,7 +8312,7 @@
           }
           if ((t.x-CX)*(t.x-CX) + (t.y-CY)*(t.y-CY) > (ARENA_R+30)*(ARENA_R+30)) t.life = 0;
         }
-        ab.torpedoes = ab.torpedoes.filter(t => t.life > 0);
+        compactInPlace(ab.torpedoes, _alivePredLife);
         if (--ab.cooldown > 0) return;
         const n = 2 + ab.level;
         for (let i = 0; i < n; i++) {
@@ -8413,7 +8415,7 @@
             const newEy = ey + (dy/dist) * ps;
             e.angle = Math.atan2(newEy - CY, newEx - CX);
             e.radius = Math.hypot(newEx - CX, newEy - CY);
-            e.targetRadius = e.radius;
+            e.targetRadius = e.radius; e._xyT = -1; // 🚀 위치 메모 무효화
           }
         }
         if (ab.tickT <= 0) {
@@ -8447,7 +8449,7 @@
         const exR = 40 + ab.level * 6;
         const slowDur = 90 + ab.level * 12;
         for (const e of ab.explosions) e.life--;
-        ab.explosions = ab.explosions.filter(e => e.life > 0);
+        compactInPlace(ab.explosions, _alivePredLife);
         for (const t of ab.torpedoes) {
           t.life--;
           if (!t.target || t.target.hp <= 0) {
@@ -8492,7 +8494,7 @@
           }
           if ((t.x-CX)*(t.x-CX) + (t.y-CY)*(t.y-CY) > (ARENA_R+30)*(ARENA_R+30)) t.life = 0;
         }
-        ab.torpedoes = ab.torpedoes.filter(t => t.life > 0);
+        compactInPlace(ab.torpedoes, _alivePredLife);
         if (--ab.cooldown > 0) return;
         const n = 4 + ab.level;
         for (let i = 0; i < n; i++) {
@@ -8542,7 +8544,7 @@
       tick(ab) {
         if (ab.fx > 0) ab.fx--;
         for (const b of ab.bolts) b.life--;
-        ab.bolts = ab.bolts.filter(b => b.life > 0);
+        compactInPlace(ab.bolts, _alivePredLife);
         if (--ab.cooldown > 0) return;
         const radius = 100 + ab.level * 15;
         // 데미지 상향: 5+lv*3 → 10+lv*7 (lv5 = 45, 약 2.25배)
@@ -8627,7 +8629,7 @@
             const newEy = ey + (dy/dist) * ps;
             e.angle = Math.atan2(newEy - CY, newEx - CX);
             e.radius = Math.hypot(newEx - CX, newEy - CY);
-            e.targetRadius = e.radius;
+            e.targetRadius = e.radius; e._xyT = -1; // 🚀 위치 메모 무효화
             e.slowFrames = Math.max(e.slowFrames || 0, slowDur);
           }
         }
@@ -8666,7 +8668,7 @@
         const exR = 70 + ab.level * 10;
         const slowDur = 160;
         for (const e of ab.explosions) e.life--;
-        ab.explosions = ab.explosions.filter(e => e.life > 0);
+        compactInPlace(ab.explosions, _alivePredLife);
         for (const t of ab.torpedoes) {
           t.life--;
           if (!t.target || t.target.hp <= 0) {
@@ -8709,7 +8711,7 @@
           }
           if ((t.x-CX)*(t.x-CX) + (t.y-CY)*(t.y-CY) > (ARENA_R+30)*(ARENA_R+30)) t.life = 0;
         }
-        ab.torpedoes = ab.torpedoes.filter(t => t.life > 0);
+        compactInPlace(ab.torpedoes, _alivePredLife);
         if (--ab.cooldown > 0) return;
         const n = 8 + ab.level * 2;
         for (let i = 0; i < n; i++) {
@@ -8763,7 +8765,7 @@
       tick(ab) {
         if (ab.fx > 0) ab.fx--;
         for (const c of ab.craters) c.life--;
-        ab.craters = ab.craters.filter(c => c.life > 0);
+        compactInPlace(ab.craters, _alivePredLife);
         const dmg = 20 + ab.level * 10;
         for (const m of ab.meteors) {
           m.t++;
@@ -8782,7 +8784,7 @@
             m.done = true;
           }
         }
-        ab.meteors = ab.meteors.filter(m => !m.done);
+        compactInPlace(ab.meteors, _predNotDone);
         if (--ab.cooldown > 0) return;
         // 광역 폭발
         const radius = 200 + ab.level * 20;
@@ -8858,7 +8860,7 @@
       tick(ab) {
         if (ab.fx > 0) ab.fx--;
         for (const p of ab.petals) { p.x += p.vx; p.y += p.vy; p.life--; p.rot += p.spin; }
-        ab.petals = ab.petals.filter(p => p.life > 0);
+        compactInPlace(ab.petals, _alivePredLife);
         if (--ab.cooldown > 0) return;
         const dmg = 14 + ab.level * 8;
         // ⭐ 별 퍼크: ★4 범위 +15%, ★7 범위 +추가 25%
@@ -8929,7 +8931,7 @@
       init(ab) { ab.cooldown = 48; ab.bullets = []; ab.bursts = []; },
       tick(ab) {
         for (const b of ab.bursts) b.life--;
-        ab.bursts = ab.bursts.filter(b => b.life > 0);
+        compactInPlace(ab.bursts, _alivePredLife);
         const dmg = 14 + ab.level * 8;
         // ⭐ 별 퍼크: ★3/★6 관통 +1/+3, ★7 폭발 반경 +25%
         const pierceMax = 4 + ab.level + permaCount('moonShot');
@@ -8999,7 +9001,7 @@
           // 아레나 이탈
           if ((b.x-CX)*(b.x-CX) + (b.y-CY)*(b.y-CY) > (ARENA_R+30)*(ARENA_R+30)) b.life = 0;
         }
-        ab.bullets = ab.bullets.filter(b => b.life > 0);
+        compactInPlace(ab.bullets, _alivePredLife);
         if (--ab.cooldown > 0) return;
         if (ab.bullets.length >= 5) { ab.cooldown = 8; return; }
         // 🎯 첫 발사: 가장 가까운 적 방향으로 (랜덤 X) — 프리징 방지 + 적중률↑
@@ -9080,7 +9082,7 @@
           }
           if ((s.x-CX)*(s.x-CX) + (s.y-CY)*(s.y-CY) > (ARENA_R+30)*(ARENA_R+30)) s.life = 0;
         }
-        ab.stars = ab.stars.filter(s => s.life > 0);
+        compactInPlace(ab.stars, _alivePredLife);
         if (--ab.cooldown > 0) return;
         // ⭐ 별 퍼크: ★4 펄스 반경 +15%, ★7 펄스 반경 +25% 추가
         const pulseR = (180 + ab.level * 18) * permaRangeMul('starSong');
@@ -9267,11 +9269,15 @@
         const blades = 3 + Math.floor(ab.level / 2);
         const halfArc = Math.PI / 5;
         // 부드러운 분홍 칼날 부채꼴 (수채화 워시 — NORMAL 블렌드)
+        // 🚀 루프 불변 그라디언트 — ab에 (range, CX, CY) 키로 캐시
+        if (!ab._bladeG || ab._bladeGK !== range + '|' + CX + '|' + CY) {
+          ab._bladeG = ctx.createRadialGradient(CX, CY, range*0.2, CX, CY, range);
+          ab._bladeG.addColorStop(0, 'rgba(255,150,195,0.05)'); ab._bladeG.addColorStop(0.7, 'rgba(255,102,170,0.26)'); ab._bladeG.addColorStop(1, 'rgba(255,180,215,0)');
+          ab._bladeGK = range + '|' + CX + '|' + CY;
+        }
         for (let k = 0; k < blades; k++) {
           const bAng = ab.ang + k * (Math.PI * 2 / blades);
-          const g = ctx.createRadialGradient(CX, CY, range*0.2, CX, CY, range);
-          g.addColorStop(0, 'rgba(255,150,195,0.05)'); g.addColorStop(0.7, 'rgba(255,102,170,0.26)'); g.addColorStop(1, 'rgba(255,180,215,0)');
-          ctx.fillStyle = g;
+          ctx.fillStyle = ab._bladeG;
           ctx.beginPath(); ctx.moveTo(CX, CY); ctx.arc(CX, CY, range, bAng - halfArc, bAng + halfArc); ctx.closePath(); ctx.fill();
           // 칼날 가장자리 — 가느다란 호
           ctx.globalAlpha = 0.4; ctx.strokeStyle = '#ffd0e6'; ctx.lineWidth = 2; ctx.lineCap = 'round';
@@ -9300,7 +9306,7 @@
       init(ab) { ab.cooldown = 55; ab.bullets = []; ab.bursts = []; },
       tick(ab) {
         for (const b of ab.bursts) b.life--;
-        ab.bursts = ab.bursts.filter(b => b.life > 0);
+        compactInPlace(ab.bursts, _alivePredLife);
         const dmg = 14 + ab.level * 7;
         const pierceMax = 4 + ab.level;
         const burstR = 45 + ab.level * 5;
@@ -9364,7 +9370,7 @@
           }
           if ((b.x-CX)*(b.x-CX) + (b.y-CY)*(b.y-CY) > (ARENA_R+30)*(ARENA_R+30)) b.life = 0;
         }
-        ab.bullets = ab.bullets.filter(b => b.life > 0);
+        compactInPlace(ab.bullets, _alivePredLife);
         if (--ab.cooldown > 0) return;
         if (ab.bullets.length >= 8) { ab.cooldown = 8; return; }  // 🛡 폭주 방지
         const shotN = 1 + Math.floor(ab.level / 3);
@@ -9437,7 +9443,7 @@
       tick(ab) {
         if (ab.fx > 0) ab.fx--;
         for (const r of ab.rings) r.life--;
-        ab.rings = ab.rings.filter(r => r.life > 0);
+        compactInPlace(ab.rings, _alivePredLife);
         const starDmg = 10 + ab.level * 6;
         for (const s of ab.stars) {
           s.x += s.vx; s.y += s.vy; s.rot += 0.25; s.life--;
@@ -9452,7 +9458,7 @@
           }
           if ((s.x-CX)*(s.x-CX) + (s.y-CY)*(s.y-CY) > (ARENA_R+30)*(ARENA_R+30)) s.life = 0;
         }
-        ab.stars = ab.stars.filter(s => s.life > 0);
+        compactInPlace(ab.stars, _alivePredLife);
         if (--ab.cooldown > 0) return;
         const pulseR = 200 + ab.level * 20;
         const pulseDmg = 20 + ab.level * 12;
@@ -9611,7 +9617,7 @@
         for (const p of ab.petals) {
           p.x += p.vx; p.y += p.vy; p.life--; p.rot += p.spin;
         }
-        ab.petals = ab.petals.filter(p => p.life > 0);
+        compactInPlace(ab.petals, _alivePredLife);
         if (ab.tickT <= 0) {
           ab.tickT = 8;
           for (let k = 0; k < blades; k++) {
@@ -9649,16 +9655,20 @@
         const range = 180 + ab.level * 18;
         const blades = 5 + Math.floor(ab.level / 2);
         const halfArc = Math.PI / 4;
-        // 🌸 전체를 감싸는 부드러운 분홍 폭풍 워시
-        const gg = ctx.createRadialGradient(CX, CY, range*0.15, CX, CY, range*1.02);
-        gg.addColorStop(0, 'rgba(255,140,190,0.12)'); gg.addColorStop(0.65, 'rgba(255,80,150,0.10)'); gg.addColorStop(1, 'rgba(255,170,210,0)');
-        ctx.fillStyle = gg; ctx.beginPath(); ctx.arc(CX, CY, range*1.02, 0, Math.PI*2); ctx.fill();
+        // 🌸 전체를 감싸는 부드러운 분홍 폭풍 워시 + 칼날 그라디언트
+        // 🚀 루프 불변 — ab에 (range, CX, CY) 키로 캐시
+        if (!ab._stormG || ab._stormGK !== range + '|' + CX + '|' + CY) {
+          ab._stormG = ctx.createRadialGradient(CX, CY, range*0.15, CX, CY, range*1.02);
+          ab._stormG.addColorStop(0, 'rgba(255,140,190,0.12)'); ab._stormG.addColorStop(0.65, 'rgba(255,80,150,0.10)'); ab._stormG.addColorStop(1, 'rgba(255,170,210,0)');
+          ab._stormBladeG = ctx.createRadialGradient(CX, CY, range*0.18, CX, CY, range);
+          ab._stormBladeG.addColorStop(0, 'rgba(255,120,175,0.06)'); ab._stormBladeG.addColorStop(0.7, 'rgba(255,51,136,0.30)'); ab._stormBladeG.addColorStop(1, 'rgba(255,150,195,0)');
+          ab._stormGK = range + '|' + CX + '|' + CY;
+        }
+        ctx.fillStyle = ab._stormG; ctx.beginPath(); ctx.arc(CX, CY, range*1.02, 0, Math.PI*2); ctx.fill();
         // 칼날 부채꼴 (수채 그라데이션)
         for (let k = 0; k < blades; k++) {
           const bAng = ab.ang + k * (Math.PI * 2 / blades);
-          const g = ctx.createRadialGradient(CX, CY, range*0.18, CX, CY, range);
-          g.addColorStop(0, 'rgba(255,120,175,0.06)'); g.addColorStop(0.7, 'rgba(255,51,136,0.30)'); g.addColorStop(1, 'rgba(255,150,195,0)');
-          ctx.fillStyle = g;
+          ctx.fillStyle = ab._stormBladeG;
           ctx.beginPath(); ctx.moveTo(CX, CY); ctx.arc(CX, CY, range, bAng - halfArc, bAng + halfArc); ctx.closePath(); ctx.fill();
           // 검광 (가느다란 호 — 끝이 둥글게)
           ctx.globalAlpha = 0.55; ctx.strokeStyle = '#ffd0e6'; ctx.lineWidth = 2.2; ctx.lineCap = 'round';
@@ -9688,7 +9698,7 @@
         const exR = 80 + ab.level * 10;
         const slowDur = 120;
         for (const c of ab.craters) c.life--;
-        ab.craters = ab.craters.filter(c => c.life > 0);
+        compactInPlace(ab.craters, _alivePredLife);
         for (const s of ab.shells) {
           s.t++;
           if (s.t >= s.fall) {
@@ -9706,7 +9716,7 @@
             s.done = true;
           }
         }
-        ab.shells = ab.shells.filter(s => !s.done);
+        compactInPlace(ab.shells, _predNotDone);
         if (--ab.cooldown > 0) return;
         // TD: 적 위치 타격 / 클래식: 무작위
         const strikes = 5 + ab.level;
@@ -9770,7 +9780,7 @@
       tick(ab) {
         if (ab.fx > 0) ab.fx--;
         for (const c of ab.craters) c.life--;
-        ab.craters = ab.craters.filter(c => c.life > 0);
+        compactInPlace(ab.craters, _alivePredLife);
         const dmg = 45 + ab.level * 22;
         const starDmg = 20 + ab.level * 12;
         for (const s of ab.stars) {
@@ -9786,7 +9796,7 @@
           }
           if ((s.x-CX)*(s.x-CX) + (s.y-CY)*(s.y-CY) > (ARENA_R+30)*(ARENA_R+30)) s.life = 0;
         }
-        ab.stars = ab.stars.filter(s => s.life > 0);
+        compactInPlace(ab.stars, _alivePredLife);
         for (const m of ab.meteors) {
           m.t++;
           if (m.t >= m.fall) {
@@ -9804,7 +9814,7 @@
             m.done = true;
           }
         }
-        ab.meteors = ab.meteors.filter(m => !m.done);
+        compactInPlace(ab.meteors, _predNotDone);
         if (--ab.cooldown > 0) return;
         // 초광역 펄스
         const pulseR = 240 + ab.level * 22;
@@ -9950,7 +9960,7 @@
             const newEy = ey + (dy/dist) * ps;
             e.angle = Math.atan2(newEy - CY, newEx - CX);
             e.radius = Math.hypot(newEx - CX, newEy - CY);
-            e.targetRadius = e.radius;
+            e.targetRadius = e.radius; e._xyT = -1; // 🚀 위치 메모 무효화
             e.slowFrames = Math.max(e.slowFrames || 0, slowDur);
           }
         }
@@ -10097,7 +10107,7 @@
             const newEy = ey + (dy/dist) * ps;
             e.angle = Math.atan2(newEy - CY, newEx - CX);
             e.radius = Math.hypot(newEx - CX, newEy - CY);
-            e.targetRadius = e.radius;
+            e.targetRadius = e.radius; e._xyT = -1; // 🚀 위치 메모 무효화
             e.slowFrames = Math.max(e.slowFrames || 0, 50);
           }
         }
@@ -10282,7 +10292,7 @@
               const path = paths[e.pathId || 0] || paths[0];
               const cell = path[e.pathIdx] || path[0];
               const c = cellCenter(cell.col, cell.row);
-              e.x = c.x; e.y = c.y;
+              e.x = c.x; e.y = c.y; e._xyT = -1; // 🚀 위치 메모 무효화
             }
             const [ex, ey] = enemyXY(e);
             spawnParticles(ex, ey, '#c084ff', 3);
@@ -10410,7 +10420,7 @@
             }
           }
         }
-        ab.petals = ab.petals.filter(p => p.life > 0);
+        compactInPlace(ab.petals, _alivePredLife);
         if (--ab.cooldown > 0) return;
         // 12개 꽃잎이 중앙에서 방사형으로 발사
         const count = 12;
@@ -10533,7 +10543,7 @@
       init(ab) { ab.cooldown = 90; ab.shells = []; ab.craters = []; },
       tick(ab) {
         for (const c of ab.craters) c.life--;
-        ab.craters = ab.craters.filter(c => c.life > 0);
+        compactInPlace(ab.craters, _alivePredLife);
         const dmg = 25 + ab.level * 12;
         const exR = 55 + ab.level * 5;
         const slowDur = 60;
@@ -10553,7 +10563,7 @@
             s.done = true;
           }
         }
-        ab.shells = ab.shells.filter(s => !s.done);
+        compactInPlace(ab.shells, _predNotDone);
         if (--ab.cooldown > 0) return;
         const strikes = 5 + Math.floor(ab.level / 2);
         // 살아있는 적 위치 우선 낙하, 적 없으면 무작위
@@ -10639,7 +10649,7 @@
           // 화면 밖 이탈
           if (b.x < -50 || b.x > W + 50 || b.y < -50 || b.y > H + 50) b.life = 0;
         }
-        ab.bullets = ab.bullets.filter(b => b.life > 0);
+        compactInPlace(ab.bullets, _alivePredLife);
         if (--ab.cooldown > 0) return;
         // 한 발 발사 — 가장 먼 적 방향 (관통 효율↑)
         let tg = null, best = -1;
@@ -10673,11 +10683,10 @@
           ctx.beginPath(); ctx.moveTo(b.x - b.vx*9, b.y - b.vy*9); ctx.lineTo(b.x, b.y); ctx.stroke();
           ctx.restore();
           ctx.save(); ctx.translate(b.x, b.y);
-          // 코로나 글로우 (일식 후광)
+          // 코로나 글로우 (일식 후광 — 로컬좌표 상수, 캐시)
           ctx.save(); ctx.globalCompositeOperation = 'lighter';
-          const cg = ctx.createRadialGradient(0, 0, 8, 0, 0, 34);
-          cg.addColorStop(0, 'rgba(210,228,255,0.85)'); cg.addColorStop(0.4, 'rgba(150,185,255,0.4)'); cg.addColorStop(1, 'rgba(150,185,255,0)');
-          ctx.fillStyle = cg; ctx.beginPath(); ctx.arc(0, 0, 34, 0, Math.PI*2); ctx.fill();
+          if (!_eclipseCoronaG) { _eclipseCoronaG = ctx.createRadialGradient(0, 0, 8, 0, 0, 34); _eclipseCoronaG.addColorStop(0, 'rgba(210,228,255,0.85)'); _eclipseCoronaG.addColorStop(0.4, 'rgba(150,185,255,0.4)'); _eclipseCoronaG.addColorStop(1, 'rgba(150,185,255,0)'); }
+          ctx.fillStyle = _eclipseCoronaG; ctx.beginPath(); ctx.arc(0, 0, 34, 0, Math.PI*2); ctx.fill();
           // 코로나 광선 (회전)
           ctx.strokeStyle = 'rgba(220,235,255,0.55)'; ctx.lineWidth = 2;
           for (let k=0;k<12;k++){ const a=b.rot*0.5 + k*Math.PI/6, r1=15, r2=15+ (k%2?14:9) + Math.sin(state.t*0.15+k)*3;
@@ -11811,7 +11820,7 @@
     }
     // 🛡 v259 — v251 엔드리스 +6%/round 롤백: enemyHpFor() 가 이미 R100+ 에서 ×1.5^(n-100) 가속 → 추가 보정 불필요 (이중 가속이라 너무 가팔라짐)
     // 🎁 이벤트/대박 보상 누적 보정 — 보상이 라운드마다 쌓여 후반이 쉬워지므로, 라운드 비례로 적·보스 HP 상향 (초반 그대로)
-    const eventComp = 1 + Math.min(0.5, Math.max(0, n - 5) * 0.01);   // R5부터 +1%/R, 최대 +50% (튜닝 가능)
+    const eventComp = 1 + Math.min(0.25, Math.max(0, n - 5) * 0.005);   // R5부터 +0.5%/R, 최대 +25% (적 누적·렉 완화 위해 하향)
     const hp = Math.ceil(baseHp * asc.enemyHpMul * tdHpMul * eventComp);
     const bossHp = Math.ceil(baseHp * (isFinal ? 13 : 10) * asc.bossHpMul * relicBossHp * tdBossHpMul * eventComp);
     const baseTime = isFinal ? 180 : 30;
@@ -14271,13 +14280,17 @@
   }
   // ⭐ 능력별 별 등급 퍼크 (★2, 3, 5, 6, 7 — 데미지 외 특별 효과)
   // 사용처: 각 능력의 tick에서 perks(ability_id).cooldownMul / extraCount / rangeMul 등 조회
+  // 🚀 퍼크 객체 메모 — 키에 별 수를 포함해 별 상승 시 자동 무효화 (능력 tick에서 매 프레임 객체 할당 제거)
+  const _charPerksCache = Object.create(null);
   function getCharStarPerks(abilityId) {
     const charId = findCharByAbility(abilityId);
     if (!charId) return null;
     const s = getCharStars(charId);
     if (s <= 0) return null;
+    const _pk = abilityId + '|' + s;
+    if (_charPerksCache[_pk]) return _charPerksCache[_pk];
     // 모든 가챠 캐릭터에 공통 — 능력별 보편 퍼크 (★2,3,5,6,7)
-    return {
+    return _charPerksCache[_pk] = {
       stars:        s,
       // ★2: 발사 쿨다운 -10% (발사 속도 ↑)
       cooldownMul:  s >= 2 ? 0.90 : 1,
@@ -15643,7 +15656,7 @@
         });
       }
       // 🎆 처치 팝 — 일반 몬스터도 죽은 자리에서 약하게 톡 튀는 스파크 (보스는 위에서 큰 폭발 별도)
-      burstFx(ex, ey, ['#ff8a6e', '#ffd479'], e.isBoss ? 12 : 8, 1.6);
+      burstFx(ex, ey, ['#ff8a6e', '#ffd479'], e.isBoss ? 8 : 4, 1.6);
       SFX.kill();
       // ⚡ 오딘의 창 — 처치 시 주변 3마리에 50% 연쇄 데미지
       if (state.relicEffects && state.relicEffects.chainLightning && !e._chainSource) {
@@ -15693,12 +15706,12 @@
         // 🎆 보스 폭발 — 죽은 자리에서 폭죽처럼 터지는 버스트 (특수보스는 더 화려). 화면 플래시 아님, 로컬.
         { const _fp = (typeof enemyXY === 'function') ? enemyXY(e) : [W / 2, H / 2];
           const _cols = e.special ? ['#ffffff', '#ffd479', '#ff8a4a', '#ff6bd6'] : ['#ffffff', '#ffd479', '#ff8a4a'];
-          burstFx(_fp[0], _fp[1], _cols, e.isMiniBoss ? 14 : (e.special ? 40 : 28), e.isMiniBoss ? 2.0 : 2.9);
-          for (let _k = 0; _k < 6; _k++) state.particles.push({ x: _fp[0], y: _fp[1], vx: (Math.random() - 0.5) * 0.7, vy: (Math.random() - 0.5) * 0.7, life: 8 + Math.random() * 4, color: '#ffffff' }); }
+          burstFx(_fp[0], _fp[1], _cols, e.isMiniBoss ? 8 : (e.special ? 22 : 15), e.isMiniBoss ? 2.0 : 2.9);
+          for (let _k = 0; _k < 4; _k++) state.particles.push({ x: _fp[0], y: _fp[1], vx: (Math.random() - 0.5) * 0.7, vy: (Math.random() - 0.5) * 0.7, life: 8 + Math.random() * 4, color: '#ffffff' }); }
         // ☠ 아바돈 피날레 — 거대 폭발 + 잔여 잡몹 일소(웨이브 즉시 종료 → 승리 연출로)
         if (e.special === 'abaddon') {
           const _af = (typeof enemyXY === 'function') ? enemyXY(e) : [W / 2, H / 2];
-          burstFx(_af[0], _af[1], ['#ffffff', '#ff2a5a', '#aa3aff', '#ffd479'], 70, 3.4);
+          burstFx(_af[0], _af[1], ['#ffffff', '#ff2a5a', '#aa3aff', '#ffd479'], 40, 3.4);
           shake(28, 40);
           if (typeof _evClearField === 'function') _evClearField();
         }
@@ -15827,7 +15840,7 @@
   }
   // 🎆 처치 버스트 — 죽은 자리에서 폭죽처럼 사방으로 튀는 스파크 (화면 플래시 아님, 로컬 이펙트)
   function burstFx(x, y, colors, count, power) {
-    const cap = IS_MOBILE ? 150 : 350;
+    const cap = IS_MOBILE ? 110 : 300;
     const room = cap - state.particles.length;
     if (room <= 0) return;
     count = Math.min(count, room);
@@ -16846,7 +16859,7 @@
           if (state.mode !== 'defense') {
             e.angle = Math.random() * Math.PI * 2;
             e.radius = 90 + Math.random() * 150;
-            e.targetRadius = e.radius;
+            e.targetRadius = e.radius; e._xyT = -1; // 🚀 위치 메모 무효화
           }
           e.blinkInvulnUntil = state.t + 26;      // ~0.43초 무적
           const [nx, ny] = enemyXY(e);
@@ -16875,6 +16888,11 @@
   // 자주 쓰는 predicate 캐싱 (클로저 재할당 방지)
   const _alivePredEnemy   = e => e.hp > 0;
   const _alivePredLife    = x => x.life > 0;
+  // 🚀 능력 fx 배열용 공유 predicate — ABILITY_DEFS tick의 매 프레임 filter를 compactInPlace로 이관
+  const _predNotDone      = o => !o.done;
+  const _predNotExploded  = o => !o.exploded;
+  const _predWaveArena    = w => w.r < ARENA_R + 30;
+  const _predStunAlive    = s => s.e && s.e.hp > 0 && s.until > state.t;
   // 🛡 v254 — 패시브 공유 metaMods 슬롯 — 매 프레임 리셋 후 능력별 max/min 머지
   //          벡터: 같은 슬롯에 여러 능력이 쓰는 케이스 (vampiric + 약탈폭격 등)
   //          능력 제거 시 stale 값 잔존 방지 + 능력 간 충돌 방지
@@ -17340,8 +17358,7 @@
     }
     if (state.comboFlash > 0) state.comboFlash--;
     updateBackground();
-
-    renderStats();
+    // 🚀 renderStats()는 rAF 루프에서 프레임당 1회만 호출 (배속 시 2-3중 호출 제거) — loop() 참고
   }
 
   // ===== 유틸 =====
@@ -17351,12 +17368,21 @@
   //    GC 압박이 가장 큰 핫스팟 (한 프레임에 수천 번 호출).
   const _enemyXYBuf = [0, 0];
   function enemyXY(e){
-    // 🏰 디펜스 모드: 직교좌표 직접 반환
-    if (e._cart) { _enemyXYBuf[0] = e.x; _enemyXYBuf[1] = e.y; }
-    else {
-      _enemyXYBuf[0] = CX + Math.cos(e.angle)*e.radius;
-      _enemyXYBuf[1] = CY + Math.sin(e.angle)*e.radius;
+    // 🚀 틱(state.t) 단위 메모 — 같은 틱에 같은 적을 (탄환×적)·(능력×적) 쌍마다 재계산하던 cos/sin 제거.
+    //    틱 중간에 위치를 바꾸는 코드(넉백/끌어당김/텔레포트)는 e._xyT = -1 로 무효화함.
+    if (e._xyT === state.t) {
+      _enemyXYBuf[0] = e._fx; _enemyXYBuf[1] = e._fy;
+      return _enemyXYBuf;
     }
+    let fx, fy;
+    // 🏰 디펜스 모드: 직교좌표 직접 반환
+    if (e._cart) { fx = e.x; fy = e.y; }
+    else {
+      fx = CX + Math.cos(e.angle)*e.radius;
+      fy = CY + Math.sin(e.angle)*e.radius;
+    }
+    e._fx = fx; e._fy = fy; e._xyT = state.t;
+    _enemyXYBuf[0] = fx; _enemyXYBuf[1] = fy;
     return _enemyXYBuf;
   }
   // 🏰 타워 발사 위치 — TD 모드는 "현재 ability 컨텍스트"의 타워 위치 (CX 자체가 swap됨)
@@ -17491,12 +17517,23 @@
     ctx.arcTo(x, y+h, x, y, r); ctx.arcTo(x, y, x+w, y, r); ctx.closePath();
   }
   // 🌑 발밑 타원 그림자 (접지감) — 납작한 라디얼
+  // 🚀 스프라이트 1회 베이크 후 drawImage — 적마다 매 프레임 그라디언트 생성 제거 (최대 핫스팟)
+  //    스톱(al, al*0.5, 0)이 al에 선형이라 알파 1.0으로 굽고 globalAlpha=al 곱하면 픽셀 동일.
+  let _shadowSpriteCv = null;
+  function _shadowSprite() {
+    if (_shadowSpriteCv) return _shadowSpriteCv;
+    const S = 128, c = document.createElement('canvas'); c.width = c.height = S;
+    const g2 = c.getContext('2d');
+    const g = g2.createRadialGradient(S/2, S/2, 0, S/2, S/2, S/2);
+    g.addColorStop(0, 'rgba(0,0,0,1)'); g.addColorStop(0.65, 'rgba(0,0,0,0.5)'); g.addColorStop(1, 'rgba(0,0,0,0)');
+    g2.fillStyle = g; g2.beginPath(); g2.arc(S/2, S/2, S/2, 0, Math.PI*2); g2.fill();
+    _shadowSpriteCv = c; return c;
+  }
   function castShadow(x, y, w, al) {
     al = al == null ? 0.3 : al;
-    ctx.save(); ctx.translate(x, y); ctx.scale(1, 0.42);
-    const g = ctx.createRadialGradient(0, 0, 0, 0, 0, w);
-    g.addColorStop(0, `rgba(0,0,0,${al})`); g.addColorStop(0.65, `rgba(0,0,0,${al*0.5})`); g.addColorStop(1, 'rgba(0,0,0,0)');
-    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, 0, w, 0, Math.PI*2); ctx.fill(); ctx.restore();
+    ctx.globalAlpha = al;
+    ctx.drawImage(_shadowSprite(), x - w, y - w * 0.42, w * 2, w * 0.84);
+    ctx.globalAlpha = 1;
   }
   function drawMotifShape(kind, s, col, ph) {
     ph = ph || 0;
@@ -17588,7 +17625,7 @@
     n = Math.max(1, Math.floor(n * 0.6));
     // 🛡 글로벌 캡 — 많은 적 동시 피격 시 FPS 보호 (특히 슬로우/광역 동시 다발 시)
     // 📱 모바일은 더 낮게 (발열/렉 완화)
-    const cap = IS_MOBILE ? 150 : 350;
+    const cap = IS_MOBILE ? 110 : 300;
     const room = cap - state.particles.length;
     if (room <= 0) return;
     if (n > room) n = room;
@@ -17736,6 +17773,10 @@
     BG.core = _tier === 2 ? { x: W * 0.80, y: H * 0.17, r: 95 } : null;
     // 🌌 아레나 바닥 텍스처 베이크 (액센트 확정 후 1회)
     bakeArenaTexture();
+    // 🚀 정적 하늘/행성 베이크 무효화 + 재생성 (티어/팔레트 확정 후)
+    BG.skyTex = null; BG.planetTex = null;
+    bakeSkyTexture(); bakePlanetTexture();
+    _ascBadgeKey = ''; // 배지 캐시도 무효화 (액센트색 변경 반영)
   }
   function updateBackground() {
     for (const s of BG.stars) {
@@ -17772,33 +17813,87 @@
       arr.length = w;
     }
   }
-  function drawBackground() {
-    const asc = (state && state.ascension) || 0;
-    const BT = BG_TIERS[BG.tier || 0];
-    // 🌌 베이스 — 단계별 라디얼 그라데이션 (중앙 → 가장자리 칠흑) = 깊이감
-    {
+  // 🚀 정적 하늘 베이크 1 — 베이스 그라데이션 + 은하 실루엣 + 성운 (티어 변경 시에만 재생성)
+  //    매 프레임 풀캔버스 라디얼 채우기 4회(베이스+성운3) → 불투명 drawImage 1회
+  function bakeSkyTexture() {
+    try {
+      const BT = BG_TIERS[BG.tier || 0];
+      const c = document.createElement('canvas'); c.width = W * DPR; c.height = H * DPR;
+      const g2 = c.getContext('2d'); g2.scale(DPR, DPR);
+      // 베이스 — 중앙 → 가장자리 칠흑
       const cx = W * 0.5, cy = H * 0.42;
-      const bg = ctx.createRadialGradient(cx, cy, 0, cx, cy, W * 0.82);
+      const bg = g2.createRadialGradient(cx, cy, 0, cx, cy, W * 0.82);
       bg.addColorStop(0, `rgb(${BT.core[0]}, ${BT.core[1]}, ${BT.core[2]})`);
       bg.addColorStop(0.55, BT.mid);
       bg.addColorStop(1, BT.edge);
-      ctx.fillStyle = bg;
-    }
-    ctx.fillRect(0, 0, W, H);
-    // 🌌 초월 — 멀리 떠 있는 거대 은하 실루엣 (어둡고 차분, 가산 아님 = 눈 편함)
-    if (BG.core) {
-      const co = BG.core;
-      ctx.save(); ctx.translate(co.x, co.y); ctx.rotate(-0.5);
-      // 부드러운 은하 헤이즈 (저명도 보라회색, 살짝 기운 디스크)
-      const g = ctx.createRadialGradient(0, 0, 0, 0, 0, co.r);
-      g.addColorStop(0, 'rgba(120,98,150,0.15)'); g.addColorStop(0.4, 'rgba(82,66,112,0.09)'); g.addColorStop(1, 'rgba(50,40,80,0)');
-      ctx.fillStyle = g; ctx.beginPath(); ctx.ellipse(0, 0, co.r, co.r * 0.62, 0, 0, Math.PI*2); ctx.fill();
-      // 아주 흐린 핵
-      const cg = ctx.createRadialGradient(0, 0, 0, 0, 0, co.r * 0.2);
-      cg.addColorStop(0, 'rgba(186,166,206,0.18)'); cg.addColorStop(1, 'rgba(186,166,206,0)');
-      ctx.fillStyle = cg; ctx.beginPath(); ctx.arc(0, 0, co.r * 0.2, 0, Math.PI*2); ctx.fill();
-      ctx.restore();
-    }
+      g2.fillStyle = bg; g2.fillRect(0, 0, W, H);
+      // 초월 — 거대 은하 실루엣 (정적)
+      if (BG.core) {
+        const co = BG.core;
+        g2.save(); g2.translate(co.x, co.y); g2.rotate(-0.5);
+        const g = g2.createRadialGradient(0, 0, 0, 0, 0, co.r);
+        g.addColorStop(0, 'rgba(120,98,150,0.15)'); g.addColorStop(0.4, 'rgba(82,66,112,0.09)'); g.addColorStop(1, 'rgba(50,40,80,0)');
+        g2.fillStyle = g; g2.beginPath(); g2.ellipse(0, 0, co.r, co.r * 0.62, 0, 0, Math.PI*2); g2.fill();
+        const cg = g2.createRadialGradient(0, 0, 0, 0, 0, co.r * 0.2);
+        cg.addColorStop(0, 'rgba(186,166,206,0.18)'); cg.addColorStop(1, 'rgba(186,166,206,0)');
+        g2.fillStyle = cg; g2.beginPath(); g2.arc(0, 0, co.r * 0.2, 0, Math.PI*2); g2.fill();
+        g2.restore();
+      }
+      // 성운 (위치/색 고정)
+      for (const n of BG.nebulae) {
+        const ng = g2.createRadialGradient(n.x, n.y, 0, n.x, n.y, n.r);
+        ng.addColorStop(0, n.c); ng.addColorStop(1, 'rgba(0,0,0,0)');
+        g2.fillStyle = ng; g2.fillRect(0, 0, W, H);
+      }
+      BG.skyTex = c;
+    } catch (e) { BG.skyTex = null; }
+  }
+  // 🚀 정적 하늘 베이크 2 — 행성 (본체+터미네이터+고리, 투명 배경) — 별이 행성 아래 깔리는 레이어 순서 유지용 분리
+  function bakePlanetTexture() {
+    try {
+      const c = document.createElement('canvas'); c.width = W * DPR; c.height = H * DPR;
+      const g2 = c.getContext('2d'); g2.scale(DPR, DPR);
+      for (const p of BG.planets) {
+        const pg = g2.createRadialGradient(p.x - p.r*0.35, p.y - p.r*0.35, 0, p.x, p.y, p.r);
+        pg.addColorStop(0, p.c1); pg.addColorStop(1, p.c2);
+        g2.fillStyle = pg; g2.beginPath(); g2.arc(p.x, p.y, p.r, 0, Math.PI*2); g2.fill();
+        // 그림자 — 부드러운 터미네이터
+        g2.save();
+        g2.beginPath(); g2.arc(p.x, p.y, p.r, 0, Math.PI*2); g2.clip();
+        const sg = g2.createRadialGradient(p.x - p.r*0.4, p.y - p.r*0.4, p.r*0.2, p.x + p.r*0.55, p.y + p.r*0.55, p.r*1.5);
+        sg.addColorStop(0, 'rgba(0,0,0,0)'); sg.addColorStop(0.55, 'rgba(0,0,0,0.18)'); sg.addColorStop(1, 'rgba(0,0,0,0.62)');
+        g2.fillStyle = sg; g2.fillRect(p.x - p.r, p.y - p.r, p.r*2, p.r*2);
+        g2.restore();
+        // 고리
+        if (p.ring) {
+          g2.save();
+          g2.translate(p.x, p.y);
+          g2.scale(1, 0.32);
+          g2.strokeStyle = p.ringC; g2.lineWidth = 2;
+          g2.beginPath(); g2.arc(0, 0, p.r * 1.9, 0, Math.PI*2); g2.stroke();
+          g2.restore();
+        }
+      }
+      BG.planetTex = c;
+    } catch (e) { BG.planetTex = null; }
+  }
+  // 🚀 별 스프라이트 (단색 원) — 별마다 매 프레임 beginPath/arc/fill 패스 테셀레이션 제거
+  const _starSpr = {};
+  function _starSprite(col) {
+    if (_starSpr[col]) return _starSpr[col];
+    const S = 16, c = document.createElement('canvas'); c.width = c.height = S;
+    const g2 = c.getContext('2d');
+    g2.fillStyle = col; g2.beginPath(); g2.arc(S/2, S/2, S/2, 0, Math.PI*2); g2.fill();
+    _starSpr[col] = c; return c;
+  }
+  let _ascBadgeCv = null, _ascBadgeKey = ''; // 🚀 승천 배지 캐시 (매 프레임 이모지 fillText+shadowBlur 제거)
+  function drawBackground() {
+    const asc = (state && state.ascension) || 0;
+    const BT = BG_TIERS[BG.tier || 0];
+    // 🌌 정적 하늘 (베이스+은하+성운) — 베이크 1장 blit
+    if (!BG.skyTex) bakeSkyTexture();
+    if (BG.skyTex) ctx.drawImage(BG.skyTex, 0, 0, W, H);
+    else { ctx.fillStyle = BT.mid; ctx.fillRect(0, 0, W, H); }
     // 🌈 승천 — 상단 오로라 리본 (은은하게 흐름, 중앙 안 가림)
     if (BG.sky === 'aurora') {
       ctx.save(); ctx.globalCompositeOperation = 'lighter';
@@ -17815,60 +17910,29 @@
       }
       ctx.restore();
     }
-    // 성운 — 광역 그라데이션 (위치/색이 고정이라 1회만 생성 후 캐시)
-    for (const n of BG.nebulae) {
-      if (!n._g) {
-        n._g = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, n.r);
-        n._g.addColorStop(0, n.c);
-        n._g.addColorStop(1, 'rgba(0,0,0,0)');
-      }
-      ctx.fillStyle = n._g;
-      ctx.fillRect(0, 0, W, H);
-    }
-    // 별 — 큰 별 글로우 (가산 1패스, 단계별 틴트)
+    // 별 — 큰 별 글로우 (가산 1패스, 단계별 틴트) — 🚀 스프라이트 blit
     ctx.save(); ctx.globalCompositeOperation = 'lighter';
-    ctx.fillStyle = 'rgb(' + (BG.glowTint || '191,224,255') + ')';
+    const _gspr = _starSprite('rgb(' + (BG.glowTint || '191,224,255') + ')');
     for (const s of BG.stars) {
       if (s.size < 2) continue;
       const tw = (Math.sin(s.tw) + 1) / 2;
       ctx.globalAlpha = s.brightness * (0.5 + tw * 0.5) * 0.45;
-      ctx.beginPath(); ctx.arc(s.x, s.y, s.size * 1.6, 0, Math.PI*2); ctx.fill();
+      const gr = s.size * 1.6;
+      ctx.drawImage(_gspr, s.x - gr, s.y - gr, gr * 2, gr * 2);
     }
     ctx.restore();
-    // 별 코어 — 소프트 점 (단계별 틴트)
-    ctx.fillStyle = 'rgb(' + (BG.starTint || '255,255,255') + ')';
+    // 별 코어 — 소프트 점 (단계별 틴트) — 🚀 스프라이트 blit
+    const _cspr = _starSprite('rgb(' + (BG.starTint || '255,255,255') + ')');
     for (const s of BG.stars) {
       const tw = (Math.sin(s.tw) + 1) / 2;
       ctx.globalAlpha = s.brightness * (0.5 + tw * 0.5);
-      ctx.beginPath(); ctx.arc(s.x, s.y, s.size * 0.55 + 0.4, 0, Math.PI*2); ctx.fill();
+      const cr = s.size * 0.55 + 0.4;
+      ctx.drawImage(_cspr, s.x - cr, s.y - cr, cr * 2, cr * 2);
     }
     ctx.globalAlpha = 1;
-    // 행성 — 그라데이션 캐시 (위치/색 고정)
-    for (const p of BG.planets) {
-      if (!p._g) {
-        p._g = ctx.createRadialGradient(p.x - p.r*0.35, p.y - p.r*0.35, 0, p.x, p.y, p.r);
-        p._g.addColorStop(0, p.c1);
-        p._g.addColorStop(1, p.c2);
-      }
-      ctx.fillStyle = p._g;
-      ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI*2); ctx.fill();
-      // 그림자 — 부드러운 터미네이터 (행성 원으로 클립 후 그라데이션)
-      ctx.save();
-      ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI*2); ctx.clip();
-      const sg = ctx.createRadialGradient(p.x - p.r*0.4, p.y - p.r*0.4, p.r*0.2, p.x + p.r*0.55, p.y + p.r*0.55, p.r*1.5);
-      sg.addColorStop(0, 'rgba(0,0,0,0)'); sg.addColorStop(0.55, 'rgba(0,0,0,0.18)'); sg.addColorStop(1, 'rgba(0,0,0,0.62)');
-      ctx.fillStyle = sg; ctx.fillRect(p.x - p.r, p.y - p.r, p.r*2, p.r*2);
-      ctx.restore();
-      // 고리
-      if (p.ring) {
-        ctx.save();
-        ctx.translate(p.x, p.y);
-        ctx.scale(1, 0.32);
-        ctx.strokeStyle = p.ringC; ctx.lineWidth = 2;
-        ctx.beginPath(); ctx.arc(0, 0, p.r * 1.9, 0, Math.PI*2); ctx.stroke();
-        ctx.restore();
-      }
-    }
+    // 행성 — 🚀 베이크 1장 blit (본체+터미네이터+고리, 별 위 레이어 순서 유지)
+    if (!BG.planetTex) bakePlanetTexture();
+    if (BG.planetTex) ctx.drawImage(BG.planetTex, 0, 0, W, H);
     // 배경 유성 (분위기용)
     for (const m of BG.meteors) {
       const alpha = Math.min(1, m.life / 50);
@@ -17885,23 +17949,30 @@
       ctx.fillStyle = '#ffffff'; ctx.fillRect(m.x - 1, m.y - 1, 3, 3);
     }
     ctx.globalAlpha = 1;
-    // 단계 표시 = 우측 상단 배지만 (눈 아픈 풀스크린 컬러 비네트/펄스 제거 — 구분은 하늘 요소 + 아레나 링 액센트로)
+    // 단계 표시 = 우측 상단 배지만 — 🚀 캐시 canvas blit (매 프레임 이모지 fillText+shadowBlur 제거)
     if (asc > 0) {
       const tier = BG.tier || 1;
       const isTrans = tier >= 2;
-      ctx.save();
-      ctx.font = 'bold 14px Jua, sans-serif';
-      ctx.textAlign = 'right';
-      ctx.fillStyle = isTrans ? '#c89ad8' : '#c4b0e8';   // 차분한 액센트색
-      ctx.shadowColor = BG.accent || '#9a7ad0';
-      ctx.shadowBlur = 6;
-      ctx.fillText(isTrans ? `🌌 초월 ${asc - 15}` : `⚡ 승천 ${asc}`, W - 12, 22);
-      ctx.shadowBlur = 0;
-      ctx.restore();
+      const bKey = (isTrans ? 'T' : 'A') + asc;
+      if (_ascBadgeKey !== bKey || !_ascBadgeCv) {
+        const c = document.createElement('canvas'); c.width = 170 * DPR; c.height = 30 * DPR;
+        const g2 = c.getContext('2d'); g2.scale(DPR, DPR);
+        g2.font = 'bold 14px Jua, sans-serif';
+        g2.textAlign = 'right';
+        g2.fillStyle = isTrans ? '#c89ad8' : '#c4b0e8';   // 차분한 액센트색
+        g2.shadowColor = BG.accent || '#9a7ad0';
+        g2.shadowBlur = 6;
+        g2.fillText(isTrans ? `🌌 초월 ${asc - 15}` : `⚡ 승천 ${asc}`, 166, 22);
+        _ascBadgeCv = c; _ascBadgeKey = bKey;
+      }
+      ctx.drawImage(_ascBadgeCv, W - 178, 0, 170, 30);
     }
   }
 
   // ===== 렌더 =====
+  // 🚀 아레나 정적 리소스 캐시 (액센트는 게임당 고정 — hex 파싱/문자열/그라디언트 매 프레임 재생성 제거)
+  let _arenaAcc = '', _arenaArgb = '', _arenaLrgb = '', _arenaFg = null, _arenaVg = null;
+  let _arenaSpokeStyle = '', _arenaRingStyle = '', _arenaDashStyle = '', _arenaEdgeStyle = '';
   function drawArena() {
     // 🏰 디펜스 모드 — 완전히 다른 레이아웃 (3 레인 + 돌담 + 방벽)
     if (state.mode === 'defense') {
@@ -17909,41 +17980,52 @@
       return;
     }
     // 표준 모드 — 홀로그래픽 라디얼 아레나 (단계 액센트색으로 틴트 = 색은 여기에만, 하늘은 깨끗)
+    // 🚀 hex 파싱·문자열·그라디언트 전부 액센트 키로 캐시 (액센트는 게임당 고정)
     const acc = BG.accent || '#5ab4e0';
-    const _an = parseInt(acc.slice(1), 16), AR = (_an>>16)&255, AG = (_an>>8)&255, AB = _an&255, argb = `${AR},${AG},${AB}`;
-    const lrgb = `${Math.min(255,AR+90)},${Math.min(255,AG+90)},${Math.min(255,AB+90)}`;
-    // 1) 바닥 에너지 디스크
-    const fg = ctx.createRadialGradient(CX, CY - 24, 18, CX, CY, ARENA_R);
-    fg.addColorStop(0, `rgba(${argb},0.11)`); fg.addColorStop(0.62, `rgba(${argb},0.05)`); fg.addColorStop(1, `rgba(${argb},0)`);
-    ctx.fillStyle = fg; ctx.beginPath(); ctx.arc(CX, CY, ARENA_R, 0, Math.PI*2); ctx.fill();
+    if (_arenaAcc !== acc) {
+      const _an = parseInt(acc.slice(1), 16), AR = (_an>>16)&255, AG = (_an>>8)&255, AB = _an&255;
+      _arenaArgb = `${AR},${AG},${AB}`;
+      _arenaLrgb = `${Math.min(255,AR+90)},${Math.min(255,AG+90)},${Math.min(255,AB+90)}`;
+      _arenaFg = ctx.createRadialGradient(CX, CY - 24, 18, CX, CY, ARENA_R);
+      _arenaFg.addColorStop(0, `rgba(${_arenaArgb},0.11)`); _arenaFg.addColorStop(0.62, `rgba(${_arenaArgb},0.05)`); _arenaFg.addColorStop(1, `rgba(${_arenaArgb},0)`);
+      _arenaVg = ctx.createRadialGradient(CX, CY, ARENA_R*0.55, CX, CY, ARENA_R);
+      _arenaVg.addColorStop(0, 'rgba(0,0,0,0)'); _arenaVg.addColorStop(1, 'rgba(0,0,0,0.26)');
+      _arenaSpokeStyle = `rgba(${_arenaArgb},0.045)`;
+      _arenaRingStyle = `rgba(${_arenaArgb},0.09)`;
+      _arenaDashStyle = `rgba(${_arenaLrgb},0.16)`;
+      _arenaEdgeStyle = `rgb(${_arenaLrgb})`;
+      _arenaAcc = acc;
+    }
+    const argb = _arenaArgb, lrgb = _arenaLrgb;
+    // 1) 바닥 에너지 디스크 (캐시 그라디언트)
+    ctx.fillStyle = _arenaFg; ctx.beginPath(); ctx.arc(CX, CY, ARENA_R, 0, Math.PI*2); ctx.fill();
     // 1.5) 🌌 텍스처 바닥 (베이크) — 유기질 노이즈 + 그레인, 림 페이드 (도트 질감 + 깊이)
     if (BG.arenaTex) ctx.drawImage(BG.arenaTex, CX - ARENA_R, CY - ARENA_R);
-    // 2) 회전 홀로 스포크 (가산, 아주 옅게)
+    // 2) 회전 홀로 스포크 (가산, 아주 옅게) — 🚀 36개를 한 패스로 배칭 (1 stroke)
     ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.translate(CX, CY); ctx.rotate(state.t * 0.0022);
-    ctx.strokeStyle = `rgba(${argb},0.045)`; ctx.lineWidth = 1;
-    for (let k = 0; k < 36; k++) { const a = k * Math.PI / 18; ctx.beginPath(); ctx.moveTo(Math.cos(a)*44, Math.sin(a)*44); ctx.lineTo(Math.cos(a)*ARENA_R, Math.sin(a)*ARENA_R); ctx.stroke(); }
+    ctx.strokeStyle = _arenaSpokeStyle; ctx.lineWidth = 1;
+    ctx.beginPath();
+    for (let k = 0; k < 36; k++) { const a = k * Math.PI / 18; ctx.moveTo(Math.cos(a)*44, Math.sin(a)*44); ctx.lineTo(Math.cos(a)*ARENA_R, Math.sin(a)*ARENA_R); }
+    ctx.stroke();
     ctx.restore();
-    // 3) 동심 그리드 링
-    ctx.strokeStyle = `rgba(${argb},0.09)`; ctx.lineWidth = 1;
-    for (let r = 60; r <= ARENA_R; r += 40) { ctx.beginPath(); ctx.arc(CX, CY, r, 0, Math.PI*2); ctx.stroke(); }
+    // 3) 동심 그리드 링 — 🚀 한 패스로 배칭 (1 stroke)
+    ctx.strokeStyle = _arenaRingStyle; ctx.lineWidth = 1;
+    ctx.beginPath();
+    for (let r = 60; r <= ARENA_R; r += 40) { ctx.moveTo(CX + r, CY); ctx.arc(CX, CY, r, 0, Math.PI*2); }
+    ctx.stroke();
     // 4) 회전 점선 테크 링
-    ctx.save(); ctx.strokeStyle = `rgba(${lrgb},0.16)`; ctx.lineWidth = 1.5;
+    ctx.save(); ctx.strokeStyle = _arenaDashStyle; ctx.lineWidth = 1.5;
     ctx.setLineDash([6, 14]); ctx.lineDashOffset = -(state.t * 0.4) % 20;
     ctx.beginPath(); ctx.arc(CX, CY, ARENA_R * 0.72, 0, Math.PI*2); ctx.stroke();
     ctx.setLineDash([]); ctx.restore();
-    // 4.5) 🌑 내부 엣지 섀도우 — 바닥 깊이감 (아레나 안쪽만, 우주엔 영향 X)
-    ctx.save();
-    ctx.beginPath(); ctx.arc(CX, CY, ARENA_R, 0, Math.PI*2); ctx.clip();
-    const _vg = ctx.createRadialGradient(CX, CY, ARENA_R*0.55, CX, CY, ARENA_R);
-    _vg.addColorStop(0, 'rgba(0,0,0,0)'); _vg.addColorStop(1, 'rgba(0,0,0,0.26)');
-    ctx.fillStyle = _vg; ctx.beginPath(); ctx.arc(CX, CY, ARENA_R, 0, Math.PI*2); ctx.fill();
-    ctx.restore();
+    // 4.5) 🌑 내부 엣지 섀도우 — 캐시 그라디언트 + 클립 제거 (채우기 패스가 동일 원이라 클립 불필요)
+    ctx.fillStyle = _arenaVg; ctx.beginPath(); ctx.arc(CX, CY, ARENA_R, 0, Math.PI*2); ctx.fill();
     // 5) 엣지 글로우 링 (가산 펄스) + 선명한 테두리
     const aPulse = 0.5 + 0.5 * Math.sin(state.t * 0.03);
     ctx.save(); ctx.globalCompositeOperation = 'lighter';
     ctx.globalAlpha = 0.10 + aPulse * 0.06; ctx.strokeStyle = acc; ctx.lineWidth = 8;
     ctx.beginPath(); ctx.arc(CX, CY, ARENA_R, 0, Math.PI*2); ctx.stroke();
-    ctx.globalAlpha = 0.5; ctx.strokeStyle = `rgb(${lrgb})`; ctx.lineWidth = 2;
+    ctx.globalAlpha = 0.5; ctx.strokeStyle = _arenaEdgeStyle; ctx.lineWidth = 2;
     ctx.beginPath(); ctx.arc(CX, CY, ARENA_R, 0, Math.PI*2); ctx.stroke();
     ctx.restore(); ctx.globalAlpha = 1;
   }
@@ -18175,9 +18257,13 @@
     ctx.beginPath();
     for (let i = 0; i < e._astPts.length; i++) { const X = e._astPts[i][0]*s, Y = e._astPts[i][1]*s; i ? ctx.lineTo(X, Y) : ctx.moveTo(X, Y); }
     ctx.closePath();
-    // 입체 음영 (좌상단 광원)
-    const g = ctx.createRadialGradient(-s*0.4, -s*0.4, s*0.1, 0, 0, s*1.25);
-    g.addColorStop(0, lite); g.addColorStop(0.5, base); g.addColorStop(1, dark);
+    // 입체 음영 (좌상단 광원) — 🚀 적 객체에 캐시 (size 스폰 후 고정, slow 색 2종)
+    let g = slow ? e._astGS : e._astGN;
+    if (!g) {
+      g = ctx.createRadialGradient(-s*0.4, -s*0.4, s*0.1, 0, 0, s*1.25);
+      g.addColorStop(0, lite); g.addColorStop(0.5, base); g.addColorStop(1, dark);
+      if (slow) e._astGS = g; else e._astGN = g;
+    }
     ctx.fillStyle = g; ctx.fill();
     ctx.strokeStyle = dark; ctx.lineWidth = 1.2; ctx.stroke();
     // 크레이터 (음각 느낌 — 어두운 원 + 밝은 테)
@@ -18199,9 +18285,13 @@
     // 서리 글로우
     ctx.fillStyle = slow ? 'rgba(120,190,230,0.16)' : 'rgba(150,210,255,0.18)';
     ctx.beginPath(); ctx.arc(0, 0, s * 1.45, 0, Math.PI*2); ctx.fill();
-    // 결정 본체 (다이아) — 면 그라데이션
-    const g = ctx.createLinearGradient(-s*0.6, -s, s*0.4, s);
-    g.addColorStop(0, lite); g.addColorStop(0.45, base); g.addColorStop(1, dark);
+    // 결정 본체 (다이아) — 면 그라데이션 — 🚀 적 객체에 캐시
+    let g = slow ? e._iceGS : e._iceGN;
+    if (!g) {
+      g = ctx.createLinearGradient(-s*0.6, -s, s*0.4, s);
+      g.addColorStop(0, lite); g.addColorStop(0.45, base); g.addColorStop(1, dark);
+      if (slow) e._iceGS = g; else e._iceGN = g;
+    }
     const dia = () => { ctx.beginPath(); ctx.moveTo(0, -s); ctx.lineTo(s*0.72, 0); ctx.lineTo(0, s); ctx.lineTo(-s*0.72, 0); ctx.closePath(); };
     dia(); ctx.fillStyle = g; ctx.fill();
     // 결정면 라인 (패싯)
@@ -18221,9 +18311,13 @@
     // 측면 윙/스러스터
     ctx.fillStyle = dark;
     ctx.fillRect(-s*1.45, -s*0.32, s*0.55, s*0.64); ctx.fillRect(s*0.9, -s*0.32, s*0.55, s*0.64);
-    // 본체 (육각 금속) — 그라데이션
-    const g = ctx.createLinearGradient(0, -s, 0, s);
-    g.addColorStop(0, metal); g.addColorStop(0.5, base); g.addColorStop(1, dark);
+    // 본체 (육각 금속) — 그라데이션 — 🚀 적 객체에 캐시
+    let g = slow ? e._drGS : e._drGN;
+    if (!g) {
+      g = ctx.createLinearGradient(0, -s, 0, s);
+      g.addColorStop(0, metal); g.addColorStop(0.5, base); g.addColorStop(1, dark);
+      if (slow) e._drGS = g; else e._drGN = g;
+    }
     const hex = () => { ctx.beginPath(); for (let k=0;k<6;k++){ const a=(Math.PI*2/6)*k; const px=Math.cos(a)*s, py=Math.sin(a)*s*0.82; k?ctx.lineTo(px,py):ctx.moveTo(px,py);} ctx.closePath(); };
     hex(); ctx.fillStyle = g; ctx.fill();
     hex(); ctx.strokeStyle = dark; ctx.lineWidth = 1.2; ctx.stroke();
@@ -18243,16 +18337,24 @@
     ctx.save(); ctx.translate(x, y);
     const pulse = 1 + Math.sin(state.t * 0.14 + e.seed) * 0.1;
     const colA = slow ? '#8fb0e0' : '#cf70e8', colB = slow ? '#34487a' : '#5a2070';
+    // 🚀 그라디언트는 기본 반경으로 1회 생성 후 캐시, 펄스는 ctx.scale로 재현 (slow 색 2종)
+    let pg = slow ? e._plGS : e._plGN;
+    if (!pg) {
+      const gg = ctx.createRadialGradient(0, 0, 0, 0, 0, s*2.1);
+      gg.addColorStop(0, '#ffffff'); gg.addColorStop(0.3, colA); gg.addColorStop(1, 'rgba(0,0,0,0)');
+      const cc = ctx.createRadialGradient(-s*0.25, -s*0.25, 0, 0, 0, s);
+      cc.addColorStop(0, '#ffffff'); cc.addColorStop(0.55, colA); cc.addColorStop(1, colB);
+      pg = { glow: gg, core: cc };
+      if (slow) e._plGS = pg; else e._plGN = pg;
+    }
     // 외곽 에너지 글로우 (가산)
-    ctx.save(); ctx.globalCompositeOperation = 'lighter';
-    const g = ctx.createRadialGradient(0, 0, 0, 0, 0, s*2.1*pulse);
-    g.addColorStop(0, '#ffffff'); g.addColorStop(0.3, colA); g.addColorStop(1, 'rgba(0,0,0,0)');
-    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, 0, s*2.1*pulse, 0, Math.PI*2); ctx.fill();
+    ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.scale(pulse, pulse);
+    ctx.fillStyle = pg.glow; ctx.beginPath(); ctx.arc(0, 0, s*2.1, 0, Math.PI*2); ctx.fill();
     ctx.restore();
     // 코어 오브
-    const c = ctx.createRadialGradient(-s*0.25, -s*0.25, 0, 0, 0, s*pulse);
-    c.addColorStop(0, '#ffffff'); c.addColorStop(0.55, colA); c.addColorStop(1, colB);
-    ctx.fillStyle = c; ctx.beginPath(); ctx.arc(0, 0, s*pulse, 0, Math.PI*2); ctx.fill();
+    ctx.save(); ctx.scale(pulse, pulse);
+    ctx.fillStyle = pg.core; ctx.beginPath(); ctx.arc(0, 0, s, 0, Math.PI*2); ctx.fill();
+    ctx.restore();
     // 전기 스파크
     ctx.save(); ctx.globalCompositeOperation = 'lighter';
     ctx.strokeStyle = `rgba(255,255,255,${0.35 + 0.4*Math.sin(state.t*0.3 + e.seed)})`; ctx.lineWidth = 1;
@@ -19012,12 +19114,12 @@
       else if (e.type === 'crystal') drawCrystalE(e, x, y, slow);
       else                        drawAsteroidE(e, x, y, slow);
       // ✨ 피격 흰 플래시 (가산) — 타격감
+      // 🚀 캐시된 플래시 스프라이트 — 피격 적마다 매 프레임 그라디언트 생성 제거
       if (e.hitFlash && e.hitFlash > state.t) {
         const fa = (e.hitFlash - state.t) / 3;
+        const fr = e.size * 1.3;
         ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = fa * 0.55;
-        const fgr = ctx.createRadialGradient(x, y, 0, x, y, e.size * 1.3);
-        fgr.addColorStop(0, 'rgba(255,255,255,0.9)'); fgr.addColorStop(0.55, 'rgba(255,255,255,0.3)'); fgr.addColorStop(1, 'rgba(255,255,255,0)');
-        ctx.fillStyle = fgr; ctx.beginPath(); ctx.arc(x, y, e.size * 1.3, 0, Math.PI*2); ctx.fill();
+        ctx.drawImage(_hitFlashSprite(), x - fr, y - fr, fr * 2, fr * 2);
         ctx.restore(); ctx.globalAlpha = 1;
       }
       // HP 바 (둥근 + 배경 트랙)
@@ -19053,6 +19155,7 @@
       }
     }
   }
+  let _bossHpGrad = null; // 🚀 보스 HP바 그라디언트 캐시
   function drawBossUI() {
     const boss = state.enemies.find(e => e.isBoss);
     if (!boss) return;
@@ -19063,8 +19166,9 @@
     // 체력 (둥근 + 그라데 + 글로우)
     const hw = Math.max(0, w * (boss.hp / boss.maxHp));
     if (hw > 1) {
-      const hg = ctx.createLinearGradient(x, y, x, y + h); hg.addColorStop(0, '#ff5a72'); hg.addColorStop(1, '#cc1733');
-      ctx.fillStyle = hg; rr(x, y, hw, h, h/2); ctx.fill();
+      // 🚀 좌표·색 전부 상수 — 1회 생성 후 재사용
+      if (!_bossHpGrad) { _bossHpGrad = ctx.createLinearGradient(x, y, x, y + h); _bossHpGrad.addColorStop(0, '#ff5a72'); _bossHpGrad.addColorStop(1, '#cc1733'); }
+      ctx.fillStyle = _bossHpGrad; rr(x, y, hw, h, h/2); ctx.fill();
       ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = 0.35; ctx.fillStyle = '#ff8090'; rr(x, y, hw, h*0.45, h*0.22); ctx.fill(); ctx.restore();
     }
     ctx.strokeStyle = 'rgba(255,120,140,0.4)'; ctx.lineWidth = 1; rr(x - 3, y - 3, w + 6, h + 6, (h+6)/2); ctx.stroke();
@@ -19084,6 +19188,17 @@
     rg.addColorStop(0, 'rgba(255,255,255,0.9)'); rg.addColorStop(0.28, col); rg.addColorStop(1, 'rgba(0,0,0,0)');
     g.fillStyle = rg; g.beginPath(); g.arc(S/2, S/2, S/2, 0, Math.PI*2); g.fill();
     _glowSprite[col] = c; return c;
+  }
+  // ✨ 피격 플래시 전용 스프라이트 — 원본 그라디언트 스톱(0.9/0.3/0)과 동일하게 베이크
+  let _hitFlashCv = null;
+  function _hitFlashSprite() {
+    if (_hitFlashCv) return _hitFlashCv;
+    const S = 64, c = document.createElement('canvas'); c.width = c.height = S;
+    const g2 = c.getContext('2d');
+    const rg = g2.createRadialGradient(S/2, S/2, 0, S/2, S/2, S/2);
+    rg.addColorStop(0, 'rgba(255,255,255,0.9)'); rg.addColorStop(0.55, 'rgba(255,255,255,0.3)'); rg.addColorStop(1, 'rgba(255,255,255,0)');
+    g2.fillStyle = rg; g2.beginPath(); g2.arc(S/2, S/2, S/2, 0, Math.PI*2); g2.fill();
+    _hitFlashCv = c; return c;
   }
   // 🌟 글로우 에너지 빔/검 — 넓은 발광 + 흰 코어 (가산 합성). 빔류 능력 비주얼 통일 업그레이드.
   function glowBeam(x1, y1, x2, y2, col, coreW, alpha) {
@@ -19663,7 +19778,7 @@
   let _bloomCv = null, _bctx = null, _bloomFrame = 0, _bloomReady = false;
   function applyBloom() {
     try {
-      const q = IS_MOBILE ? 0.32 : 0.5;
+      const q = IS_MOBILE ? 0.26 : 0.42;   // 블룸 해상도 ↓ (렉 완화 — 데스크톱도 낮춤)
       const bw = Math.max(1, Math.round(W * q)), bh = Math.max(1, Math.round(H * q));
       if (!_bloomCv) { _bloomCv = document.createElement('canvas'); _bctx = _bloomCv.getContext('2d'); }
       if (_bloomCv.width !== bw || _bloomCv.height !== bh) { _bloomCv.width = bw; _bloomCv.height = bh; _bloomReady = false; }
@@ -19672,7 +19787,7 @@
       // 🔥 모바일 과열 완화 — 가장 비싼 연산(필터+풀캔버스 드로우)은 격프레임만 재계산.
       //   합성(아래 drawImage)은 매 프레임 → 글로우는 깜빡임 없이 안정적으로 보임.
       _bloomFrame++;
-      if (!IS_MOBILE || !_bloomReady || (_bloomFrame & 1) === 0) {
+      if (!_bloomReady || (_bloomFrame % (IS_MOBILE ? 3 : 2)) === 0) {   // 무거운 블러 재계산 throttle: 모바일 3프레임·데스크톱 2프레임마다 (합성은 매 프레임 → 글로우 안정)
         _bctx.clearRect(0, 0, bw, bh);
         _bctx.filter = 'brightness(1.2) contrast(2.7) blur(' + (IS_MOBILE ? 4 : 6) + 'px)';
         _bctx.drawImage(canvas, 0, 0, bw, bh);
@@ -19687,15 +19802,25 @@
     } catch (e) {}
   }
   // 🎬 비네팅 — 가장자리 어둡게 (월드에만, UI 전에)
+  // 🚀 오프스크린 1회 베이크 — 매 프레임 풀스크린 라디얼 그라디언트 평가 제거 (W/H는 640 고정)
+  let _vignetteCv = null;
   function drawVignette() {
     try {
-      const g = ctx.createRadialGradient(W/2, H/2, W*0.34, W/2, H/2, W*0.74);
-      g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(1, 'rgba(0,0,0,0.34)');
-      ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+      if (!_vignetteCv) {
+        const c = document.createElement('canvas'); c.width = W * DPR; c.height = H * DPR;
+        const g2 = c.getContext('2d'); g2.scale(DPR, DPR);
+        const g = g2.createRadialGradient(W/2, H/2, W*0.34, W/2, H/2, W*0.74);
+        g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(1, 'rgba(0,0,0,0.34)');
+        g2.fillStyle = g; g2.fillRect(0, 0, W, H);
+        _vignetteCv = c;
+      }
+      ctx.drawImage(_vignetteCv, 0, 0, W, H);
     } catch (e) {}
   }
   function render() {
-    ctx.clearRect(0,0,W,H);
+    // 🚀 배경 베이스가 불투명 풀캔버스 채우기라 clearRect는 중복 풀스크린 패스 — 제거.
+    //    대신 이전 프레임에서 샌 알파/블렌드 상태만 방어적으로 리셋.
+    ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
     // 배경 — 흔들림 영향 없음 (별/행성/성운 안정)
     drawBackground();
     // 🌌 v272 — 특수 보스 등장 연출 (배경 레이어 — 게임 월드 아래라 적/타워가 그림자 위에 그려짐 = "뒤에서 다가옴")
@@ -19965,13 +20090,21 @@
     return shuffled.slice(0, Math.min(numCards, shuffled.length));
   }
   // 🎴 능력 ID → 캐릭터 ID 매핑 (가챠 캐릭터 고유 능력만)
+  // 🚀 abilityId → charId 맵 1회 빌드 — damageEnemy(모든 히트)마다 Object.keys 배열 할당 + 선형 탐색하던 것 제거
+  //    startAbilities는 런타임에 불변이므로 무효화 불필요. 첫 매치 우선(원본 순회 순서와 동일).
+  let _abilityCharMap = null;
   function findCharByAbility(abilityId) {
     if (typeof CHARACTERS === 'undefined') return null;
-    for (const charId of Object.keys(CHARACTERS)) {
-      const ch = CHARACTERS[charId];
-      if (ch && ch.startAbilities && ch.startAbilities.indexOf(abilityId) >= 0) return charId;
+    if (!_abilityCharMap) {
+      _abilityCharMap = Object.create(null);
+      for (const charId of Object.keys(CHARACTERS)) {
+        const ch = CHARACTERS[charId];
+        if (ch && ch.startAbilities) {
+          for (const aid of ch.startAbilities) { if (!(aid in _abilityCharMap)) _abilityCharMap[aid] = charId; }
+        }
+      }
     }
-    return null;
+    return _abilityCharMap[abilityId] || null;
   }
   // 🎴 능력 ID → 가챠 등급 ('R' / 'SR' / 'SSR' / null)
   function abilityGachaTier(abilityId) {
@@ -21271,7 +21404,8 @@
     const cfg = roundConfig(state.round);
     const remain = Math.max(0, cfg.duration - state.roundFrame) / FPS;
     _setText($('s-time'), remain.toFixed(1) + 's');
-    _setStyle($('s-timebar'), 'width', (100 * (cfg.duration - state.roundFrame) / cfg.duration) + '%');
+    // 🚀 정수 %로 양자화 — 매 틱 고유 문자열로 _setStyle 게이트가 뚫려 상시 레이아웃 유발하던 것 제거 (.15s transition이 1% 스텝을 부드럽게 메움)
+    _setStyle($('s-timebar'), 'width', Math.round(100 * (cfg.duration - state.roundFrame) / cfg.duration) + '%');
     _setText($('s-gold'), String(state.gold));
     _setText($('s-score'), state.score.toLocaleString());
     const _maxA = getMaxAlive();
@@ -21337,11 +21471,16 @@
   // 강화 버튼 활성/비활성 + 색상을 현재 골드 기준으로 즉시 갱신 (DOM 재생성 없이)
   // 카드 모달 떠있을 때는 모든 강화/삭제 버튼 비활성 (꼼수 방지)
   //   ⚠ v205 — 캐싱/diff 제거. 매 프레임 querySelectorAll + 직접 set.
-  //   미세한 성능 차이는 있지만 정확성이 우선 — 캐시가 stale될 수 있는 엣지케이스 발생함.
-  function _invalidateAbBtnCache() { /* deprecated — no-op for backward compat */ }
+  //   🚀 v384 — DOM 캐시 대신 "입력 시그니처 게이트": 결과를 바꾸는 입력(골드/모달/패널세대)이
+  //   동일하면 통째로 스킵. DOM 참조는 캐시하지 않으므로 v205의 stale 캐시 버그 부류는 불가능.
+  let _affSig = '', _affGen = 0;
+  function _invalidateAbBtnCache() { _affGen++; } // 패널 재구성/강화 시 시그니처 무효화 (renderPanel이 호출)
   function refreshAbilityAffordability() {
     if (!elAb) return;
     const modalOpen = !!state.levelUpChoices;
+    const _sig = state.gold + '|' + modalOpen + '|' + _affGen + '|' + state.tower.abilities.length;
+    if (_sig === _affSig) return;
+    _affSig = _sig;
     // 강화 버튼 — 직접 처리 (캐시 없음)
     const upBtns = elAb.querySelectorAll('button[data-act="up"]');
     for (let i = 0; i < upBtns.length; i++) {
@@ -21857,9 +21996,9 @@
         ] }; },
     ]},
     magician: { name: '마법사 · 메를린', fb: '🪄', art: 'magician', color: '#7ad7ff', events: [
-      () => ({ title: '🪄 변성', text: '"마음에 안 드는 힘? 같은 격으로, 다른 걸 빚어주지."',
+      () => ({ title: '🪄 변성', text: '"마음에 안 드는 힘? 레벨은 그대로 둔 채, 다른 능력으로 빚어주지."',
         choices: [
-          { label: '변성시킨다', desc: '능력 하나를 같은 레벨의 다른 능력으로', resolve() { return _evTransmute(); } },
+          { label: '변성시킨다', desc: '능력 하나를 같은 레벨의 다른 능력으로 교체', resolve() { return _evTransmute(); } },
           { label: '사양한다', desc: '지금이 좋다', resolve() { return '연금술사가 끄덕인다.'; } },
         ] }),
       () => ({ title: '🪄 등가교환', text: '"전 재산을 힘으로. 많이 바칠수록 강해져 — 한계는 있지만."',
@@ -21975,7 +22114,22 @@
     const ownedIds = [...new Set(state.tower.abilities.map(a => a.id))];
     const allowed = (typeof getUnlockedAbilityIds === 'function') ? getUnlockedAbilityIds() : new Set(RANDOM_POOL_IDS);
     const unowned = RANDOM_POOL_IDS.filter(id => allowed.has(id) && !ownedIds.includes(id));
-    if (unowned.length) { const id = unowned[Math.floor(Math.random() * unowned.length)]; for (let i = 0; i < n; i++) _shopGainAbility(id); return `${ABILITY_DEFS[id].name}${n > 1 ? ' ×' + n : ''} 획득!`; }
+    if (unowned.length) {
+      const id = unowned[Math.floor(Math.random() * unowned.length)];
+      const def = ABILITY_DEFS[id];
+      // 🆕 칸이 가득 찬 상태면 이벤트 특전으로 해당 종류 최대 칸 +1 확장 (새 능력을 버리지 않도록)
+      const isPassive = !!def.isPassive;
+      const slotFull = isPassive ? (passiveCount() >= maxPassiveSlots()) : (activeCount() >= maxActiveSlots());
+      let expanded = false;
+      if (slotFull) {
+        if (!state.metaMods) state.metaMods = {};
+        if (isPassive) state.metaMods.passiveSlotBonus = (state.metaMods.passiveSlotBonus || 0) + 1;
+        else state.metaMods.slotMod = (state.metaMods.slotMod || 0) + 1;
+        expanded = true;
+      }
+      for (let i = 0; i < n; i++) _shopGainAbility(id);
+      return `${def.name}${n > 1 ? ' ×' + n : ''} 획득!` + (expanded ? ` (${isPassive ? '패시브' : '액티브'} 최대 칸 +1!)` : '');
+    }
     const nm = _shopUpgradeRandom(n); return nm ? `${nm} +${n} 강화!` : '강화할 능력이 없었다.';
   }
   function _evGiveRelic() {
@@ -24078,7 +24232,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 378;
+  const APP_VERSION = 385;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
@@ -25575,6 +25729,7 @@
       const steps = paused || state.gameOver ? 1 : gameSpeed;
       for (let i = 0; i < steps; i++) update();
       render();
+      renderStats(); // 🚀 HUD 갱신은 페인트당 1회면 충분 (이전: update()마다 = 배속×중복)
     }
   })();
 })();
