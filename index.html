@@ -24528,7 +24528,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 400;
+  const APP_VERSION = 403;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
@@ -26011,22 +26011,33 @@
     }
   });
 
-  // 🔥 60fps 상한 — 고주사율(90/120Hz) 폰의 과열 + 프레임기반(state.t++) 2배속 방지.
-  //   60Hz는 항상 통과, 120Hz는 격프레임만 실행 → 모든 기기에서 동일한 ~60fps 속도.
-  let _lastFrameT = 0;
-  const _FRAME_MS = 1000 / 60;
+  // ⏱ 시간 누적(accumulator) 루프 — 로직은 실시간 "초당 60틱" 고정(주사율 무관 정확 속도),
+  //   렌더는 매 네이티브 프레임. 기존 프레임-스킵 리미터는 90Hz→45fps·144Hz→72fps + 속도 왜곡을 유발해 폐기.
+  //   (탭 숨김 동안의 catch-up은 위 visibilitychange/worker가 담당 → 여기선 큰 elapsed를 클램프해 폭주 방지)
+  const _STEP = 1000 / 60;
+  let _acc = 0, _prevT = 0;
   (function loop(now){
     requestAnimationFrame(loop);
     if (now === undefined) now = (typeof performance !== 'undefined' && performance.now) ? performance.now() : 0;
-    // 직전 렌더로부터 ~13.3ms 미만이면 이번 콜백은 스킵 (60Hz는 여유 있게 통과, 120Hz는 절반만)
-    if (_lastFrameT && (now - _lastFrameT) < _FRAME_MS * 0.8) return;
-    _lastFrameT = now;
-    if (currentScreen === 'game') {
-      const steps = paused || state.gameOver ? 1 : gameSpeed;
-      for (let i = 0; i < steps; i++) update();
-      render();
-      renderStats(); // 🚀 HUD 갱신은 페인트당 1회면 충분 (이전: update()마다 = 배속×중복)
+    if (currentScreen !== 'game') { _prevT = 0; _acc = 0; return; }
+    if (!_prevT) _prevT = now;
+    let elapsed = now - _prevT; _prevT = now;
+    if (elapsed > 250) elapsed = _STEP;   // 탭 복귀/큰 hitch — 폭주 방지
+    if (paused || state.gameOver || state.levelUpChoices) {
+      _acc = 0;
+      update();   // 멈춤 화면도 update() 1회 (내부에서 게임 로직은 early-return, 연출/UI만)
+    } else {
+      _acc += elapsed;
+      const gs = gameSpeed || 1;
+      let ticks = 0;
+      while (_acc >= _STEP && ticks < 5) {   // 60틱/초 × 배속, 최대 5틱/프레임 (폭주 방지)
+        for (let s = 0; s < gs; s++) update();
+        _acc -= _STEP; ticks++;
+        if (state.gameOver || state.levelUpChoices) { _acc = 0; break; }
+      }
     }
+    render();
+    renderStats();   // HUD 갱신은 페인트당 1회
   })();
 })();
 </script>
