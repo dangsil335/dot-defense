@@ -1,7 +1,7 @@
 // Dot Defense — 서비스워커
 // 업데이트 시: CACHE 이름의 v숫자만 올리면 자동으로 새 캐시 생성 + 기존 캐시 폐기.
 // HTML/메인페이지는 network-first 전략 → 인터넷 연결되어 있으면 항상 최신본 반영.
-const CACHE = 'dot-defense-v404';
+const CACHE = 'dot-defense-v431';
 const ASSETS = [
   './',
   './index.html',
@@ -14,8 +14,8 @@ const ASSETS = [
 //    설치 자체는 위 ASSETS만 기다리므로 SW 활성화 지연 안 됨.
 //    이거 캐싱 끝나면 다음 로드부터 즉시 표시.
 const DEFERRED_ASSETS = [
-  './icons/gacha-aria.png',
-  './icons/gacha-misaki.png',
+  './icons/gacha-elemSumi.png',
+  './icons/gacha-ariaMisa.png',
 ];
 
 self.addEventListener('install', e => {
