@@ -1067,31 +1067,41 @@
     display: flex; justify-content: space-between; align-items: center;
     max-width: 900px; width: 100%;
     margin: 0 auto 14px;
-    padding-bottom: 10px;
-    border-bottom: 1px solid rgba(122,215,255,0.16);
+    padding-bottom: 9px;
+    /* 🛰️ 코스믹 HUD — 네온 그라디언트 계기판 라인 */
+    border-width: 0 0 1px; border-style: solid;
+    border-image: linear-gradient(90deg, rgba(122,215,255,0.55), rgba(160,110,255,0.35) 45%, rgba(122,215,255,0)) 1;
   }
-  .codex-header h2 { margin: 0; font-size: 22px; letter-spacing: 6px; color: var(--accent, #7ad7ff); text-shadow: 0 0 14px rgba(122,215,255,0.35); }
+  /* 거대한 라벨 → 작은 HUD 인덱스 (축소 + 모노 프리픽스 + 글로우) */
+  .codex-header h2 { margin: 0; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 15px; letter-spacing: 3px; font-weight: 700; color: #9fe0ff; text-shadow: 0 0 10px rgba(122,215,255,0.5); }
+  .codex-header h2::before { content: '▸ '; font-family: ui-monospace, 'Courier New', monospace; color: rgba(122,215,255,0.55); font-weight: 400; letter-spacing: 0; }
   .codex-back {
-    padding: 10px 18px;
-    background: linear-gradient(180deg, #242d3f, #1a2230); color: var(--text, #e8eaf0);
-    border: 1px solid var(--border, #3a4256);
-    border-radius: var(--radius-sm, 8px);
-    cursor: pointer; font-family: inherit; font-size: 13px;
+    flex-shrink: 0;
+    padding: 8px 15px;
+    background: rgba(18,24,38,0.72); color: #cdd6e6;
+    border: 1px solid rgba(122,215,255,0.32);
+    border-radius: 999px;
+    cursor: pointer; font-family: inherit; font-size: 13px; font-weight: 700;
+    white-space: nowrap;
     touch-action: manipulation;
     transition: background .12s, border-color .12s, box-shadow .12s;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+    box-shadow: 0 0 12px rgba(80,120,200,0.16);
   }
-  .codex-back:hover { background: linear-gradient(180deg, #2e3a55, #232d42); border-color: var(--accent-2, #5870a0); box-shadow: 0 0 10px rgba(122,215,255,0.2); }
+  .codex-back:hover { background: rgba(42,62,104,0.6); border-color: rgba(122,215,255,0.6); box-shadow: 0 0 14px rgba(122,215,255,0.35); }
   .codex-tabs {
     display: flex; gap: 8px;
     max-width: 900px; width: 100%;
     margin: 0 auto 12px;
-    /* 🛡 v209 — 부모 .screen 의 touch-action: pan-y 로 인해 가로 터치 스크롤이 막혔던 문제 해결.
-       탭 컨테이너 자체는 가로 pan + 세로 pan(부모 스크롤로 위임) 모두 허용. */
+    /* 🛡 가로 스크롤(탭 넘침) — overflow-x:auto + nowrap. 스크롤바 숨김. 드래그 스크롤은 attachDragScroll. */
+    flex-wrap: nowrap; overflow-x: auto; overflow-y: hidden;
+    flex-shrink: 0;   /* 🛡 flex 컬럼에서 overflow:hidden 이 min-height:auto 를 0으로 만들어 탭바가 찌부러지던 문제 방지 */
+    scrollbar-width: none; -webkit-overflow-scrolling: touch;
     touch-action: pan-x pan-y;
   }
+  .codex-tabs::-webkit-scrollbar { display: none; }
   .codex-tab {
     padding: 10px 18px;
+    flex-shrink: 0; white-space: nowrap;
     background: linear-gradient(180deg, #232c3d, #1a2230); color: #9aa3b3;
     border: 1px solid #3a4256; border-radius: var(--radius-sm, 8px);
     cursor: pointer; font-family: inherit; font-size: 13px;
@@ -2298,6 +2308,879 @@
   }
   .ach-section-header:first-child { margin-top: 0; }
 
+  /* ===== 🌌 코스믹 UI 테마 (가챠/업적/능력강화) — 기능 불변, 스킨만 ===== */
+  #gachaScreen, #achievementsScreen, #abilityPerma, #shop {
+    background:
+      radial-gradient(ellipse 70% 45% at 16% 6%, rgba(150,60,190,0.20), transparent 60%),
+      radial-gradient(ellipse 60% 45% at 88% 94%, rgba(50,90,210,0.18), transparent 60%),
+      radial-gradient(ellipse 90% 70% at 50% 45%, rgba(45,28,85,0.22), transparent 72%),
+      #07080f;
+  }
+  /* — 가챠 → 차원 웜홀 / 관측 게이트 — */
+  @keyframes gachaPortalPulse {
+    0%,100% { box-shadow: 0 0 0 1px rgba(140,90,220,0.40), 0 0 20px rgba(120,70,200,0.38), 0 0 46px rgba(80,40,140,0.20); }
+    50%     { box-shadow: 0 0 0 1px rgba(165,115,255,0.62), 0 0 32px rgba(150,90,240,0.58), 0 0 70px rgba(110,60,190,0.36); }
+  }
+  #gachaScreen .gacha-fullbanner { border: 1px solid rgba(130,200,255,0.35); animation: gachaPortalPulse 3.6s ease-in-out infinite; }
+  #gachaScreen .gacha-fullbanner::after {
+    content:''; position:absolute; inset:0; z-index:4; pointer-events:none; border-radius:10px;
+    background:
+      repeating-linear-gradient(0deg, rgba(130,200,255,0.04) 0 1px, transparent 1px 5px),
+      radial-gradient(ellipse at 50% 48%, transparent 66%, rgba(10,6,26,0.42) 100%);
+    box-shadow: inset 0 0 34px rgba(80,40,140,0.30);
+  }
+  #gachaScreen .gacha-fullbanner::before {
+    content:''; position:absolute; inset:7px; z-index:4; pointer-events:none; border-radius:6px;
+    border: 1px solid rgba(130,200,255,0.16);
+  }
+  #gachaScreen .gacha-pull-btn-overlay { box-shadow: 0 0 14px rgba(120,70,200,0.36), inset 0 0 12px rgba(130,200,255,0.10); border-color: rgba(130,200,255,0.5); }
+  #gachaScreen .gacha-pull-btn-overlay.primary { box-shadow: 0 0 20px rgba(165,115,255,0.5), inset 0 0 14px rgba(165,115,255,0.16); }
+  /* 가챠 — 뽑기 버튼을 배너 밖 콘솔로 분리 (모바일 겹침/가림 해결 + 콕핏 데스크). 배너는 16:9 전체 일러 노출 */
+  .gacha-pull-console {
+    max-width: 600px; width: 100%; margin: 10px auto 0; box-sizing: border-box;
+    padding: 10px 12px 12px;
+    background: linear-gradient(180deg, rgba(18,24,42,0.9), rgba(9,12,24,0.95));
+    border: 1px solid rgba(122,200,255,0.3); border-radius: 14px;
+    box-shadow: 0 0 18px rgba(90,120,220,0.25), inset 0 1px 0 rgba(255,255,255,0.05);
+  }
+
+  /* ===== 🌌 코스믹 리디자인 §2~5 ===== */
+  /* §2 강화소/능력강화 — 회로 코너 브래킷 + 메탈릭 코어 스위치 버튼 */
+  #shop .shop-card { position: relative; }
+  #shop .shop-card::before, #shop .shop-card::after { content:''; position:absolute; width:13px; height:13px; pointer-events:none; border:1.5px solid rgba(122,200,255,0.45); }
+  #shop .shop-card::before { top:6px; left:6px; border-right:none; border-bottom:none; }
+  #shop .shop-card::after { bottom:6px; right:6px; border-left:none; border-top:none; }
+  #shop .shop-card.maxed::before, #shop .shop-card.maxed::after { border-color: rgba(82,224,122,0.6); }
+  #shop .shop-buy, #perma-grid .perma-buy { clip-path: polygon(9px 0, 100% 0, 100% calc(100% - 9px), calc(100% - 9px) 100%, 0 100%, 0 9px) !important; }
+  /* §3 기록 — 데이터칩 + WIN 골드 오라 + 연료 실린더 게이지 */
+  #records .record-card { background: linear-gradient(180deg, rgba(20,26,40,0.92), rgba(12,16,26,0.95)); border:1px solid #243049; border-radius:11px; position:relative; overflow:hidden; }
+  #records .record-card.win { border-color: rgba(255,224,112,0.45); box-shadow: 0 0 0 1px rgba(255,224,112,0.4), 0 0 16px rgba(255,224,112,0.26); }
+  #records .record-card.win .rank { color:#ffe070; text-shadow:0 0 9px rgba(255,224,112,0.7); }
+  #records .record-card.win::after { content:'✓ SECURE'; position:absolute; top:6px; right:34px; font-size:8px; letter-spacing:1px; color:rgba(255,224,112,0.8); font-family: ui-monospace, 'Courier New', monospace; }
+  .records-gauge { max-width:720px; width:100%; margin:0 auto 14px; padding:12px 14px; background:linear-gradient(180deg, rgba(22,27,39,0.88), rgba(15,19,28,0.9)); border:1px solid #2a3550; border-radius:12px; box-shadow:0 0 16px rgba(80,60,160,0.2); }
+  .records-gauge-top { display:flex; justify-content:space-between; font-size:11px; color:#8ec5ff; font-weight:800; letter-spacing:1px; margin-bottom:7px; }
+  .records-gauge-bar { height:14px; background:#0a0f1c; border:1px solid #1c2740; border-radius:8px; overflow:hidden; box-shadow:inset 0 0 6px rgba(0,0,0,0.6); }
+  .records-gauge-bar > i { display:block; height:100%; background:linear-gradient(90deg,#5ad7ff,#a070ff); box-shadow:0 0 10px rgba(122,180,255,0.7); transition:width .6s; }
+  /* §4 도감 미해금 — 암흑 성운 블러 (사각 틀 제거) */
+  #codex .codex-card.locked { border-color:transparent !important; border-left-color:transparent !important; box-shadow:none !important; background: radial-gradient(ellipse at 50% 42%, rgba(74,52,124,0.30), rgba(12,14,24,0) 72%) !important; }
+  #codex .codex-card.locked .name { color:#5b5380 !important; }
+  #codex .codex-card.locked .desc { color:#403a55 !important; }
+  #codex .codex-card.locked:hover { background: radial-gradient(ellipse at 50% 42%, rgba(96,70,152,0.42), rgba(12,14,24,0) 72%) !important; }
+  #codex .codex-card.locked:hover .name::after { content:' 🔒'; }
+  /* §5 가챠 — 차원 게이트 웜홀 에너지 배경 */
+  #gachaScreen > * { position: relative; z-index: 1; }
+  #gachaScreen::before { content:''; position:absolute; inset:0; z-index:0; pointer-events:none; background: radial-gradient(circle at 50% 40%, rgba(150,90,235,0.13), rgba(80,40,140,0.05) 46%, transparent 70%); animation: gachaWormholePulse 6s ease-in-out infinite; }
+  @keyframes gachaWormholePulse { 0%,100% { opacity:0.5; } 50% { opacity:1; } }
+
+  /* ===== 🛰️ 인게임 콕핏 HUD (전부 HTML — CSS만, 캔버스 미수정) ===== */
+  #panel {
+    font-family: 'Pretendard','Apple SD Gothic Neo',system-ui,sans-serif;
+    background: linear-gradient(180deg, rgba(16,20,34,0.97), rgba(9,11,22,0.98)) !important;
+    border: 1px solid #2a3a60 !important;
+    box-shadow: inset 0 0 28px rgba(40,70,160,0.10), 0 0 16px rgba(60,90,180,0.16);
+  }
+  /* 스탯 숫자 → 모노 계기판 폰트 */
+  #panel #stats span[id^="s-"] { font-family: ui-monospace, 'Courier New', monospace; letter-spacing: 0.3px; }
+  #panel #stats .row.primary { background: rgba(14,20,36,0.8); }
+  /* 게이지 → 네온 튜브 (글로우 + 라운드, 색은 유지) */
+  #panel .bar { background: #0a0f1c; border: 1px solid #1c2740; border-radius: 6px; box-shadow: inset 0 0 4px rgba(0,0,0,0.6); }
+  #panel .bar > i { border-radius: 6px; box-shadow: 0 0 7px rgba(255,255,255,0.32); filter: brightness(1.12) saturate(1.15); }
+  /* 컨트롤 버튼 → 다크 + 네온 와이어 (탭/능력행 내부버튼은 상태 보존 위해 제외) */
+  #panel .speed-btn, #panel #randomBtn, #panel #relicViewBtn {
+    background: linear-gradient(180deg, rgba(28,36,56,0.82), rgba(14,19,32,0.9)) !important;
+    border: 1px solid rgba(122,180,255,0.34) !important; color: #cdd9ee !important; border-radius: 4px !important;
+    clip-path: polygon(7px 0, 100% 0, 100% calc(100% - 7px), calc(100% - 7px) 100%, 0 100%, 0 7px);   /* 사선 컷 콕핏 스위치 (각도 통일) */
+  }
+  /* 게이지 → //// 사선 눈금 칩 (스캔 라인) */
+  #panel .bar::after { content:''; position:absolute; inset:0; pointer-events:none; background: repeating-linear-gradient(115deg, rgba(0,0,0,0.22) 0 2px, transparent 2px 6px); }
+  #panel .speed-btn:hover, #panel #randomBtn:hover:not(:disabled), #panel #relicViewBtn:hover {
+    border-color: rgba(122,200,255,0.65) !important; box-shadow: 0 0 12px rgba(122,180,255,0.35) !important;
+  }
+  /* 능력 행 — 코스믹 모듈 배경 (좌측 등급선/내부버튼은 유지) */
+  #panel .ability-row { border-radius: 9px; }
+
+  /* ===== 🌌 별자리 체인 — 능력 영구강화 리스트 (노드 + 세로 빛줄기로 리스트 느낌 탈피) ===== */
+  .perma-list { position: relative; }
+  .perma-row { position: relative; }
+  .perma-row::before {
+    content:''; position:absolute; left:14px; top:50%; transform:translate(-50%,-50%);
+    width:12px; height:12px; border-radius:50%;
+    background: radial-gradient(circle at 45% 40%, #fff, var(--rc,#7ad7ff) 95%);
+    box-shadow: 0 0 8px var(--rc,#7ad7ff), 0 0 3px var(--rc,#7ad7ff); z-index:2;
+  }
+  .perma-row::after {
+    content:''; position:absolute; left:14px; top:-13px; height:calc(50% + 13px); width:2.5px; transform:translateX(-50%);
+    background: linear-gradient(180deg, rgba(122,180,255,0.2), var(--rc,#7ad7ff)); opacity:0.92; z-index:1;
+    box-shadow: 0 0 5px var(--rc,#7ad7ff);
+  }
+  .perma-list > .perma-row:first-child::after { display:none; }
+  .perma-row.perma-maxed::before { background: radial-gradient(circle at 45% 40%, #fff, #ffd060 95%); box-shadow: 0 0 11px #ffd060, 0 0 4px #ffd060; }
+
+  /* — 업적 → 함장 대시보드 (연료 게이지 + 데이터칩) — */
+  #achievementsScreen .achievement-summary {
+    display:flex; align-items:center; gap:16px; text-align:left;
+    background: linear-gradient(180deg, rgba(22,27,39,0.88), rgba(15,19,28,0.88));
+    border:1px solid #2a3550; box-shadow: 0 0 18px rgba(80,60,160,0.22), inset 0 0 22px rgba(40,60,140,0.10);
+  }
+  .ach-gauge { position:relative; width:70px; height:70px; flex-shrink:0; }
+  .ach-gauge-svg { width:100%; height:100%; transform:rotate(-90deg); }
+  .ach-gauge-track { fill:none; stroke:#1c2438; stroke-width:7; }
+  .ach-gauge-fill { fill:none; stroke:#7ad7ff; stroke-width:7; stroke-linecap:round; transition:stroke-dashoffset .6s ease; filter:drop-shadow(0 0 4px rgba(122,215,255,0.7)); }
+  .ach-gauge-num { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:18px; font-weight:800; color:#cdeaff; }
+  .ach-gauge-num span { font-size:10px; margin-left:1px; opacity:.7; }
+  .ach-gauge-text { flex:1; min-width:0; }
+  .ach-gauge-title { font-size:12px; font-weight:800; color:#8ec5ff; letter-spacing:1px; }
+  .ach-gauge-sub { font-size:13px; color:#c8cdd8; margin-top:3px; }
+  .ach-gauge-sub b { color:#ffd479; }
+  #achievementsScreen .achievement-card { border-radius:12px; background: linear-gradient(180deg, rgba(20,26,40,0.92), rgba(13,17,27,0.94)); }
+  #achievementsScreen .achievement-card.unlocked { box-shadow: 0 0 0 1px rgba(255,212,121,0.42), 0 0 16px rgba(255,212,121,0.20), inset 0 0 18px rgba(255,200,100,0.05); }
+  #achievementsScreen .achievement-card .ach-icon { width:40px; height:40px; display:flex; align-items:center; justify-content:center; border-radius:50%; background:#0c1018; border:1px solid #2a3142; }
+  #achievementsScreen .achievement-card.unlocked .ach-icon { background:radial-gradient(circle,#3a2e10,#0c1018); border-color:#ffd479; box-shadow:0 0 11px rgba(255,212,121,0.5); }
+  #achievementsScreen .achievement-card.repeat.unlocked .ach-icon { background:radial-gradient(circle,#0e2438,#0c1018); border-color:#88c8ff; box-shadow:0 0 11px rgba(136,200,255,0.5); }
+
+  /* — 능력 영구강화 → 항성계 공전 궤도 — */
+  .perma-orbit { position:relative; width:100%; max-width:440px; margin:6px auto 2px; aspect-ratio:1; }
+  .perma-orbit-rings { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; }
+  .perma-ring { fill:none; stroke:rgba(130,160,255,0.15); stroke-width:0.35; }
+  .perma-core { position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); width:74px; height:74px; border-radius:50%; background:radial-gradient(circle,#1a2440,#0a0e1c); border:1px solid rgba(130,200,255,0.5); box-shadow:0 0 22px rgba(110,80,220,0.5), inset 0 0 18px rgba(130,200,255,0.2); display:flex; flex-direction:column; align-items:center; justify-content:center; z-index:1; }
+  .perma-core-icon { font-size:25px; line-height:1; }
+  .perma-core-count { font-size:11px; font-weight:800; color:#9fb6ff; margin-top:2px; }
+  .perma-planet { position:absolute; transform:translate(-50%,-50%); width:44px; cursor:pointer; display:flex; flex-direction:column; align-items:center; z-index:2; transition:transform .12s; }
+  .perma-planet-core { width:38px; height:38px; border-radius:50%; overflow:hidden; display:flex; align-items:center; justify-content:center; background:#10162a; border:2px solid var(--pc,#3a4256); box-shadow:0 0 8px rgba(0,0,0,.5); font-weight:bold; color:var(--pc,#fff); font-size:16px; }
+  .perma-planet-core img { width:100%; height:100%; object-fit:contain; image-rendering:pixelated; }
+  .perma-planet-lv { font-size:8.5px; font-weight:800; color:#cfe0ff; background:rgba(8,12,22,0.92); border:1px solid var(--pc,#3a4256); border-radius:7px; padding:0 5px; margin-top:-5px; position:relative; z-index:2; }
+  .perma-planet.affordable .perma-planet-core { border-color:#fff; box-shadow:0 0 11px var(--pc,#7ad7ff), 0 0 4px var(--pc,#7ad7ff); }
+  .perma-planet.maxed .perma-planet-core { border-color:#ffd060; box-shadow:0 0 12px rgba(255,208,96,0.6); }
+  .perma-planet:hover { transform:translate(-50%,-50%) scale(1.08); }
+  .perma-planet.sel { z-index:5; }
+  .perma-planet.sel .perma-planet-core { transform:scale(1.16); box-shadow:0 0 0 2px #fff, 0 0 16px var(--pc,#7ad7ff); }
+  .perma-orbit-hint { text-align:center; font-size:11px; color:#7a8294; margin:2px auto 8px; }
+  .perma-sel-panel { display:none; max-width:460px; width:100%; margin:6px auto 0; }
+  .perma-sel-panel.show { display:block; }
+
+  /* — 강화소(#shop) → 우주 도크 / 에너지 코어 모듈 — */
+  #shop .stardust-bar, #abilityPerma .stardust-bar {
+    background: linear-gradient(180deg, rgba(26,32,52,0.85), rgba(13,18,30,0.88));
+    border:1px solid #2a3a60; border-radius:12px; letter-spacing:1px;
+    box-shadow: 0 0 16px rgba(80,120,220,0.22), inset 0 0 18px rgba(60,90,180,0.12);
+  }
+  #shop .shop-card {
+    background: linear-gradient(135deg, rgba(22,28,44,0.92), rgba(12,16,26,0.95));
+    border-color:#243049; border-radius:13px;
+    box-shadow: inset 0 0 22px rgba(40,70,160,0.07), 0 2px 10px rgba(0,0,0,0.35);
+    transition: border-color .12s, transform .08s, box-shadow .12s;
+  }
+  #shop .shop-card:not(.maxed):hover { transform: translateY(-2px); box-shadow: inset 0 0 22px rgba(60,100,200,0.12), 0 0 16px rgba(90,130,230,0.32); }
+  #shop .shop-card.maxed { box-shadow: inset 0 0 22px rgba(82,224,122,0.08), 0 0 12px rgba(82,224,122,0.22); }
+  #shop .shop-card .name { color:#dbe6ff; }
+  #shop .shop-card .lv { color:#9fb6ff; }
+  #shop .shop-lv-bar { height:5px; background:#0a0f1c; border:1px solid #1c2740; box-shadow: inset 0 0 4px rgba(0,0,0,0.5); }
+  #shop .shop-lv-bar > i { box-shadow: 0 0 8px rgba(122,180,255,0.85); filter: brightness(1.15); }
+  #shop .shop-buy { background: linear-gradient(180deg, #2a2410, #1a1608); border-color:#e8c45a; box-shadow: 0 0 12px rgba(255,212,121,0.28), inset 0 0 10px rgba(255,212,121,0.08); }
+  #shop .shop-buy:not(:disabled):not(.maxed):hover { box-shadow: 0 0 18px rgba(255,212,121,0.5); transform: translateY(-1px); }
+  #shop .shop-buy.maxed, #shop .shop-buy:disabled { background:#12161f; color:#5a6275; border-color:#283042; box-shadow:none; cursor:default; }
+  /* sticky 탭 바 — 성운 위에서 하드한 띠로 안 보이게 반투명+블러 (능력강화) */
+  #perma-tabs { background: rgba(9,11,20,0.92) !important; backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px); border-radius: 0 0 12px 12px; }
+  #perma-tabs .codex-tab { background: linear-gradient(180deg, #26314a, #18203a) !important; color:#cfdaee !important; border:1px solid #46578a !important; }
+  #perma-tabs .codex-tab.active { background: linear-gradient(180deg, #5170c0, #3a4f96) !important; color:#fff !important; border-color:#8fb0f0 !important; box-shadow:0 0 14px rgba(122,180,255,0.45) !important; }
+
+  /* ===== 🪐 v444 — 강화 화면 "인도자/상인" 일러 무대 (비대칭 illustration-centric) ===== */
+  /* 단순 리스트 → 상단에 캐릭터가 등장해 강화를 주관. 구매 로직/버튼 id는 그대로. */
+  #shop .up-stage, #abilityPerma .up-stage {
+    width: 100%; max-width: 620px; margin: 8px auto 2px;
+    display: flex; align-items: stretch; gap: 14px;
+    box-sizing: border-box; position: relative;
+    animation: upStageIn .4s ease both;
+  }
+  @keyframes upStageIn { 0%{opacity:0; transform:translateY(8px)} 100%{opacity:1; transform:translateY(0)} }
+  #abilityPerma .up-stage { flex-direction: row-reverse; }  /* 인도자는 우측 무대 → 강화소(상인 좌측)와 비대칭 차별화 */
+  .up-stage-art {
+    position: relative; flex: 0 0 41%; max-width: 184px; min-height: 172px;
+    overflow: hidden;
+    clip-path: polygon(0 0, 100% 0, 100% 85%, 85% 100%, 0 100%);  /* 우하단 사선 컷 — 틀 깨기 */
+    background:
+      radial-gradient(120% 82% at 50% 0%, color-mix(in srgb, var(--npc,#7ad7ff) 30%, transparent), transparent 66%),
+      linear-gradient(180deg, rgba(20,26,44,0.92), rgba(8,10,20,0.97));
+    box-shadow:
+      inset 0 0 0 1px color-mix(in srgb, var(--npc,#7ad7ff) 55%, #2a3350),
+      inset 0 0 30px rgba(0,0,0,0.55);
+    filter: drop-shadow(0 0 16px color-mix(in srgb, var(--npc,#7ad7ff) 38%, transparent));
+    display: flex; align-items: flex-end; justify-content: center;
+  }
+  #abilityPerma .up-stage-art { clip-path: polygon(0 0, 100% 0, 100% 100%, 15% 100%, 0 85%); } /* 좌하단 컷 (반대 방향) */
+  .up-stage-art img {
+    position: absolute; inset: 0; width: 100%; height: 100%;
+    object-fit: cover; object-position: 50% 10%; z-index: 2;
+  }
+  .up-stage-fb {
+    position: relative; z-index: 1; font-size: 58px; padding-bottom: 22px;
+    filter: drop-shadow(0 0 16px var(--npc,#7ad7ff));
+  }
+  /* 일러 위 미세 성운 글로우 라인 (상단 테두리 빛) */
+  .up-stage-art::after {
+    content: ''; position: absolute; left: 0; right: 0; top: 0; height: 3px; z-index: 3;
+    background: linear-gradient(90deg, transparent, var(--npc,#7ad7ff), transparent);
+    box-shadow: 0 0 10px var(--npc,#7ad7ff); opacity: .85;
+  }
+  .up-stage-info {
+    flex: 1 1 0; min-width: 0;
+    display: flex; flex-direction: column; justify-content: center; gap: 7px;
+    text-align: left; padding: 4px 2px;
+  }
+  .up-stage-role {
+    font-size: 10px; letter-spacing: 2.5px; font-weight: 800; text-transform: uppercase;
+    color: color-mix(in srgb, var(--npc,#7ad7ff) 80%, #fff);
+    display: inline-flex; align-items: center; gap: 7px;
+  }
+  .up-stage-role::before {
+    content: ''; width: 18px; height: 1.5px;
+    background: var(--npc,#7ad7ff); box-shadow: 0 0 7px var(--npc,#7ad7ff);
+  }
+  .up-stage-name {
+    font-size: 19px; font-weight: 800; color: #f3f7ff; letter-spacing: 1px;
+    text-shadow: 0 0 13px color-mix(in srgb, var(--npc,#7ad7ff) 60%, transparent);
+  }
+  .up-stage-line { font-size: 12.5px; line-height: 1.55; color: #aeb9d6; font-style: italic; }
+  .up-stage-tag {
+    align-self: flex-start; margin-top: 2px;
+    font-size: 10px; font-weight: 700; letter-spacing: 1px; color: #cdd8f2;
+    background: color-mix(in srgb, var(--npc,#7ad7ff) 16%, rgba(10,14,26,0.9));
+    border: 1px solid color-mix(in srgb, var(--npc,#7ad7ff) 45%, #243049);
+    border-radius: 999px; padding: 3px 10px;
+    box-shadow: 0 0 10px color-mix(in srgb, var(--npc,#7ad7ff) 22%, transparent);
+  }
+
+  /* ===== 🦸 v446 — "해방" 대형 캐릭터 레이아웃 (강화소 프로토타입: 좌측 엔지니어 + 우측 슬림 글래스 패널) ===== */
+  /* 캐릭터를 화면 높이 기준 대형으로 좌측에 띄우고(UI 위 레이어, 클릭 통과), UI는 우측으로 슬림하게 밀어 비대칭. 구매로직/id 불변. */
+  .up-hero { position: fixed; bottom: 0; z-index: 3; pointer-events: none; }
+  .up-hero-left { left: 0; }
+  .up-hero-img {
+    display: block; width: auto; height: min(88vh, 132vw); max-width: 70vw;
+    transform: translateX(-9%);  /* 좌측 살짝 화면 밖 크롭 */
+    filter: drop-shadow(0 0 24px color-mix(in srgb, var(--npc,#88ffcc) 38%, transparent))
+            drop-shadow(0 10px 34px rgba(0,0,0,0.62));
+    -webkit-mask-image: linear-gradient(to top, transparent 1%, #000 12%);
+            mask-image: linear-gradient(to top, transparent 1%, #000 12%);  /* 하단 페이드 크롭 */
+  }
+  .up-hero-fb { display: none; position: fixed; left: 5%; bottom: 9%; z-index: 3; font-size: 92px;
+    filter: drop-shadow(0 0 20px var(--npc,#88ffcc)); pointer-events: none; }
+  .up-hero.noimg .up-hero-fb { display: block; }
+
+  /* 우측 슬림 UI 컬럼 (강화소·능력강화 공용 .up-screen) — 헤더는 풀폭, 나머지는 우측 정렬 + 폭 축소 */
+  .up-screen .up-dialog, .up-screen .up-tabs, .up-screen .up-list {
+    align-self: flex-end !important;
+    width: min(540px, 60vw) !important; max-width: 540px !important;
+    margin-left: 0 !important; margin-right: max(10px, 3.5vw) !important;
+    position: relative; z-index: 2;
+  }
+  .up-screen .up-tabs { z-index: 6; }   /* 탭은 캐릭터 차폐 위로 */
+  .up-screen .up-dialog {
+    z-index: 7;
+    background: linear-gradient(135deg, rgba(10,14,26,0.55), rgba(20,26,44,0.5));
+    -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
+    border: 1px solid color-mix(in srgb, var(--npc,#88ffcc) 38%, #243049);
+    border-left: 3px solid var(--npc,#88ffcc);
+    border-radius: 11px; padding: 9px 14px; margin: 8px 0 6px;
+    clip-path: polygon(0 0, 100% 0, 97% 100%, 3% 100%);
+    box-shadow: 0 0 18px color-mix(in srgb, var(--npc,#88ffcc) 18%, transparent);
+  }
+  .up-dialog .up-stage-role { font-size:10px; letter-spacing:2.5px; font-weight:800; text-transform:uppercase; color: color-mix(in srgb, var(--npc,#88ffcc) 82%, #fff); display:inline-flex; align-items:center; gap:7px; }
+  .up-dialog .up-stage-role::before { content:''; width:18px; height:1.5px; background:var(--npc,#88ffcc); box-shadow:0 0 7px var(--npc,#88ffcc); }
+  .up-dialog .up-stage-name { font-size:18px; font-weight:800; color:#f3f7ff; letter-spacing:1px; margin-top:4px; text-shadow:0 0 13px color-mix(in srgb, var(--npc,#88ffcc) 60%, transparent); }
+  .up-dialog .up-stage-line { font-size:12.5px; line-height:1.5; color:#aeb9d6; font-style:italic; margin-top:3px; }
+  .up-dialog .up-stage-tag { display:inline-block; margin-top:7px; font-size:10px; font-weight:700; letter-spacing:1px; color:#cdd8f2; background: color-mix(in srgb, var(--npc,#88ffcc) 16%, rgba(10,14,26,0.9)); border:1px solid color-mix(in srgb, var(--npc,#88ffcc) 42%, #243049); border-radius:999px; padding:3px 10px; }
+
+  /* 글래스 슬롯 — 뒤로 캐릭터 실루엣이 은은히 비침 (강화소 카드 + 능력강화 행) */
+  .up-screen .shop-card, .up-screen .perma-row {
+    background: linear-gradient(135deg, rgba(14,18,28,0.30), rgba(22,28,46,0.36)) !important;
+    -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
+  }
+
+  /* ===== ⬡ v447 — TYPE A 사선 평행사변형 버튼 (강화소·능력강화 구매 버튼) ===== */
+  /* 자르지 않고 skewX로 매끄럽게 눕힘. JS 0% 유지 위해 버튼 본체는 안 기울여(글자 자동 수직), 기운 네온 테두리/배경은 ::before가 담당. --rc=카테고리/능력색 상속. */
+  #shop .shop-buy, #abilityPerma .perma-buy {
+    position: relative; z-index: 0;
+    background: transparent !important; border: 0 !important;
+    clip-path: none !important; box-shadow: none !important;
+    overflow: visible;
+    font-family: ui-monospace, 'Courier New', monospace;
+    letter-spacing: 1px; font-weight: 800; color: #eaf6ff;
+  }
+  #shop .shop-buy::before, #abilityPerma .perma-buy::before {
+    content: ''; position: absolute; inset: 0; z-index: -1;
+    transform: skewX(-12deg);   /* ★ 박스만 매끄럽게 눕힘 */
+    background: linear-gradient(100deg, color-mix(in srgb, var(--rc,#7ad7ff) 14%, transparent), transparent 75%);
+    border: 1.5px solid var(--rc,#7ad7ff);
+    box-shadow: 0 0 10px color-mix(in srgb, var(--rc,#7ad7ff) 30%, transparent), inset 0 0 8px color-mix(in srgb, var(--rc,#7ad7ff) 10%, transparent);
+    transition: box-shadow .15s, background .15s, border-color .15s;
+  }
+  #shop .shop-buy:not(:disabled):not(.maxed):hover::before,
+  #abilityPerma .perma-buy:not(:disabled):not(.maxed):hover::before {
+    background: linear-gradient(100deg, color-mix(in srgb, var(--rc,#7ad7ff) 32%, transparent), transparent 70%);
+    box-shadow: 0 0 16px color-mix(in srgb, var(--rc,#7ad7ff) 55%, transparent);
+    border-color: #fff;
+  }
+  /* MAX = 골드 과부하 */
+  #shop .shop-buy.maxed::before, #abilityPerma .perma-buy.maxed::before {
+    border-color: #ffd060; background: linear-gradient(100deg, rgba(255,208,96,0.16), transparent 72%);
+    box-shadow: 0 0 12px rgba(255,208,96,0.42);
+  }
+  #shop .shop-buy.maxed, #abilityPerma .perma-buy.maxed { color: #ffe08a !important; }
+  /* 잠김(재화 부족) = 서늘한 레드 시스템 경고 (텍스트는 비용 유지 — [LOCKED] 치환은 JS 필요라 생략) */
+  #shop .shop-buy:disabled:not(.maxed)::before, #abilityPerma .perma-buy:disabled:not(.maxed)::before {
+    border-color: rgba(255,90,110,0.5); background: rgba(255,90,110,0.06); box-shadow: none;
+  }
+  #shop .shop-buy:disabled:not(.maxed), #abilityPerma .perma-buy:disabled:not(.maxed) {
+    color: rgba(255,120,135,0.78) !important; opacity: 1 !important;
+  }
+
+  /* ===== 🖼️ v451 — 강화소 고정 프레임: 페이지 전체 스크롤 제거 → #shop-list(강화능력)만 내부 스크롤 ===== */
+  /* 헤더/일러/다이얼로그/스타더스트/탭 고정, 리스트만 스크롤. 일러는 탭·헤더 '밑으로' 깔려 안 겹침. 다이얼로그 축소. */
+  .up-screen { overflow: hidden !important; justify-content: flex-start; }
+  .up-screen .up-list {
+    flex: 1 1 auto; min-height: 0;
+    overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch;
+    padding-bottom: 10px;
+  }
+  /* 헤더·탭 = 불투명 배경 + 캐릭터 위 레이어 → 일러스트가 그 아래로 깔끔히 들어가 겹침 X */
+  .up-screen .codex-header { position: relative; z-index: 8; background: rgba(9,11,20,0.92); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+  .up-screen .up-tabs { background: rgba(9,11,20,0.92) !important; -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); border-radius: 10px; padding: 5px; }
+  /* 스타더스트 = 헤더 우측 미니 칩(메뉴로와 같은 줄·세로 중앙). 박스만 skewX(-12°), 글자는 수직. */
+  .up-screen .codex-header .stardust-bar {
+    position: relative !important; z-index: 1 !important; align-self: center !important;
+    margin: 0 10px 0 auto !important; padding: 6px 13px !important;
+    width: auto !important; max-width: none !important; flex-shrink: 0;
+    font-size: 12px !important; font-weight: 800; white-space: nowrap; letter-spacing: 0.3px;
+    color: #ffe08a; background: transparent !important; border: 0 !important; box-shadow: none !important;
+  }
+  .up-screen .codex-header .stardust-bar::before {
+    content: ''; position: absolute; inset: 0; z-index: -1;
+    transform: skewX(-12deg);
+    background: linear-gradient(100deg, rgba(255,212,121,0.12), transparent 82%);
+    border: 1px solid rgba(232,196,90,0.6); border-radius: 3px;
+    box-shadow: 0 0 9px rgba(255,212,121,0.2);
+  }
+  .up-screen .codex-header .stardust-bar #stardust-count,
+  .up-screen .codex-header .stardust-bar #perma-stardust-count { color: #fff; }
+  /* 다이얼로그 축소 — 역할 + 이름만 작게 (대사/태그 숨김) */
+  .up-screen .up-dialog { padding: 6px 12px !important; margin: 6px 0 5px !important; }
+  .up-screen .up-dialog .up-stage-line, .up-screen .up-dialog .up-stage-tag { display: none !important; }
+  .up-screen .up-dialog .up-stage-role { font-size: 9px; letter-spacing: 2px; }
+  .up-screen .up-dialog .up-stage-name { font-size: 15px; margin-top: 2px; }
+
+  /* ===== 📱 v448→451 — 모바일/세로: 상하 반절(상단 캐릭터 / 하단 리스트만 스크롤) ===== */
+  /* 데스크탑(>720px)은 위의 겹침 연출 유지. 좁은 화면에서만 캐릭터 z-index를 UI 아래로 내리고 페이드 + 슬롯 풀폭. */
+  @media (max-width: 720px) {
+    /* 📐 상하 반절 v452 — 중간 장애물(소개패널·재화바) 치우고 리스트 시원하게(슬롯 3개+) */
+    .up-screen { justify-content: flex-start; }
+    /* ① 헤더 거의 불투명(머리 안 뚫게) + 스타더스트를 헤더 우측 미니칩으로 도킹 */
+    .up-screen .codex-header { position: relative; z-index: 9; background: rgba(9,11,20,0.98); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+    /* ③ 캐릭터: 헤더 아래로 내려 머리 안 뚫게(padding-top) + 키워서 몸통이 하단 리스트 뒤로 이어짐 */
+    .up-screen .up-hero { top: 0; bottom: auto; left: 0; right: 0; width: 100%; transform: none; display: flex; justify-content: center; align-items: flex-start; padding-top: 7vh; box-sizing: border-box; z-index: 1; opacity: 1; }
+    .up-screen .up-hero-img {
+      height: min(72vh, 150vw); width: auto; max-width: 100vw; transform: none;
+      object-position: 50% 0%;
+      -webkit-mask-image: linear-gradient(to top, transparent 0%, #000 22%);
+              mask-image: linear-gradient(to top, transparent 0%, #000 22%);   /* 하단 페이드 → 리스트 뒤로 자연 연결 */
+    }
+    .up-screen .up-hero-fb { top: 12vh; bottom: auto; left: 0; right: 0; text-align: center; }
+    /* ② 다이얼로그(이름만): 일러스트 좌하단에 오버레이 → 흐름에서 빼서 세로공간 회수 */
+    .up-screen .up-dialog {
+      position: absolute !important; z-index: 7; top: 29vh; left: 8px;
+      width: auto !important; max-width: 64vw !important; margin: 0 !important; padding: 5px 11px !important;
+    }
+    /* ④ 탭+리스트를 ~48vh부터 시작 → 리스트 세로 길게(슬롯 3개+ 노출) */
+    .up-screen .up-tabs { margin-top: 42vh !important; align-self: center !important; width: 94vw !important; max-width: 94vw !important; }
+    .up-screen .up-list { align-self: center !important; width: 94vw !important; max-width: 94vw !important; margin: 6px auto 0 !important; }
+    /* 글래스 리스트 — 캐릭터 몸통이 뒤로 비침 */
+    .up-screen .shop-card, .up-screen .perma-row { background: rgba(10,13,20,0.32) !important; -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); }
+  }
+
+  /* ===== 🌌 v455 — 능력강화 전용 "에테르 관측소": 흐르는 성운 + 살아있는 별자리 신경망 (강화소와 차별화) ===== */
+  /* 강화소는 정적 배경, 능력강화는 성운이 미세하게 흐르고 별자리 노드가 맥동. 기능/구매로직 불변. */
+  #abilityPerma::before {
+    content: ''; position: absolute; inset: -25%; z-index: 0; pointer-events: none;
+    background:
+      radial-gradient(38% 30% at 32% 30%, rgba(130,90,225,0.30), transparent 70%),
+      radial-gradient(34% 27% at 70% 58%, rgba(70,130,235,0.24), transparent 70%),
+      radial-gradient(30% 24% at 52% 82%, rgba(160,95,215,0.20), transparent 70%);
+    filter: blur(26px);
+    animation: permaNebulaDrift 34s ease-in-out infinite alternate;
+  }
+  @keyframes permaNebulaDrift {
+    0%   { transform: translate(0,0) rotate(0deg) scale(1); opacity: 0.8; }
+    50%  { transform: translate(-3.5%, 2.5%) rotate(7deg) scale(1.12); opacity: 1; }
+    100% { transform: translate(2.5%, -2%) rotate(-5deg) scale(1.06); opacity: 0.85; }
+  }
+  /* ===== 🎹 v456 — 능력강화 "아리아 선율" 컨셉: 이퀄라이저 탭 + 하프 현 사선 슬롯 + 주파수 링 ===== */
+  /* 일러 불변. UI 형태만 음악/파동으로 → 강화소 재탕 탈피. 기능·구매로직 불변. (별자리 노드펄스 → 음악 교체) */
+  /* ① 이퀄라이저 탭 — 사각 박스 폐기, 텍스트 + 활성 음파 언더라인 */
+  #abilityPerma #perma-tabs { background: rgba(9,11,20,0.5) !important; }
+  #abilityPerma #perma-tabs .codex-tab {
+    background: transparent !important; border: 0 !important; box-shadow: none !important;
+    border-radius: 0 !important; color: #8da2fb !important; position: relative;
+  }
+  #abilityPerma #perma-tabs .codex-tab.active { color: #eaf2ff !important; text-shadow: 0 0 8px rgba(120,180,255,0.6); }
+  #abilityPerma #perma-tabs .codex-tab.active::after {
+    content: ''; position: absolute; left: 14%; right: 14%; bottom: 2px; height: 2.5px; border-radius: 2px;
+    background: linear-gradient(90deg, transparent, #6ad0ff, #b06aff, transparent);
+    box-shadow: 0 0 9px #7ac0ff;
+    animation: ariaEq 1.5s ease-in-out infinite;
+  }
+  @keyframes ariaEq { 0%,100% { transform: scaleY(1); opacity: 0.85; } 50% { transform: scaleY(2.4); opacity: 1; } }
+
+  /* ② 하프 현 사선 슬롯 — 네모 박스 파괴: 행은 투명, 사선 글래스 패널(::before) + 왼쪽 수직 현(::after) */
+  #abilityPerma .perma-row {
+    background: transparent !important; border: 0 !important; border-radius: 0 !important;
+    padding-left: 26px !important; overflow: visible;
+  }
+  #abilityPerma .perma-row::before {   /* 별자리 노드 → 사선 글래스 패널 */
+    content: ''; position: absolute; inset: 0; left: 16px; top: 0; z-index: -1;
+    width: auto; height: auto; border-radius: 5px;
+    background: linear-gradient(100deg, rgba(16,20,31,0.52), rgba(26,32,52,0.40)) !important;
+    -webkit-backdrop-filter: blur(9px); backdrop-filter: blur(9px);
+    transform: skewX(-12deg);
+    box-shadow: inset 0 0 0 1px rgba(122,180,255,0.12);
+    animation: none !important;
+  }
+  #abilityPerma .perma-row.perma-maxed::before { box-shadow: inset 0 0 0 1px rgba(255,208,96,0.42); }
+  #abilityPerma .perma-row::after {    /* 연결선 → 하프 현(왼쪽 수직 네온 라인) */
+    content: ''; position: absolute; left: 13px; top: 8%; bottom: 8%; height: auto; width: 2px;
+    transform: none; border-radius: 2px;
+    background: linear-gradient(180deg, transparent, var(--rc,#7ad7ff) 20%, var(--rc,#7ad7ff) 80%, transparent);
+    box-shadow: 0 0 8px var(--rc,#7ad7ff);
+    z-index: 1; opacity: 0.95; display: block;
+  }
+
+  /* ③ 주파수 링 — 강화 가능한 구매 버튼에 음파 박동 (만렙/잠김은 없음=데드라인) */
+  #abilityPerma .perma-buy:not(:disabled):not(.maxed)::after {
+    content: ''; position: absolute; inset: -3px; z-index: -2; border-radius: 5px;
+    border: 1px solid var(--rc,#7ad7ff);
+    animation: ariaPulseRing 1.9s ease-out infinite;
+  }
+  @keyframes ariaPulseRing {
+    0%   { transform: skewX(-12deg) scale(0.9); opacity: 0.6; }
+    100% { transform: skewX(-12deg) scale(1.2); opacity: 0; }
+  }
+
+  /* ===== 🔷 v457 — 강화소 "테라 · 세계 관장신" 컨셉: 신성 기하학 / 천체 지도 / 석판 (아리아 선율과 차별) ===== */
+  /* 일러 불변. UI 형태만 신성 기하학으로. 아리아=유동적 선율 / 테라=단단한 질서·설계도. 구매로직 불변. */
+  /* ① 천체 지도 격자 슬롯 (Sacred Monolith) — 카드에 옅은 위도/경도 그리드. 회로 코너브래킷(기존)은 유지. */
+  #shop .shop-card {
+    background:
+      repeating-linear-gradient(0deg, rgba(150,200,255,0.05) 0 1px, transparent 1px 23px),
+      repeating-linear-gradient(90deg, rgba(150,200,255,0.05) 0 1px, transparent 1px 23px),
+      linear-gradient(135deg, rgba(14,18,28,0.30), rgba(22,28,46,0.36)) !important;
+    border: 1px solid rgba(150,210,255,0.30) !important; border-radius: 4px;
+    -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
+  }
+  /* ② 브래킷 탭 — 활성 탭에 신성 비석 코너 브래킷(기하학). 아리아(박스 없는 유동선)와 대비되는 '단단한 석판'. */
+  /* 탭: 못생긴 네모 박스 폐기 → 텍스트만 + 활성 탭 양옆 [ ] 네온 브래킷 (아리아 파동선과 대비되는 견고한 기하학) */
+  #shop #shop-tabs .codex-tab {
+    position: relative;
+    background: transparent !important; border: 0 !important; box-shadow: none !important; border-radius: 0 !important;
+    color: #93a6c8 !important;
+  }
+  #shop #shop-tabs .codex-tab.active { color: #eaf6ff !important; text-shadow: 0 0 8px rgba(150,210,255,0.5); }
+  #shop #shop-tabs .codex-tab.active::before,
+  #shop #shop-tabs .codex-tab.active::after {
+    content: ''; position: absolute; top: 20%; height: 60%; width: 6px; pointer-events: none; z-index: 2;
+    border: 1.5px solid #bfe6ff; box-shadow: 0 0 6px rgba(150,210,255,0.75);
+  }
+  #shop #shop-tabs .codex-tab.active::before { left: 5px; border-right: 0; }    /* [ */
+  #shop #shop-tabs .codex-tab.active::after  { right: 5px; border-left: 0; }    /* ] */
+  /* ③ 다이아몬드 컷 버튼 — 크리스프 흰-청 베벨(권위/단단함). 아리아의 소프트 글로우·박동과 대비(테라는 박동 없이 묵직). */
+  #shop .shop-buy::before {
+    box-shadow: inset 0 0 0 1px rgba(205,232,255,0.55), 0 0 10px color-mix(in srgb, var(--rc,#7ad7ff) 26%, transparent) !important;
+  }
+  /* ===== 🎼 v480 — 능력강화 "우주의 악보(Cosmic Score)": 아리아 선율 위에 '악보'를 얹음 =====
+     황금 오선보 + 높은음자리표 + 배경의 보이지 않는 현 + 강화 공명. 구매로직/JS 0% 변경. 색=코즈믹(청/보) 위 골드 악보. */
+  #abilityPerma { --gold: #ffd98a; }
+  /* ① 오선보(Staff) — 사선 글래스 슬롯 안에 옅은 황금 수평선(skewX에서도 수평 유지). v456 ::before 배경에 staff 레이어 추가 */
+  #abilityPerma .perma-row::before {
+    background:
+      repeating-linear-gradient(0deg, rgba(255,217,138,0.14) 0 1px, transparent 1px 9px),
+      linear-gradient(100deg, rgba(16,20,31,0.52), rgba(26,32,52,0.40)) !important;
+  }
+  #abilityPerma .perma-row.perma-maxed::before {
+    background:
+      repeating-linear-gradient(0deg, rgba(255,224,128,0.32) 0 1px, transparent 1px 9px),
+      linear-gradient(100deg, rgba(42,34,16,0.55), rgba(54,44,22,0.42)) !important;
+    box-shadow: inset 0 0 0 1px rgba(255,208,96,0.5) !important;
+  }
+  /* ② 높은음자리표(G-Clef) — 헤더 타이틀 앞 네온 골드 데코('▸' 대체) */
+  #abilityPerma .codex-header h2 { color: #ffe9b8 !important; text-shadow: 0 0 13px rgba(255,210,120,0.5); }
+  #abilityPerma .codex-header h2::before {
+    content: '𝄞'; font-family: 'Segoe UI Symbol','Apple Symbols',serif; color: var(--gold);
+    margin-right: 8px; font-weight: 400; letter-spacing: 0;
+    text-shadow: 0 0 10px rgba(255,210,120,0.85), 0 0 22px rgba(255,190,90,0.4);
+  }
+  /* ③ 보이지 않는 현(Strings) — 리스트 배경에 옅은 세로 골드 라인(하프 현 공명 공간) */
+  #abilityPerma .up-list {
+    background-image: repeating-linear-gradient(90deg, rgba(255,217,138,0.05) 0 1px, transparent 1px 46px) !important;
+  }
+  /* ④ 이퀄라이저 활성 언더라인에 골드 한 줄 섞기(선율→악보 톤) */
+  #abilityPerma #perma-tabs .codex-tab.active::after {
+    background: linear-gradient(90deg, transparent, #ffd98a, #6ad0ff, #b06aff, transparent) !important;
+    box-shadow: 0 0 9px rgba(255,210,120,0.7) !important;
+  }
+  /* ⑤ 공명(Resonance) — 강화 버튼 누를 때 0.18s 황금 파동(현 퉁기는 손맛). CSS :active 만으로 — JS 불변 */
+  #abilityPerma .perma-buy:not(:disabled):not(.maxed):active::before {
+    box-shadow: 0 0 0 2px var(--gold), 0 0 18px rgba(255,210,120,0.8), inset 0 0 14px rgba(255,210,120,0.3) !important;
+    border-color: #fff !important;
+  }
+  #abilityPerma .perma-buy:not(:disabled):not(.maxed):active { animation: ariaResonance 0.18s ease-out; }
+  @keyframes ariaResonance { 0% { transform: scale(0.975); } 55% { transform: scale(1.015); } 100% { transform: scale(1); } }
+
+  /* ===== 🛰️ v460 — 메인 메뉴 1차: 흐르는 성운 + 콕핏 콘솔 칩 버튼 (칙칙한 그라디언트 박스 덱 탈피) ===== */
+  #menu::before {
+    content: ''; position: absolute; inset: -25%; z-index: -2; pointer-events: none;
+    background:
+      radial-gradient(36% 28% at 26% 24%, rgba(120,90,220,0.22), transparent 70%),
+      radial-gradient(32% 26% at 74% 66%, rgba(70,130,235,0.18), transparent 70%);
+    filter: blur(30px);
+    animation: permaNebulaDrift 40s ease-in-out infinite alternate;
+  }
+  /* 로테이션 간판 캐릭터 백드롭 — 콘솔(버튼) 뒤 z-1, 상단 페이드, 은은하게 */
+  .menu-hero-bg {
+    position: absolute; z-index: -1; pointer-events: none;
+    top: 4vh; left: 50%; transform: translateX(-50%);
+    height: min(62vh, 150vw); width: auto; max-width: 100vw;
+    object-fit: contain; object-position: top center;
+    opacity: 0; transition: opacity 0.7s ease;
+    -webkit-mask-image: linear-gradient(to top, transparent 8%, #000 42%);
+            mask-image: linear-gradient(to top, transparent 8%, #000 42%);
+    filter: drop-shadow(0 0 30px rgba(90,140,230,0.25));
+  }
+  #menu .menu-hero-bg.show { opacity: 0.5 !important; }
+  /* 나브 그리드 버튼(강화소/능력영구/도감/캐릭터진화/업적/기록) = 사선 네온 콘솔 칩. 글자 수직 유지. */
+  #menu .menu-btn-grid {
+    background: transparent !important; border: 0 !important; box-shadow: none !important;
+    position: relative; z-index: 0; overflow: visible;
+  }
+  #menu .menu-btn-grid::before {
+    content: ''; position: absolute; inset: 0; z-index: -1;
+    transform: skewX(-12deg);
+    background: linear-gradient(120deg, rgba(18,26,44,0.82), rgba(12,17,30,0.7));
+    border: 1.5px solid rgba(122,200,255,0.42); border-radius: 3px;
+    box-shadow: 0 0 10px rgba(90,150,240,0.18), inset 0 0 10px rgba(80,140,230,0.06);
+    transition: border-color .12s, box-shadow .12s;
+  }
+  #menu .menu-btn-grid:hover:not(:disabled)::before { border-color: #bfe6ff; box-shadow: 0 0 16px rgba(122,200,255,0.5); }
+  #menu .menu-btn-grid:active { transform: scale(0.97); }
+
+  /* ===== 🛰️ v463 — 메인 메뉴 [캐릭터 유지형] 우측 사선 콘솔 스택 (중앙 개방 + 글래스 칩) ===== */
+  /* 캐릭터 배경 유지, 버튼을 우측 단일컬럼으로 옮겨 중앙(캐릭터)을 열어줌. 모든 버튼 -12 글래스 칩(글자 수직). */
+  #menu .menu-main {
+    align-self: flex-end !important;
+    width: min(290px, 64vw) !important;
+    margin-right: max(10px, 3vw); margin-left: 0;
+  }
+  #menu .menu-grid, #menu .menu-grid-2, #menu .menu-grid-3 { grid-template-columns: 1fr !important; }
+  /* 모든 메뉴 버튼 → 투명 글래스 -12 칩 (뒤 캐릭터 비침) */
+  #menu .menu-btn {
+    background: transparent !important; border: 0 !important; box-shadow: none !important;
+    border-radius: 0 !important; position: relative; z-index: 0; overflow: visible;
+  }
+  #menu .menu-btn::before, #menu .menu-btn-grid::before {
+    content: ''; position: absolute; inset: 0; z-index: -1;
+    transform: skewX(-12deg);
+    background: rgba(16,20,31,0.42) !important;
+    -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
+    border: 1.5px solid rgba(122,200,255,0.42); border-radius: 3px;
+    box-shadow: 0 0 10px rgba(90,150,240,0.16);
+    transition: border-color .12s, box-shadow .12s;
+  }
+  #menu .menu-btn:hover:not(:disabled)::before { border-color: #bfe6ff; box-shadow: 0 0 16px rgba(122,200,255,0.5); }
+  #menu .menu-btn:active { transform: scale(0.985); }
+  /* CTA(이어하기/새게임) — 강조 + 펄스 */
+  #menu .menu-btn-primary::before {
+    background: linear-gradient(110deg, rgba(46,60,94,0.5), rgba(31,40,64,0.42)) !important;
+    border-color: rgba(150,185,255,0.78); box-shadow: 0 0 18px rgba(122,200,255,0.35);
+    animation: ctaPulse 2.4s ease-in-out infinite;
+  }
+  @keyframes ctaPulse { 0%,100% { box-shadow: 0 0 13px rgba(122,200,255,0.28); } 50% { box-shadow: 0 0 26px rgba(122,200,255,0.6); } }
+  /* CTA 단독 강조 — 크게 (명세: 출격을 2배급 메인 버튼으로) */
+  #menu .menu-btn-primary { font-size: clamp(17px, 3.2vmin, 23px) !important; padding: clamp(16px, 3vmin, 22px) clamp(8px, 2vmin, 14px) !important; letter-spacing: 1px; font-weight: 800 !important; }
+  #menu .menu-btn-restart::before { background: rgba(40,16,20,0.45) !important; border-color: rgba(255,120,135,0.5); }
+  #menu .menu-btn-secondary::before { background: rgba(26,20,8,0.45) !important; border-color: rgba(232,196,90,0.55); }
+  /* 글로벌 랭킹 → 상단 우측 미니 골드 칩 (하단 자리 회수) */
+  /* 글로벌 랭킹 → 좌상단 업데이트 버튼과 대칭되는 투명 미니멀 칩 (골드 박스 폐기) */
+  #menu #globalRankBtn {
+    position: absolute !important; top: 16px; right: 56px;
+    width: auto !important; max-width: 42vw; margin: 0 !important;
+    font-size: 11px !important; padding: 8px 12px !important; color: #7ad7ff !important; z-index: 6;
+  }
+  #menu #globalRankBtn::before {
+    transform: none !important;   /* skew 제거 — 반듯한 작은 칩 */
+    background: rgba(16,32,40,0.72) !important; border: 1px solid #2a5878 !important; border-radius: 8px !important;
+    box-shadow: none !important;
+  }
+  #menu #globalRankBtn:hover::before { border-color: #4a88b8 !important; box-shadow: 0 0 8px rgba(122,215,255,0.3) !important; }
+  /* 타이틀/서브타이틀 가독성 (캐릭터 위) */
+  #menu h1, #menu .subtitle { text-shadow: 0 2px 14px rgba(0,0,0,0.75), 0 0 8px rgba(0,0,0,0.5); }
+
+  /* ===== 🛸 v465 — 콕핏 윙 \_/ 대칭 레이아웃 (우측쏠림 취소 → 중앙 V갭, 세로/가로 대응) ===== */
+  /* 유저: 좌우 끝 고정하면 세로화면서 휑/쪼그라듦 → 중앙정렬 컨테이너 + 중앙 V갭, 세로 컴팩트/가로 펼침. */
+  #menu .menu-main {
+    align-self: center !important; align-items: center !important;
+    width: min(520px, 96vw) !important; max-width: 96vw !important;
+    margin: 0 auto !important; padding: 0 12px !important; box-sizing: border-box !important;
+  }
+  /* 나브 = 2열 윙 (좌3/우3) — 중앙 V갭(캐릭터 노출). 버튼 테두리는 전부 같은 각도로 평행(skewX) */
+  #menu .menu-grid, #menu .menu-grid-2, #menu .menu-grid-3 {
+    grid-template-columns: 1fr 1fr !important;
+    column-gap: clamp(54px, 17vw, 116px) !important; row-gap: 9px !important;
+  }
+  #menu .menu-section { margin-top: 0; }
+  #menu .menu-section-label { display: none !important; }   /* 윙은 라벨 없이 깔끔 */
+  /* 좌열(odd) skewX -12 / 우열(even) skewX +12 → 모든 윙 버튼 테두리가 같은 각도로 평행한 평행사변형 (글자 수직) */
+  #menu .menu-grid .menu-btn:nth-child(odd)::before, #menu .menu-grid-2 .menu-btn:nth-child(odd)::before { transform: skewX(-12deg) !important; clip-path: none !important; }
+  #menu .menu-grid .menu-btn:nth-child(even)::before, #menu .menu-grid-2 .menu-btn:nth-child(even)::before { transform: skewX(12deg) !important; clip-path: none !important; }
+  /* CTA·재시작(중앙 컨트롤러) — skew 없이 직선 */
+  #menu .menu-cta-group .menu-btn::before { transform: none !important; }
+  /* 글래스 더 투명 (명세 rgba 0.3대) — 플레인 나브만 */
+  #menu .menu-btn::before { background: rgba(14,18,28,0.34) !important; }
+  /* 가챠 → 하단 중앙 코어 (골드 포인트) */
+  #menu #gachaBtn { left: auto !important; right: auto !important; top: auto !important; bottom: auto !important; transform: none !important; }
+  #menu .gacha-circle-label, #menu #gachaCircleEmoji { color: #ffe08a; }
+  /* 🖥 가로/와이드 — 윙을 더 넓게 펼쳐 콕핏 감 (세로는 위 컴팩트 유지) */
+  @media (orientation: landscape) and (min-width: 760px) {
+    #menu .menu-main { width: min(820px, 92vw) !important; }
+    #menu .menu-grid, #menu .menu-grid-2, #menu .menu-grid-3 { column-gap: clamp(140px, 24vw, 380px) !important; }
+  }
+
+  /* ===== 🛸 v466 — 콕핏 마감: CTA 좁혀 캐릭터 개방 + 가챠 골드 칩(갈색 원형 폐기) ===== */
+  /* CTA/재시작 — 풀폭 바 폐기, 중앙 좁게 (뒤 캐릭터 상반신 노출) */
+  #menu .menu-cta-group { align-self: center !important; width: min(330px, 82%) !important; }
+  /* 가챠 → 중앙 명당(이어하기 아래·나브 위) 와이드 골드 칩 (84px 원형·pulse·absolute 폐기 → flow) */
+  #menu #gachaBtn {
+    position: relative !important; transform: none !important; align-self: center !important;
+    width: min(330px, 82%) !important; height: auto !important; min-width: 0 !important; border-radius: 0 !important;
+    background: transparent !important; border: 0 !important; box-shadow: none !important;
+    animation: none !important; overflow: hidden !important;   /* 성운 스월이 칩 안에 갇히게 */
+    display: flex !important; flex-direction: row !important; align-items: center; justify-content: center; gap: 8px;
+    padding: 12px 18px !important; margin: 4px auto 8px !important; z-index: 1;
+  }
+  /* 프레임 + 블랙홀 성운 배경 (골드 테두리) */
+  #menu #gachaBtn::before {
+    content: ''; position: absolute; inset: 0; z-index: -2; transform: none;
+    background: radial-gradient(ellipse 70% 90% at 50% 55%, rgba(120,70,210,0.45), rgba(30,14,55,0.6) 55%, rgba(8,5,18,0.78));
+    border: 1.5px solid #ffcf5a; border-radius: 4px;
+    box-shadow: 0 0 16px rgba(255,200,90,0.4), inset 0 0 22px rgba(80,40,140,0.4); transition: box-shadow .12s, border-color .12s;
+  }
+  /* 회전하는 성운 스월(블랙홀 느낌) */
+  #menu #gachaBtn::after {
+    content: ''; position: absolute; left: 50%; top: 50%; width: 200%; padding-bottom: 200%; z-index: -1;
+    transform: translate(-50%,-50%); border-radius: 50%; pointer-events: none; opacity: 0.55;
+    background: conic-gradient(from 0deg, transparent 0deg, rgba(160,95,255,0.5) 60deg, transparent 130deg, rgba(80,150,255,0.4) 220deg, transparent 300deg);
+    animation: scoutSwirl 9s linear infinite;
+    -webkit-mask-image: radial-gradient(circle, #000 38%, transparent 70%); mask-image: radial-gradient(circle, #000 38%, transparent 70%);
+  }
+  @keyframes scoutSwirl { to { transform: translate(-50%,-50%) rotate(360deg); } }
+  #menu #gachaBtn:hover::before { box-shadow: 0 0 26px rgba(255,210,110,0.7), inset 0 0 26px rgba(110,55,190,0.55); border-color: #ffe8a0; }
+  #menu #gachaBtn #gachaCircleEmoji { font-size: 18px !important; }
+  #menu #gachaBtn .gacha-circle-label { position: static !important; bottom: auto !important; width: auto !important; font-size: 14px !important; color: #ffe08a !important; font-weight: 800 !important; letter-spacing: 1px; }
+  /* \_/ 3축 2층 나브 (col1 \ skew-12 / col2 _ flat / col3 / skew+12) */
+  #menu .menu-nav3 {
+    display: grid !important; grid-template-columns: repeat(3, 1fr);
+    gap: 10px clamp(6px, 1.8vw, 14px); width: 100%; margin-top: 2px;
+  }
+  /* 마름모(평행사변형) 윙 — 칩(::before) 자체를 평행사변형 모양으로(skewX). 테두리 온전(선 안 사라짐), 글자는 수직. */
+  #menu .menu-nav3 { row-gap: 10px !important; }
+  #menu .menu-nav3 .menu-btn { transform: none !important; }   /* 버튼은 똑바로 정렬(배치 아치 제거) */
+  #menu .menu-nav3 .menu-btn::before { clip-path: none !important; }
+  #menu .menu-nav3 .menu-btn:nth-child(3n+1)::before { transform: skewX(-12deg) !important; }  /* 좌열 \ 마름모 */
+  #menu .menu-nav3 .menu-btn:nth-child(3n+2)::before { transform: none !important; }            /* 중앙 _ 직사각형 */
+  #menu .menu-nav3 .menu-btn:nth-child(3n)::before   { transform: skewX(12deg) !important; }   /* 우열 / 마름모 */
+  /* 닉네임 → 최하단 미니멀 인포바 (박스 제거, 얇은 선) */
+  #menu .nickname-display {
+    background: transparent !important; border: 0 !important; box-shadow: none !important;
+    border-top: 1px solid rgba(122,180,255,0.18) !important; border-radius: 0 !important;
+    padding: 9px 0 4px !important; margin-top: 8px !important; font-size: 12px !important;
+  }
+  /* ============================================================================
+     📚 v478 — 도감 "차원 도서관" 전면 홀로그램 대혁신 (비블리아 프리젠터)
+     명세: ①전화면 개방 시네마틱 성운 ②비블리아 중앙 백드롭 ③탭 부채꼴 마름모
+           ④데이터 스트림 카드(박스철거+격자+스캔라인) ⑤플로팅 HUD 대사창 ⑥미니멀 상단칩
+     원칙: 모든 셀렉터 #codex 스코프 — 강화소/능력강화 등 타 화면 불변. JS 로직 0% 변경.
+     ============================================================================ */
+  #codex { --cy: #4fe6ff; --cyd: #3bf7ff; }
+
+  /* ① 전 화면 = 개방형 성운 캔버스 + 미세 격자/스캔라인 (사각 상자 배경 전면 철거) */
+  #codex::before {   /* 은하 성운 — 느리게 호흡 */
+    content: ''; position: absolute; inset: 0; z-index: 0; pointer-events: none;
+    background:
+      radial-gradient(ellipse 62% 52% at 32% 26%, rgba(38,96,158,0.30), transparent 70%),
+      radial-gradient(ellipse 52% 60% at 76% 68%, rgba(72,46,134,0.24), transparent 72%),
+      radial-gradient(circle at 50% 48%, rgba(6,10,20,0), rgba(3,6,13,0.62) 100%);
+    animation: codexNebula 48s ease-in-out infinite alternate;
+  }
+  @keyframes codexNebula { 0% { transform: scale(1) translate(0,0); } 100% { transform: scale(1.13) translate(-2%,1.2%); } }
+  #codex::after {    /* 전 화면 모눈 격자 + 미세 스캔라인 (홀로그램 투사면) */
+    content: ''; position: absolute; inset: 0; z-index: 0; pointer-events: none; opacity: 0.55;
+    background:
+      repeating-linear-gradient(0deg, rgba(79,230,255,0.030) 0 1px, transparent 1px 3px),
+      linear-gradient(rgba(79,230,255,0.026) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(79,230,255,0.020) 1px, transparent 1px);
+    background-size: 100% 3px, 100% 36px, 36px 100%;
+    will-change: transform;
+    transform: translateY(calc(var(--cxScroll, 0) * -0.035px));   /* ⑥ 스크롤 패럴랙스 */
+  }
+
+  /* ② 비블리아 = 백드롭(중앙·미해금처럼 차폐 X). z-index 베이스(UI 아래) + 투과 위해 살짝 페이드 */
+  #codex .up-hero { z-index: 1 !important; opacity: 0.62; }
+
+  /* ⑤ 헤더 — 상자 철거(투명), 타이틀 네온 글로우 */
+  #codex .codex-header { background: transparent !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; border: 0 !important; box-shadow: none !important; }
+  #codex .codex-header h2 { color: #c7f3ff !important; text-shadow: 0 0 16px rgba(79,230,255,0.6); }
+  /* ⑥ 상단 [메뉴로] → 얇은 투명 네온 라인칩(우상단 도킹) */
+  #codex .codex-back, #codex #codexBack {
+    background: transparent !important; border: 1px solid rgba(79,230,255,0.42) !important;
+    color: #a7ecff !important; box-shadow: none !important; border-radius: 2px !important;
+    font-family: ui-monospace,'Courier New',monospace; font-size: 11px !important; letter-spacing: 0.5px;
+    padding: 5px 12px !important;
+  }
+  #codex .codex-back:hover, #codex #codexBack:hover { border-color: #4fe6ff !important; color: #e6fbff !important; box-shadow: 0 0 12px rgba(79,230,255,0.4) !important; }
+
+  /* ⑤ 플로팅 HUD 사서 대사창 — 거의 투명(뒤 비블리아 투과) + #3bf7ff 4꼭짓점 꺾쇠 */
+  #codex .up-dialog {
+    background-color: rgba(11,13,18,0.16) !important;
+    background-image:
+      linear-gradient(var(--cyd),var(--cyd)), linear-gradient(var(--cyd),var(--cyd)),
+      linear-gradient(var(--cyd),var(--cyd)), linear-gradient(var(--cyd),var(--cyd)),
+      linear-gradient(var(--cyd),var(--cyd)), linear-gradient(var(--cyd),var(--cyd)),
+      linear-gradient(var(--cyd),var(--cyd)), linear-gradient(var(--cyd),var(--cyd)) !important;
+    background-repeat: no-repeat !important;
+    background-size: 15px 1.5px, 1.5px 15px, 15px 1.5px, 1.5px 15px, 15px 1.5px, 1.5px 15px, 15px 1.5px, 1.5px 15px !important;
+    background-position: top left, top left, top right, top right, bottom left, bottom left, bottom right, bottom right !important;
+    -webkit-backdrop-filter: blur(8px) !important; backdrop-filter: blur(8px) !important;
+    border: 0 !important; border-radius: 2px !important; clip-path: none !important;
+    box-shadow: 0 0 24px rgba(79,230,255,0.12) !important;
+    padding: 10px 15px !important; margin: 8px 0 7px !important;
+  }
+  #codex .up-dialog .up-stage-line { display: block !important; font-size: 12px !important; color: #b9d6ee !important; }
+  #codex .up-dialog .up-stage-tag {
+    display: inline-block !important; font-family: ui-monospace,'Courier New',monospace; font-size: 9px !important;
+    letter-spacing: 1.6px; color: #6fe6ff !important; background: transparent !important; border: 0 !important;
+    padding: 4px 0 0 !important; box-shadow: none !important; text-shadow: 0 0 8px rgba(79,230,255,0.5);
+  }
+
+  /* ③ 탭 = 부채꼴 호선 + -12° 마름모 칩 + 투명. 활성만 날카로운 네온 사이언 */
+  #codex .up-tabs, #codex .codex-tabs {
+    background: transparent !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important;
+    border-radius: 0 !important; padding: 10px 18px 8px !important; gap: 9px !important;
+    /* 가로 스크롤 복구(이전 overflow:visible이 스크롤 죽여 유물 탭 잘림). 맞으면 중앙, 넘치면 좌측부터 스크롤=잘림 방지 + 스냅 */
+    overflow-x: auto !important; overflow-y: hidden !important;
+    justify-content: safe center !important; scroll-snap-type: x proximity; scroll-padding: 0 24px;
+  }
+  #codex .codex-tab { scroll-snap-align: center; }
+  #codex .codex-tab {
+    position: relative; z-index: 0; background: transparent !important; border: 0 !important; box-shadow: none !important;
+    color: rgba(156,202,236,0.6) !important; font-family: ui-monospace,'Courier New',monospace;
+    font-size: 11px !important; letter-spacing: 0.3px; padding: 7px 5px !important; overflow: visible !important;
+    transform-origin: bottom center; transition: color .15s;
+  }
+  #codex .codex-tab::before {   /* 마름모(평행사변형) 윤곽 칩 — 얇은 네온 */
+    content: ''; position: absolute; inset: 2px 1px; z-index: -1; transform: skewX(-12deg);
+    border: 1px solid rgba(79,230,255,0.20); border-radius: 2px; background: rgba(79,230,255,0.035);
+    transition: border-color .15s, box-shadow .15s, background .15s;
+  }
+  #codex .codex-tab.active { color: #e3fbff !important; text-shadow: 0 0 10px rgba(79,230,255,0.7); }
+  #codex .codex-tab.active::before {
+    border-color: #4fe6ff; background: rgba(79,230,255,0.11);
+    box-shadow: 0 0 13px rgba(79,230,255,0.5), inset 0 0 9px rgba(79,230,255,0.12);
+  }
+  /* 부채꼴 엇박자 정렬 (5탭: 중앙 평평, 바깥 살짝 회전·상승) */
+  #codex .codex-tabs .codex-tab:nth-child(1) { transform: rotate(-3.2deg) translateY(2.5px); }
+  #codex .codex-tabs .codex-tab:nth-child(2) { transform: rotate(-1.6deg) translateY(0.6px); }
+  #codex .codex-tabs .codex-tab:nth-child(3) { transform: rotate(0deg); }
+  #codex .codex-tabs .codex-tab:nth-child(4) { transform: rotate(1.6deg) translateY(0.6px); }
+  #codex .codex-tabs .codex-tab:nth-child(5) { transform: rotate(3.2deg) translateY(2.5px); }
+
+  /* 필터칩 — 미니멀 네온 토글 (투명) */
+  #codex .codex-filter-chips { position: relative; z-index: 2; margin-bottom: 6px; }
+  #codex .codex-filter-chip {
+    background: transparent !important; border: 1px solid rgba(79,230,255,0.26) !important; box-shadow: none !important;
+    color: rgba(156,202,236,0.7) !important; font-family: ui-monospace,'Courier New',monospace;
+    font-size: 10px !important; letter-spacing: 0.4px; border-radius: 2px !important; padding: 4px 11px !important;
+  }
+  #codex .codex-filter-chip.active {
+    border-color: #4fe6ff !important; color: #e3fbff !important; background: rgba(79,230,255,0.11) !important;
+    box-shadow: 0 0 10px rgba(79,230,255,0.35) !important; text-shadow: 0 0 7px rgba(79,230,255,0.6);
+  }
+
+  /* ④ 데이터 스트림 리스트 — 상자 철거. 카드는 모눈격자+스캔라인 위로 텍스트만 투과. 스크롤 경계 페이드 */
+  #codex .up-list {
+    background: transparent !important;
+    -webkit-mask-image: linear-gradient(180deg, transparent 0, #000 3.5%, #000 96%, transparent 100%);
+            mask-image: linear-gradient(180deg, transparent 0, #000 3.5%, #000 96%, transparent 100%);
+  }
+  #codex .codex-card {
+    background-color: rgba(8,13,22,0.30);
+    background-image:
+      linear-gradient(rgba(120,206,255,0.055) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(120,206,255,0.04) 1px, transparent 1px);
+    background-size: 100% 12px, 20px 100%;
+    -webkit-backdrop-filter: blur(7px); backdrop-filter: blur(7px);
+    border: 0; border-left: 3px solid rgba(110,206,255,0.55);   /* 색은 인라인 borderLeftColor(희귀도) 상속 */
+    border-bottom: 1px solid rgba(79,230,255,0.22); border-radius: 2px;
+    position: relative; overflow: hidden;
+  }
+  #codex .codex-card > * { position: relative; z-index: 1; }   /* ★ 텍스트/아이콘을 가상요소 위로 — 스캔라인이 글자 덮던 버그 수정 */
+  #codex .codex-card::after {   /* 정적 미세 스캔라인 (내용 아래) */
+    content: ''; position: absolute; inset: 0; pointer-events: none; z-index: 0; opacity: 0.6;
+    background: repeating-linear-gradient(0deg, rgba(120,206,255,0.05) 0 1px, transparent 1px 3px);
+  }
+  #codex .codex-card::before {  /* 스캔 스윕 */
+    content: ''; position: absolute; left: 0; right: 0; top: -45%; height: 45%; z-index: 0; pointer-events: none;
+    background: linear-gradient(180deg, transparent, rgba(120,210,255,0.12), transparent);
+    animation: codexScan 3.6s linear infinite;
+  }
+  @keyframes codexScan { 0% { top: -45%; } 100% { top: 112%; } }
+  #codex .codex-card .name { text-shadow: 0 1px 6px rgba(0,0,0,0.7); }
+  #codex .codex-card .desc { color: #c2d2e8 !important; text-shadow: 0 1px 5px rgba(0,0,0,0.7); }
+  /* 미해금 = 암호화된 홀로그램 (희미한 시안 + 격자만, 박스 X) */
+  #codex .codex-card.locked {
+    background-color: rgba(8,13,22,0.18) !important; border-left-color: rgba(95,150,200,0.30) !important;
+    border-bottom-color: rgba(79,230,255,0.10) !important;
+    background-image:
+      linear-gradient(rgba(120,206,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(120,206,255,0.022) 1px, transparent 1px) !important;
+    background-size: 100% 12px, 20px 100% !important;
+  }
+  #codex .codex-card.locked .name { color: #5d7596 !important; }
+  #codex .codex-card.locked .desc { color: #46566f !important; }
+
+  /* === 데스크탑(>720px): 비블리아 중앙 대형 백드롭 (잘림 없이 웅장하게) === */
+  @media (min-width: 721px) {
+    #codex .up-hero { left: 50% !important; right: auto; transform: translateX(-50%) translateY(calc(var(--cxScroll,0) * 0.02px)) !important; }
+    #codex .up-hero-img { transform: none !important; height: min(96vh, 150vw) !important; max-width: 86vw !important;
+      -webkit-mask-image: linear-gradient(to top, transparent 1%, #000 14%); mask-image: linear-gradient(to top, transparent 1%, #000 14%); }
+    #codex .codex-filter-chips { align-self: flex-end !important; width: min(540px,60vw) !important; max-width: 540px !important; margin-right: max(10px,3.5vw) !important; }
+  }
+  /* === 모바일/세로(≤720px): 비블리아 페이드 백드롭 + 리스트가 남은 세로 전부 차지 ===
+     옛 상하반절(탭 margin-top:42vh로 리스트를 하단 ~27vh로 압축)을 폐기.
+     비블리아는 얼굴만 상단 노출·몸통 페이드 → 그 위로 리스트(flex:1, ~68vh)가 데이터처럼 흐름.
+     vh 고정 대신 flex 흐름 기반 → 화면을 세로로 늘려도 비율이 깨지지 않음. */
+  @media (max-width: 720px) {
+    /* 비블리아 = 페이드 백드롭(상단 얼굴 노출, 하단 몸통 페이드) */
+    #codex .up-hero { opacity: 0.55 !important; z-index: 1 !important; padding-top: 5vh !important; }
+    #codex .up-hero-img {
+      height: min(78vh, 150vw) !important; max-width: 100vw !important; transform: none !important;
+      -webkit-mask-image: linear-gradient(to top, transparent 16%, #000 46%) !important;
+              mask-image: linear-gradient(to top, transparent 16%, #000 46%) !important;
+    }
+    /* 대사창 = 얼굴 옆 상단 좌측 플로팅(위로 끌어올림). 모바일은 태그 숨겨 압축(role+name+line) → 탭과 안 겹침 */
+    #codex .up-dialog { top: 9vh !important; left: 8px !important; max-width: 72vw !important; padding: 8px 13px !important; }
+    #codex .up-dialog .up-stage-tag { display: none !important; }
+    /* 탭 = 압축된 대사창 아래로 확실히 분리(과밀어내기 제거) → 리스트 영역 대폭 확장 */
+    #codex .up-tabs { margin-top: 15vh !important; align-self: center !important; width: 94vw !important; max-width: 94vw !important; }
+    #codex .codex-filter-chips { align-self: center !important; width: 94vw !important; max-width: 94vw !important; margin: 4px auto 6px !important; }
+    /* 리스트 = 남은 세로 전부(flex:1) → 화면 절반 이상, 비블리아 위로 데이터 흐름 */
+    #codex .up-list { flex: 1 1 auto !important; min-height: 0 !important; align-self: center !important; width: 94vw !important; max-width: 94vw !important; margin: 0 auto !important; }
+  }
+
   /* ===== 🎁 게임 결과 — 획득 보상 패널 + 메뉴 NEW 뱃지 (v322) ===== */
   .menu-btn, .menu-btn-grid, .nickname-display { position: relative; }
   .menu-new-dot {
@@ -2374,16 +3257,13 @@
 <body>
 <!-- ===== 메뉴 화면 (v218 — 그룹화 + 그리드 레이아웃) ===== -->
 <div id="menu" class="screen show">
+  <!-- 🛰️ v461 — 로테이션 간판 캐릭터 백드롭 (진입마다 순환, 콘솔 뒤 시네마틱) -->
+  <img id="menu-hero-bg" class="menu-hero-bg" alt="">
   <!-- 상단 좌측: 캐시 업데이트 -->
-  <button id="updateCacheBtn" class="update-cache-btn" title="캐시만 지우고 최신 버전으로 업데이트 (저장 데이터는 유지)">🔄 업데이트</button>
+  <button id="updateCacheBtn" class="update-cache-btn" title="캐시만 지우고 최신 버전으로 업데이트 (저장 데이터는 유지)">업데이트</button>
   <!-- 상단 우측: 설정 (데이터 초기화/동기화 모음) -->
   <button id="settingsBtn" class="settings-btn" title="설정">⚙</button>
   <!-- 🎰 가챠 원형 버튼 — 우측 하단 -->
-  <button id="gachaBtn" class="gacha-circle-btn" title="🎰 가챠">
-    <span id="gachaCircleEmoji">🎰</span>
-    <div class="gacha-circle-label">가챠</div>
-  </button>
-
   <!-- 타이틀 -->
   <h1>DOT DEFENSE</h1>
   <div class="subtitle">픽셀 디펜스 · 능력 조합 빌더</div>
@@ -2403,33 +3283,26 @@
       <div id="quickStartPreview" class="quick-start-preview" style="display:none;"></div>
       <!-- 설정 변경 (빠른 시작 가능할 때만 노출) -->
       <button id="changeSettingsBtn" class="menu-btn menu-btn-secondary" style="display:none;">⚙ 캐릭터 변경</button>
-      <button id="difficultyBtn" class="menu-btn menu-btn-secondary" style="display:none">⚡ 난이도: 기본</button>
+      <button id="difficultyBtn" class="menu-btn menu-btn-secondary" style="display:none">난이도: 기본</button>
     </div>
 
-    <!-- 그룹 1: 진행 관리 -->
-    <div class="menu-section">
-      <div class="menu-section-label">⭐ 진행 관리</div>
-      <div class="menu-grid">
-        <button id="shopBtn" class="menu-btn menu-btn-grid">⭐ 강화소</button>
-        <button id="abilityPermaBtn" class="menu-btn menu-btn-grid">🌟 능력 영구</button>
-      </div>
-    </div>
+    <!-- 🎰 가챠 — 중앙 명당(이어하기 아래, 나브 위) 와이드 골드 칩 -->
+    <button id="gachaBtn" class="gacha-circle-btn" title="차원 스카우트">
+      <div class="gacha-circle-label">차원 스카우트</div>
+    </button>
 
-    <!-- 그룹 2: 컬렉션 -->
-    <div class="menu-section">
-      <div class="menu-section-label">📚 컬렉션</div>
-      <div class="menu-grid menu-grid-2">
-        <button id="codexBtn" class="menu-btn menu-btn-grid">도감</button>
-        <button id="charCollectionBtn" class="menu-btn menu-btn-grid">캐릭터</button>
-      </div>
-      <div class="menu-grid menu-grid-2">
-        <button id="achievementsBtn" class="menu-btn menu-btn-grid">업적</button>
-        <button id="recordsBtn" class="menu-btn menu-btn-grid">기록</button>
-      </div>
+    <!-- 메인 나브 6종 — \ _ / 3축 2층 콕핏 콘솔 (좌\=강화소·업적 / 중_=도감·캐릭터진화 / 우/=능력영구·기록) -->
+    <div class="menu-nav3">
+      <button id="shopBtn" class="menu-btn menu-btn-grid">강화소</button>
+      <button id="codexBtn" class="menu-btn menu-btn-grid">도감</button>
+      <button id="abilityPermaBtn" class="menu-btn menu-btn-grid">능력 영구</button>
+      <button id="achievementsBtn" class="menu-btn menu-btn-grid">업적</button>
+      <button id="charCollectionBtn" class="menu-btn menu-btn-grid">캐릭터·진화</button>
+      <button id="recordsBtn" class="menu-btn menu-btn-grid">기록</button>
     </div>
 
     <!-- 글로벌 랭킹 (와이드) -->
-    <button id="globalRankBtn" class="menu-btn menu-btn-wide">🌐 글로벌 랭킹</button>
+    <button id="globalRankBtn" class="menu-btn menu-btn-wide">글로벌 랭킹</button>
   </div>
 
   <!-- 닉네임 (하단) -->
@@ -3180,7 +4053,7 @@
 <div id="gachaScreen" class="screen">
   <div class="gacha-top-bar">
     <button id="gachaBack" class="codex-back gacha-back-small">←</button>
-    <div class="gacha-title">🎰 가챠</div>
+    <div class="gacha-title">🎰 차원 스카우트</div>
     <div class="gacha-currencies">
       <span class="gacha-cur-chip"><span style="color:#88ccff">💎</span> <span id="crystal-count">0</span></span>
       <span class="gacha-cur-chip"><span style="color:#ffd479">⭐</span> <span id="gacha-stardust">0</span></span>
@@ -3196,7 +4069,7 @@
     <div id="gacha-banner-fallback" class="gacha-fullbanner-fallback" style="display:none;">
       <div class="gacha-banner-sparkles">✨</div>
       <div class="gacha-banner-title">DOT DEFENSE</div>
-      <div class="gacha-banner-sub">캐릭터 픽업 가챠</div>
+      <div class="gacha-banner-sub">캐릭터 픽업 · 차원 스카우트</div>
     </div>
 
     <!-- 배너 좌/우 전환 화살표 -->
@@ -3218,22 +4091,23 @@
       </div>
     </div>
 
-    <!-- 하단 오버레이: 뽑기 버튼만 (일러스트 보존) -->
+    <!-- 하단 오버레이: 픽업 칩만 (숨김). 뽑기 버튼은 배너 밖 콘솔로 이동 -->
     <div class="gacha-banner-bottom-overlay">
-      <!-- 픽업 캐릭터 — 숨김 (불필요한 가림 방지). 정보는 상단 칩 + 컬렉션에서 확인 -->
       <div id="gacha-pickup-icons" class="gacha-pickup-icons" style="display:none;"></div>
+    </div>
+  </div>
 
-      <!-- 뽑기 버튼들 (반투명 + 블러로 일러스트 가리지 않음) -->
-      <div class="gacha-pull-row">
-        <button id="gachaPull1" class="gacha-pull-btn-overlay">
-          <div class="gacha-pull-label">1회 뽑기</div>
-          <div class="gacha-pull-cost"><span style="color:#88ccff">💎</span> 1</div>
-        </button>
-        <button id="gachaPull10" class="gacha-pull-btn-overlay primary">
-          <div class="gacha-pull-label">10회 뽑기</div>
-          <div class="gacha-pull-cost"><span style="color:#88ccff">💎</span> 9</div>
-        </button>
-      </div>
+  <!-- 🛰️ 뽑기 콘솔 (배너 밖 하단 — 모바일서 일러 안 가리고 콕핏 데스크 느낌) -->
+  <div class="gacha-pull-console">
+    <div class="gacha-pull-row">
+      <button id="gachaPull1" class="gacha-pull-btn-overlay">
+        <div class="gacha-pull-label">1회 뽑기</div>
+        <div class="gacha-pull-cost"><span style="color:#88ccff">💎</span> 1</div>
+      </button>
+      <button id="gachaPull10" class="gacha-pull-btn-overlay primary">
+        <div class="gacha-pull-label">10회 뽑기</div>
+        <div class="gacha-pull-cost"><span style="color:#88ccff">💎</span> 9</div>
+      </button>
     </div>
   </div>
 
@@ -3267,35 +4141,55 @@
 </div>
 
 <!-- ===== 강화소 화면 ===== -->
-<div id="shop" class="screen">
+<div id="shop" class="screen up-screen">
   <div class="codex-header">
     <h2>강화소</h2>
+    <div class="stardust-bar">스타더스트: <span id="stardust-count">0</span> ★</div>
     <button id="shopBack" class="codex-back">← 메뉴로</button>
   </div>
-  <div class="stardust-bar">스타더스트: <span id="stardust-count">0</span> ★</div>
-  <div class="codex-tabs" id="shop-tabs" style="overflow-x:auto; overflow-y:hidden; flex-wrap:nowrap; -webkit-overflow-scrolling:touch;">
-    <button class="codex-tab active" data-shoptab="resource" style="flex-shrink:0; white-space:nowrap;">💰 자원</button>
-    <button class="codex-tab" data-shoptab="combat" style="flex-shrink:0; white-space:nowrap;">⚔️ 전투력</button>
-    <button class="codex-tab" data-shoptab="build" style="flex-shrink:0; white-space:nowrap;">🎴 빌드</button>
-    <button class="codex-tab" data-shoptab="survival" style="flex-shrink:0; white-space:nowrap;">🛡️ 생존</button>
+  <div class="up-hero up-hero-left" style="--npc:#88ffcc;">
+    <span class="up-hero-fb">🌍</span>
+    <img class="up-hero-img" src="./icons/npc/world.png" alt="" loading="lazy" onerror="this.style.display='none';this.parentNode.classList.add('noimg');">
   </div>
-  <div id="shop-list"></div>
+  <div class="up-dialog" style="--npc:#88ffcc;">
+    <div class="up-stage-role">방주 강화 마스터</div>
+    <div class="up-stage-name">🌍 세계 · 테라</div>
+    <div class="up-stage-line">"대지가 무너지지 않듯, 네 방주도 내가 떠받쳐 주마."</div>
+    <span class="up-stage-tag">⭐ 자원 · 전투력 · 빌드 · 생존</span>
+  </div>
+  <div class="codex-tabs up-tabs" id="shop-tabs" style="overflow-x:auto; overflow-y:hidden; flex-wrap:nowrap; -webkit-overflow-scrolling:touch;">
+    <button class="codex-tab active" data-shoptab="resource" style="flex:1 1 0; min-width:0; padding:8px 2px; font-size:12px; text-align:center; line-height:1.2; white-space:nowrap;">자원</button>
+    <button class="codex-tab" data-shoptab="combat" style="flex:1 1 0; min-width:0; padding:8px 2px; font-size:12px; text-align:center; line-height:1.2; white-space:nowrap;">전투력</button>
+    <button class="codex-tab" data-shoptab="build" style="flex:1 1 0; min-width:0; padding:8px 2px; font-size:12px; text-align:center; line-height:1.2; white-space:nowrap;">빌드 / 카드</button>
+    <button class="codex-tab" data-shoptab="survival" style="flex:1 1 0; min-width:0; padding:8px 2px; font-size:12px; text-align:center; line-height:1.2; white-space:nowrap;">생존 / 슬롯</button>
+  </div>
+  <div id="shop-list" class="up-list"></div>
 </div>
 
 <!-- ===== 🌟 능력 영구 강화 — 별도 화면 (강화소와 동일한 UI 구조로 통일) ===== -->
-<div id="abilityPerma" class="screen">
+<div id="abilityPerma" class="screen up-screen">
   <div class="codex-header">
     <h2>능력 영구 강화</h2>
+    <div class="stardust-bar">스타더스트: <span id="perma-stardust-count">0</span> ★</div>
     <button id="abilityPermaBack" class="codex-back">← 메뉴로</button>
   </div>
-  <div class="stardust-bar">스타더스트: <span id="perma-stardust-count">0</span> ★</div>
-  <div class="codex-tabs" id="perma-tabs" style="display:flex; gap:4px; width:100%; max-width:600px; padding:0 8px; position:sticky; top:0; background:#0b0d12; padding-top:4px; padding-bottom:4px; z-index:5;">
-    <button class="codex-tab active" data-permatab="active" style="flex:1 1 0; min-width:0; padding:8px 2px; font-size:12px; text-align:center; line-height:1.2;">⚡ 액티브</button>
-    <button class="codex-tab" data-permatab="passive" style="flex:1 1 0; min-width:0; padding:8px 2px; font-size:12px; text-align:center; line-height:1.2;">⭐ 패시브</button>
-    <button class="codex-tab" data-permatab="combo" style="flex:1 1 0; min-width:0; padding:8px 2px; font-size:12px; text-align:center; line-height:1.2;">🔥 조합</button>
-    <button class="codex-tab" data-permatab="gacha" style="flex:1 1 0; min-width:0; padding:8px 2px; font-size:12px; text-align:center; line-height:1.2;">🎰 가챠</button>
+  <div class="up-hero up-hero-left" style="--npc:#9fd0ff;">
+    <span class="up-hero-fb">🌟</span>
+    <img class="up-hero-img" src="./icons/illust/aria.png" alt="" loading="lazy" onerror="this.style.display='none';this.parentNode.classList.add('noimg');">
   </div>
-  <div id="perma-grid" style="width:100%; max-width:900px;"></div>
+  <div class="up-dialog" style="--npc:#9fd0ff;">
+    <div class="up-stage-role">전술 인도자</div>
+    <div class="up-stage-name">🌟 아리아</div>
+    <div class="up-stage-line">"능력의 정수를 별처럼 다듬어 줄게."</div>
+    <span class="up-stage-tag">⚡ 액티브 · ⭐ 패시브 · 🔥 조합 · 🎰 가챠</span>
+  </div>
+  <div class="codex-tabs up-tabs" id="perma-tabs" style="overflow-x:auto; overflow-y:hidden; flex-wrap:nowrap; -webkit-overflow-scrolling:touch;">
+    <button class="codex-tab active" data-permatab="active" style="flex:1 1 0; min-width:0; padding:8px 2px; font-size:12px; text-align:center; line-height:1.2;">액티브</button>
+    <button class="codex-tab" data-permatab="passive" style="flex:1 1 0; min-width:0; padding:8px 2px; font-size:12px; text-align:center; line-height:1.2;">패시브</button>
+    <button class="codex-tab" data-permatab="combo" style="flex:1 1 0; min-width:0; padding:8px 2px; font-size:12px; text-align:center; line-height:1.2;">조합</button>
+    <button class="codex-tab" data-permatab="gacha" style="flex:1 1 0; min-width:0; padding:8px 2px; font-size:12px; text-align:center; line-height:1.2;">가챠</button>
+  </div>
+  <div id="perma-grid" class="up-list"></div>
 </div>
 
 <!-- ===== 기록 화면 ===== -->
@@ -3317,12 +4211,23 @@
 </div>
 
 <!-- ===== 도감 화면 ===== -->
-<div id="codex" class="screen">
+<div id="codex" class="screen up-screen">
   <div class="codex-header">
     <h2>도감</h2>
     <button id="codexBack" class="codex-back">← 메뉴로</button>
   </div>
-  <div class="codex-tabs">
+  <!-- 📚 비블리아 — 성간 아카이브 사서 (차원 도서관 프리젠터) -->
+  <div class="up-hero up-hero-left" style="--npc:#7ac0ff;">
+    <span class="up-hero-fb">📖</span>
+    <img class="up-hero-img" src="./icons/npc/biblia.png" alt="" loading="eager" decoding="async" onerror="this.style.display='none';this.parentNode.classList.add('noimg');">
+  </div>
+  <div class="up-dialog" style="--npc:#7ac0ff;">
+    <div class="up-stage-role">성간 아카이브 사서</div>
+    <div class="up-stage-name">비블리아</div>
+    <div class="up-stage-line">"찾으시는 데이터를 열람합니다, 함장님."</div>
+    <span class="up-stage-tag">[ SYS_SCAN_ACTIVE ]</span>
+  </div>
+  <div class="codex-tabs up-tabs">
     <button class="codex-tab active" data-tab="basic">액티브</button>
     <button class="codex-tab" data-tab="passive">패시브</button>
     <button class="codex-tab" data-tab="combo">조합</button>
@@ -3335,7 +4240,7 @@
     <button class="codex-filter-chip" data-codexfilter="owned">🔓 해금</button>
     <button class="codex-filter-chip" data-codexfilter="locked">🔒 잠김</button>
   </div>
-  <div id="codex-list"></div>
+  <div id="codex-list" class="up-list"></div>
 </div>
 
 <!-- 🎁 게임 결과 — 획득 보상 패널 (body 레벨 — 게임 컨테이너 transform/display 영향 차단) -->
@@ -7907,14 +8812,15 @@
 
     timeStop: {
       name: '시간정지', baseCost: 90, color: '#dde0ff',
-      desc: lv => `매 주기 모든 적 ${(0.7+lv*0.15).toFixed(1)}s 정지`,
-      // 일정 주기로 모든 적의 움직임을 정지시킴 (slowFrames 강제 부여)
+      desc: lv => `매 주기 모든 적 ${(0.7+lv*0.15).toFixed(1)}s 정지 + 시간압축 DMG ${8+lv*6}`,
+      // 일정 주기로 모든 적의 움직임을 정지시키며 시간압축 피해 (단독으로도 처치 가능)
       init(ab) { ab.cooldown = 240; ab.fxLife = 0; },
       tick(ab) {
         if (ab.fxLife > 0) ab.fxLife--;
         if (--ab.cooldown > 0) return;
         const dur = Math.floor((0.7 + ab.level * 0.15) * 60);
         const bossDur = Math.floor(dur * 0.4);  // 보스는 슬로우만 (40% 지속), 정지 면역
+        const dmg = 8 + ab.level * 6;           // ⏱ 시간압축 피해 — 모든 액티브는 단독 처치 가능
         for (const e of state.enemies) {
           if (e.hp <= 0) continue;
           if (e.isBoss) {
@@ -7924,6 +8830,7 @@
             e.slowFrames = Math.max(e.slowFrames || 0, dur);
             e.timeStopped = state.t + dur;
           }
+          damageEnemy(e, dmg);
         }
         ab.fxLife = 30;
         ab.cooldown = Math.max(160, 360 - ab.level * 18);
@@ -8156,9 +9063,9 @@
     },
 
     fury: {
-      name: '분노', baseCost: 60, color: '#ff4466',
+      name: '분노', isPassive: true, baseCost: 60, color: '#ff4466',
       desc: lv => `활성 적 5마리당 데미지 +${lv*5}% (모든 능력 영향)`,
-      // 패시브 — 적 수에 비례 데미지 증가. damageEnemy에서 알아서 적용됨.
+      // 패시브 — 적 수에 비례 데미지 증가. damageEnemy에서 알아서 적용됨. (액티브 아님 → 처치 규칙 제외)
       init(ab) {},
       tick(ab) {
         if (!state.metaMods) return;
@@ -13250,7 +14157,7 @@
     // 🌟 misaki 8★ — 역설의 동결 (Paradox Freeze) — 주기 전체 동결 + 데미지 증폭
     paradoxFreeze: {
       name: '역설의동결', isGachaUnique: true, isStarUnlock: true, baseCost: 600, color: '#88ddff',
-      desc: lv => `[8★히든] ${(12-lv*0.5).toFixed(1)}s마다 전체 동결 ${(2.5+lv*0.2).toFixed(1)}s · 동결 중 받는 DMG ×${(2.5+lv*0.1).toFixed(1)}`,
+      desc: lv => `[8★히든] ${(12-lv*0.5).toFixed(1)}s마다 전체 동결 ${(2.5+lv*0.2).toFixed(1)}s · 발동 DMG ${20+lv*12} · 동결 중 받는 DMG ×${(2.5+lv*0.1).toFixed(1)}`,
       init(ab) { ab.cooldown = 360; ab.freezeT = 0; ab.flashLife = 0; },
       tick(ab) {
         if (ab.flashLife > 0) ab.flashLife--;
@@ -13280,10 +14187,12 @@
         ab.flashLife = 30;
         shake(15, 12);
         SFX.combo && SFX.combo();
+        const burst = 20 + ab.level * 12;   // 시공 붕괴 피해 — 단독 처치 가능
         for (const e of state.enemies) {
           if (e.hp <= 0) continue;
           const [ex, ey] = enemyXY(e);
           spawnParticles(ex, ey, '#88ddff', 6);
+          damageEnemy(e, burst);
         }
         ab.cooldown = Math.max(360, Math.floor((12 - ab.level * 0.5) * 60));
       },
@@ -26803,6 +27712,7 @@
     }
     if (name === 'menu') {
       refreshMenuButtons();
+      if (typeof refreshMenuHero === 'function') refreshMenuHero();  // 로테이션 간판 캐릭터 (진입 1회)
       // 🔄 다기기 동기화 — 메뉴 진입 시 서버 데이터 자동 새로고침 (20s 쿨다운)
       if (typeof refreshMetaFromServerIfStale === 'function') {
         refreshMetaFromServerIfStale().catch(() => {});
@@ -26836,7 +27746,7 @@
     if (startBtn) {
       if (inProgress) {
         // 게임 진행 중 — "처음부터 다시" 명확히 (이어하기와 시각적 구분)
-        startBtn.textContent = '🔄 처음부터 다시';
+        startBtn.textContent = '처음부터 다시';
         startBtn.dataset.quickStart = '1';
         startBtn.classList.add('menu-btn-restart');   // 보조 스타일
       } else {
@@ -26897,7 +27807,7 @@
     if (diffBtn) {
       if (getMaxAscension() > 0) {
         diffBtn.style.display = '';
-        diffBtn.textContent = `⚡ 난이도: ${ascensionLabel(getSelectedAscension())}`;
+        diffBtn.textContent = `난이도: ${ascensionLabel(getSelectedAscension())}`;
       } else {
         diffBtn.style.display = 'none';
       }
@@ -26905,6 +27815,27 @@
     // 🎴 v221 — 현재 선택 캐릭터 미리보기 갱신
     if (typeof refreshMenuCharPreview === 'function') refreshMenuCharPreview();
   }
+
+  // 🛰️ v461 — 메인 메뉴 로테이션 간판 캐릭터 백드롭 (메뉴 진입마다 순환)
+  // ⚠️ refreshMenuButtons가 아니라 showScreen('menu') 진입에서만 호출 — refreshMenuButtons는 서버 pull 후에도 재호출돼 중복 회전/캐시-onload 버그 유발.
+  const MENU_HERO_IDS = ['aria','misaki','elementia','sumika','solar','marine','gravitas','luna','sakura','cardista','levina'];
+  let _menuHeroIdx = -1;
+  function refreshMenuHero() {
+    const el = document.getElementById('menu-hero-bg');
+    if (!el) return;
+    // 🎲 진짜 랜덤 순서 (접속·진입 모두 무작위). 직전과 동일한 캐릭터만 회피.
+    let next;
+    do { next = Math.floor(Math.random() * MENU_HERO_IDS.length); }
+    while (MENU_HERO_IDS.length > 1 && next === _menuHeroIdx);
+    _menuHeroIdx = next;
+    const src = `./icons/illust/${MENU_HERO_IDS[_menuHeroIdx]}.png`;
+    if (el.getAttribute('src') !== src) {
+      el.onerror = () => { el.classList.remove('show'); };
+      el.src = src;
+    }
+    el.classList.add('show');   // 즉시 표시 — CSS transition이 페이드인 (캐시 src는 onload 미발화하므로 onload 의존 X)
+  }
+  try { refreshMenuHero(); } catch (e) {}   // 🛰️ 초기 로드 1회 (메뉴가 정적 show로 뜨고 init은 showScreen('menu') 미호출)
 
   // 🎴 v221 — 메뉴 캐릭터 미리보기 (카드 스타일)
   //   이미지 있으면 이미지 + 텍스트, 없으면 텍스트만. 카드 색상은 등급별/캐릭터별 자동.
@@ -27212,6 +28143,18 @@
     showScreen('codex');
   };
   document.getElementById('codexBack').onclick = () => showScreen('menu');
+  // 🌌 v478 — 도감 홀로그램 패럴랙스: 리스트 스크롤 → #codex에 --cxScroll 주입(성운/격자/비블리아 미세 뎁스). UI 전용·게임로직 무관.
+  (function(){
+    const _cxList = document.getElementById('codex-list');
+    const _cxRoot = document.getElementById('codex');
+    if (_cxList && _cxRoot) {
+      let _cxTick = false;
+      _cxList.addEventListener('scroll', () => {
+        if (_cxTick) return; _cxTick = true;
+        requestAnimationFrame(() => { _cxRoot.style.setProperty('--cxScroll', _cxList.scrollTop); _cxTick = false; });
+      }, { passive: true });
+    }
+  })();
   // 🎴 v232 — 캐릭터 도감 (메인 메뉴에서 직접 진입)
   //   v233 — 진입 경로에 따라 헤더/하단 바 표시 분기 ('도감' vs '선택')
   let _characterScreenMode = 'select';   // 'select' (게임 시작 흐름) | 'collection' (도감 보기)
@@ -27383,7 +28326,7 @@
     // 🐛 버튼은 항상 슬롯머신 🎰 고정 (보유 캐릭터로 바뀌지 않게 — 가챠 진입 후 버튼이 변하면 어색)
     const btn = document.getElementById('gachaBtn');
     if (!btn) return;
-    btn.innerHTML = `<span id="gachaCircleEmoji">🎰</span><div class="gacha-circle-label">가챠</div>`;
+    btn.innerHTML = `<div class="gacha-circle-label">차원 스카우트</div>`;
   }
   // 🌟 능력 영구 강화 메뉴 버튼 → 별도 화면
   const _permaBtn = document.getElementById('abilityPermaBtn');
@@ -27838,7 +28781,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 431;
+  const APP_VERSION = 480;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
@@ -27987,8 +28930,17 @@
     const repeatCounts = META.repeatCounts || {};
     const repeatDust = REPEAT_ACHIEVEMENTS.reduce((acc, a) => acc + (repeatCounts[a.id] || 0) * a.reward, 0);
     // 요약
+    // 🛰️ 함장 대시보드 — 원형 연료 게이지(전체 달성률) + 누적 (집계값 그대로 사용)
+    const _achPct = ACHIEVEMENTS.length ? Math.round(have.size / ACHIEVEMENTS.length * 100) : 0;
+    const _achC = 2 * Math.PI * 30;
+    const _achOff = _achC * (1 - _achPct / 100);
     document.getElementById('achievement-summary').innerHTML =
-      `단발 <b>${have.size}/${ACHIEVEMENTS.length}</b> · 누적 <b>${singleDust + repeatDust}★</b>`;
+      `<div class="ach-gauge"><svg class="ach-gauge-svg" viewBox="0 0 80 80">`
+      + `<circle class="ach-gauge-track" cx="40" cy="40" r="30"/>`
+      + `<circle class="ach-gauge-fill" cx="40" cy="40" r="30" style="stroke-dasharray:${_achC.toFixed(1)};stroke-dashoffset:${_achOff.toFixed(1)};"/></svg>`
+      + `<div class="ach-gauge-num">${_achPct}<span>%</span></div></div>`
+      + `<div class="ach-gauge-text"><div class="ach-gauge-title">🛰️ 방주 시스템 가동률</div>`
+      + `<div class="ach-gauge-sub">단발 <b>${have.size}/${ACHIEVEMENTS.length}</b> · 누적 <b>${singleDust + repeatDust}★</b></div></div>`;
 
     // 탭 카운트 갱신 — 모든 카테고리 라벨 포함 (trans/chars 누락 시 undefined 버그 방지)
     const ACH_TAB_LABELS = {
@@ -28637,7 +29589,9 @@
       if (!btn) continue;
       const inCat = META_UPGRADES.filter(u => u.category === cat.id);
       const maxed = inCat.filter(u => metaLv(u.id) >= u.maxLv).length;
-      btn.textContent = `${cat.label} ${maxed}/${inCat.length}`;
+      // 🎴 아리아 탭과 통일: 이모지 제거 + 라벨/카운트 두 줄(n/n 10px dim)
+      const _clean = cat.label.replace(/^\P{L}+/u, '');
+      btn.innerHTML = `<div>${_clean}</div><div style="font-size:10px; opacity:0.75; margin-top:2px;">${maxed}/${inCat.length}</div>`;
     }
 
     // 활성 탭의 카테고리
@@ -28653,6 +29607,7 @@
       const card = document.createElement('div');
       card.className = 'shop-card' + (maxed ? ' maxed' : '');
       card.style.borderLeftColor = cat.color;
+      card.style.setProperty('--rc', cat.color);   // 🌌 별자리 노드 색
       let effectText = '';
       if (cur > 0 && up.apply) {
         const v = up.apply(cur);
@@ -28682,6 +29637,8 @@
   }
   // 🌟 능력 영구 강화 — 별도 화면 (색다른 디자인)
   let permaTab = 'active';
+  let _permaSelId = null;   // 궤도에서 선택된 능력 (하단 강화 패널)
+  const PERMA_TAB_ICON = { active: '⚡', passive: '⭐', combo: '🔥', gacha: '🎰' };
   function buildPermaScreen() {
     const grid = document.getElementById('perma-grid');
     const dustEl = document.getElementById('perma-stardust-count');
@@ -28710,10 +29667,10 @@
     // 탭 카운트 갱신 — 라벨은 고정 맵에서 가져오기 (텍스트 파싱 X → 한국어 라벨 손실 버그 방지)
     // 좁은 화면에서도 잘리지 않게 라벨과 카운트를 두 줄로 표시
     const PERMA_TAB_LABELS = {
-      active:  '⚡ 액티브',
-      passive: '⭐ 패시브',
-      combo:   '🔥 조합',
-      gacha:   '🎰 가챠',
+      active:  '액티브',
+      passive: '패시브',
+      combo:   '조합',
+      gacha:   '가챠',
     };
     document.querySelectorAll('#perma-tabs .codex-tab').forEach(btn => {
       const t = btn.dataset.permatab;
@@ -28730,45 +29687,89 @@
     }
     // 📚 앨범 형식 — 가챠 탭은 캐릭터별 섹션, 나머지 탭은 티어별 섹션
     const sections = buildPermaSections(permaTab, ids);
+    // 📋 읽기 쉬운 코스믹 카드 — 섹션 헤더 + 반응형 카드 그리드 (성운 배경 위. 궤도는 진화트리 전용)
     for (const sect of sections) {
       const sectionEl = document.createElement('div');
       sectionEl.style.cssText = `margin-bottom:16px;`;
-      // 섹션 헤더
       const header = document.createElement('div');
-      header.style.cssText = `
-        display:flex;align-items:center;gap:8px;
-        padding:8px 12px;margin-bottom:8px;
-        background:linear-gradient(90deg, ${sect.color}22 0%, transparent 100%);
-        border-left:4px solid ${sect.color};
-        border-radius:0 6px 6px 0;
-      `;
-      header.innerHTML = `
-        ${sect.iconHtml ? `<div style="width:32px;height:32px;flex-shrink:0;">${sect.iconHtml}</div>` : ''}
-        <div style="flex:1;min-width:0;">
-          <div style="font-size:14px;font-weight:bold;color:${sect.color};line-height:1.1;">${sect.title}</div>
-          ${sect.subtitle ? `<div style="font-size:10px;color:#9aa3b3;line-height:1.1;margin-top:2px;">${sect.subtitle}</div>` : ''}
-        </div>
-        <div style="font-size:11px;color:#9aa3b3;flex-shrink:0;">
-          <span style="color:${sect.color};font-weight:bold;">${sect.upgraded}</span>/${sect.items.length}
-        </div>
-      `;
+      header.style.cssText = `display:flex;align-items:center;gap:8px;padding:8px 12px;margin-bottom:8px;background:linear-gradient(90deg, ${sect.color}22 0%, transparent 100%);border-left:4px solid ${sect.color};border-radius:0 6px 6px 0;`;
+      header.innerHTML = `${sect.iconHtml ? `<div style="width:32px;height:32px;flex-shrink:0;">${sect.iconHtml}</div>` : ''}<div style="flex:1;min-width:0;"><div style="font-size:14px;font-weight:bold;color:${sect.color};line-height:1.1;">${sect.title}</div>${sect.subtitle ? `<div style="font-size:10px;color:#9aa3b3;line-height:1.1;margin-top:2px;">${sect.subtitle}</div>` : ''}</div><div style="font-size:11px;color:#9aa3b3;flex-shrink:0;"><span style="color:${sect.color};font-weight:bold;">${sect.upgraded}</span>/${sect.items.length}</div>`;
       sectionEl.appendChild(header);
-      // 📋 능력 리스트 — 반응형 그리드 (화면 폭에 따라 1~3열)
       const list = document.createElement('div');
-      list.style.cssText = `display:grid;grid-template-columns:repeat(auto-fill, minmax(280px, 1fr));gap:6px;`;
-      for (const id of sect.items) {
-        list.appendChild(buildPermaRow(id));
-      }
+      list.className = 'perma-list';   // 🌌 별자리 체인 (세로 단일 컬럼 + 연결선)
+      list.style.cssText = `display:flex;flex-direction:column;gap:10px;`;
+      for (const id of sect.items) { list.appendChild(buildPermaRow(id)); }
       sectionEl.appendChild(list);
       grid.appendChild(sectionEl);
     }
-    // 버튼 핸들러
     grid.querySelectorAll('.perma-buy').forEach(btn => {
-      btn.onclick = (e) => {
-        e.stopPropagation();
-        if (buyAbilityPerma(btn.dataset.id)) buildPermaScreen();
-      };
+      btn.onclick = (e) => { e.stopPropagation(); if (buyAbilityPerma(btn.dataset.id)) buildPermaScreen(); };
     });
+  }
+  // 🪐 항성계 공전 궤도 렌더 — 중앙 코어 + 동심원 궤도 + 능력 행성 (섹션 순서/색 유지)
+  function _permaRenderOrbit(grid, sections) {
+    const items = [];
+    sections.forEach(sect => (sect.items || []).forEach(id => items.push({ id: id, color: sect.color })));
+    const N = items.length;
+    const orbit = document.createElement('div'); orbit.className = 'perma-orbit';
+    grid.appendChild(orbit);
+    const ringCount = N <= 6 ? 1 : (N <= 18 ? 2 : 3);   // 최대 3링 — 링 간격을 넓혀 반지름 방향 겹침 방지
+    const rMin = 18, rMax = 44;
+    const ringR = (k) => ringCount === 1 ? 33 : rMin + k * (rMax - rMin) / (ringCount - 1);
+    // 링별 개수 — 둘레(반지름)에 비례 분배 → 안쪽 적게/바깥 많게 = 균등 간격
+    const _w = []; let _wsum = 0; for (let k = 0; k < ringCount; k++) { _w.push(ringR(k)); _wsum += ringR(k); }
+    const counts = _w.map(w => Math.floor(N * w / _wsum));
+    let _rem = N - counts.reduce((a, b) => a + b, 0);
+    for (let k = ringCount - 1; _rem > 0; k = (k - 1 + ringCount) % ringCount) { counts[k]++; _rem--; }
+    const NS = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(NS, 'svg'); svg.setAttribute('class', 'perma-orbit-rings'); svg.setAttribute('viewBox', '0 0 100 100'); svg.setAttribute('preserveAspectRatio', 'none');
+    for (let k = 0; k < ringCount; k++) { const c = document.createElementNS(NS, 'circle'); c.setAttribute('cx', 50); c.setAttribute('cy', 50); c.setAttribute('r', ringR(k)); c.setAttribute('class', 'perma-ring'); svg.appendChild(c); }
+    orbit.appendChild(svg);
+    const upg = items.filter(it => getAbilityPermaLv(it.id) > 0).length;
+    const core = document.createElement('div'); core.className = 'perma-core';
+    core.innerHTML = `<div class="perma-core-icon">${PERMA_TAB_ICON[permaTab] || '✦'}</div><div class="perma-core-count">${upg}/${N}</div>`;
+    orbit.appendChild(core);
+    const rings = []; let _p = 0;
+    for (let k = 0; k < ringCount; k++) { rings.push(items.slice(_p, _p + counts[k])); _p += counts[k]; }
+    rings.forEach((ringItems, k) => {
+      const r = ringR(k); const m = ringItems.length || 1;
+      ringItems.forEach((it, j) => {
+        const ang = (j / m) * Math.PI * 2 - Math.PI / 2 + k * 0.5;
+        const cx = 50 + r * Math.cos(ang), cy = 50 + r * Math.sin(ang);
+        orbit.appendChild(_permaPlanetNode(it, cx, cy));
+      });
+    });
+    const hint = document.createElement('div'); hint.className = 'perma-orbit-hint'; hint.textContent = '행성을 눌러 강화하세요';
+    grid.appendChild(hint);
+    const panel = document.createElement('div'); panel.id = 'perma-sel-panel'; panel.className = 'perma-sel-panel'; grid.appendChild(panel);
+    if (_permaSelId && items.some(it => it.id === _permaSelId)) _permaSelectPlanet(_permaSelId);
+  }
+  function _permaPlanetNode(it, cx, cy) {
+    const id = it.id; const d = ABILITY_DEFS[id] || {};
+    const lv = getAbilityPermaLv(id); const maxed = lv >= ABILITY_PERMA_MAX;
+    const cost = maxed ? null : abilityPermaCost(id); const canBuy = !maxed && (META.stardust || 0) >= cost;
+    const el = document.createElement('div');
+    el.className = 'perma-planet' + (maxed ? ' maxed' : (canBuy ? ' affordable' : ''));
+    el.style.left = cx + '%'; el.style.top = cy + '%';
+    el.style.setProperty('--pc', d.color || it.color || '#7ad7ff');
+    el.dataset.id = id;
+    const iconPath = getIconPath(id);
+    const ico = iconPath
+      ? `<img src="${iconPath}" alt="" onerror="this.style.display='none';this.parentElement.textContent='${(d.name || '?').charAt(0)}';">`
+      : (d.name || '?').charAt(0);
+    el.innerHTML = `<div class="perma-planet-core">${ico}</div>` + (lv > 0 ? `<div class="perma-planet-lv">${lv}</div>` : '');
+    el.onclick = function () { _permaSelectPlanet(id); };
+    return el;
+  }
+  function _permaSelectPlanet(id) {
+    _permaSelId = id;
+    document.querySelectorAll('#perma-grid .perma-planet').forEach(p => p.classList.toggle('sel', p.dataset.id === id));
+    const panel = document.getElementById('perma-sel-panel');
+    if (!panel) return;
+    panel.innerHTML = ''; panel.appendChild(buildPermaRow(id)); panel.classList.add('show');
+    const btn = panel.querySelector('.perma-buy');
+    if (btn) btn.onclick = (e) => { e.stopPropagation(); if (buyAbilityPerma(btn.dataset.id)) buildPermaScreen(); };
+    try { panel.scrollIntoView({ block: 'nearest' }); } catch (e) {}
   }
 
   // 🎭 능력 ID → 소유 캐릭터 ID 맵 — startAbility + 별해금 + 조합/트리플 (재귀)
@@ -28958,14 +29959,16 @@
     else if (d.isCombo) rowBg = 'linear-gradient(90deg, rgba(192,132,255,0.05) 0%, #141822 30%)';
 
     const row = document.createElement('div');
+    row.className = 'perma-row' + (maxed ? ' perma-maxed' : '');   // 🌌 별자리 체인 노드용
     row.style.cssText = `
       display:flex;align-items:center;gap:10px;
-      padding:8px 10px;background:${rowBg};
+      padding:8px 10px 8px 34px;background:${rowBg};
       border:1px solid ${maxed ? '#ffd060' : '#2a2f3a'};
       border-left:3px solid ${d.color || '#3a4256'};
       border-radius:6px;
       ${maxed ? 'box-shadow:0 0 6px rgba(255,208,96,0.2);' : ''}
     `;
+    row.style.setProperty('--rc', d.color || '#7ad7ff');
     row.innerHTML = `
       <div style="flex-shrink:0;">${iconHtml}</div>
       <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:3px;">
@@ -29407,6 +30410,15 @@
     if (records.length === 0) {
       list.innerHTML = '<div class="record-empty">아직 기록이 없습니다.<br/>게임을 플레이해서 첫 기록을 남겨보세요!</div>';
       return;
+    }
+    // 🛰️ 방주 항해 기록 게이지 (최고 도달 라운드 / 클리어 수)
+    {
+      const best = records.reduce((m, r) => Math.max(m, r.round || 0), 0);
+      const wins = records.filter(r => r.win).length;
+      const pct = Math.min(100, Math.round(best));
+      const g = document.createElement('div'); g.className = 'records-gauge';
+      g.innerHTML = `<div class="records-gauge-top"><span>🛰️ 방주 항해 기록</span><span>최고 R${best} · 클리어 ${wins}</span></div><div class="records-gauge-bar"><i style="width:${pct}%"></i></div>`;
+      list.appendChild(g);
     }
     records.forEach((rec, i) => {
       const card = document.createElement('div');
