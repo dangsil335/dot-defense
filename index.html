@@ -3223,17 +3223,16 @@
   @keyframes promoRise { from { opacity: 0; transform: translateY(22px) scale(0.9); } to { opacity: 1; transform: none; } }
 
   /* ===== 🪐 v500 — 행성 난이도 선택 스테이지 (테라/이그니스/아비스 3티어 록온) ===== */
-  #difficultyScreen #difficulty-list { max-width: 560px; margin: 0 auto; padding: 4px; }
+  #difficultyScreen #difficulty-list { width: 100%; max-width: 560px; margin: 0 auto; padding: 4px; box-sizing: border-box; flex: 1; display: flex; flex-direction: column; overflow: hidden; min-height: 0; }
   #difficultyScreen .planet-stage {
-    position: relative; display: flex; align-items: center; justify-content: center; gap: 0;
-    height: 210px; margin: 6px 0; overflow: hidden; touch-action: pan-y;
-    transition: transform .4s cubic-bezier(.2,.8,.3,1); will-change: transform;
+    position: relative; width: 100%; height: 224px; margin: 6px 0; overflow: hidden; touch-action: pan-y; flex-shrink: 0;
   }
-  #difficultyScreen .planet-orb {
-    flex: 0 0 auto; width: 110px; height: 110px; position: relative; cursor: pointer;
-    opacity: 0.4; transform: scale(0.62); transition: transform .4s cubic-bezier(.2,.8,.3,1), opacity .4s;
+  #difficultyScreen .planet-orb {   /* absolute 캐러셀 — margin으로 정적 중앙정렬 + translateX(px)로 좌우 슬라이드 */
+    position: absolute; left: 50%; top: 50%; width: 110px; height: 110px; margin: -55px 0 0 -55px; cursor: pointer;
+    opacity: 0.45; transform-origin: 50% 50%;
+    transition: transform .45s cubic-bezier(.2,.8,.3,1), opacity .45s;
   }
-  #difficultyScreen .planet-orb.active { opacity: 1; transform: scale(1.42); z-index: 2; }
+  #difficultyScreen .planet-orb.active { opacity: 1; z-index: 2; }
   #difficultyScreen .planet-orb svg { width: 100%; height: 100%; display: block; overflow: visible; filter: drop-shadow(0 0 4px currentColor); }
   #difficultyScreen .planet-orb.active svg { filter: drop-shadow(0 0 9px currentColor); }
   #difficultyScreen .planet-orb.spin svg { animation: planetSpin 26s linear infinite; transform-origin: 50% 50%; }
@@ -3243,21 +3242,25 @@
     content: ''; position: absolute; inset: -16%; border-radius: 50%; border: 1.5px dashed currentColor; opacity: 0.6; animation: reticleSpin 9s linear infinite;
   }
   @keyframes reticleSpin { to { transform: rotate(-360deg); } }
-  #difficultyScreen .planet-info { text-align: center; position: relative; }
+  #difficultyScreen { overflow: hidden; justify-content: flex-start; }
+  #difficultyScreen .planet-info { text-align: center; position: relative; flex: 1; min-height: 0; overflow: hidden; transition: opacity 0.15s ease; }
+  #difficultyScreen .planet-launch-wrap { text-align: center; padding: 10px 0 14px; flex-shrink: 0; }
+  #difficultyScreen .planet-swipe-hint { font-size: 10px; color: #6a7790; letter-spacing: 2px; margin: 2px 0 6px; flex-shrink: 0; }
   #difficultyScreen .planet-name { font-family: ui-monospace,'Courier New',monospace; font-size: 19px; font-weight: 800; letter-spacing: 2px; text-shadow: 0 0 12px currentColor; }
   #difficultyScreen .planet-sector { font-size: 11px; letter-spacing: 3px; opacity: 0.85; margin-top: 3px; }
   #difficultyScreen .planet-desc { font-size: 12px; color: #aeb9d6; margin: 9px auto; max-width: 92%; line-height: 1.5; }
   #difficultyScreen .planet-sublevel { display: flex; align-items: center; justify-content: center; gap: 14px; margin: 10px 0; }
   #difficultyScreen .planet-sublevel button { width: 34px; height: 34px; border-radius: 4px; background: transparent; color: inherit; border: 1px solid currentColor; font-size: 17px; font-weight: 800; cursor: pointer; font-family: inherit; line-height: 1; }
   #difficultyScreen .planet-sublevel button:disabled { opacity: 0.3; cursor: default; }
-  #difficultyScreen .planet-sublevel .psl-val { font-family: ui-monospace,monospace; font-size: 15px; font-weight: 800; min-width: 96px; color: #eaf2ff; }
+  #difficultyScreen .planet-sublevel .psl-val { font-family: ui-monospace,monospace; font-size: 15px; font-weight: 800; min-width: 116px; color: #eaf2ff; }
+  #difficultyScreen .planet-sublevel .psl-val small { font-size: 11px; font-weight: 700; opacity: 0.65; margin-left: 2px; }
+  #difficultyScreen .planet-fixed { font-family: ui-monospace,monospace; font-size: 12px; letter-spacing: 1px; color: #9fb4d6; opacity: 0.82; margin: 12px 0; }
   #difficultyScreen .planet-stats { display: flex; flex-wrap: wrap; gap: 7px; justify-content: center; margin: 10px 0; }
   #difficultyScreen .planet-stat { position: relative; font-size: 11px; font-weight: 700; color: #eaf2ff; padding: 5px 13px; white-space: nowrap; }
   #difficultyScreen .planet-stat::before { content: ''; position: absolute; inset: 0; z-index: -1; transform: skewX(-12deg); background: rgba(12,18,30,0.55); border: 1px solid currentColor; border-radius: 3px; opacity: 0.9; }
-  #difficultyScreen .planet-launch { margin-top: 8px; padding: 12px 28px; font-family: ui-monospace,monospace; font-weight: 800; letter-spacing: 1px; font-size: 14px; color: #06121a; border: 0; border-radius: 4px; cursor: pointer; transition: transform .1s; }
+  #difficultyScreen .planet-launch { padding: 12px 28px; font-family: ui-monospace,monospace; font-weight: 800; letter-spacing: 1px; font-size: 14px; color: #06121a; border: 0; border-radius: 4px; cursor: pointer; transition: transform .1s; }
   #difficultyScreen .planet-launch:disabled { background: transparent !important; color: #6a7283 !important; box-shadow: none !important; border: 1px solid #3a4256; cursor: not-allowed; }
   #difficultyScreen .planet-launch:active:not(:disabled) { transform: scale(0.96); }
-  #difficultyScreen .planet-swipe-hint { font-size: 10px; color: #6a7790; letter-spacing: 2px; margin: 2px 0 6px; }
   /* ============================================================================
   /* ============================================================================
      📚 v478 — 도감 "차원 도서관" 전면 홀로그램 대혁신 (비블리아 프리젠터)
@@ -28257,7 +28260,7 @@
         startBtn.classList.add('menu-btn-restart');   // 보조 스타일
       } else {
         startBtn.classList.remove('menu-btn-restart');
-        startBtn.textContent = '▶ 빠른 시작';
+        startBtn.textContent = '▶ 새 게임';
         startBtn.dataset.quickStart = '1';
       }
     }
@@ -28572,30 +28575,21 @@
   }
   // 🚀 v223+v228 — startBtn: 빠른 시작 / 새 게임 / 처음부터 다시
   document.getElementById('startBtn').onclick = () => {
-    const btn = document.getElementById('startBtn');
-    const quickMode = btn && btn.dataset.quickStart === '1';
     // 🛡 v228 — 진행 중인 게임 있을 때 확인 (실수로 새 게임 시작 방지)
     const isInProgress = state && !state.gameOver && state.tower;
     if (isInProgress) {
-      if (!confirm('현재 진행 중인 게임이 사라집니다.\n정말 처음부터 다시 시작할까요?')) return;
+      if (!confirm('현재 진행 중인 게임이 사라집니다.\n정말 새로 출격할까요?')) return;
     }
-    // 🚀 v248 — 모드 디폴트 'standard' 적용 → lastSelectedMode 없어도 빠른 시작 가능
-    const charOk = selectedCharacter && isCharUnlocked(selectedCharacter);
-    if (quickMode && charOk) {
-      // 마지막 설정 그대로 즉시 게임 시작 (모드 없으면 standard 디폴트)
-      SFX.click();
-      // 🚫 디펜스 비활성화 — 항상 클래식. 과거 디펜스 선택값도 standard로 정리.
-      if (META.lastSelectedMode !== 'standard') { META.lastSelectedMode = 'standard'; saveMeta(); }
-      reset();
-      paused = false;
-      const pauseBtn = document.getElementById('pauseBtn');
-      if (pauseBtn) pauseBtn.textContent = '⏸ 일시정지';
-      renderPanel();
-      showScreen('game');
-    } else {
-      // 잠긴 캐릭터 → 모드 선택부터
-      goToCharacterSelect();
-    }
+    SFX.click();
+    // 🚫 디펜스 비활성화 — 항상 클래식 + 기본 도트포대.
+    if (META.lastSelectedMode !== 'standard') { META.lastSelectedMode = 'standard'; saveMeta(); }
+    selectedCharacter = 'standard';
+    // 🪐 v518 — 새 게임 → 곧장 게임이 아니라 행성(난이도) 선택 화면으로 진입.
+    //   마지막 선택 섹터로 초기화 → 한 번 더 탭(출격)이면 즉시 시작.
+    const s = getSelectedAscension(); _diffTier = tierFromAsc(s);
+    if (_diffTier === 1) _diffSub[1] = s; else if (_diffTier === 2) _diffSub[2] = s;
+    buildDifficultyList();
+    showScreen('difficulty');
   };
   // 🚀 v223 — 설정 변경 버튼: 모드 선택부터 정상 흐름
   const _changeBtn = document.getElementById('changeSettingsBtn');
@@ -29235,72 +29229,175 @@
   }
   function _wireDiffSwipe(stage) {
     if (!stage) return;
-    let sx = 0, on = false;
-    stage.addEventListener('pointerdown', e => { on = true; sx = e.clientX; });
-    stage.addEventListener('pointerup', e => {
-      if (!on) return; on = false;
-      const dx = e.clientX - sx;
-      if (Math.abs(dx) > 38) { _diffTier = Math.max(0, Math.min(2, _diffTier + (dx < 0 ? 1 : -1))); buildDifficultyList(); }
+    let sx = 0, on = false, moved = false, pid = null;
+    stage.addEventListener('pointerdown', e => {
+      on = true; moved = false; sx = e.clientX; pid = e.pointerId;
+      // 무대가 제스처 전체를 붙잡음 → 손가락이 무대 밖으로 나가도 pointermove/up 계속 수신
+      try { stage.setPointerCapture(e.pointerId); } catch (_) {}
     });
-    stage.addEventListener('pointerleave', () => { on = false; });
+    stage.addEventListener('pointermove', e => {
+      if (on && Math.abs(e.clientX - sx) > 8) moved = true;
+    });
+    const _end = e => {
+      if (!on) return; on = false;
+      try { stage.releasePointerCapture(pid); } catch (_) {}
+      const dx = e.clientX - sx;
+      if (Math.abs(dx) > 34) {
+        // 스와이프
+        const nt = Math.max(0, Math.min(2, _diffTier + (dx < 0 ? 1 : -1)));
+        if (nt !== _diffTier) { _diffTier = nt; _applyDiffState(); }
+      } else if (!moved) {
+        // 탭 — setPointerCapture 때문에 오브 onclick이 안 오므로 여기서 직접 처리
+        const stageRect = stage.getBoundingClientRect();
+        const tapX = e.clientX - stageRect.left - stageRect.width / 2;
+        const gap = _diffGap();
+        let best = _diffTier, bestDist = Infinity;
+        [0, 1, 2].forEach(i => {
+          const d = Math.abs(tapX - (i - _diffTier) * gap);
+          if (d < bestDist) { bestDist = d; best = i; }
+        });
+        if (best !== _diffTier) { _diffTier = best; _applyDiffState(); }
+      }
+    };
+    stage.addEventListener('pointerup', _end);
+    stage.addEventListener('pointercancel', () => { on = false; try { stage.releasePointerCapture(pid); } catch (_) {} });
+    // 스와이프(드래그)였으면 직후의 오브 탭(click)을 억제 — 캡처 단계에서 가로채 오브 onclick 차단
+    stage.addEventListener('click', e => { if (moved) { e.stopPropagation(); e.preventDefault(); moved = false; } }, true);
+  }
+  // 🪐 v519 — 캐러셀: 오브 3개를 absolute로 영속 배치 → transform만 갱신해 부드럽게 슬라이드.
+  //   활성 행성은 항상 정중앙(좌측 잘림 0). 셸은 1회만 생성, 이후 _applyDiffState()로 갱신.
+  const _DIFF_ACTIVE_SCALE = 1.25, _DIFF_SIDE_SCALE = 0.55;
+  // 좌우 오브 간격을 화면 폭에 비례시켜, 좁은 화면에서도 옆 행성이 항상 또렷이 peek 되게.
+  //   무대 getBoundingClientRect는 스크린 show 직후 폭이 잘못 측정되는 타이밍 이슈가 있어
+  //   항상 즉시 신뢰 가능한 window.innerWidth 기준으로 계산(무대 max-width 560 + padding 보정).
+  //   최소값 104 = 활성(반폭 68.75) + 측면(반폭 30.25) + 여유 → 어떤 폭에서도 겹침 방지.
+  function _diffGap() {
+    const vw = window.innerWidth || 360;
+    const w = Math.min(560, vw) - 16;
+    return Math.max(104, Math.min(150, w * 0.38));
+  }
+  function _diffOrbTransform(i, gap) {
+    const g = (gap != null) ? gap : _diffGap();
+    const off = (i - _diffTier) * g;
+    const sc = (i === _diffTier) ? _DIFF_ACTIVE_SCALE : _DIFF_SIDE_SCALE;
+    // 중앙 정렬은 CSS margin으로 정적 처리 → transform은 순수 translateX+scale (calc 보간 고착 회피)
+    return `translateX(${off}px) scale(${sc})`;
   }
   function buildDifficultyList() {
     const list = document.getElementById('difficulty-list');
-    const cur = document.getElementById('ascension-current');
+    if (!list) return;
+    // 셸 1회 생성 (오브 영속 → 재진입/전환 시 DOM 유지, transform만 애니메이션)
+    if (!list.querySelector('.planet-stage')) {
+      let orbs = '';
+      for (let i = 0; i < 3; i++) {
+        const t = PLANET_TIERS[i];
+        orbs += `<div class="planet-orb planet-${t.key}" data-tier="${i}" style="color:${t.color}">`
+          + `${planetSvg(t.key)}<div class="planet-lock" style="display:none">🔒</div></div>`;
+      }
+      list.innerHTML = `<div class="planet-stage">${orbs}</div>`
+        + `<div class="planet-info"></div>`
+        + `<div class="planet-launch-wrap"><button class="planet-launch" disabled></button></div>`;
+      // 초기 위치는 전환 없이 즉시 (실제 무대 폭 기준 — 첫 진입 시 행성이 날아오지 않게)
+      const _g0 = _diffGap();
+      list.querySelectorAll('.planet-orb').forEach((o, i) => { o.style.transition = 'none'; o.style.transform = _diffOrbTransform(i, _g0); });
+      void list.offsetWidth;   // 강제 reflow
+      list.querySelectorAll('.planet-orb').forEach(o => { o.style.transition = ''; });
+      list.querySelectorAll('.planet-orb').forEach(o => {
+        o.onclick = () => { const ti = parseInt(o.dataset.tier, 10) || 0; if (ti === _diffTier) return; _diffTier = ti; _applyDiffState(); };
+      });
+      _wireDiffSwipe(list.querySelector('.planet-stage'));
+      // 회전/리사이즈 시 간격 재계산 → 오브 재배치 (난이도 화면 활성일 때만)
+      window.addEventListener('resize', () => {
+        if (currentScreen !== 'difficulty') return;
+        const g = _diffGap();
+        list.querySelectorAll('.planet-orb').forEach((o, i) => { o.style.transform = _diffOrbTransform(i, g); });
+      });
+    }
+    _applyDiffState();
+  }
+  function _applyDiffState() {
+    const list = document.getElementById('difficulty-list');
     if (!list) return;
     const maxA = getMaxAscension();
     const sel = getSelectedAscension();
+    const cur = document.getElementById('ascension-current');
     if (cur) cur.textContent = ascensionLabel(sel);
     const descs = (typeof ascensionDescriptions === 'function') ? ascensionDescriptions() : [];
     const T = PLANET_TIERS[_diffTier] || PLANET_TIERS[0];
     const unlocked = maxA >= T.unlockA;
-    // 현재 티어의 선택 asc
     let asc;
     if (_diffTier === 0) asc = 0;
     else { asc = Math.min(T.ascMax, Math.max(T.ascMin, _diffSub[_diffTier] || T.ascMin)); asc = Math.min(asc, Math.max(T.ascMin, maxA)); }
-    const isSel = (asc === sel);
     const mul = (1 + asc * 0.10).toFixed(1);
-    // 행성 3개 (active = _diffTier). 활성 행성을 중앙으로 translate
-    let orbs = '';
-    for (let i = 0; i < 3; i++) {
-      const t = PLANET_TIERS[i];
-      const ulk = maxA >= t.unlockA;
-      orbs += `<div class="planet-orb planet-${t.key}${i === _diffTier ? ' active spin' : ' side'}" data-tier="${i}" style="color:${t.color}">`
-        + `${planetSvg(t.key)}${!ulk ? `<div class="planet-lock">🔒</div>` : ''}</div>`;
-    }
-    // 서브레벨 스테퍼 (승천/초월만)
+    // 오브 슬라이드(transform) + 활성/회전/잠금 토글
+    const gap = _diffGap();
+    list.querySelectorAll('.planet-orb').forEach((o, i) => {
+      const ulk = maxA >= PLANET_TIERS[i].unlockA;
+      o.style.transform = _diffOrbTransform(i, gap);
+      o.classList.toggle('active', i === _diffTier);
+      o.classList.toggle('spin', i === _diffTier);
+      const lk = o.querySelector('.planet-lock');
+      if (lk) lk.style.display = ulk ? 'none' : 'flex';
+    });
+    // 서브레벨 1~15 스테퍼 (승천/초월) — 화살표로 난이도 선택. 테라는 고정.
     let sub = '';
     if (_diffTier > 0 && unlocked) {
-      const canDown = asc > T.ascMin, canUp = asc < Math.min(T.ascMax, maxA);
-      sub = `<div class="planet-sublevel"><button class="psl-down"${canDown ? '' : ' disabled'}>−</button>`
-        + `<span class="psl-val">${ascensionLabel(asc)}</span>`
-        + `<button class="psl-up"${canUp ? '' : ' disabled'}>＋</button></div>`;
+      const topLv = Math.min(T.ascMax, maxA);
+      const canDown = asc > T.ascMin, canUp = asc < topLv;
+      const lv = asc - T.ascMin + 1;              // 1~15
+      const lvMax = topLv - T.ascMin + 1;         // 해금된 최대 (≤15)
+      sub = `<div class="planet-sublevel"><button class="psl-down"${canDown ? '' : ' disabled'}>◀</button>`
+        + `<span class="psl-val">${ascensionLabel(asc)} <small>${lv} / ${lvMax}</small></span>`
+        + `<button class="psl-up"${canUp ? '' : ' disabled'}>▶</button></div>`;
+    } else if (_diffTier === 0) {
+      sub = `<div class="planet-fixed">난이도 고정 · 표준 전장</div>`;
     }
     const stats = unlocked ? `<div class="planet-stats">`
       + `<span class="planet-stat" style="color:${T.color}">점수 ×${mul}</span>`
-      + `<span class="planet-stat" style="color:${T.color}">보상 ×${mul}</span>`
-      + `<span class="planet-stat" style="color:${T.color}">${ascensionLabel(asc)}</span></div>` : '';
+      + `<span class="planet-stat" style="color:${T.color}">보상 ×${mul}</span></div>` : '';
     const lockMsg = !unlocked ? `<div class="planet-desc" style="color:#ff8088">🔒 이전 섹터 R100 클리어로 해금됩니다</div>` : '';
-    const launchBtn = unlocked
-      ? `<button class="planet-launch" style="background:${T.color};box-shadow:0 0 18px ${T.color}">${isSel ? '✓ 선택된 섹터' : '이 섹터 선택'}</button>`
-      : `<button class="planet-launch" disabled>잠긴 섹터</button>`;
-    list.innerHTML = `
-      <div class="planet-stage" style="transform:translateX(${(1 - _diffTier) * 86}px)">${orbs}</div>
-      <div class="planet-swipe-hint">◄  좌우 스와이프 / 행성 탭으로 섹터 전환  ►</div>
-      <div class="planet-info" style="color:${T.color}">
+    const info = list.querySelector('.planet-info');
+    if (!info) return;
+    // 행성 전환 시에만 페이드 (sublevel ▶◀ 클릭은 같은 tier → 페이드 없이 즉시)
+    const tierChanged = info.dataset.tier !== String(_diffTier);
+    const _doUpdate = () => {
+      info.style.color = T.color;
+      info.innerHTML = `
         <div class="planet-name">${T.name} · ${T.en}</div>
         <div class="planet-sector">${T.sector}</div>
         <div class="planet-desc">${descs[asc] || T.desc}</div>
-        ${sub}${stats}${lockMsg}${launchBtn}
-      </div>`;
-    // 와이어링
-    list.querySelectorAll('.planet-orb').forEach(o => { o.onclick = () => { _diffTier = parseInt(o.dataset.tier, 10) || 0; buildDifficultyList(); }; });
-    const dn = list.querySelector('.psl-down'), up = list.querySelector('.psl-up');
-    if (dn) dn.onclick = () => { _diffSub[_diffTier] = Math.max(T.ascMin, asc - 1); buildDifficultyList(); };
-    if (up) up.onclick = () => { _diffSub[_diffTier] = Math.min(Math.min(T.ascMax, maxA), asc + 1); buildDifficultyList(); };
-    const lb = list.querySelector('.planet-launch');
-    if (lb && unlocked) lb.onclick = () => { setSelectedAscension(asc); if (typeof SFX !== 'undefined' && SFX.click) SFX.click(); buildDifficultyList(); };
-    _wireDiffSwipe(list.querySelector('.planet-stage'));
+        ${sub}${stats}${lockMsg}`;
+      info.dataset.tier = String(_diffTier);
+      if (tierChanged) requestAnimationFrame(() => { info.style.opacity = '1'; });
+      // sublevel 와이어링
+      const dn = info.querySelector('.psl-down'), up = info.querySelector('.psl-up');
+      if (dn) dn.onclick = () => { _diffSub[_diffTier] = Math.max(T.ascMin, asc - 1); _applyDiffState(); };
+      if (up) up.onclick = () => { _diffSub[_diffTier] = Math.min(Math.min(T.ascMax, maxA), asc + 1); _applyDiffState(); };
+    };
+    if (tierChanged) { info.style.opacity = '0'; setTimeout(_doUpdate, 140); } else { _doUpdate(); }
+    // 출격 버튼 — planet-info 밖의 고정 래퍼에서 직접 갱신 (레이아웃 고정)
+    const lb = list.querySelector('.planet-launch-wrap .planet-launch');
+    if (lb) {
+      lb.disabled = !unlocked;
+      if (unlocked) {
+        lb.textContent = `▶ ${T.name} 출격`;
+        lb.style.cssText = `background:${T.color};box-shadow:0 0 18px ${T.color};color:#06121a;border:0;`;
+        lb.onclick = () => {
+          setSelectedAscension(asc);
+          if (typeof SFX !== 'undefined' && SFX.click) SFX.click();
+          selectedCharacter = 'standard';
+          reset();
+          paused = false;
+          const _pb = document.getElementById('pauseBtn');
+          if (_pb) _pb.textContent = '⏸ 일시정지';
+          renderPanel();
+          showScreen('game');
+        };
+      } else {
+        lb.textContent = '🔒 잠긴 섹터';
+        lb.style.cssText = '';
+      }
+    }
   }
   document.getElementById('characterBack').onclick = () => showScreen('menu');
   { const _etb = document.getElementById('evoTreeBack'); if (_etb) _etb.onclick = () => showScreen('menu'); }
@@ -29336,7 +29433,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 518;
+  const APP_VERSION = 531;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
