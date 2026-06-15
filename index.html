@@ -2558,12 +2558,19 @@
   .up-hero { position: fixed; bottom: 0; z-index: 3; pointer-events: none; }
   .up-hero-left { left: 0; }
   .up-hero-img {
-    display: block; width: auto; height: min(88vh, 132vw); max-width: 70vw;
-    transform: translateX(-9%);  /* 좌측 살짝 화면 밖 크롭 */
+    display: block; width: auto; height: auto;
+    max-height: min(88vh, 132vw); max-width: 70vw;  /* 양쪽 max → 비율 유지, 찌그러짐 없음 */
+    transform: translateX(-9%);
     filter: drop-shadow(0 0 24px color-mix(in srgb, var(--npc,#88ffcc) 38%, transparent))
             drop-shadow(0 10px 34px rgba(0,0,0,0.62));
-    -webkit-mask-image: linear-gradient(to top, transparent 1%, #000 12%);
-            mask-image: linear-gradient(to top, transparent 1%, #000 12%);  /* 하단 페이드 크롭 */
+    -webkit-mask-image:
+      linear-gradient(to right, transparent 0%, #000 18%, #000 82%, transparent 100%),
+      linear-gradient(to top, transparent 1%, #000 12%);
+    -webkit-mask-composite: source-in, source-over;
+            mask-image:
+      linear-gradient(to right, transparent 0%, #000 18%, #000 82%, transparent 100%),
+      linear-gradient(to top, transparent 1%, #000 12%);
+            mask-composite: intersect;
   }
   .up-hero-fb { display: none; position: fixed; left: 5%; bottom: 9%; z-index: 3; font-size: 92px;
     filter: drop-shadow(0 0 20px var(--npc,#88ffcc)); pointer-events: none; }
@@ -2684,10 +2691,16 @@
     /* 캐릭터 = 페이드 백드롭(상단 얼굴 노출, 몸통 페이드) */
     .up-screen .up-hero { top: 0; bottom: auto; left: 0; right: 0; width: 100%; transform: none; display: flex; justify-content: center; align-items: flex-start; padding-top: 5vh; box-sizing: border-box; z-index: 1; opacity: 0.55; }
     .up-screen .up-hero-img {
-      height: min(78vh, 150vw); width: auto; max-width: 100vw; transform: none;
+      height: auto; width: auto; max-height: min(78vh, 150vw); max-width: 100vw; transform: none;
       object-position: 50% 0%;
-      -webkit-mask-image: linear-gradient(to top, transparent 16%, #000 46%);
-              mask-image: linear-gradient(to top, transparent 16%, #000 46%);
+      -webkit-mask-image:
+        linear-gradient(to right, transparent 0%, #000 12%, #000 88%, transparent 100%),
+        linear-gradient(to top, transparent 16%, #000 46%);
+      -webkit-mask-composite: source-in, source-over;
+              mask-image:
+        linear-gradient(to right, transparent 0%, #000 12%, #000 88%, transparent 100%),
+        linear-gradient(to top, transparent 16%, #000 46%);
+              mask-composite: intersect;
     }
     .up-screen .up-hero-fb { top: 12vh; bottom: auto; left: 0; right: 0; text-align: center; }
     /* 대사창(이름만; 도감은 안내 대사) = 상단 좌측 플로팅 */
@@ -3418,8 +3431,15 @@
   /* === 데스크탑(>720px): 비블리아 중앙 대형 백드롭 (잘림 없이 웅장하게) === */
   @media (min-width: 721px) {
     #codex .up-hero { left: 50% !important; right: auto; transform: translateX(-50%) translateY(calc(var(--cxScroll,0) * 0.02px)) !important; }
-    #codex .up-hero-img { transform: none !important; height: min(96vh, 150vw) !important; max-width: 86vw !important;
-      -webkit-mask-image: linear-gradient(to top, transparent 1%, #000 14%); mask-image: linear-gradient(to top, transparent 1%, #000 14%); }
+    #codex .up-hero-img { transform: none !important; height: auto !important; max-height: min(96vh, 150vw) !important; max-width: 86vw !important;
+      -webkit-mask-image:
+        linear-gradient(to right, transparent 0%, #000 10%, #000 90%, transparent 100%),
+        linear-gradient(to top, transparent 1%, #000 14%);
+      -webkit-mask-composite: source-in, source-over;
+      mask-image:
+        linear-gradient(to right, transparent 0%, #000 10%, #000 90%, transparent 100%),
+        linear-gradient(to top, transparent 1%, #000 14%);
+      mask-composite: intersect; }
     #codex .codex-filter-chips { align-self: flex-end !important; width: min(540px,60vw) !important; max-width: 540px !important; margin-right: max(10px,3.5vw) !important; }
   }
   /* === 모바일(≤720px) 도감 고유: 레이아웃은 .up-screen 공통 베이스가 처리. 여기선 도감만의 항목만 ===
@@ -3845,6 +3865,7 @@
     border: 1px solid #3bf7ff !important; border-radius: 3px !important;
     box-shadow: 0 0 28px rgba(59,247,255,0.2), inset 0 0 18px rgba(59,247,255,0.06) !important;
     -webkit-backdrop-filter: blur(15px); backdrop-filter: blur(15px);
+    max-width: min(420px, calc(100vw - 48px)) !important;  /* 모바일 양쪽 24px 여백 확보 */
   }
   #nicknameModal .nick-card::before {   /* 4꼭짓점 시안 꺾쇠 (잘림 없는 전술 프레임) */
     content: ''; position: absolute; inset: 0; pointer-events: none; z-index: 4;
@@ -16521,7 +16542,7 @@
     earnCrystals();
     // 🎖️ v498 — 함장 경험치 적립 (점수/라운드/승천/승리). UI 전용 통화, 게임플레이 로직 무관
     try {
-      const _runXp = Math.floor((state.score || 0) / 40) + (state.round || 1) * 4 + (state.ascension || 0) * 15 + (win ? 80 : 0);
+      const _runXp = Math.floor((state.score || 0) / 300) + (state.round || 1) * 4 + (state.ascension || 0) * 15 + (win ? 80 : 0);
       state.accountXpGained = gainAccountXp(_runXp);
     } catch (e) {}
     recordCharUsage();        // 캐릭터 사용 라운드 기록
@@ -16938,7 +16959,7 @@
     return null;
   }
   // ===== 🎖️ v498 — 함장(계정) 레벨/XP 시스템 (META.accountXp 영구 적립) =====
-  function xpForLevelUp(lv) { return Math.floor(150 + (lv - 1) * 90); }   // lv1→2:150, 2→3:240, ...
+  function xpForLevelUp(lv) { return Math.floor(600 + (lv - 1) * 200); }   // lv1→2:600, 2→3:800, ..., 4x harder progression
   function accountLevelInfo() {
     let xp = Math.max(0, Math.floor(META.accountXp || 0));
     let lv = 1, acc = 0, need = xpForLevelUp(1);
@@ -29433,7 +29454,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 531;
+  const APP_VERSION = 534;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
