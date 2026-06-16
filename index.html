@@ -16,7 +16,7 @@
 <!-- 둥글둥글한 한글 폰트 (Jua = 주아체, Black Han Sans = 굵은 제목용) -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Jua&family=Black+Han+Sans&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Black+Han+Sans&family=Rajdhani:wght@400;500;600;700&family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
 <!-- Supabase JS SDK (글로벌 랭킹용) — 키 미설정 시 자동 비활성 -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <title>Dot Defense</title>
@@ -2959,7 +2959,7 @@
   #panel .speed-btn, #panel #randomBtn, #panel #relicViewBtn {
     background: linear-gradient(180deg, rgba(28,36,56,0.82), rgba(14,19,32,0.9)) !important;
     border: 1px solid rgba(122,180,255,0.34) !important; color: #cdd9ee !important; border-radius: 4px !important;
-    clip-path: polygon(7px 0, 100% 0, 100% calc(100% - 7px), calc(100% - 7px) 100%, 0 100%, 0 7px);   /* 사선 컷 콕핏 스위치 (각도 통일) */
+    /* v575 — 모서리 사선 컷(clip-path) 제거: "버튼 좌상단·우하단이 짤린다" 피드백 → 깔끔한 라운드 사각형(border-radius:4px)으로 */
   }
   /* 게이지 → //// 사선 눈금 칩 (스캔 라인) */
   #panel .bar::after { content:''; position:absolute; inset:0; pointer-events:none; background: repeating-linear-gradient(115deg, rgba(0,0,0,0.22) 0 2px, transparent 2px 6px); }
@@ -2968,6 +2968,103 @@
   }
   /* 능력 행 — 코스믹 모듈 배경 (좌측 등급선/내부버튼은 유지) */
   #panel .ability-row { border-radius: 9px; }
+
+  /* ===== 🛸 v577 — 인게임 우측 콘솔: 사각 메카닉 HUD (사선 폐기 → 90° 정렬 + 1px 네온 사이언 + 코너 꺾쇠) =====
+     사각 틀 안 사선 칩이 여백을 깨서 직선 규칙으로 통일. 두꺼운 면 제거 → 1px 네온 와이어프레임 + 4모서리 ㄷ자 꺾쇠(::before 8그라디언트). */
+  #panel #randomBtn, #panel .relic-view-btn, #panel .ab-tab, #panel .speed-btn {
+    position: relative; z-index: 0; isolation: isolate;
+    background: rgba(14,22,38,0.32) !important;
+    border: 1px solid rgba(59,247,255,0.45) !important;
+    border-radius: 0 !important; clip-path: none !important;
+    box-shadow: inset 0 0 10px rgba(0,180,255,0.05) !important;
+    overflow: visible !important;
+    transition: border-color .14s, box-shadow .14s, background .14s;
+  }
+  /* 코너 꺾쇠 — 4모서리 ㄷ자(L자). top/bottom × left/right 각 2개 그라디언트 = 8개 */
+  #panel #randomBtn::before, #panel .relic-view-btn::before, #panel .ab-tab::before, #panel .speed-btn::before {
+    content: ''; position: absolute; inset: -1px; z-index: 1; pointer-events: none;
+    --bc: #3bf7ff; --bl: 7px; --bt: 2px;
+    background:
+      linear-gradient(var(--bc),var(--bc)) top left/var(--bl) var(--bt) no-repeat,
+      linear-gradient(var(--bc),var(--bc)) top left/var(--bt) var(--bl) no-repeat,
+      linear-gradient(var(--bc),var(--bc)) top right/var(--bl) var(--bt) no-repeat,
+      linear-gradient(var(--bc),var(--bc)) top right/var(--bt) var(--bl) no-repeat,
+      linear-gradient(var(--bc),var(--bc)) bottom left/var(--bl) var(--bt) no-repeat,
+      linear-gradient(var(--bc),var(--bc)) bottom left/var(--bt) var(--bl) no-repeat,
+      linear-gradient(var(--bc),var(--bc)) bottom right/var(--bl) var(--bt) no-repeat,
+      linear-gradient(var(--bc),var(--bc)) bottom right/var(--bt) var(--bl) no-repeat;
+    filter: drop-shadow(0 0 2px rgba(59,247,255,0.65));
+  }
+  #panel .ab-tab:hover, #panel .speed-btn:hover,
+  #panel .relic-view-btn:hover:not(.empty), #panel #randomBtn:hover:not(:disabled) {
+    border-color: rgba(120,250,255,0.9) !important;
+    box-shadow: 0 0 12px rgba(0,210,255,0.3), inset 0 0 12px rgba(0,190,255,0.1) !important;
+    background: rgba(20,34,56,0.45) !important;
+  }
+  /* 활성 탭 — 사이언 채움 강조 */
+  #panel .ab-tab.active { background: rgba(0,120,180,0.34) !important; border-color: rgba(120,250,255,0.95) !important; box-shadow: 0 0 12px rgba(0,210,255,0.4) !important; }
+  /* 랜덤 능력(핵심 액션)·유물(보유) = 골드 라인+골드 꺾쇠 / 유물(빈) = 딤 */
+  #panel #randomBtn, #panel .relic-view-btn:not(.empty) {
+    border-color: rgba(255,206,90,0.5) !important; background: rgba(30,24,12,0.34) !important;
+  }
+  #panel #randomBtn::before, #panel .relic-view-btn:not(.empty)::before { --bc: #ffd479; filter: drop-shadow(0 0 2px rgba(255,206,90,0.65)); }
+  #panel #randomBtn:hover:not(:disabled), #panel .relic-view-btn:not(.empty):hover {
+    border-color: rgba(255,226,142,0.95) !important; box-shadow: 0 0 12px rgba(255,205,90,0.35) !important;
+  }
+  #panel .relic-view-btn.empty { background: rgba(14,20,32,0.3) !important; border-color: rgba(122,180,255,0.22) !important; box-shadow: none !important; }
+  #panel .relic-view-btn.empty::before { --bc: rgba(122,180,255,0.5); filter: none; }
+
+  /* === 스킬 슬롯(ability-row) — 글래스 + 1px 네온 사이언 프레임 + 직선 좌측 액센트 (사선 폐기) === */
+  #panel .ability-row {
+    position: relative;
+    background: rgba(16,26,44,0.42) !important;
+    border: 1px solid rgba(59,247,255,0.26) !important;
+    border-radius: 0 !important;
+    padding-left: 11px;
+  }
+  #panel .ability-row::before {
+    content: ''; position: absolute; left: 3px; top: 4px; bottom: 4px; width: 3px; z-index: 0;
+    background: linear-gradient(180deg, rgba(59,247,255,0.9), rgba(0,150,255,0.5));
+    box-shadow: 0 0 6px rgba(0,210,255,0.55); pointer-events: none;
+  }
+  #panel .ability-row.maxed { border-color: rgba(82,224,122,0.5) !important; }
+  #panel .ability-row.maxed::before { background: linear-gradient(180deg, rgba(110,255,150,0.95), rgba(40,200,100,0.6)); box-shadow: 0 0 7px rgba(82,224,122,0.7); }
+  #panel .ability-row.affordable { border-color: rgba(255,206,90,0.5) !important; box-shadow: 0 0 9px rgba(255,200,90,0.12) !important; }
+  #panel .ability-row.affordable::before { background: linear-gradient(180deg, rgba(255,224,140,0.95), rgba(255,180,60,0.55)); box-shadow: 0 0 7px rgba(255,206,90,0.6); }
+
+  /* 강화(up)=골드 칩 / 삭제(rm)=레드 라인 — 둘 다 90° */
+  #panel .ability-row button[data-act="up"] {
+    background: rgba(34,26,12,0.5) !important; border: 1px solid rgba(255,206,90,0.4) !important;
+    border-radius: 0 !important; color: #ffd479 !important;
+  }
+  #panel .ability-row.affordable button[data-act="up"] { border-color: rgba(255,224,140,0.95) !important; box-shadow: 0 0 8px rgba(255,205,90,0.35) !important; background: rgba(48,36,14,0.6) !important; }
+  #panel .ability-row button[data-act="rm"]:not(.rm-armed) {
+    background: rgba(40,16,16,0.38) !important; border: 1px solid rgba(255,96,96,0.32) !important; border-radius: 0 !important; color: #ff8a8a !important;
+  }
+
+  /* ===== 🛸 v578 — 스탯 계기판 가독성: HUD 가이드라인 + 우측 여백(벽 밀착 해소) + 좌측 틱 ===== */
+  #panel #stats .row.primary { padding-right: 13px; }
+  #panel #stats .row.secondary {
+    position: relative;
+    padding: 3px 9px 3px 8px;
+    border-bottom: 1px solid rgba(59,247,255,0.08);
+  }
+  #panel #stats .row.secondary::before {
+    content: ''; position: absolute; left: 0; top: 50%; transform: translateY(-50%);
+    width: 2px; height: 9px; background: rgba(59,247,255,0.4); box-shadow: 0 0 4px rgba(59,247,255,0.4);
+  }
+  #panel #stats .row.secondary:last-of-type { border-bottom: 0; }
+  #panel #stats .row.tertiary { padding-left: 8px; padding-right: 9px; }
+  /* 숫자 폭 고정(tabular) → 값들이 흔들리지 않고 계기판처럼 정렬 */
+  #panel #stats .row span:last-child { font-variant-numeric: tabular-nums; }
+
+  /* ===== 🛸 v581 — 인게임 패널 타이포: Jua(둥근) → Rajdhani + IBM Plex Sans KR (날카로운 콘덴스드 HUD) + 자간 ===== */
+  :root { --hud-font: 'Rajdhani', 'IBM Plex Sans KR', 'Pretendard', system-ui, sans-serif; }
+  #panel { font-family: var(--hud-font); letter-spacing: 0.03em; }
+  #panel .ab-tab { font-size: 10px; font-weight: 600; letter-spacing: 0.08em; }
+  #panel .ab-tab .ab-sep { opacity: 0.4; margin: 0 1px; font-weight: 400; }
+  #panel #randomBtn, #panel .relic-view-btn, #panel .speed-btn { font-weight: 600; letter-spacing: 0.05em; }
+  #panel .ability-name b { font-weight: 600; letter-spacing: 0.01em; }
 
   /* ===== 🌌 별자리 체인 — 능력 영구강화 리스트 (노드 + 세로 빛줄기로 리스트 느낌 탈피) ===== */
   .perma-list { position: relative; }
@@ -5368,6 +5465,51 @@
   @keyframes curseGlow { 0%,100% { box-shadow: 0 0 18px rgba(180,40,60,.4), 0 20px 60px rgba(0,0,0,.78); } 50% { box-shadow: 0 0 42px rgba(220,30,50,.9); } }
   #eventScene.curse .npc-scene-inner { border-color: #b0203a; animation: curseGlow .7s ease-in-out infinite; }
   #eventScene.curse .npc-panel-title { color: #ff8a8a; text-shadow: 0 0 14px rgba(220,40,60,.6); }
+
+  /* ===== 🛸 v583 — 이벤트 팝업(차원 간섭) HUD 리스킨: #eventScene 한정 (상점 공유 클래스 불변) ===== */
+  #eventScene .npc-panel { font-family: var(--hud-font); letter-spacing: 0.02em; }
+  /* 외곽 프레임 — 라운드 ↓ + 1px 네온 + 글래스 */
+  #eventScene .npc-scene-inner {
+    border-radius: 4px; border: 1px solid rgba(59,247,255,0.35);
+    background: linear-gradient(180deg, rgba(18,24,38,0.92), rgba(8,11,18,0.95));
+    box-shadow: 0 20px 60px rgba(0,0,0,0.6), 0 0 30px rgba(59,247,255,0.1);
+  }
+  /* 저주 이벤트 — 1px 레드 네온 발광 스트로크 */
+  #eventScene.curse .npc-scene-inner {
+    border: 1px solid #ff3b4d;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.6), 0 0 22px rgba(255,59,77,0.45), inset 0 0 30px rgba(255,40,60,0.08);
+  }
+  /* 타이틀 — 시스템 서체 + 사이언(저주는 레드) + 글로우 */
+  #eventScene .npc-panel-title {
+    font-family: var(--hud-font); font-weight: 600; font-size: 17px; letter-spacing: 0.04em;
+    color: #3bf7ff; text-shadow: 0 0 12px rgba(59,247,255,0.45);
+  }
+  #eventScene.curse .npc-panel-title { color: #ff6b78; text-shadow: 0 0 12px rgba(255,60,80,0.55); }
+  /* 크레딧 칩 — 둥근 알약 폐기 → 1px 사각 프레임 + 모노 */
+  #eventScene .npc-panel-gold {
+    font-family: var(--hud-font); font-size: 12px; letter-spacing: 0.06em; font-weight: 600;
+    background: rgba(10,16,28,0.6); border: 1px solid rgba(59,247,255,0.3); border-radius: 2px;
+    color: #cfe6ff; padding: 4px 9px;
+  }
+  /* 스크립트/효과 박스 — 글래스 (불투명 면 제거) */
+  #eventScene .event-text {
+    background: rgba(12,18,30,0.4); border: 1px solid rgba(59,247,255,0.18); border-radius: 3px;
+    font-family: var(--hud-font); letter-spacing: 0.02em;
+  }
+  #eventScene.curse .event-text { border-color: rgba(255,80,95,0.25); background: rgba(26,10,12,0.4); }
+  /* 버튼(계속/선택) — 통짜 블루 폐기 → 투명 네온 라인 칩 */
+  #eventScene .npc-btn {
+    font-family: var(--hud-font); font-weight: 600; letter-spacing: 0.08em;
+    background: rgba(14,22,38,0.5) !important; border: 1px solid rgba(59,247,255,0.5) !important;
+    border-radius: 3px !important; color: #bfefff !important;
+    box-shadow: inset 0 0 12px rgba(0,180,255,0.08) !important;
+  }
+  #eventScene .npc-btn:hover {
+    border-color: rgba(120,250,255,0.9) !important; box-shadow: 0 0 14px rgba(0,210,255,0.35) !important;
+    background: rgba(20,34,56,0.6) !important;
+  }
+  #eventScene.curse .npc-btn { border-color: rgba(255,80,95,0.55) !important; color: #ffd0d4 !important; }
+  #eventScene.curse .npc-btn:hover { border-color: rgba(255,110,125,0.95) !important; box-shadow: 0 0 14px rgba(255,60,80,0.4) !important; }
   .draft-card.jackpot { box-shadow: 0 0 42px rgba(255,210,74,.95), 0 0 84px rgba(255,170,40,.55) !important; }
   .draft-card.jackpot .dc-front { border-color: #ffd24a; }
   /* 📱 모바일(세로): NPC 상단 / 내용 하단으로 세로 정렬 (shop·event 공통) */
@@ -5405,12 +5547,12 @@
     <div class="npc-panel">
       <div class="npc-panel-head">
         <span class="npc-panel-title" id="eventTitle">✦ 사건</span>
-        <span class="npc-panel-gold">💰 <span id="eventGold">0</span> G</span>
+        <span class="npc-panel-gold">CREDIT <span id="eventGold">0</span> G</span>
       </div>
       <div class="event-text" id="eventText"></div>
       <div class="event-choices" id="eventChoices"></div>
       <div class="npc-panel-foot" id="eventFoot" style="display:none;">
-        <button class="npc-btn" id="eventCloseBtn">계속 ▶</button>
+        <button class="npc-btn" id="eventCloseBtn">[ CONTINUE ]</button>
       </div>
     </div>
   </div>
@@ -5492,8 +5634,8 @@
     <!-- 🏰 디펜스 모드: 슬롯 클릭 직접 사용 — 뽑기 버튼 제거됨 (v165) -->
     <button id="relicViewBtn" class="relic-view-btn empty">유물 <span id="relic-view-count">0개</span></button>
     <div class="ab-tabs">
-      <button class="ab-tab active" data-abtab="active">액티브 <span id="ab-active-count">0/6</span></button>
-      <button class="ab-tab" data-abtab="passive">패시브 <span id="ab-passive-count">0/6</span></button>
+      <button class="ab-tab active" data-abtab="active">ACTIVE <span class="ab-sep">//</span> <span id="ab-active-count">0/6</span></button>
+      <button class="ab-tab" data-abtab="passive">PASSIVE <span class="ab-sep">//</span> <span id="ab-passive-count">0/6</span></button>
     </div>
     <div id="abilities"></div>
     <button id="abilityToggle" class="ability-toggle">▲ 능력 확인</button>
@@ -16483,7 +16625,7 @@
     ctx.strokeRect(x + 1, y + 1, size - 2, size - 2);
     // 첫 글자 (1~2자)
     ctx.fillStyle = borderC;
-    ctx.font = `bold ${Math.floor(size * 0.42)}px Jua, sans-serif`;
+    ctx.font = `bold ${Math.floor(size * 0.42)}px Rajdhani, "IBM Plex Sans KR", sans-serif`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     const label = (def.name || '?').substring(0, 2);
@@ -23091,7 +23233,7 @@
       if (_ascBadgeKey !== bKey || !_ascBadgeCv) {
         const c = document.createElement('canvas'); c.width = 170 * DPR; c.height = 30 * DPR;
         const g2 = c.getContext('2d'); g2.scale(DPR, DPR);
-        g2.font = 'bold 14px Jua, sans-serif';
+        g2.font = 'bold 14px Rajdhani, "IBM Plex Sans KR", sans-serif';
         g2.textAlign = 'right';
         g2.fillStyle = isTrans ? '#c89ad8' : '#c4b0e8';   // 차분한 액센트색
         g2.shadowColor = BG.accent || '#9a7ad0';
@@ -23221,7 +23363,7 @@
       const path = paths[pi];
       const startC = cellCenter(path[0].col, path[0].row);
       ctx.fillStyle = pi === 0 ? 'rgba(255, 100, 120, 0.85)' : (pi === 1 ? 'rgba(120, 180, 255, 0.85)' : 'rgba(180, 255, 140, 0.85)');
-      ctx.font = 'bold 10px Jua, sans-serif';
+      ctx.font = 'bold 10px Rajdhani, "IBM Plex Sans KR", sans-serif';
       ctx.textAlign = 'center';
       ctx.fillText(paths.length > 1 ? `▼ ENEMY ${pi + 1}` : '▼ ENEMY', startC.x, startC.y - 22);
     }
@@ -23245,7 +23387,7 @@
         ctx.setLineDash([]);
         // 가운데 + (희미하게)
         ctx.fillStyle = `rgba(122, 215, 255, ${pulse * 0.7})`;
-        ctx.font = 'bold 18px Jua, sans-serif';
+        ctx.font = 'bold 18px Rajdhani, "IBM Plex Sans KR", sans-serif';
         ctx.fillText('+', c.x, c.y + 6);
       }
     }
@@ -23270,7 +23412,7 @@
     ctx.arc(coreC.x, coreC.y, TD.cellW * 0.3, 0, Math.PI * 2);
     ctx.fill();
     ctx.fillStyle = '#ffd479';
-    ctx.font = 'bold 22px Jua, sans-serif';
+    ctx.font = 'bold 22px Rajdhani, "IBM Plex Sans KR", sans-serif';
     ctx.fillText('🏰', coreC.x, coreC.y + 8);
     ctx.textAlign = 'start';
     // 6) Prep Phase Start 버튼 — 첫 라운드 시작 전
@@ -23297,7 +23439,7 @@
     ctx.lineWidth = 2;
     ctx.strokeRect(bx, by, bw, bh);
     ctx.fillStyle = '#fff';
-    ctx.font = 'bold 14px Jua, sans-serif';
+    ctx.font = 'bold 14px Rajdhani, "IBM Plex Sans KR", sans-serif';
     ctx.textAlign = 'center';
     ctx.fillText('▶ 웨이브 시작 (타워 배치 후 클릭)', bx + bw / 2, by + bh / 2 + 5);
     ctx.textAlign = 'start';
@@ -24058,8 +24200,8 @@
     if (p >= 0.62) {
       const tp = Math.min(1, (p - 0.62) / 0.12), slam = 1 + (1 - tp) * 0.6;
       ctx.save(); ctx.globalAlpha = tp * fade; ctx.scale(slam, slam); ctx.textAlign = 'center';
-      ctx.shadowColor = def.eye; ctx.shadowBlur = 26; ctx.fillStyle = '#fff'; ctx.font = 'bold 38px Jua, sans-serif'; ctx.fillText('종말 · 아바돈', 0, -6);
-      ctx.shadowBlur = 0; ctx.fillStyle = `rgba(${ec},${tp})`; ctx.font = 'bold 14px Jua, sans-serif'; ctx.fillText('— THE END —', 0, 22);
+      ctx.shadowColor = def.eye; ctx.shadowBlur = 26; ctx.fillStyle = '#fff'; ctx.font = 'bold 38px Rajdhani, "IBM Plex Sans KR", sans-serif'; ctx.fillText('종말 · 아바돈', 0, -6);
+      ctx.shadowBlur = 0; ctx.fillStyle = `rgba(${ec},${tp})`; ctx.font = 'bold 14px Rajdhani, "IBM Plex Sans KR", sans-serif'; ctx.fillText('— THE END —', 0, 22);
       ctx.restore();
     }
     ctx.restore();
@@ -24116,7 +24258,7 @@
     // 공통 경고 텍스트 (상단) — 아바돈은 전용 타이틀 슬램이 따로 있어 생략
     if (p >= 0.3 && bi.special !== 'abaddon') {
       const tp = Math.min(1, (p - 0.3) / 0.2) * fade; const pulse = 0.7 + 0.3 * Math.sin(f * 0.18);
-      ctx.textAlign = 'center'; ctx.fillStyle = def.eye; ctx.shadowColor = def.eye; ctx.shadowBlur = 18; ctx.font = 'bold 22px Jua, sans-serif';
+      ctx.textAlign = 'center'; ctx.fillStyle = def.eye; ctx.shadowColor = def.eye; ctx.shadowBlur = 18; ctx.font = 'bold 22px Rajdhani, "IBM Plex Sans KR", sans-serif';
       ctx.globalAlpha = tp * pulse; ctx.fillText(bi.special === 'abaddon' ? `☠ 최종 — ${def.name} 강림` : `⚠ ${def.icon} ${def.name} 접근 중...`, CX, 40); ctx.shadowBlur = 0; ctx.globalAlpha = 1;
     }
     ctx.restore();
@@ -24307,7 +24449,7 @@
     }
     ctx.strokeStyle = 'rgba(255,120,140,0.4)'; ctx.lineWidth = 1; rr(x - 3, y - 3, w + 6, h + 6, (h+6)/2); ctx.stroke();
     ctx.fillStyle = '#fff'; ctx.textAlign = 'center';
-    ctx.font = 'bold 11px Jua, sans-serif';
+    ctx.font = 'bold 11px Rajdhani, "IBM Plex Sans KR", sans-serif';
     ctx.fillText(`BOSS  ${boss.hp} / ${boss.maxHp}`, W/2, y + 10);
     ctx.textAlign = 'start';
   }
@@ -24518,17 +24660,17 @@
       // ───── 7) 유니크/콤보 티어 마커 ─────
       if (ABILITY_DEFS[visualId] && ABILITY_DEFS[visualId].isEighth) {
         // 8돌파 마커 (홍염)
-        ctx.font = 'bold 11px Jua, sans-serif';
+        ctx.font = 'bold 11px Rajdhani, "IBM Plex Sans KR", sans-serif';
         ctx.fillStyle = '#ff7a3d';
         ctx.fillText('✦', c.x, c.y - R + 4);
       } else if (isUnique || isTriple) {
         // 왕관 (SR/SSR/Triple)
-        ctx.font = 'bold 10px Jua, sans-serif';
+        ctx.font = 'bold 10px Rajdhani, "IBM Plex Sans KR", sans-serif';
         ctx.fillStyle = isTriple ? '#ffd060' : '#ffe070';
         ctx.fillText(isTriple ? '👑' : '♛', c.x, c.y - R + 4);
       } else if (isCombo) {
         // 콤보 표식
-        ctx.font = 'bold 9px Jua, sans-serif';
+        ctx.font = 'bold 9px Rajdhani, "IBM Plex Sans KR", sans-serif';
         ctx.fillStyle = '#c084ff';
         ctx.fillText('⚙', c.x, c.y - R + 4);
       }
@@ -24548,7 +24690,7 @@
 
       // ───── 9) MAX 표시 ─────
       if (lv >= maxLv) {
-        ctx.font = 'bold 8px Jua, sans-serif';
+        ctx.font = 'bold 8px Rajdhani, "IBM Plex Sans KR", sans-serif';
         ctx.fillStyle = '#ffd060';
         ctx.fillText('MAX', c.x, c.y + R + 8);
       }
@@ -24568,7 +24710,7 @@
         ctx.strokeRect(2, 2, W - 4, H - 4);
         ctx.setLineDash([]);
         ctx.fillStyle = '#ffd479';
-        ctx.font = 'bold 11px Jua, sans-serif';
+        ctx.font = 'bold 11px Rajdhani, "IBM Plex Sans KR", sans-serif';
         ctx.textAlign = 'center';
         ctx.fillText('∞ 전 맵 사거리', t.x, t.y - 28);
         ctx.textAlign = 'start';
@@ -24742,16 +24884,16 @@
       ctx.fillStyle = 'rgba(0,0,0,0.55)'; ctx.fillRect(0,0,W,H);
       ctx.textAlign='center';
       // PAUSED 큰 텍스트
-      ctx.fillStyle = '#fff'; ctx.font='bold 30px Jua, sans-serif';
+      ctx.fillStyle = '#fff'; ctx.font='bold 30px Rajdhani, "IBM Plex Sans KR", sans-serif';
       ctx.fillText('PAUSED', CX, CY - 36);
       // 현재 상황 표시
-      ctx.fillStyle = '#cfd6e3'; ctx.font='14px Jua, sans-serif';
+      ctx.fillStyle = '#cfd6e3'; ctx.font='14px Rajdhani, "IBM Plex Sans KR", sans-serif';
       const ascSuf = (state.ascension && state.ascension > 0) ? ` ⚡${state.ascension}` : '';
       ctx.fillText(`라운드 ${state.round}${ascSuf}`, CX, CY - 8);
-      ctx.fillStyle = '#ffd479'; ctx.font='bold 16px Jua, sans-serif';
+      ctx.fillStyle = '#ffd479'; ctx.font='bold 16px Rajdhani, "IBM Plex Sans KR", sans-serif';
       ctx.fillText(state.score.toLocaleString() + ' 점', CX, CY + 14);
       // 재개 힌트
-      ctx.fillStyle = '#7a8090'; ctx.font='12px Jua, sans-serif';
+      ctx.fillStyle = '#7a8090'; ctx.font='12px Rajdhani, "IBM Plex Sans KR", sans-serif';
       ctx.fillText('Space 로 재개', CX, CY + 42);
       ctx.textAlign='start';
     }
@@ -24779,7 +24921,7 @@
       ctx.fillStyle = titleColor;
       ctx.shadowColor = titleColor;
       ctx.shadowBlur = 18 * titleAlpha;
-      ctx.font='bold 42px Jua, sans-serif';
+      ctx.font='bold 42px Rajdhani, "IBM Plex Sans KR", sans-serif';
       const titleText = state.gameWin
         ? (state.endless ? '♾ ENDLESS END' : 'VICTORY')
         : 'GAME OVER';
@@ -24797,7 +24939,7 @@
         ctx.fillStyle = '#88ff88';
         ctx.shadowColor = '#88ff88';
         ctx.shadowBlur = 12;
-        ctx.font='bold 14px Jua, sans-serif';
+        ctx.font='bold 14px Rajdhani, "IBM Plex Sans KR", sans-serif';
         ctx.fillText('NEW RECORD', CX, CY - 22);
         ctx.shadowBlur = 0;
         ctx.restore();
@@ -24808,7 +24950,7 @@
         ctx.globalAlpha = reasonAlpha;
         ctx.textAlign='center';
         ctx.fillStyle = state.gameWin ? '#fff080' : '#ffaaaa';
-        ctx.font='14px Jua, sans-serif';
+        ctx.font='14px Rajdhani, "IBM Plex Sans KR", sans-serif';
         ctx.fillText(state.gameOverReason, CX, CY - 22);
         ctx.restore();
       }
@@ -24818,7 +24960,7 @@
       ctx.save();
       ctx.globalAlpha = statsAlpha;
       ctx.textAlign='center';
-      ctx.fillStyle = '#fff'; ctx.font='16px Jua, sans-serif';
+      ctx.fillStyle = '#fff'; ctx.font='16px Rajdhani, "IBM Plex Sans KR", sans-serif';
       const lastRound = (state.endless || !state.gameWin) ? state.round : MAX_ROUND;
       const roundTxt = state.endless ? `♾ 도달 R${lastRound}` : `도달 라운드: ${lastRound}`;
       // 점수 카운트업 (0.5~1.5초)
@@ -24836,33 +24978,33 @@
       let lineY = CY + 38;
       // 남은 골드 → 점수 환산 표시
       if (state.goldBonusScore && state.goldBonusScore > 0) {
-        ctx.fillStyle = '#ffd479'; ctx.font='12px Jua, sans-serif';
+        ctx.fillStyle = '#ffd479'; ctx.font='12px Rajdhani, "IBM Plex Sans KR", sans-serif';
         ctx.fillText(`💰 남은 골드 ${state.goldRemaining}G → +${state.goldBonusScore.toLocaleString()}점`, CX, lineY);
         lineY += 16;
       }
       // 🏆 v262 — 난이도 클리어 보너스 표시 (점수 뛴 이유 명확화)
       if (state.diffBonusMul && state.diffBonusMul > 1) {
-        ctx.fillStyle = '#ff88ff'; ctx.font='bold 13px Jua, sans-serif';
+        ctx.fillStyle = '#ff88ff'; ctx.font='bold 13px Rajdhani, "IBM Plex Sans KR", sans-serif';
         ctx.fillText(`⚡ ${ascensionLabel(state.ascension)} 보너스 ×${state.diffBonusMul.toFixed(1)}`, CX, lineY);
         lineY += 17;
       }
       if (state.stardustEarned) {
-        ctx.fillStyle = '#ffd479'; ctx.font='14px Jua, sans-serif';
+        ctx.fillStyle = '#ffd479'; ctx.font='14px Rajdhani, "IBM Plex Sans KR", sans-serif';
         ctx.fillText(`+${state.stardustEarned} ★ 스타더스트 획득`, CX, lineY);
         lineY += 18;
       }
       if (state.newAscensionUnlocked) {
-        ctx.fillStyle = '#ff80ff'; ctx.font='bold 16px Jua, sans-serif';
+        ctx.fillStyle = '#ff80ff'; ctx.font='bold 16px Rajdhani, "IBM Plex Sans KR", sans-serif';
         ctx.fillText(`✨ 승천 ${state.newAscensionUnlocked} 해금!`, CX, lineY);
         lineY += 20;
       }
       if (state.crystalsEarned) {
-        ctx.fillStyle = '#88ccff'; ctx.font='bold 14px Jua, sans-serif';
+        ctx.fillStyle = '#88ccff'; ctx.font='bold 14px Rajdhani, "IBM Plex Sans KR", sans-serif';
         ctx.fillText(`+${state.crystalsEarned} 💎 결정 획득`, CX, lineY);
         lineY += 18;
         // 사유 표시 (최대 3줄)
         if (state.crystalReasons && state.crystalReasons.length > 0) {
-          ctx.fillStyle = '#88ccff'; ctx.font='10px Jua, sans-serif';
+          ctx.fillStyle = '#88ccff'; ctx.font='10px Rajdhani, "IBM Plex Sans KR", sans-serif';
           for (const r of state.crystalReasons.slice(0, 3)) {
             ctx.fillText(`· ${r}`, CX, lineY);
             lineY += 13;
@@ -24870,17 +25012,17 @@
         }
       }
       if (state.achievementsEarned && state.achievementsEarned.length > 0) {
-        ctx.fillStyle = '#52e07a'; ctx.font='12px Jua, sans-serif';
+        ctx.fillStyle = '#52e07a'; ctx.font='12px Rajdhani, "IBM Plex Sans KR", sans-serif';
         ctx.fillText(`🏅 신규 업적 ${state.achievementsEarned.length}개 (+${state.achievementStardust} ★)`, CX, lineY);
         lineY += 16;
         for (const ach of state.achievementsEarned.slice(0, 3)) {
-          ctx.fillStyle = '#aaffaa'; ctx.font='10px Jua, sans-serif';
+          ctx.fillStyle = '#aaffaa'; ctx.font='10px Rajdhani, "IBM Plex Sans KR", sans-serif';
           ctx.fillText(`· ${ach.name}: ${ach.desc}`, CX, lineY);
           lineY += 13;
         }
       }
       if (state.repeatStardust > 0) {
-        ctx.fillStyle = '#88ccff'; ctx.font='12px Jua, sans-serif';
+        ctx.fillStyle = '#88ccff'; ctx.font='12px Rajdhani, "IBM Plex Sans KR", sans-serif';
         ctx.fillText(`🔁 반복 업적: +${state.repeatStardust} ★`, CX, lineY);
         lineY += 16;
       }
@@ -24904,7 +25046,7 @@
       ctx.lineWidth = 2;
       ctx.strokeRect(btnX1, btnYg, btnW, btnH);
       ctx.fillStyle = '#ffd479';
-      ctx.font = 'bold 14px Jua, sans-serif';
+      ctx.font = 'bold 14px Rajdhani, "IBM Plex Sans KR", sans-serif';
       ctx.textAlign = 'center';
       ctx.fillText('↻ 다시 하기', btnX1 + btnW / 2, btnYg + 27);
       // 📊 딜량 통계
@@ -24914,7 +25056,7 @@
       ctx.lineWidth = 2;
       ctx.strokeRect(btnX2, btnYg, btnW, btnH);
       ctx.fillStyle = '#88e0ff';
-      ctx.font = 'bold 14px Jua, sans-serif';
+      ctx.font = 'bold 14px Rajdhani, "IBM Plex Sans KR", sans-serif';
       ctx.fillText('📊 딜량 통계', btnX2 + btnW / 2, btnYg + 27);
       // 메인메뉴
       ctx.fillStyle = '#1a1f2b';
@@ -24923,14 +25065,14 @@
       ctx.lineWidth = 2;
       ctx.strokeRect(btnX3, btnYg, btnW, btnH);
       ctx.fillStyle = '#cfd6e3';
-      ctx.font = '14px Jua, sans-serif';
+      ctx.font = '14px Rajdhani, "IBM Plex Sans KR", sans-serif';
       ctx.fillText('🏠 메인 메뉴', btnX3 + btnW / 2, btnYg + 27);
       state._retryBtn    = { x: btnX1, y: btnYg, w: btnW, h: btnH };
       state._dmgStatsBtn = { x: btnX2, y: btnYg, w: btnW, h: btnH };
       state._menuBtn     = { x: btnX3, y: btnYg, w: btnW, h: btnH };
       // 단축키 안내 (작게)
       ctx.fillStyle = '#5a6068';
-      ctx.font = '10px Jua, sans-serif';
+      ctx.font = '10px Rajdhani, "IBM Plex Sans KR", sans-serif';
       ctx.fillText('R = 다시하기  ·  ESC = 메인 메뉴', CX, btnYg + btnH + 16);
       ctx.restore();   // 버튼 페이드인 그룹 종료
       ctx.textAlign='start';
@@ -25058,13 +25200,13 @@
       ctx.save();
       ctx.globalAlpha = alpha;
       ctx.textAlign = 'center';
-      ctx.font = 'bold 32px Jua, sans-serif';
+      ctx.font = 'bold 32px Rajdhani, "IBM Plex Sans KR", sans-serif';
       ctx.fillStyle = '#ff5b6e';
       ctx.shadowColor = 'rgba(255, 91, 110, 0.6)';
       ctx.shadowBlur = 12;
       ctx.fillText('⚠ BOSS', CX, CY - 14);
       ctx.shadowBlur = 0;
-      ctx.font = '12px Jua, sans-serif';
+      ctx.font = '12px Rajdhani, "IBM Plex Sans KR", sans-serif';
       ctx.fillStyle = '#ffaaaa';
       ctx.fillText('보스 등장', CX, CY + 10);
       ctx.restore();
@@ -25764,11 +25906,11 @@
     const isStackMode = state.relicOffering.every(rid => ownedSet.has(rid));
     // 타이틀
     ctx.fillStyle = isStackMode ? '#aaccff' : '#ffd479';
-    ctx.font = 'bold 24px Jua, sans-serif';
+    ctx.font = 'bold 24px Rajdhani, "IBM Plex Sans KR", sans-serif';
     ctx.textAlign = 'center';
     ctx.fillText(isStackMode ? '✨ 유물 강화 ✨' : '보스의 유물', CX, 48);
     ctx.fillStyle = '#9aa3b3';
-    ctx.font = '12px Jua, sans-serif';
+    ctx.font = '12px Rajdhani, "IBM Plex Sans KR", sans-serif';
     ctx.fillText(isStackMode
       ? '강화할 유물을 선택 (스택 +1 · 데미지+3% · 골드+3%)'
       : '하나를 선택하세요 (영원히 이번 게임에 적용)', CX, 68);
@@ -25804,7 +25946,7 @@
       ctx.fillRect(x, y + altarH - 1, altarW, 1);
       // 등급 라벨
       ctx.fillStyle = rarInfo.color;
-      ctx.font = 'bold 11px Jua, sans-serif';
+      ctx.font = 'bold 11px Rajdhani, "IBM Plex Sans KR", sans-serif';
       ctx.textAlign = 'left';
       ctx.fillText(`✦ ${rarInfo.label.toUpperCase()} ✦`, x + 16, y + 18);
       // 🖼 v247 — 아이콘 (이미지 우선, 없으면 emoji 폴백)
@@ -25817,7 +25959,7 @@
       ctx.globalAlpha = 1;
       // 이름
       ctx.fillStyle = '#fff';
-      ctx.font = 'bold 18px Jua, sans-serif';
+      ctx.font = 'bold 18px Rajdhani, "IBM Plex Sans KR", sans-serif';
       ctx.textAlign = 'left';
       ctx.fillText(r.name, x + 100, y + 40);
       // 🌟 v241 — 스택 모드: 현재 누적 스택 표시 + 강화 후 표시
@@ -25830,7 +25972,7 @@
         const badgeX = x + 100 + nameW + 8;
         const badgeY = y + 26;
         const badgeText = `+${curStack} → +${curStack + 1}`;
-        ctx.font = 'bold 12px Jua, sans-serif';
+        ctx.font = 'bold 12px Rajdhani, "IBM Plex Sans KR", sans-serif';
         const badgeW = ctx.measureText(badgeText).width + 10;
         ctx.fillRect(badgeX, badgeY, badgeW, 18);
         ctx.fillStyle = '#fff';
@@ -25838,7 +25980,7 @@
       }
       // 설명
       ctx.fillStyle = '#c8cdd8';
-      ctx.font = '13px Jua, sans-serif';
+      ctx.font = '13px Rajdhani, "IBM Plex Sans KR", sans-serif';
       // 줄바꿈 처리
       const words = r.desc.split(' ');
       let line = '';
@@ -25859,7 +26001,7 @@
     }
     // 스킵 안내
     ctx.fillStyle = '#5a5f6a';
-    ctx.font = '11px Jua, sans-serif';
+    ctx.font = '11px Rajdhani, "IBM Plex Sans KR", sans-serif';
     ctx.textAlign = 'center';
     ctx.fillText('(클릭으로 선택 — 스킵 불가)', CX, H - 28);
     ctx.textAlign = 'start';
@@ -25878,20 +26020,20 @@
     // 타이틀
     ctx.textAlign = 'center';
     ctx.fillStyle = '#ffd479';
-    ctx.font = 'bold 38px Jua, sans-serif';
+    ctx.font = 'bold 38px Rajdhani, "IBM Plex Sans KR", sans-serif';
     ctx.fillText('🏆 VICTORY', CX, CY - 110);
     ctx.fillStyle = '#fff';
-    ctx.font = '20px Jua, sans-serif';
+    ctx.font = '20px Rajdhani, "IBM Plex Sans KR", sans-serif';
     ctx.fillText('R100 클리어!', CX, CY - 76);
     // 안내
     ctx.fillStyle = '#88e0ff';
-    ctx.font = 'bold 22px Jua, sans-serif';
+    ctx.font = 'bold 22px Rajdhani, "IBM Plex Sans KR", sans-serif';
     ctx.fillText('♾ 엔드리스 모드로 계속하시겠습니까?', CX, CY - 28);
     ctx.fillStyle = '#cfd6e3';
-    ctx.font = '13px Jua, sans-serif';
+    ctx.font = '13px Rajdhani, "IBM Plex Sans KR", sans-serif';
     ctx.fillText('매 라운드마다 적 HP가 ×1.5 배수로 증가합니다.', CX, CY + 2);
     ctx.fillStyle = '#9aa3b3';
-    ctx.font = '11px Jua, sans-serif';
+    ctx.font = '11px Rajdhani, "IBM Plex Sans KR", sans-serif';
     ctx.fillText('현재 기록은 이미 R100 클리어로 저장되었습니다.', CX, CY + 22);
     // 버튼
     const btnW = 160, btnH = 48, btnGap = 16;
@@ -25906,7 +26048,7 @@
     ctx.lineWidth = 2;
     ctx.strokeRect(btnX1, btnY, btnW, btnH);
     ctx.fillStyle = '#88ff88';
-    ctx.font = 'bold 16px Jua, sans-serif';
+    ctx.font = 'bold 16px Rajdhani, "IBM Plex Sans KR", sans-serif';
     ctx.fillText('♾ 계속한다', btnX1 + btnW / 2, btnY + 30);
     // NO (종료)
     ctx.fillStyle = '#2a1414';
@@ -25915,7 +26057,7 @@
     ctx.lineWidth = 2;
     ctx.strokeRect(btnX2, btnY, btnW, btnH);
     ctx.fillStyle = '#ff8888';
-    ctx.font = 'bold 16px Jua, sans-serif';
+    ctx.font = 'bold 16px Rajdhani, "IBM Plex Sans KR", sans-serif';
     ctx.fillText('🏁 종료', btnX2 + btnW / 2, btnY + 30);
     state._endlessYesBtn = { x: btnX1, y: btnY, w: btnW, h: btnH };
     state._endlessNoBtn  = { x: btnX2, y: btnY, w: btnW, h: btnH };
@@ -25947,7 +26089,7 @@
     for (const d of state.damageNumbers) {
       const a = Math.min(1, d.life / 30);
       ctx.globalAlpha = a;
-      ctx.font = `bold ${d.size}px Jua, sans-serif`;
+      ctx.font = `bold ${d.size}px Rajdhani, "IBM Plex Sans KR", sans-serif`;
       ctx.fillStyle = '#000';
       ctx.fillText(d.text, d.x + 1, d.y + 1);
       ctx.fillStyle = d.color;
@@ -25969,11 +26111,11 @@
     ctx.scale(scale, scale);
     ctx.globalAlpha = alpha;
     ctx.fillStyle = '#ffe070';
-    ctx.font = 'bold 30px Jua, sans-serif';
+    ctx.font = 'bold 30px Rajdhani, "IBM Plex Sans KR", sans-serif';
     ctx.textAlign = 'center';
     ctx.fillText(`R${w.round} CLEAR!`, 0, 0);
     ctx.fillStyle = '#fff';
-    ctx.font = '14px Jua, sans-serif';
+    ctx.font = '14px Rajdhani, "IBM Plex Sans KR", sans-serif';
     ctx.fillText(`+${w.bonus.toLocaleString()} (${w.timeSaved.toFixed(1)}s 단축)`, 0, 22);
     ctx.restore();
     ctx.globalAlpha = 1;
@@ -26010,16 +26152,16 @@
     ctx.strokeRect(-cw/2, -ch/2, cw, ch);
     // 위 라벨
     ctx.fillStyle = '#ffd479';
-    ctx.font = 'bold 12px Jua, sans-serif';
+    ctx.font = 'bold 12px Rajdhani, "IBM Plex Sans KR", sans-serif';
     ctx.textAlign = 'center';
     ctx.fillText('조합 완성', 0, -ch/2 + 18);
     // 이름
     ctx.fillStyle = def.color;
-    ctx.font = 'bold 24px Jua, sans-serif';
+    ctx.font = 'bold 24px Rajdhani, "IBM Plex Sans KR", sans-serif';
     ctx.fillText(def.name, 0, 8);
     // 설명
     ctx.fillStyle = '#c8cdd8';
-    ctx.font = '11px Jua, sans-serif';
+    ctx.font = '11px Rajdhani, "IBM Plex Sans KR", sans-serif';
     ctx.fillText(def.desc(cr.level || 1), 0, ch/2 - 14);
     ctx.restore();
     ctx.globalAlpha = 1;
@@ -26031,7 +26173,7 @@
       bg1: '#1c1e26', bg2: '#0a0c14',
       border: '#e6e6ec', name: '#ffffff',
       accent: '#c0c4cc', glow: null,
-      label: '⭐ NEW',
+      label: '◇ NEW',
     },
     upgrade: {
       bg1: '#1a3050', bg2: '#0a1424',
@@ -26043,49 +26185,49 @@
       bg1: '#3a1e58', bg2: '#180824',
       border: '#c084ff', name: '#e0c0ff',
       accent: '#c084ff', glow: 'rgba(192, 132, 255, 0.30)',
-      label: '✦ 조합!',
+      label: '✦ 조합',
     },
     triple: {
       // 세련된 와인 레드 (딥 크림슨)
       bg1: '#48121c', bg2: '#1d0608',
       border: '#e8364a', name: '#ff7a8c',
       accent: '#e8364a', glow: 'rgba(232, 54, 74, 0.42)',
-      label: '🔥 히든 조합!',
+      label: '✦✦ 히든 조합',
     },
     bonusScore: {
       // 점수 보너스 — 잎새 같은 차분한 청록
       bg1: '#103024', bg2: '#06150f',
       border: '#88dda8', name: '#bcf0d2',
       accent: '#88dda8', glow: 'rgba(136, 221, 168, 0.25)',
-      label: '🎁 점수',
+      label: '◇ 점수',
     },
     bonusStardust: {
       // 스타더스트 — 부드러운 골드
       bg1: '#2e2410', bg2: '#181104',
       border: '#ffd479', name: '#ffe890',
       accent: '#ffd479', glow: 'rgba(255, 212, 121, 0.30)',
-      label: '⭐ 스타더스트',
+      label: '◇ 스타더스트',
     },
     ascendant: {
       // 🌟 v241 — 어센던트 (엔드리스 +% 카드) 화려한 보라/시안 그라데이션
       bg1: '#1f1840', bg2: '#0c0820',
       border: '#aa88ff', name: '#d0c0ff',
       accent: '#aaccff', glow: 'rgba(170, 136, 255, 0.55)',
-      label: '✨ ASCENDANT',
+      label: '◆ ASCENDANT',
     },
     lucky: {
       // LUCKY +2 — 행운의 녹색/금색
       bg1: '#1e3018', bg2: '#0f1808',
       border: '#88ff88', name: '#ccffcc',
       accent: '#aaff88', glow: 'rgba(136, 255, 136, 0.45)',
-      label: '🍀 LUCKY +2',
+      label: '◆ LUCKY +2',
     },
     superLucky: {
       // SUPER LUCKY +3 — 무지개 핫핑크/금색 화려함
       bg1: '#3a1840', bg2: '#1a0820',
       border: '#ff80ff', name: '#ffe0ff',
       accent: '#ffd0ff', glow: 'rgba(255, 128, 255, 0.55)',
-      label: '💫 SUPER LUCKY +3',
+      label: '◆ SUPER LUCKY +3',
     },
   };
   function getCardTier(c) {
@@ -26124,21 +26266,25 @@
       // 시작 무료 카드 — 강화소 보너스
       const totalFreeRolls = (state.metaMods && state.metaMods.freeRolls) || 0;
       const currentIdx = totalFreeRolls - state.pendingFreeRolls + 1;
-      ctx.fillStyle = '#88ff88';
-      ctx.font = 'bold 26px Jua, sans-serif';
+      ctx.fillStyle = '#3bf7ff';
+      ctx.shadowColor = 'rgba(59,247,255,0.85)'; ctx.shadowBlur = 9;
+      ctx.font = '600 23px Rajdhani, "IBM Plex Sans KR", sans-serif';
       ctx.textAlign = 'center';
-      ctx.fillText(`🎁 시작 무료 카드 (${currentIdx}/${totalFreeRolls})`, CX, 70);
-      ctx.fillStyle = '#9aa3b3';
-      ctx.font = '13px Jua, sans-serif';
-      ctx.fillText('강화소 보너스 · 골드 차감 없음', CX, 92);
+      ctx.fillText(`[ SYS.LINK // 보급 ${currentIdx}/${totalFreeRolls} ]`, CX, 70);
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = 'rgba(154,163,179,0.6)';
+      ctx.font = '11px Rajdhani, "IBM Plex Sans KR", sans-serif';
+      ctx.fillText('강화소 보너스 · 골드 차감 없음', CX, 91);
     } else {
-      ctx.fillStyle = isRandom ? '#ffd479' : '#ffe070';
-      ctx.font = 'bold 26px Jua, sans-serif';
+      ctx.fillStyle = isRandom ? '#ffc24a' : '#3bf7ff';
+      ctx.shadowColor = isRandom ? 'rgba(255,194,74,0.85)' : 'rgba(59,247,255,0.85)'; ctx.shadowBlur = 9;
+      ctx.font = '600 23px Rajdhani, "IBM Plex Sans KR", sans-serif';
       ctx.textAlign = 'center';
-      ctx.fillText(isRandom ? '🎲 카드 선택' : `LEVEL ${state.playerLevel} UP!`, CX, 70);
-      ctx.fillStyle = '#9aa3b3';
-      ctx.font = '13px Jua, sans-serif';
-      ctx.fillText(isRandom ? `선택 시 ${state.cardCost}G 차감` : '3장 중 하나를 선택하세요', CX, 92);
+      ctx.fillText(isRandom ? '[ SYS.LINK // 능력 선택 ]' : `[ LEVEL ${state.playerLevel} // UP ]`, CX, 70);
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = 'rgba(154,163,179,0.6)';
+      ctx.font = '11px Rajdhani, "IBM Plex Sans KR", sans-serif';
+      ctx.fillText(isRandom ? `선택 시 ${state.cardCost}G 차감` : '3장 중 하나를 선택하세요', CX, 91);
     }
 
     const cardW = 175, cardH = 290, gap = 12;   // 아이콘 공간 위해 cardH ↑
@@ -26230,27 +26376,37 @@
       grad.addColorStop(0, p.bg1);
       grad.addColorStop(1, p.bg2);
       ctx.fillStyle = grad;
-      rr(x, y, cardW, cardH, 7); ctx.fill();
-      // 본체 테두리
-      ctx.strokeStyle = p.border; ctx.lineWidth = 3;
-      rr(x, y, cardW, cardH, 7); ctx.stroke();
-      // 상단 액센트 바 (둥근 모서리 안에 클립)
-      ctx.save(); rr(x, y, cardW, cardH, 7); ctx.clip();
+      rr(x, y, cardW, cardH, 2); ctx.fill();
+      // 본체 테두리 — 1.5px 얇은 네온 라인 (메카닉 와이어프레임)
+      ctx.strokeStyle = p.border; ctx.lineWidth = 1.5;
+      rr(x, y, cardW, cardH, 2); ctx.stroke();
+      // 상단 액센트 바 (모서리 안에 클립)
+      ctx.save(); rr(x, y, cardW, cardH, 2); ctx.clip();
       ctx.fillStyle = p.border; ctx.fillRect(x, y, cardW, 3);
       ctx.restore();
+      // 🛸 v580 — 메카닉 HUD 코너 꺾쇠 (4모서리 L자, 네온 발광) — 우측 패널 버튼과 통일
+      {
+        const bL = 16, bwid = 2.5;
+        ctx.save();
+        ctx.strokeStyle = p.border; ctx.lineWidth = bwid; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+        ctx.shadowColor = p.border; ctx.shadowBlur = 5;
+        const brk = (cx, cy, dx, dy) => { ctx.beginPath(); ctx.moveTo(cx + dx * bL, cy); ctx.lineTo(cx, cy); ctx.lineTo(cx, cy + dy * bL); ctx.stroke(); };
+        brk(x, y, 1, 1); brk(x + cardW, y, -1, 1); brk(x, y + cardH, 1, -1); brk(x + cardW, y + cardH, -1, -1);
+        ctx.restore();
+      }
 
       // 티어 라벨 (보너스는 위, 능력은 아이콘 아래 — 충분한 간격으로 안 겹침)
       ctx.fillStyle = p.accent;
-      ctx.font = 'bold 13px Jua, sans-serif';
+      ctx.font = 'bold 13px Rajdhani, "IBM Plex Sans KR", sans-serif';
       ctx.textAlign = 'center';
       const tierY = isBonus ? y + 24 : y + 100;
       // LUCKY/SUPER LUCKY 는 폰트도 큼지막하게 + 그림자 효과
       if (tier === 'lucky') {
-        ctx.font = 'bold 16px Jua, sans-serif';
+        ctx.font = 'bold 16px Rajdhani, "IBM Plex Sans KR", sans-serif';
         ctx.shadowColor = '#88ff88';
         ctx.shadowBlur = 12;
       } else if (tier === 'superLucky') {
-        ctx.font = 'bold 18px Jua, sans-serif';
+        ctx.font = 'bold 18px Rajdhani, "IBM Plex Sans KR", sans-serif';
         ctx.shadowColor = '#ff80ff';
         ctx.shadowBlur = 18;
         // 무지개 색상 사이클
@@ -26268,19 +26424,19 @@
       }
 
       // 능력 종류 태그 (아이콘 아래)
-      const kindY = isBonus ? y + 42 : y + 116;   // 102 → 116
+      const kindY = isBonus ? y + 42 : y + 110;   // v582 — 종류줄 살짝 위로(이름 앞 여백 확보)
       // 🌟 v242 — 어센던트는 '어센던트'로 표시 (이전엔 '보너스' 잘못 표시)
       if (isAscendant) {
         ctx.fillStyle = '#aaccff';
-        ctx.font = 'bold 11px Jua, sans-serif';
+        ctx.font = 'bold 11px Rajdhani, "IBM Plex Sans KR", sans-serif';
         ctx.fillText('어센던트', x + cardW/2, kindY);
       } else if (isBonus) {
         ctx.fillStyle = '#7a8090';
-        ctx.font = '11px Jua, sans-serif';
+        ctx.font = '11px Rajdhani, "IBM Plex Sans KR", sans-serif';
         ctx.fillText('보너스', x + cardW/2, kindY);
       } else if (def) {
         ctx.fillStyle = '#7a8090';
-        ctx.font = '11px Jua, sans-serif';
+        ctx.font = '11px Rajdhani, "IBM Plex Sans KR", sans-serif';
         const kindTag = def.isPassive ? '⚙ 패시브' : (def.isCombo ? '✨ 조합' : '⚡ 액티브');
         ctx.fillText(kindTag, x + cardW/2, kindY);
       }
@@ -26289,7 +26445,7 @@
       if (!isBonus && c.id) {
         const tags = getAbilityTags(c.id);
         if (tags.length > 0) {
-          ctx.font = 'bold 10px Jua, sans-serif';
+          ctx.font = 'bold 10px Rajdhani, "IBM Plex Sans KR", sans-serif';
           // 전체 너비 측정 + 가운데 정렬
           const segs = [];
           for (let ti = 0; ti < tags.length; ti++) {
@@ -26300,7 +26456,7 @@
           for (const s of segs) totalW += ctx.measureText(s.text).width;
           // 너비 초과 시 폰트 축소
           if (totalW > cardW - 16) {
-            ctx.font = 'bold 9px Jua, sans-serif';
+            ctx.font = 'bold 9px Rajdhani, "IBM Plex Sans KR", sans-serif';
             totalW = 0;
             for (const s of segs) totalW += ctx.measureText(s.text).width;
           }
@@ -26308,7 +26464,7 @@
           let curX = x + cardW/2 - totalW/2;
           for (const s of segs) {
             ctx.fillStyle = s.color;
-            ctx.fillText(s.text, curX, y + 132);   // 118 → 132 (tier/kind 아래로 밀림)
+            ctx.fillText(s.text, curX, y + 122);   // v582 — 태그줄 위로 → 이름과 간격 확보(20→30px)
             curX += ctx.measureText(s.text).width;
           }
           ctx.textAlign = 'center';
@@ -26317,25 +26473,25 @@
 
       // 이름 (티어 색) — 보너스는 카드 윗부분 그대로, 능력은 아이콘 아래
       ctx.fillStyle = p.name;
-      ctx.font = 'bold 20px Jua, sans-serif';
+      ctx.font = 'bold 20px Rajdhani, "IBM Plex Sans KR", sans-serif';
       if (isAscendant && ascDef) {
         // 🌟 v241 — 어센던트 카드 렌더: 아이콘 + 이름 + 효과 + 누적 스택
         ctx.fillStyle = ascDef.color;
         ctx.font = 'bold 44px sans-serif';
         ctx.fillText(ascDef.icon, x + cardW/2, y + 78);
         ctx.fillStyle = p.name;
-        ctx.font = 'bold 17px Jua, sans-serif';
+        ctx.font = 'bold 17px Rajdhani, "IBM Plex Sans KR", sans-serif';
         ctx.fillText(ascDef.name, x + cardW/2, y + 110);
         ctx.fillStyle = ascDef.color;
-        ctx.font = 'bold 14px Jua, sans-serif';
+        ctx.font = 'bold 14px Rajdhani, "IBM Plex Sans KR", sans-serif';
         ctx.fillText(ascDef.desc, x + cardW/2, y + 138);
         if (ascStack > 0) {
           ctx.fillStyle = '#aaccff';
-          ctx.font = 'bold 12px Jua, sans-serif';
+          ctx.font = 'bold 12px Rajdhani, "IBM Plex Sans KR", sans-serif';
           ctx.fillText(`현재 누적 +${ascStack}`, x + cardW/2, y + 164);
         }
         ctx.fillStyle = '#9aa3b3';
-        ctx.font = '11px Jua, sans-serif';
+        ctx.font = '11px Rajdhani, "IBM Plex Sans KR", sans-serif';
         ctx.fillText('영구 글로벌 강화', x + cardW/2, y + cardH - 60);
       } else if (isBonus) {
         const isScore = c.action === 'bonusScore';
@@ -26343,13 +26499,13 @@
           ? `+${c.amount.toLocaleString()}`
           : `+${c.amount} ★`;
         ctx.fillStyle = p.name;
-        ctx.font = 'bold 26px Jua, sans-serif';
+        ctx.font = 'bold 26px Rajdhani, "IBM Plex Sans KR", sans-serif';
         ctx.fillText(amountText, x + cardW/2, y + 82);
         ctx.fillStyle = p.accent;
-        ctx.font = '13px Jua, sans-serif';
+        ctx.font = '13px Rajdhani, "IBM Plex Sans KR", sans-serif';
         ctx.fillText(isScore ? '점수' : '스타더스트', x + cardW/2, y + 104);
         ctx.fillStyle = '#9aa3b3';
-        ctx.font = '11px Jua, sans-serif';
+        ctx.font = '11px Rajdhani, "IBM Plex Sans KR", sans-serif';
         const helpTxt = isScore
           ? '현재 게임 점수 즉시 추가'
           : '영구 통화 (메뉴 강화소)';
@@ -26366,7 +26522,7 @@
         // 럭키 카드는 큰 폰트로 강조
         const isLucky = c.lucky && c.lucky > 0;
         ctx.fillStyle = p.accent;
-        ctx.font = isLucky ? 'bold 15px Jua, sans-serif' : '13px Jua, sans-serif';
+        ctx.font = isLucky ? 'bold 15px Rajdhani, "IBM Plex Sans KR", sans-serif' : '13px Rajdhani, "IBM Plex Sans KR", sans-serif';
         ctx.fillText(`Lv${c.level} → Lv${c.newLevel}`, x + cardW/2, y + 170);
         nextLineY = y + 190;
       } else if (c.action === 'combo' && c.parts) {
@@ -26374,13 +26530,13 @@
         const p2 = ABILITY_DEFS[c.parts[1]];
         if (p1 && p2) {
           ctx.fillStyle = p.accent;
-          ctx.font = '12px Jua, sans-serif';
+          ctx.font = '12px Rajdhani, "IBM Plex Sans KR", sans-serif';
           ctx.fillText('재료 ↓', x + cardW/2, y + 170);
           ctx.fillStyle = '#c8cdd8';
-          ctx.font = 'bold 12px Jua, sans-serif';
+          ctx.font = 'bold 12px Rajdhani, "IBM Plex Sans KR", sans-serif';
           ctx.fillText(`${p1.name} + ${p2.name}`, x + cardW/2, y + 186);
           ctx.fillStyle = p.accent;
-          ctx.font = '11px Jua, sans-serif';
+          ctx.font = '11px Rajdhani, "IBM Plex Sans KR", sans-serif';
           ctx.fillText('(MAX 재료 소진)', x + cardW/2, y + 200);
           nextLineY = y + 218;
         }
@@ -26390,7 +26546,7 @@
       let lineY = nextLineY;
       if (!isBonus && def) {
         ctx.fillStyle = '#c8cdd8';
-        ctx.font = '12px Jua, sans-serif';
+        ctx.font = '12px Rajdhani, "IBM Plex Sans KR", sans-serif';
         const desc = def.desc(c.newLevel || c.level || 1);
         const words = desc.split(' ');
         let line = '';
@@ -26435,7 +26591,7 @@
           ctx.fillStyle = has
             ? (isTrip ? '#ffd060' : '#c084ff')
             : '#5a6068';
-          ctx.font = (has ? 'bold ' : '') + '11px Jua, sans-serif';
+          ctx.font = (has ? 'bold ' : '') + '11px Rajdhani, "IBM Plex Sans KR", sans-serif';
           const tag = isTrip ? '🔥' : (cdef.isCombo && pdef.isPassive ? '⚙' : '+');
           const hint = `${tag} ${pdef.name} → ${cdef.name}`;
           let txt = hint;
@@ -26449,7 +26605,7 @@
 
       // 하단 번호 키 (폰트 확대)
       ctx.fillStyle = p.accent;
-      ctx.font = 'bold 15px Jua, sans-serif';
+      ctx.font = 'bold 15px Rajdhani, "IBM Plex Sans KR", sans-serif';
       ctx.fillText(`[${i + 1}]`, x + cardW/2, y + cardH - 12);
       ctx.restore();   // 🎯 v227 — 카드 눌림 변형 종료
     }
@@ -26468,19 +26624,19 @@
       const totalBW = bw * 2 + gap2;
       const bx1 = CX - totalBW / 2;
       const bx2 = bx1 + bw + gap2;
-      drawModalBtn(bx1, btnY, bw, bh, '🎲 리롤', '#1f2a35', '#7ad7ff');
-      drawModalBtn(bx2, btnY, bw, bh, '취소 [ESC]', '#1a1f2b', '#3a4256');
+      drawModalBtn(bx1, btnY, bw, bh, '↻ 리롤', '#1f2a35', '#7ad7ff');
+      drawModalBtn(bx2, btnY, bw, bh, '취소 [ESC]', 'rgba(30,12,12,0.5)', '#ff6b6b');
       state._rerollBtn = { x: bx1, y: btnY, w: bw, h: bh };
       state._cancelBtn = { x: bx2, y: btnY, w: bw, h: bh };
     } else if (showReroll) {
       const bw = 150;
       const bx = CX - bw / 2;
-      drawModalBtn(bx, btnY, bw, bh, '🎲 리롤 (남은 1회)', '#1f2a35', '#7ad7ff');
+      drawModalBtn(bx, btnY, bw, bh, '↻ 리롤 (남은 1회)', '#1f2a35', '#7ad7ff');
       state._rerollBtn = { x: bx, y: btnY, w: bw, h: bh };
     } else if (showCancel) {
       const bw = 120;
       const bx = CX - bw / 2;
-      drawModalBtn(bx, btnY, bw, bh, '취소 [ESC]', '#1a1f2b', '#3a4256');
+      drawModalBtn(bx, btnY, bw, bh, '취소 [ESC]', 'rgba(30,12,12,0.5)', '#ff6b6b');
       state._cancelBtn = { x: bx, y: btnY, w: bw, h: bh };
     }
 
@@ -26489,12 +26645,12 @@
       const remainMs = Math.max(0, state.autoCardTimer - performance.now());
       const sec = Math.ceil(remainMs / 1000);
       const countY = btnY + bh + 22;
-      ctx.font = '12px Jua, sans-serif';
+      ctx.font = '12px Rajdhani, "IBM Plex Sans KR", sans-serif';
       ctx.textAlign = 'center';
       ctx.fillStyle = '#9aa3b3';
       ctx.fillText('스타더스트 자동 선택', CX, countY);
       // 카운트다운 숫자 — 작게 강조
-      ctx.font = 'bold 18px Jua, sans-serif';
+      ctx.font = 'bold 18px Rajdhani, "IBM Plex Sans KR", sans-serif';
       ctx.fillStyle = sec <= 1 ? '#ff8898' : (sec <= 2 ? '#ffd479' : '#88dda8');
       ctx.fillText(`${sec}S`, CX, countY + 22);
     }
@@ -26512,7 +26668,7 @@
     ctx.lineWidth = 1.5;
     ctx.strokeRect(x, y, w, h);
     ctx.fillStyle = '#e8eaf0';
-    ctx.font = '13px Jua, sans-serif';
+    ctx.font = '13px Rajdhani, "IBM Plex Sans KR", sans-serif';
     ctx.textAlign = 'center';
     ctx.fillText(label, x + w / 2, y + 24);
   }
@@ -27493,6 +27649,7 @@
     const nm = document.createElement('div'); nm.className = 'npc-name'; nm.textContent = npc.name; portrait.appendChild(nm);
   }
   function _showEventOutcome(out, isCurse) {
+    out = _stripEvEmoji(out);
     _lastEventOutcome = out;
     const choicesEl = document.getElementById('eventChoices');
     // 🆕 능력 변동 아이콘 (삭제/획득/강화) — 텍스트 위에 표시
@@ -27507,7 +27664,7 @@
     if (choicesEl) choicesEl.innerHTML = iconRow + `<div class="event-outcome"${isCurse ? ' style="color:#ff8a8a;background:#1a1012;border-color:#4a2030;"' : ''}>${out}</div>`;
     const ge = document.getElementById('eventGold'); if (ge) ge.textContent = String(Math.floor(state.gold));
     const foot = document.getElementById('eventFoot'); if (foot) foot.style.display = '';
-    const _cb = document.getElementById('eventCloseBtn'); if (_cb) _cb.textContent = '계속 ▶';
+    const _cb = document.getElementById('eventCloseBtn'); if (_cb) _cb.textContent = '[ CONTINUE ]';
     try { for (let k = 0; k < 10; k++) spawnParticles(CX, CY, isCurse ? '#ff6b6b' : '#ffd479', 1); } catch (e) {}
     if (typeof renderPanel === 'function') renderPanel();
   }
@@ -27632,10 +27789,10 @@
     paused = true;
     _activeEvent = { _curse: false, _resolved: false, _evolve: rtKey, choices: [
       { label: '힘을 받는다', desc: '[R] ' + (t.title || rtKey) + ' — ' + info.abName,
-        resolve() { applyEvolution('R', rtKey, info.abId); return '🌳 ' + (t.title || rtKey) + '의 힘이 깃들었다!'; } },
+        resolve() { applyEvolution('R', rtKey, info.abId); return '✦ ' + (t.title || rtKey) + '의 힘이 깃들었다!'; } },
     ] };
     try { _setEventPortrait(rtKey); } catch (e) {}
-    const te = document.getElementById('eventTitle'); if (te) te.textContent = '🌳 진화 — ' + (t.title || rtKey);
+    const te = document.getElementById('eventTitle'); if (te) te.textContent = _evTitle('진화 // ' + (t.title || rtKey));
     const ge = document.getElementById('eventGold'); if (ge) ge.textContent = String(Math.floor(state.gold));
     const tx = document.getElementById('eventText'); if (tx) tx.textContent = '"' + (EVO_LINES[rtKey] || ((npc.name || '운명') + ' — 내 힘을 받아라. 너의 포탑이 [' + (t.title || rtKey) + ']로 깨어난다.')) + '"';
     const choicesEl = document.getElementById('eventChoices');
@@ -27688,9 +27845,9 @@
     if (isCurse) { try { shake(12, 20); } catch (e) {} }                 // 💀 저주 — 불길한 진동
     else if (_jp) { try { if (SFX && SFX.victory) SFX.victory(); } catch (e) {} }   // ✨ 대박 효과음
     _setEventPortrait(npcKey);
-    const te = document.getElementById('eventTitle'); if (te) te.textContent = title;
+    const te = document.getElementById('eventTitle'); if (te) te.textContent = _evTitle(title);
     const ge = document.getElementById('eventGold'); if (ge) ge.textContent = String(Math.floor(state.gold));
-    const tx = document.getElementById('eventText'); if (tx) tx.textContent = text;
+    const tx = document.getElementById('eventText'); if (tx) tx.textContent = _stripEvEmoji(text);
     const choicesEl = document.getElementById('eventChoices'); if (choicesEl) choicesEl.innerHTML = '';
     const foot = document.getElementById('eventFoot'); if (foot) foot.style.display = 'none';
     if (isCurse) {
@@ -27700,7 +27857,7 @@
     } else {
       _activeEvent.choices.forEach((ch, i) => {
         const btn = document.createElement('button'); btn.className = 'event-choice'; btn.disabled = !!ch.disabled;
-        btn.innerHTML = `<div class="ec-label">${ch.label}</div><div class="ec-desc">${ch.desc || ''}</div>`;
+        btn.innerHTML = `<div class="ec-label">${_stripEvEmoji(ch.label)}</div><div class="ec-desc">${_stripEvEmoji(ch.desc || '')}</div>`;
         if (!ch.disabled) btn.onclick = () => resolveEventChoice(i);
         if (choicesEl) choicesEl.appendChild(btn);
       });
@@ -27817,7 +27974,7 @@
     // ===== 화면 피드백 =====
     _setEventPortrait(npcKey);
     const _scnR = document.getElementById('eventScene'); if (_scnR) { _scnR.classList.toggle('jackpot', !!jackpot); _scnR.classList.remove('curse'); }
-    const te = document.getElementById('eventTitle'); if (te) te.textContent = isStack ? '🔮 유물 강화' : '🔮 유물 획득';   // 대박은 금테 글로우 + 고등급 유물(자체 광채)로만 표현
+    const te = document.getElementById('eventTitle'); if (te) te.textContent = isStack ? '유물 강화' : '유물 획득';   // 대박은 금테 글로우 + 고등급 유물(자체 광채)로만 표현
     const ge = document.getElementById('eventGold'); if (ge) ge.textContent = String(Math.floor(state.gold));
     const tx = document.getElementById('eventText');
     const choicesEl = document.getElementById('eventChoices');
@@ -27842,7 +27999,7 @@
     }
     _activeEvent = { _curse: false, choices: [], _resolved: true };
     const foot = document.getElementById('eventFoot'); if (foot) foot.style.display = '';
-    const _cb = document.getElementById('eventCloseBtn'); if (_cb) _cb.textContent = '계속 ▶';
+    const _cb = document.getElementById('eventCloseBtn'); if (_cb) _cb.textContent = '[ CONTINUE ]';
     const sc = document.getElementById('eventScene'); if (sc) sc.classList.add('show');
   }
 
@@ -28281,15 +28438,15 @@
       portrait.appendChild(_charPortraitImg(charId));   // 일러스트(icons/illust/) — 없으면 이모지 폴백
       const nm = document.createElement('div'); nm.className = 'npc-name'; nm.textContent = char.name; portrait.appendChild(nm);
     }
-    const te = document.getElementById('eventTitle'); if (te) te.textContent = '⚡ ' + ev.title;   // 기습 표식
-    const tx = document.getElementById('eventText'); if (tx) tx.textContent = ev.text;
+    const te = document.getElementById('eventTitle'); if (te) te.textContent = _evTitle(ev.title);   // 기습 — 이모지 스트립(시스템 텍스트만)
+    const tx = document.getElementById('eventText'); if (tx) tx.textContent = _stripEvEmoji(ev.text);
     const ge = document.getElementById('eventGold'); if (ge) ge.textContent = String(Math.floor(state.gold));
     const choicesEl = document.getElementById('eventChoices');
     if (choicesEl) {
       choicesEl.innerHTML = '';
       ev.choices.forEach((ch, i) => {
         const btn = document.createElement('button'); btn.className = 'event-choice'; btn.disabled = !!ch.disabled;
-        btn.innerHTML = `<div class="ec-label">${ch.label}</div><div class="ec-desc">${ch.desc || ''}</div>`;
+        btn.innerHTML = `<div class="ec-label">${_stripEvEmoji(ch.label)}</div><div class="ec-desc">${_stripEvEmoji(ch.desc || '')}</div>`;
         if (!ch.disabled) btn.onclick = () => resolveEventChoice(i);
         choicesEl.appendChild(btn);
       });
@@ -28320,6 +28477,10 @@
   }
   document.getElementById('pauseBtn').onclick = togglePause;
   (function(){ const b = document.getElementById('shopCloseBtn'); if (b) b.onclick = () => { if (SFX && SFX.click) SFX.click(); closeShop(); }; })();
+  // 🛸 v583 — 이벤트 타이틀 이모지 스트립 (💀🌳🔮⚡💰 등 제거 → 시스템 텍스트만). 한글/[]/▶/◇ 등은 보존.
+  function _evTitle(s){ return String(s||'').replace(/[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{2B00}-\u{2BFF}️]/gu,'').replace(/\s+/g,' ').trim(); }
+  // 🛸 v585 — 이벤트 결과/선택지/대사 이모지 스트립 (✦◇▶◆ 등 SF 마커는 보존). 모든 이벤트 렌더에 일괄 적용.
+  function _stripEvEmoji(s){ return String(s||'').replace(/[\u{1F000}-\u{1FAFF}\u{2600}-\u{2725}\u{2727}-\u{27BF}\u{2B00}-\u{2BFF}\u{FE0F}]/gu,'').replace(/ {2,}/g,' ').trim(); }
   (function(){ const b = document.getElementById('eventCloseBtn'); if (b) b.onclick = () => { if (SFX && SFX.click) SFX.click(); closeEvent(); }; })();
   document.getElementById('resetBtn').onclick = () => {
     // 진행 중인 게임이면 확인 팝업 (실수 방지)
@@ -30485,7 +30646,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 574;
+  const APP_VERSION = 585;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
