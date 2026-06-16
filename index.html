@@ -18624,12 +18624,16 @@
   // ===== 점수 제출 (게임 종료 시) — title 컬럼 미생성 대응 =====
   let _lastSubmitError = null;
   let _submitPromise = null;       // 진행 중인 제출 Promise (조회 시 await 용도)
-  function submitGlobalScore(override) {
+  // 🛡 v574 — 기기-로컬 시즌 최고점 (글로벌 랭킹 제출 dedup). META 와 분리 → 서버 sync 영향 0.
+  function _getRankBest() { try { return JSON.parse(localStorage.getItem('_dd_rankbest') || '{}') || {}; } catch (e) { return {}; } }
+  function _setRankBest(o) { try { localStorage.setItem('_dd_rankbest', JSON.stringify(o)); } catch (e) {} }
+  function submitGlobalScore(override, force) {
     // override 있으면 그 기록(점수/라운드/난이도/캐릭/모드)을 제출, 없으면 현재 게임 state
-    _submitPromise = _submitGlobalScoreImpl(override);
+    // force=true (수동 재제출): 로컬 시즌 최고점 가드 우회 (서버에 유실/클로버된 점수 복구용)
+    _submitPromise = _submitGlobalScoreImpl(override, force);
     return _submitPromise;
   }
-  async function _submitGlobalScoreImpl(override) {
+  async function _submitGlobalScoreImpl(override, force) {
     _lastSubmitError = null;
     if (!isSupabaseEnabled()) { _lastSubmitError = 'Supabase 미설정'; console.warn('[점수제출] Supabase 미설정'); return; }
     const sb = getSupabase();
@@ -18646,6 +18650,17 @@
     const titleVal = getSelectedTitle() || null;
     if (newScore <= 0) { _lastSubmitError = '점수 0'; console.warn('[점수제출] 점수가 0 — 제출 생략'); return; }
     console.log(`[점수제출] 시작: ${newScore}점 (mode=${gameMode}, round=${gameRound}, asc=${gameAsc})`);
+
+    // 🛡 v574 — 로컬 시즌 최고점 가드 (서버 읽기 성공/실패와 무관하게 동작).
+    //   Supabase upsert 는 충돌 시 무조건 덮어쓰므로, 서버 조회 실패(RLS/네트워크) 시
+    //   낮은 점수가 기존 높은 점수를 갈아치우던 버그 방지 → 같은 기기에서 이번 시즌 이미 제출한
+    //   최고점보다 낮으면 제출 자체를 스킵. (force=수동 재제출 시엔 우회해서 서버 복구 허용)
+    const _seasonStart = (typeof getSeasonStartTime === 'function') ? getSeasonStartTime() : 0;
+    const _localBest = (() => { const e = _getRankBest()[gameMode]; return (e && e.seasonStart === _seasonStart) ? (e.score || 0) : 0; })();
+    if (!force && newScore <= _localBest) {
+      console.log(`[점수제출] 로컬 시즌 최고 ${_localBest} ≥ 새 점수 ${newScore} — 스킵 (낮은 점수 덮어쓰기 방지)`);
+      return;
+    }
 
     // 🛡 기존 점수 조회 — 실패해도 제출은 계속 (Supabase upsert 가 conflict 처리)
     //    조회 성공 + 기존 점수가 더 높으면 그때만 스킵
@@ -18709,6 +18724,8 @@
           console.log(`[점수제출] ✅ 성공 (시도 ${i+1}/${attempts.length}): ${newScore.toLocaleString()}점 (mode=${gameMode})`);
           invalidateRankingCache();
           _lastSubmitError = null;
+          // 🛡 v574 — 로컬 시즌 최고점 갱신 (이후 더 낮은 점수의 덮어쓰기 차단)
+          try { const rb = _getRankBest(); rb[gameMode] = { score: newScore, seasonStart: _seasonStart }; _setRankBest(rb); } catch (e) {}
           return;
         }
         lastError = res.error;
@@ -18746,7 +18763,7 @@
     const p = Promise.all(list.map(r => submitGlobalScore({
       score: r.score, round: r.round || 1, ascension: r.ascension || 0,
       character: r.character || 'standard', mode: r.mode || 'standard',
-    })));
+    }, true)));
     p.then(() => {
       if (_lastSubmitError) toast(`❌ 재제출 실패: ${_lastSubmitError}`);
       else { toast('✅ 이번 시즌 최고 기록 재제출 완료'); invalidateRankingCache(); loadGlobalRankings(); }
@@ -30468,7 +30485,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 573;
+  const APP_VERSION = 574;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
