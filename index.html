@@ -458,6 +458,10 @@
     display: flex; align-items: center; gap: 6px;
     margin-bottom: 2px;
   }
+  /* 능력 출처 배지 — 🌳 진화트리 능력 / ✦ 고유 능력 (게임 중 한눈 구분) */
+  .ability-row .ab-origin { font-size: 12px; line-height: 1; margin-left: 2px; flex-shrink: 0; }
+  .ability-row .ab-origin.evo  { filter: drop-shadow(0 0 4px rgba(0,229,255,0.85)); }
+  .ability-row .ab-origin.uniq { filter: drop-shadow(0 0 4px rgba(255,212,121,0.9)); }
   .codex-card .card-header {
     display: flex; align-items: center; gap: 8px;
     margin-bottom: 4px;
@@ -1408,6 +1412,7 @@
     font-size: 18px; font-weight: bold; color: #e8eaf0;
     letter-spacing: 2px;
   }
+  .app-ver-label { font-size: 9px; font-weight: 600; letter-spacing: 0; color: rgba(0,229,255,0.45); vertical-align: middle; }
   .gacha-currencies {
     display: flex; gap: 6px;
   }
@@ -1420,17 +1425,18 @@
   /* 🎴 풀스크린 배너 (명조 스타일) */
   .gacha-fullbanner {
     position: relative;
-    width: 100%;
+    /* 짧은 화면에선 폭을 줄여 16:9 유지 → flex 컬럼에서 세로로 눌려 좌우 띠 생기던 문제 해결 */
+    width: min(100%, 70vh);
     aspect-ratio: 16/9;
-    max-height: 75vh;
+    flex-shrink: 0;
+    margin: 0 auto 12px;
     background: linear-gradient(135deg, #0a0c14, #050608);
     border-radius: 10px;
     overflow: hidden;
-    margin-bottom: 12px;
   }
   .gacha-fullbanner-img {
     width: 100%; height: 100%;
-    object-fit: cover;
+    object-fit: contain;
     display: block;
   }
   .gacha-fullbanner-fallback {
@@ -1456,7 +1462,8 @@
     font-family: inherit;
   }
   .gacha-banner-arrow:hover { background: rgba(122,215,255,0.4); transform: translateY(-50%) scale(1.08); }
-  .gacha-banner-arrow:active { transform: translateY(-50%) scale(0.95); }
+  /* :not(:disabled)로 전역 button:active(scale만 적용→중앙정렬 풀림) 이김 → 눌러도 안 내려감 */
+  .gacha-banner-arrow:active:not(:disabled) { transform: translateY(-50%) scale(0.95); }
   .gacha-arrow-left  { left: 8px; }
   .gacha-arrow-right { right: 8px; }
   /* 상단 좌측: 배너 타이틀 */
@@ -1708,56 +1715,93 @@
 
   /* ===== 가챠 결과 화면 ===== */
   #gachaResultScreen {
-    padding: 12px;
+    padding: 10px 10px 8px;
     align-items: center;
-    justify-content: center;
-    gap: 12px;
+    justify-content: flex-start;
+    gap: 7px;
     box-sizing: border-box;
-    /* 컨텐츠가 화면을 넘어가면 안 잘리게 — 단, 카드 자체는 그리드로 항상 fit */
     overflow-y: auto;
+    background: #020408;
+  }
+  /* 배경 스캔라인 */
+  #gachaResultScreen::before {
+    content: '';
+    position: absolute; inset: 0; pointer-events: none; z-index: 0;
+    background: repeating-linear-gradient(
+      0deg, transparent, transparent 3px,
+      rgba(0,229,255,0.013) 3px, rgba(0,229,255,0.013) 4px
+    );
   }
   .gacha-result-title {
-    font-size: 26px; font-weight: bold; color: #ffd479;
-    letter-spacing: 4px;
-    text-shadow: 0 0 20px rgba(255, 212, 121, 0.5);
+    font-family: ui-monospace, 'Courier New', monospace;
+    font-size: 11px; font-weight: bold; color: #00e5ff;
+    letter-spacing: 5px;
+    text-shadow: 0 0 12px rgba(0,229,255,0.7);
+    border-bottom: 1px solid rgba(0,229,255,0.2);
+    padding-bottom: 6px; width: 100%;
+    text-align: center; position: relative; z-index: 1;
   }
-  /* 🎴 10연 결과 — 5×2 그리드 고정 (스크롤 없이 한 화면에) */
+  /* 10연 결과 — 5×2 그리드 */
   .gacha-result-cards {
     display: grid;
     grid-template-columns: repeat(5, 1fr);
-    gap: 8px;
-    justify-content: center;
+    gap: 6px;
     width: 100%;
     max-width: 720px;
     box-sizing: border-box;
-    padding: 4px;
-    /* 화면 잘림 방지 — 컨테이너 자체 스크롤 X, 카드 크기로 조절 */
-    overflow: hidden;
+    padding: 8px 4px 2px;
+    overflow: visible;
+    position: relative; z-index: 1;
   }
-  /* 1회 뽑기 — 카드 1개일 때 그리드 1열 + 큰 카드 */
+  /* 1회 뽑기 */
   .gacha-result-cards.single {
-    grid-template-columns: 200px;
-    max-width: 220px;
+    grid-template-columns: 175px;
+    max-width: 195px;
   }
   .gacha-result-card {
-    --rarity-color: #7ad7ff;
+    --rarity-color: rgba(0,200,240,0.65);
+    --neon: #3bf7ff;
     position: relative;
-    width: 100%;
-    min-width: 0;        /* grid 자식이 콘텐츠로 인해 부풀지 않게 */
-    background: #0c0e18;
-    border: 2px solid var(--rarity-color);
-    border-radius: 9px;
-    overflow: hidden;
+    isolation: isolate;             /* z-index 컨텍스트 격리 (카드별 독립) */
+    width: 100%; min-width: 0;
+    background: transparent;        /* 패널 채움은 ::before 글래스가 담당 */
+    border: 0;                      /* ← 투박한 사각 쫄대 테두리 제거 */
+    border-radius: 2px;
+    overflow: hidden;               /* skew 의사요소를 카드 경계에서 clip (핵심) */
     display: flex; flex-direction: column;
     opacity: 0;
-    transform: translateY(24px) scale(0.6) rotate(-4deg);
-    /* 🎬 v250 — 순차 등장: animation-delay 는 JS 에서 inline 으로 설정 (카드별 stagger) */
-    animation: _gacha-card-reveal 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    transform: translateY(20px) scale(0.7);
+    animation: _gacha-card-reveal 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  }
+  /* -12° 기울어진 글래스 패널 — 회전 안 함(컨테이너 직속), 콘텐츠 뒤(z:0) */
+  .gacha-result-card::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: linear-gradient(135deg, rgba(8,14,28,0.55) 0%, rgba(4,8,18,0.30) 100%);
+    backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
+    z-index: 0; pointer-events: none;
+  }
+  /* -12° 네온 사선 프레임 + 주파수 스캔 — 카드 오픈 후에만 보임(z:5 < back-cover z:8) */
+  .gacha-result-card::after {
+    content: '';
+    position: absolute; inset: 0;          /* 카드 가장자리에 딱 맞춤 — 이미지/라벨이 프레임 밖으로 나오지 않게 */
+    border: 1px solid var(--neon);
+    border-radius: 2px;                     /* 카드 radius와 동일 */
+    box-shadow: inset 0 0 7px rgba(59,247,255,0.10);
+    z-index: 5; pointer-events: none;
+    background: linear-gradient(180deg, transparent, rgba(59,247,255,0.13) 50%, transparent) no-repeat;
+    background-size: 100% 26%; background-position: 0 -40%;
+    animation: _card-freq-scan 3.6s linear infinite;
+  }
+  /* 스캔 광선만 위→아래로 훑음 (테두리는 항상 유지 — opacity 안 건드림) */
+  @keyframes _card-freq-scan {
+    0%   { background-position: 0 -40%; }
+    100% { background-position: 0 140%; }
   }
   @keyframes _gacha-card-reveal {
-    0%   { opacity: 0; transform: translateY(24px) scale(0.6) rotate(-4deg); }
-    60%  { opacity: 1; transform: translateY(-4px) scale(1.05) rotate(1deg); }
-    100% { opacity: 1; transform: translateY(0) scale(1) rotate(0deg); }
+    0%   { opacity: 0; transform: translateY(20px) scale(0.7); }
+    60%  { opacity: 1; transform: translateY(-3px) scale(1.04); }
+    100% { opacity: 1; transform: translateY(0) scale(1); }
   }
   /* 🎬 v250 — SSR/ANCIENT 강조 펄스 (등장 후 한 번 더 빛남) */
   @keyframes _gacha-card-rarity-burst {
@@ -1773,106 +1817,180 @@
   }
   .gacha-result-card .card-rarity-tag {
     text-align: center;
-    padding: 3px;
+    padding: 2px 4px;
     background: var(--rarity-color);
-    color: #0b0d12;
+    color: #020408;
+    font-family: ui-monospace, 'Courier New', monospace;
     font-weight: bold;
-    font-size: 10px;
-    letter-spacing: 1px;
+    font-size: 8px;
+    letter-spacing: 2px;
   }
   .gacha-result-card .card-portrait {
-    aspect-ratio: 1 / 1;     /* 카드 폭에 비례한 정사각 portrait */
+    aspect-ratio: 1 / 1;
     display: flex; align-items: center; justify-content: center;
-    font-size: clamp(28px, 7vw, 48px);
-    background: radial-gradient(circle at center, color-mix(in srgb, var(--rarity-color) 25%, #0b0d12), #0b0d12);
+    font-size: clamp(24px, 6vw, 40px);
+    background: radial-gradient(circle at center, color-mix(in srgb, var(--rarity-color) 18%, #020408), #020408);
     position: relative;
   }
   .gacha-result-card .card-name {
     text-align: center;
-    padding: 4px 2px 2px;
-    font-size: clamp(10px, 1.8vw, 12px);
+    padding: 3px 2px 1px;
+    font-size: clamp(9px, 1.6vw, 11px);
     font-weight: bold;
+    font-family: ui-monospace, 'Courier New', monospace;
     color: var(--rarity-color);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    letter-spacing: 1px;
+    width: 100%; box-sizing: border-box;
   }
   .gacha-result-card .card-status {
     text-align: center;
-    padding: 1px 2px 4px;
-    font-size: clamp(8px, 1.4vw, 10px);
-    color: #9aa3b3;
+    padding: 1px 2px 3px;
+    font-size: clamp(8px, 1.3vw, 10px);
+    font-family: ui-monospace, 'Courier New', monospace;
+    color: rgba(100,160,200,0.65);
     min-height: 14px;
+    width: 100%; box-sizing: border-box;
+    overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
   }
-  /* 1회 결과 — 큰 카드일 때 폰트도 크게 */
   .gacha-result-cards.single .card-portrait { font-size: 64px; }
-  .gacha-result-cards.single .card-name { font-size: 14px; }
+  .gacha-result-cards.single .card-name { font-size: 13px; }
   .gacha-result-cards.single .card-status { font-size: 11px; }
-  .gacha-result-card .card-status.new {
-    color: #88ff88;
-    font-weight: bold;
+  .gacha-result-card .card-status.new { color: #00ffaa; font-weight: bold; }
+
+  /* 스타더스트 양자 데이터 샤드 — 면 없이 1px 네온 라인 + 홀로 스캔 격자 (회전 X) */
+  .card-stardust-core {
+    width: 62%; aspect-ratio: 1;
+    position: relative; flex-shrink: 0;
+    animation: _shard-breath 2.6s ease-in-out infinite;
+  }
+  .card-stardust-core .shard-svg { width: 100%; height: 100%; display: block; overflow: visible; }
+  /* 일반 — 다크 사이언, 배경 투명(성운 투과) */
+  .card-stardust-core .shard-outer {
+    fill: rgba(0,200,240,0.05);
+    stroke: #3bf7ff; stroke-width: 2;
+    filter: drop-shadow(0 0 3px rgba(0,210,255,0.8));
+  }
+  .card-stardust-core .shard-inner {
+    fill: none; stroke: rgba(120,230,255,0.45); stroke-width: 1.1;
+  }
+  .card-stardust-core .shard-grid line {
+    stroke: rgba(0,229,255,0.22); stroke-width: 0.8;
+    animation: _shard-grid-flow 2.8s ease-in-out infinite;
+  }
+  .card-stardust-core .shard-dot {
+    fill: #d6f9ff;
+    filter: drop-shadow(0 0 4px rgba(0,220,255,0.95));
+    animation: _shard-dot 2.6s ease-in-out infinite;
+  }
+  @keyframes _shard-breath {
+    0%,100% { transform: scale(1);    opacity: .92; }
+    50%     { transform: scale(1.05); opacity: 1; }
+  }
+  @keyframes _shard-dot { 0%,100%{ r: 3; opacity: .8; } 50%{ r: 4.4; opacity: 1; } }
+  @keyframes _shard-grid-flow { 0%,100%{ opacity:.15; } 50%{ opacity:.5; } }
+  /* 잭팟 — 싱귤래리티 크리티컬 샤드 (화이트골드, 강한 펄스, 회전 X) */
+  .card-stardust-core.jackpot { animation: _shard-breath-jp 1.1s ease-in-out infinite; }
+  .card-stardust-core.jackpot .shard-outer {
+    fill: rgba(255,170,0,0.07);
+    stroke: #ffaa00; stroke-width: 2.6;
+    filter: drop-shadow(0 0 7px rgba(255,170,0,0.95));
+  }
+  .card-stardust-core.jackpot .shard-inner {
+    stroke: #fff2cc; stroke-width: 1.6;
+    filter: drop-shadow(0 0 4px rgba(255,210,120,0.85));
+    animation: _shard-inner-jp 1.1s ease-in-out infinite;
+  }
+  .card-stardust-core.jackpot .shard-grid line { stroke: rgba(255,210,120,0.3); }
+  .card-stardust-core.jackpot .shard-dot { fill: #ffffff; filter: drop-shadow(0 0 6px rgba(255,255,255,0.95)); }
+  @keyframes _shard-breath-jp {
+    0%,100% { transform: scale(1);    filter: brightness(1); }
+    50%     { transform: scale(1.09); filter: brightness(1.4) saturate(1.3); }
+  }
+  @keyframes _shard-inner-jp { 0%,100%{ opacity:.6; } 50%{ opacity:1; } }
+
+  /* [ CRITICAL SYNC ] 잭팟 태그 */
+  /* 잭팟 태그 — 카드 안쪽으로 들여 띄운 가운데 칩 (네온 프레임 inset/둥근모서리와 안 닿게 → 잘림 방지) */
+  .card-critical-sync {
+    align-self: center;
+    margin: 4px 0 1px;
+    max-width: calc(100% - 8px);
+    padding: 1px 5px;
+    font-family: ui-monospace, 'Courier New', monospace;
+    font-size: 5px; font-weight: bold;
+    color: #ffaa00; letter-spacing: 0; text-align: center;
+    border: 1px solid rgba(255,170,0,0.55);
+    border-radius: 3px;
+    background: rgba(255,120,0,0.12);
+    animation: _critical-flash 1.2s ease-in-out infinite;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    box-sizing: border-box;
+    position: relative; z-index: 3;
+  }
+  @keyframes _critical-flash {
+    0%,100% { opacity: 1; color: #ffaa00; }
+    50%     { opacity: 0.7; color: #ffcc44; text-shadow: 0 0 8px rgba(255,170,0,0.9); }
   }
   /* 등급별 이펙트 */
-  /* R 등급 — 부드러운 청록 글로우 */
   .gacha-result-card.rarity-r {
-    box-shadow: 0 0 12px rgba(122, 215, 255, 0.3);
+    box-shadow: 0 0 6px rgba(0,200,240,0.2);
   }
-  /* SR 등급 — 보라 광채 + 빛 펄스 */
   .gacha-result-card.rarity-sr {
-    box-shadow: 0 0 20px rgba(192, 132, 255, 0.6), inset 0 0 20px rgba(192, 132, 255, 0.15);
-    animation: gacha-card-in 0.4s ease-out forwards, gacha-sr-pulse 2s ease-in-out infinite 0.5s;
-  }
-  .gacha-result-card.rarity-sr::before {
-    content: '';
-    position: absolute; inset: 0;
-    background: linear-gradient(135deg, transparent 30%, rgba(192, 132, 255, 0.18) 50%, transparent 70%);
-    background-size: 200% 200%;
-    animation: gacha-sr-shimmer 3s linear infinite;
-    pointer-events: none;
+    box-shadow: 0 0 16px rgba(192,132,255,0.5), inset 0 0 14px rgba(192,132,255,0.1);
+    animation: _gacha-card-reveal 0.4s cubic-bezier(0.34,1.56,0.64,1) forwards, gacha-sr-pulse 2s ease-in-out infinite 0.5s;
   }
   @keyframes gacha-sr-pulse {
-    0%, 100% { box-shadow: 0 0 20px rgba(192, 132, 255, 0.5), inset 0 0 20px rgba(192, 132, 255, 0.15); }
-    50%      { box-shadow: 0 0 30px rgba(192, 132, 255, 0.9), inset 0 0 25px rgba(192, 132, 255, 0.25); }
+    0%,100% { box-shadow: 0 0 16px rgba(192,132,255,0.4), inset 0 0 14px rgba(192,132,255,0.1); }
+    50%     { box-shadow: 0 0 28px rgba(192,132,255,0.85), inset 0 0 22px rgba(192,132,255,0.2); }
   }
   @keyframes gacha-sr-shimmer {
-    0% { background-position: -100% -100%; }
+    0%   { background-position: -100% -100%; }
     100% { background-position: 100% 100%; }
   }
-  /* SSR 등급 — 무지개 빛기둥 + 강한 폭발 + 스파클 */
   .gacha-result-card.rarity-ssr {
-    box-shadow: 0 0 28px rgba(255, 212, 121, 0.8), inset 0 0 28px rgba(255, 215, 0, 0.25);
-    animation: gacha-card-in 0.5s ease-out forwards, gacha-ssr-glow 1.5s ease-in-out infinite 0.5s;
+    box-shadow: 0 0 24px rgba(255,212,121,0.7), inset 0 0 20px rgba(255,215,0,0.18);
+    animation: _gacha-card-reveal 0.45s cubic-bezier(0.34,1.56,0.64,1) forwards,
+               _gacha-card-rarity-burst 0.8s ease-out,
+               gacha-ssr-glow 1.5s ease-in-out infinite 0.9s;
   }
-  .gacha-result-card.rarity-ssr::before {
-    content: '';
-    position: absolute; inset: -2px;
-    background: linear-gradient(135deg,
-      #ff66bb 0%, #ffd479 25%, #66ffcc 50%, #88aaff 75%, #ff66bb 100%);
-    background-size: 400% 400%;
-    animation: gacha-rainbow 4s linear infinite;
-    z-index: -1;
-    border-radius: 8px;
-    filter: blur(4px);
+  /* === 등급별 -12° 네온 프레임 색상 (::after) === */
+  .gacha-result-card.rarity-r::after  { border-color: var(--neon); }
+  .gacha-result-card.rarity-sr::after {
+    border-color: #c9a8ff;
+    box-shadow: 0 0 5px rgba(192,132,255,0.5), inset 0 0 7px rgba(192,132,255,0.12);
   }
   .gacha-result-card.rarity-ssr::after {
-    content: '✨';
-    position: absolute;
-    top: 6px; right: 6px;
-    font-size: 22px;
-    animation: gacha-ssr-spark 1.8s ease-in-out infinite;
-    pointer-events: none;
+    border-color: #ffd479;
+    box-shadow: 0 0 8px rgba(255,212,121,0.8), inset 0 0 9px rgba(255,200,80,0.18);
+    animation: _card-freq-scan 3.6s linear infinite;
+  }
+  .gacha-result-card.rarity-ancient::after {
+    border-color: #ff9aff;
+    box-shadow: 0 0 8px rgba(255,138,255,0.85), inset 0 0 9px rgba(255,120,255,0.18);
+    animation: _card-freq-scan 3.6s linear infinite;
+  }
+  @keyframes _frame-gold-pulse {
+    0%,100% { filter: brightness(1)   drop-shadow(0 0 2px rgba(255,212,121,0.4)); }
+    50%     { filter: brightness(1.4) drop-shadow(0 0 8px rgba(255,212,121,0.95)); }
+  }
+  /* SSR/Ancient 등급 텍스트·태그 — 정적 골드 발광 (깜빡임 제거) */
+  .gacha-result-card.rarity-ssr .card-rarity-tag,
+  .gacha-result-card.rarity-ssr .card-name,
+  .gacha-result-card.rarity-ancient .card-rarity-tag,
+  .gacha-result-card.rarity-ancient .card-name {
+    text-shadow: 0 0 5px rgba(255,212,121,0.7);
+  }
+  @keyframes _text-gold-pulse {
+    0%,100% { text-shadow: 0 0 2px rgba(255,212,121,0.5); }
+    50%     { text-shadow: 0 0 8px rgba(255,212,121,1), 0 0 14px rgba(255,180,80,0.7); }
   }
   @keyframes gacha-ssr-glow {
-    0%, 100% { box-shadow: 0 0 28px rgba(255, 212, 121, 0.7), inset 0 0 28px rgba(255, 215, 0, 0.20); }
-    50%      { box-shadow: 0 0 45px rgba(255, 180, 200, 1), 0 0 60px rgba(255, 212, 121, 0.6), inset 0 0 35px rgba(255, 215, 0, 0.35); }
+    0%,100% { box-shadow: 0 0 24px rgba(255,212,121,0.6), inset 0 0 24px rgba(255,215,0,0.16); }
+    50%     { box-shadow: 0 0 40px rgba(255,180,200,1), 0 0 55px rgba(255,212,121,0.5), inset 0 0 30px rgba(255,215,0,0.28); }
   }
   @keyframes gacha-rainbow {
-    0% { background-position: 0% 0%; }
+    0%   { background-position: 0% 0%; }
     100% { background-position: 200% 200%; }
-  }
-  @keyframes gacha-ssr-spark {
-    0%, 100% { transform: scale(1) rotate(0deg); opacity: 0.9; }
-    50%      { transform: scale(1.4) rotate(180deg); opacity: 1; }
   }
   /* 카드 등장 지연 — 순차 등장 */
   .gacha-result-card:nth-child(1) { animation-delay: 0.0s, 0.5s; }
@@ -1885,21 +2003,328 @@
   .gacha-result-card:nth-child(8) { animation-delay: 0.7s, 1.2s; }
   .gacha-result-card:nth-child(9) { animation-delay: 0.8s, 1.3s; }
   .gacha-result-card:nth-child(10) { animation-delay: 0.9s, 1.4s; }
-  /* 요약 + 액션 */
-  .gacha-result-summary {
-    text-align: center;
-    font-size: 14px;
+
+  /* === 카드 뒤집기 모드 === */
+  /* 플립 모드에서 카드 빠르게 등장 (back cover가 가리므로 애니 간략화) */
+  .flip-mode .gacha-result-card {
+    opacity: 1 !important; transform: none !important;
+    animation: _flip-enter 0.2s ease-out both !important;
+    animation-delay: var(--fd, 0ms) !important;
+  }
+  @keyframes _flip-enter { from { opacity:0; transform:scale(0.88); } to { opacity:1; transform:scale(1); } }
+
+  /* 플립 전 글로우 억제 (cover가 숨기므로 낭비 방지) */
+  .flip-mode .gacha-result-card:not(.flipped).rarity-sr,
+  .flip-mode .gacha-result-card:not(.flipped).rarity-ssr,
+  .flip-mode .gacha-result-card:not(.flipped).rarity-ancient { box-shadow:none !important; animation:_flip-enter 0.2s ease-out both !important; }
+  /* 플립 전 글래스/프레임(::before/::after) 숨김 — back-cover가 가리므로 렌더 절약, 플립 시 등장 */
+  .flip-mode .gacha-result-card:not(.flipped)::before,
+  .flip-mode .gacha-result-card:not(.flipped)::after { display:none !important; }
+
+  /* 뒤집힌 후 SSR/Ancient — 등장 버스트 1회만, 이후 글로우는 inset(안쪽)만 → 카드 밖으로 안 번짐 */
+  /* SSR/Ancient 공개 — 카드에서 차분히 떠오르는 골드 블룸(1회) → 정적 인셋 글로우. 화면 전체 이펙트 X */
+  @keyframes _ssr-reveal-pop {
+    0%   { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(255,200,80,0); }
+    45%  { transform: scale(1.05); box-shadow: 0 0 26px 3px rgba(255,205,90,0.6), inset 0 0 18px rgba(255,225,150,0.4); }
+    100% { transform: scale(1);    box-shadow: inset 0 0 13px rgba(255,200,80,0.22); }
+  }
+  @keyframes _anc-reveal-pop {
+    0%   { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(255,120,255,0); }
+    45%  { transform: scale(1.05); box-shadow: 0 0 26px 3px rgba(255,140,255,0.6), inset 0 0 18px rgba(255,210,255,0.4); }
+    100% { transform: scale(1);    box-shadow: inset 0 0 13px rgba(255,120,255,0.22); }
+  }
+  .flip-mode .gacha-result-card.flipped.rarity-ssr {
+    animation: _ssr-reveal-pop 0.7s cubic-bezier(0.2,1.1,0.3,1) both !important;
+  }
+  .flip-mode .gacha-result-card.flipped.rarity-ancient {
+    animation: _anc-reveal-pop 0.7s cubic-bezier(0.2,1.1,0.3,1) both !important;
+  }
+  /* ✨ 고급 홀로그램 광택(foil) — 카드 표면을 비스듬히 가로지르는 광택이 주기적으로 스윕 (SSR/Ancient, 카드 안에만) */
+  .gacha-result-card.flipped.rarity-ssr .card-face-front::after,
+  .gacha-result-card.flipped.rarity-ancient .card-face-front::after {
+    content: ''; position: absolute; inset: 0; z-index: 3; pointer-events: none;
+    mix-blend-mode: screen;
+    background: linear-gradient(115deg, transparent 40%, rgba(255,255,255,0.4) 49%, rgba(255,240,200,0.62) 50%, rgba(255,255,255,0.4) 51%, transparent 60%);
+    background-size: 220% 100%; background-position: 112% 0;
+    animation: _holo-sheen 4s ease-in-out infinite;
+  }
+  .gacha-result-card.flipped.rarity-ancient .card-face-front::after {
+    background: linear-gradient(115deg, transparent 40%, rgba(255,215,255,0.4) 49%, rgba(255,240,255,0.62) 50%, rgba(215,175,255,0.4) 51%, transparent 60%);
+    background-size: 220% 100%; background-position: 112% 0;
+  }
+  /* 왼쪽 밖에서 스윽 들어와 → 중앙에서 보이는 채로 멈춤 → 그 자리에서 이어서 오른쪽 밖으로.
+     양끝(112%/-12%)은 카드 밖이라 다음 패스는 점프 없이 왼쪽에서 부드럽게 슬라이드-인. */
+  @keyframes _holo-sheen {
+    0%   { background-position: 112% 0; }
+    40%  { background-position: 50% 0; }
+    60%  { background-position: 50% 0; }
+    100% { background-position: -12% 0; }
+  }
+  /* SR — 애니메이션 없이, 글로우도 inset만 (보라 halo가 카드 밖으로 번지던 "삐짐" 완전 제거) */
+  .flip-mode .gacha-result-card.flipped.rarity-sr {
+    animation: none !important;
+    box-shadow: inset 0 0 9px rgba(192,132,255,0.2) !important;
+  }
+
+  /* 카드 뒤집기 — 3D 공간 */
+  .flip-mode .gacha-result-card { perspective: 500px; }
+
+  /* 앞면 콘텐츠 래퍼: 처음엔 -90deg (숨김), 뒤집히면 0deg (등장)
+     ※ position:static — 카드 높이를 이 요소가 결정함 */
+  .card-face-front {
+    width: 100%;
+    position: relative; z-index: 2;   /* 글래스(::before z:0) 위, 네온프레임(::after z:5) 아래 */
+    overflow: hidden;
+    display: flex; flex-direction: column; align-items: stretch;
+    transform: rotateY(-90deg);
+    transition: transform 0.22s ease-out 0.2s;
+    backface-visibility: hidden;
+  }
+  .gacha-result-card.flipped .card-face-front {
+    transform: rotateY(0deg);
+  }
+
+  /* 카드 뒷면 덮개 */
+  .card-back-cover {
+    position:absolute; inset:0; z-index:8;
+    background:#040810; border-radius:3px; overflow:hidden;
+    transform-origin:center;
+    transition: transform 0.22s ease-in, opacity 0.04s 0.2s;
+    pointer-events:none;
+    backface-visibility: hidden;
+  }
+  .card-back-cover .back-img {
+    width:100%; height:100%; object-fit:cover; image-rendering:pixelated; display:block;
+  }
+  /* 덮개 사라지기 */
+  .gacha-result-card.flipped .card-back-cover {
+    transform:rotateY(90deg); opacity:0;
+  }
+  /* 뒤집힌 후엔 전조(hint) 애니메이션 중단 — SR 진동/SSR·Ancient 글리치의 transform이
+     덮개의 rotateY(90deg)를 덮어써 "앞면 그대로 통통 튀던" 버그 차단 */
+  .gacha-result-card.flipped .card-back-cover.hint-sr,
+  .gacha-result-card.flipped .card-back-cover.hint-ssr,
+  .gacha-result-card.flipped .card-back-cover.hint-ancient {
+    animation: none !important;
+  }
+
+  /* 등급 힌트 효과 — 홀로그램 전조 연출 */
+
+  /* SR — 주파수 서지: 미세 진동 + SIGNAL_DETECTED 점멸 */
+  .card-back-cover.hint-sr {
+    border: 1px solid rgba(192,132,255,0.7);
+    box-shadow: 0 0 12px rgba(192,132,255,0.5), inset 0 0 8px rgba(192,132,255,0.12);
+    animation: _hint-sr 2s ease-in-out infinite;   /* 위아래 진동(_hint-sr-vib) 제거 — 글로우만 */
+  }
+  .card-back-cover.hint-sr::before {
+    content: '[ SIGNAL_DETECTED: HIGH ]';
+    position: absolute; bottom: 5px; left: 0; right: 0; z-index: 10;
+    font-family: ui-monospace, 'Courier New', monospace;
+    font-size: 5.5px; letter-spacing: 1px; text-align: center;
+    color: rgba(192,132,255,0.85);
+    animation: _signal-blink 1.3s ease-in-out infinite;
+    pointer-events: none;
+  }
+  /* 홀로그램 스캔 라인 */
+  .card-back-cover.hint-sr::after {
+    content: ''; position: absolute; inset: 0; z-index: 9; pointer-events: none;
+    background: repeating-linear-gradient(
+      0deg, transparent, transparent 3px,
+      rgba(192,132,255,0.06) 3px, rgba(192,132,255,0.06) 4px
+    );
+    animation: _sr-scan 1.8s linear infinite;
+  }
+  @keyframes _hint-sr {
+    0%,100%{box-shadow:0 0 10px rgba(192,132,255,0.4),inset 0 0 6px rgba(192,132,255,0.1);}
+    50%{box-shadow:0 0 22px rgba(192,132,255,0.9),inset 0 0 14px rgba(192,132,255,0.25);}
+  }
+  @keyframes _hint-sr-vib {
+    0%,100% { transform: translateY(0); }
+    25%  { transform: translateY(-1.5px); }
+    75%  { transform: translateY(1.5px); }
+  }
+  @keyframes _signal-blink { 0%,100%{opacity:.9;} 50%{opacity:.1;} }
+  @keyframes _sr-scan {
+    0%   { background-position: 0 0; }
+    100% { background-position: 0 -40px; }
+  }
+
+  /* SSR — 차원 과부하: 글리치 RGB 분열 + CRITICAL RESONANCE 경고 */
+  .card-back-cover.hint-ssr {
+    border: 2px solid #ffd479;
+    box-shadow: 0 0 16px rgba(255,212,121,0.65);
+    animation: _hint-ssr 1.5s ease-in-out infinite, _hint-ssr-glitch 2.4s linear infinite;
+  }
+  .card-back-cover.hint-ssr::before {
+    content: '[ !! CRITICAL RESONANCE !! ]';
+    position: absolute; bottom: 4px; left: 0; right: 0; z-index: 10;
+    font-family: ui-monospace, 'Courier New', monospace;
+    font-size: 5px; letter-spacing: 1px; text-align: center;
+    color: rgba(255,55,55,0.95);
+    text-shadow: 0 0 6px rgba(255,55,55,0.8);
+    animation: _warning-flash 0.65s ease-in-out infinite;
+    pointer-events: none;
+  }
+  .card-back-cover.hint-ssr::after {
+    content: ''; position: absolute; inset: -2px; border-radius: 5px; z-index: -1;
+    background: linear-gradient(135deg,#ff66bb,#ffd479,#66ffcc,#88aaff,#ff66bb);
+    background-size: 300% 300%; filter: blur(7px);
+    animation: _hint-ssr-rainbow 2s linear infinite;
+  }
+  @keyframes _hint-ssr {
+    0%,100%{box-shadow:0 0 12px rgba(255,212,121,0.5);}
+    50%{box-shadow:0 0 30px rgba(255,212,121,0.95),0 0 48px rgba(255,140,180,0.5);}
+  }
+  @keyframes _hint-ssr-rainbow { 0%{background-position:0% 0%;} 100%{background-position:300% 300%;} }
+  @keyframes _hint-ssr-glitch {
+    0%,84%,100% { transform:none; filter:none; }
+    85% { transform:translateX(-4px);    filter:hue-rotate(-50deg) saturate(2.5) brightness(1.2); }
+    86% { transform:translateX(4px);     filter:hue-rotate(50deg)  saturate(2.5) brightness(1.2); }
+    87% { transform:translateX(-3px) skewX(3deg); filter:hue-rotate(-90deg) saturate(3) brightness(1.4); }
+    88% { transform:none; filter:none; }
+    93% { transform:translateX(3px);     filter:hue-rotate(25deg)  saturate(2); }
+    94% { transform:translateX(-2px);    filter:hue-rotate(-25deg) saturate(2); }
+    95% { transform:none; filter:none; }
+  }
+  @keyframes _warning-flash { 0%,100%{opacity:1;} 50%{opacity:.05;} }
+
+  /* Ancient — SSR 이상의 핑크 글리치 */
+  .card-back-cover.hint-ancient {
+    border: 2px solid rgba(255,136,255,0.9);
+    box-shadow: 0 0 14px rgba(255,136,255,0.6), inset 0 0 10px rgba(255,136,255,0.2);
+    animation: _hint-ancient 1.2s ease-in-out infinite, _hint-ancient-glitch 1.9s linear infinite;
+  }
+  .card-back-cover.hint-ancient::before {
+    content: '[ !! ANCIENT CODE DETECTED !! ]';
+    position: absolute; bottom: 4px; left: 0; right: 0; z-index: 10;
+    font-family: ui-monospace, 'Courier New', monospace;
+    font-size: 5px; letter-spacing: 1px; text-align: center;
+    color: rgba(255,100,255,0.95);
+    text-shadow: 0 0 8px rgba(255,136,255,0.9);
+    animation: _ancient-flash 0.5s ease-in-out infinite;
+    pointer-events: none;
+  }
+  .card-back-cover.hint-ancient::after {
+    content: ''; position: absolute; inset: -2px; border-radius: 5px; z-index: -1;
+    background: linear-gradient(135deg,#ff44ff,#ff88aa,#cc44ff,#ff88ff,#ff44ff);
+    background-size: 300% 300%; filter: blur(8px);
+    animation: _hint-ssr-rainbow 1.4s linear infinite;
+  }
+  @keyframes _hint-ancient {
+    0%,100%{box-shadow:0 0 10px rgba(255,136,255,0.5),inset 0 0 8px rgba(255,136,255,0.15);opacity:.85;}
+    50%{box-shadow:0 0 28px rgba(255,136,255,1),inset 0 0 20px rgba(255,136,255,0.35);opacity:1;}
+  }
+  @keyframes _hint-ancient-glitch {
+    0%,78%,100% { transform:none; filter:none; }
+    79% { transform:translateX(-5px);           filter:hue-rotate(-60deg) saturate(3) brightness(1.3); }
+    80% { transform:translateX(5px);            filter:hue-rotate(60deg)  saturate(3) brightness(1.3); }
+    81% { transform:translateX(-3px) skewX(4deg); filter:hue-rotate(-120deg) saturate(4) brightness(1.5); }
+    82% { transform:none; filter:none; }
+    89% { transform:translateX(4px) skewX(-2deg); filter:hue-rotate(30deg) saturate(2.5); }
+    90% { transform:translateX(-4px);           filter:hue-rotate(-30deg) saturate(2.5); }
+    91% { transform:none; filter:none; }
+  }
+  @keyframes _ancient-flash { 0%,100%{opacity:1;text-shadow:0 0 8px rgba(255,136,255,0.9);} 50%{opacity:.06;text-shadow:none;} }
+
+  /* ===== Phase 1 메인 버튼: REVEAL ALL — 네온 골드 + 시스템 서브텍스트 ===== */
+  #gachaResultScreen #gachaRevealAll {
+    width: 100%;
+    padding: 12px 14px;
+    cursor: pointer;
+    border-color: rgba(255,200,80,0.6);
     color: #ffd479;
-    padding: 6px 12px;
-    background: #141822;
-    border: 1px solid #2a2f3a;
-    border-radius: 4px;
-    min-height: 24px;
+    background: rgba(22,14,4,0.5);
+    animation: _btn-gold-pulse 2s ease-in-out infinite;
   }
+  #gachaResultScreen #gachaRevealAll:hover:not(:disabled) {
+    background: rgba(40,26,6,0.66);
+    box-shadow: 0 0 30px rgba(255,180,0,0.62), inset 0 0 14px rgba(255,180,0,0.12);
+    transform: skewX(-12deg) translateY(-1px);
+  }
+  #gachaResultScreen #gachaRevealAll:active { transform: skewX(-12deg) scale(0.97); }
+  #gachaRevealAll .ra-main { font-size: 13px; font-weight: bold; letter-spacing: 3px; }
+  #gachaRevealAll .ra-sub {
+    font-size: 7px; letter-spacing: 1.5px; color: rgba(255,200,80,0.6);
+    animation: _ra-sub-blink 1.4s ease-in-out infinite;
+  }
+  @keyframes _ra-sub-blink { 0%,100%{ opacity:.85; } 50%{ opacity:.3; } }
+
+  /* 요약 바 — 얇은 터미널 라인 */
+  .gacha-result-summary {
+    font-family: ui-monospace, 'Courier New', monospace;
+    font-size: 11px; color: rgba(0,229,255,0.6);
+    padding: 5px 12px;
+    border-top: 1px solid rgba(0,229,255,0.15);
+    border-bottom: 1px solid rgba(0,229,255,0.15);
+    background: transparent;
+    width: 100%; box-sizing: border-box;
+    text-align: center; letter-spacing: 1px;
+    min-height: 24px; position: relative; z-index: 1;
+  }
+
+  /* 결과 액션 */
   .gacha-result-actions {
-    display: flex; gap: 12px;
-    margin-top: 8px;
+    display: flex; gap: 8px;
+    width: 100%; box-sizing: border-box;
+    position: relative; z-index: 1;
   }
+  /* 결과화면 버튼 — -12° 사선 글래스 칩 */
+  @keyframes _btn-gold-pulse {
+    0%,100% { box-shadow: 0 0 10px rgba(255,180,0,0.28), inset 0 0 8px rgba(255,180,0,0.06); }
+    50%      { box-shadow: 0 0 24px rgba(255,180,0,0.58), inset 0 0 14px rgba(255,180,0,0.14); }
+  }
+  #gachaResultScreen .gacha-result-actions .gacha-pull-btn {
+    background: rgba(4,10,22,0.5);
+    backdrop-filter: blur(4px);
+    border: 1px solid rgba(0,229,255,0.32);
+    border-radius: 2px;
+    color: rgba(0,229,255,0.78);
+    font-family: ui-monospace, 'Courier New', monospace;
+    font-size: 12px; letter-spacing: 2px;
+    padding: 11px 14px;
+    transform: skewX(-12deg);
+    box-shadow: 0 0 8px rgba(0,229,255,0.12);
+    transition: background .12s, box-shadow .12s, transform .06s;
+  }
+  #gachaResultScreen .gacha-result-actions .gacha-pull-btn:hover:not(:disabled) {
+    background: rgba(0,229,255,0.07);
+    box-shadow: 0 0 18px rgba(0,229,255,0.38);
+    transform: skewX(-12deg) translateY(-1px);
+  }
+  #gachaResultScreen .gacha-result-actions .gacha-pull-btn:active {
+    transform: skewX(-12deg) scale(0.97);
+  }
+  #gachaResultScreen .gacha-result-actions .gacha-pull-btn.primary {
+    border-color: rgba(255,200,80,0.55);
+    color: #ffd479;
+    background: rgba(22,14,4,0.55);
+    animation: _btn-gold-pulse 2s ease-in-out infinite;
+  }
+  #gachaResultScreen .gacha-result-actions .gacha-pull-btn.primary:hover:not(:disabled) {
+    background: rgba(40,26,6,0.65);
+    box-shadow: 0 0 28px rgba(255,180,0,0.55), inset 0 0 14px rgba(255,180,0,0.12);
+    transform: skewX(-12deg) translateY(-1px);
+  }
+  /* 버튼 라벨 역skew — 사선 칩 안에서 텍스트 수직 고정 */
+  #gachaResultScreen .gacha-result-actions .gacha-pull-btn .btn-label {
+    display: inline-flex; flex-direction: column; align-items: center; gap: 2px;
+    transform: skewX(12deg);
+    pointer-events: none;
+  }
+  /* Phase 2 정산 버튼 — 사선 도킹 등장 (계단식) */
+  @keyframes _btn-dock-in {
+    0%   { opacity: 0; transform: skewX(-12deg) translateX(-16px); }
+    100% { opacity: 1; transform: skewX(-12deg) translateX(0); }
+  }
+  #gachaResultScreen .gacha-result-actions .gacha-pull-btn.docking {
+    animation: _btn-dock-in 0.36s cubic-bezier(0.2,0.9,0.3,1) both;
+  }
+  #gachaResultScreen .gacha-result-actions #gachaResultAgain.docking { animation-delay: 0.08s; }
+  /* Phase 2 요약 바 — 정산 페이드인 */
+  #gachaResultScreen .gacha-result-summary.settling {
+    animation: _summary-settle 0.5s ease-out both;
+  }
+  @keyframes _summary-settle { 0%{ opacity:0; transform: translateY(6px); } 100%{ opacity:1; transform: none; } }
 
   /* ===== 강화소 ===== */
   #shop { padding: 24px; align-items: stretch; }
@@ -2323,16 +2748,13 @@
     50%     { box-shadow: 0 0 0 1px rgba(165,115,255,0.62), 0 0 32px rgba(150,90,240,0.58), 0 0 70px rgba(110,60,190,0.36); }
   }
   #gachaScreen .gacha-fullbanner { border: 1px solid rgba(130,200,255,0.35); animation: gachaPortalPulse 3.6s ease-in-out infinite; }
+  /* 이미지가 바깥 테두리까지 꽉 차 보이게 — 가장자리 어둡게 하던 비네트 대폭 완화 + 안쪽 7px 프레임 제거 */
   #gachaScreen .gacha-fullbanner::after {
     content:''; position:absolute; inset:0; z-index:4; pointer-events:none; border-radius:10px;
     background:
-      repeating-linear-gradient(0deg, rgba(130,200,255,0.04) 0 1px, transparent 1px 5px),
-      radial-gradient(ellipse at 50% 48%, transparent 66%, rgba(10,6,26,0.42) 100%);
-    box-shadow: inset 0 0 34px rgba(80,40,140,0.30);
-  }
-  #gachaScreen .gacha-fullbanner::before {
-    content:''; position:absolute; inset:7px; z-index:4; pointer-events:none; border-radius:6px;
-    border: 1px solid rgba(130,200,255,0.16);
+      repeating-linear-gradient(0deg, rgba(130,200,255,0.03) 0 1px, transparent 1px 5px),
+      radial-gradient(ellipse at 50% 50%, transparent 88%, rgba(10,6,26,0.14) 100%);
+    box-shadow: inset 0 0 8px rgba(80,40,140,0.07);
   }
   #gachaScreen .gacha-pull-btn-overlay { box-shadow: 0 0 14px rgba(120,70,200,0.36), inset 0 0 12px rgba(130,200,255,0.10); border-color: rgba(130,200,255,0.5); }
   #gachaScreen .gacha-pull-btn-overlay.primary { box-shadow: 0 0 20px rgba(165,115,255,0.5), inset 0 0 14px rgba(165,115,255,0.16); }
@@ -2374,6 +2796,151 @@
   #gachaScreen > * { position: relative; z-index: 1; }
   #gachaScreen::before { content:''; position:absolute; inset:0; z-index:0; pointer-events:none; background: radial-gradient(circle at 50% 40%, rgba(150,90,235,0.13), rgba(80,40,140,0.05) 46%, transparent 70%); animation: gachaWormholePulse 6s ease-in-out infinite; }
   @keyframes gachaWormholePulse { 0%,100% { opacity:0.5; } 50% { opacity:1; } }
+
+  /* === 가챠 배너 하단 정보 패널 (이미지 아래 — 아무것도 안 겹침) === */
+  .gacha-info-panel {
+    width: 100%; padding: 8px 14px 4px;
+    display: flex; flex-direction: column; gap: 5px;
+  }
+  .gacha-info-panel .gacha-banner-name {
+    font-size: 16px; font-weight: 800; color: #e0e4f0;
+    text-shadow: 0 0 10px rgba(122,215,255,0.18);
+    letter-spacing: 0.5px; margin-bottom: 0;
+  }
+  .gacha-info-panel .gacha-banner-pickup-info {
+    background: none; backdrop-filter: none; text-shadow: none;
+    color: #5a6a82; padding: 0; border-radius: 0; font-size: 11px; display: block;
+  }
+  .gacha-info-panel .gacha-pickup-icons { display: none !important; }
+  .gacha-info-panel .gacha-banner-ancient-chip { display: none !important; }
+
+  /* === 배너 전환 글리치 이펙트 === */
+  @keyframes _gacha-glitch-img {
+    0%,100% { filter:none; transform:none; }
+    18%  { filter:hue-rotate(90deg) saturate(2.5); transform:translateX(-4px); }
+    36%  { filter:hue-rotate(-70deg) saturate(3); transform:translateX(5px); }
+    54%  { filter:saturate(0.4) brightness(1.6); transform:translateX(-2px); }
+    72%  { filter:hue-rotate(180deg) saturate(2); transform:translateX(3px); }
+  }
+  @keyframes _gacha-glitch-lines {
+    0%,100% { opacity:0; }
+    10%,90% { opacity:1; }
+  }
+  .gacha-fullbanner.glitching .gacha-fullbanner-img {
+    animation: _gacha-glitch-img 0.22s steps(1) forwards;
+  }
+  .gacha-fullbanner.glitching::after {
+    content:''; position:absolute; inset:0; z-index:10; pointer-events:none;
+    background: repeating-linear-gradient(0deg, rgba(0,229,255,0.07) 0 2px, transparent 2px 5px);
+    animation: _gacha-glitch-lines 0.22s steps(1) forwards;
+  }
+
+  /* === 주파수 조율 연출 화면 === */
+  #gachaTuningScreen {
+    background: #030609;
+    justify-content: space-between;
+    padding: 0; gap: 0; overflow: hidden;
+  }
+  .tuning-sys-log {
+    width:100%; padding:14px 20px 4px;
+    font-family:ui-monospace,'Courier New',monospace; font-size:10px;
+    color:#1a5a3a; letter-spacing:1.5px; text-align:center;
+    flex-shrink:0; min-height:32px;
+  }
+  .tuning-title {
+    font-family:ui-monospace,'Courier New',monospace;
+    font-size:11px; color:#2a5560; letter-spacing:4px;
+    flex-shrink:0; margin-bottom:2px;
+  }
+  #tuning-canvas {
+    width:100%; flex:1; min-height:0; max-height:44vh; display:block;
+  }
+  .tuning-sync-label {
+    font-family:ui-monospace,'Courier New',monospace;
+    font-size:15px; color:#1a5a6a; letter-spacing:3px;
+    flex-shrink:0; margin:6px 0; transition:color 0.3s;
+  }
+  .tuning-sync-label.syncing { color:#00aacc; }
+  .tuning-sync-label.synced  { color:#00ffaa; animation:_tuning-flash 0.12s steps(2) 6; }
+  @keyframes _tuning-flash { 0%,100%{opacity:1;} 50%{opacity:0;} }
+  .tuning-hint {
+    font-family:ui-monospace,'Courier New',monospace; font-size:10px;
+    color:#006688; letter-spacing:1.5px;
+    display:flex; align-items:center; gap:10px; flex-shrink:0;
+    margin-bottom:4px;
+    animation:_tuning-hint-blink 1.4s ease-in-out infinite;
+  }
+  .tuning-hint.hidden { visibility:hidden; }
+  @keyframes _tuning-hint-blink { 0%,100%{opacity:0.35;} 50%{opacity:1;} }
+  .tuning-hint-arr {
+    display:inline-block;
+    animation:_tuning-arr-nudge 1s ease-in-out infinite alternate;
+  }
+  .tuning-hint-arr:last-child { animation-direction:alternate-reverse; }
+  @keyframes _tuning-arr-nudge { 0%{transform:translateX(-6px);} 100%{transform:translateX(6px);} }
+  .tuning-dial-wrap {
+    width:calc(100% - 48px); max-width:400px; flex-shrink:0;
+    padding:6px 0 10px; position:relative;
+  }
+  .tuning-dial-track {
+    height:2px; background:rgba(0,180,220,0.18); border-radius:1px;
+    position:relative; transform:skewX(-12deg);
+    box-shadow:0 0 8px rgba(0,200,255,0.1);
+  }
+  .tuning-dial-handle {
+    width:30px; height:30px;
+    background:rgba(0,180,220,0.1);
+    border:1.5px solid rgba(0,229,255,0.65);
+    border-radius:3px;
+    position:absolute; top:50%; left:50%;
+    transform:translate(-50%,-50%) skewX(-6deg);
+    cursor:grab; touch-action:none;
+    box-shadow:0 0 10px rgba(0,229,255,0.3), inset 0 0 6px rgba(0,229,255,0.06);
+    clip-path:polygon(6px 0,100% 0,calc(100% - 6px) 100%,0 100%);
+    display:flex; align-items:center; justify-content:center;
+  }
+  .tuning-dial-handle::after {
+    content:'|||'; font-size:8px; color:rgba(0,229,255,0.45); letter-spacing:1px;
+  }
+  .tuning-dial-handle.idle {
+    animation:_tuning-handle-idle 1.6s ease-in-out infinite;
+  }
+  /* 핸들은 유저 입력 시에만 이동 — idle은 위치(left) 건드리지 않고 글로우만 호흡 */
+  @keyframes _tuning-handle-idle {
+    0%,100% { box-shadow:0 0 6px rgba(0,229,255,0.18); }
+    50%      { box-shadow:0 0 18px rgba(0,229,255,0.65); }
+  }
+  .tuning-skip-btn {
+    flex-shrink:0; margin-bottom:14px; padding:6px 20px;
+    background:transparent; border:1px solid rgba(0,200,255,0.12);
+    border-radius:4px; color:rgba(0,180,200,0.3);
+    font-family:ui-monospace,'Courier New',monospace; font-size:10px;
+    letter-spacing:2px; cursor:pointer; transition:color .15s, border-color .15s;
+  }
+  .tuning-skip-btn:hover { color:rgba(0,200,255,0.65); border-color:rgba(0,200,255,0.35); }
+
+  /* SSR 돌발 경고 — absolute 오버레이 (레이아웃에 끼지 않음 → 나타나도 다이얼/버튼 안 밀림) */
+  .tuning-ssr-warning {
+    position: absolute; top: 16%; left: 0; right: 0; z-index: 30;
+    pointer-events: none;
+    font-family: ui-monospace, 'Courier New', monospace;
+    font-size: 10px; font-weight: bold;
+    color: rgba(255,80,80,1); letter-spacing: 2px; text-align: center;
+    padding: 6px 8px;
+    border-top: 1px solid rgba(255,50,50,0.5);
+    border-bottom: 1px solid rgba(255,50,50,0.5);
+    text-shadow: 0 0 8px rgba(255,50,50,0.9);
+    animation: _ssr-warn-flash 0.6s ease-in-out infinite;
+    background: rgba(40,0,4,0.6);
+  }
+  @keyframes _ssr-warn-flash {
+    0%,100% { opacity: 1; }
+    50%     { opacity: 0.15; }
+  }
+  /* 잭팟 활성 시 화면 가장자리 붉은 글로우 */
+  #gachaTuningScreen.ssr-active {
+    box-shadow: inset 0 0 80px rgba(255,60,0,0.1), inset 0 0 30px rgba(255,0,80,0.06);
+  }
 
   /* ===== 🛰️ 인게임 콕핏 HUD (전부 HTML — CSS만, 캔버스 미수정) ===== */
   #panel {
@@ -4058,6 +4625,8 @@
   .evo-star.tier-SR .evo-star-core { width:50px; height:50px; }
   .evo-star.tier-SSR .evo-star-core { width:62px; height:62px; }
   .evo-star-name { font-size:9.5px; font-weight:700; color:#eef1ff; text-shadow:0 1px 3px #000,0 0 4px #000; line-height:1.18; text-align:center; max-width:78px; opacity:.9; transition:opacity .2s; }
+  /* 노드 ★ 돌파 레벨 — 상세 안 들어가도 한눈에 (가챠 캐릭만) */
+  .evo-star-lv { font-size:9px; font-weight:800; line-height:1; letter-spacing:.5px; text-shadow:0 0 5px currentColor; margin-top:1px; }
   .evo-star.locked { filter:grayscale(1) brightness(.5); }
   .evo-star.locked .evo-star-core { box-shadow:none; border-color:#556; }
   .evo-star.locked .evo-star-name { opacity:.5; }
@@ -4440,17 +5009,16 @@
 <div id="gachaScreen" class="screen">
   <div class="gacha-top-bar">
     <button id="gachaBack" class="codex-back gacha-back-small">←</button>
-    <div class="gacha-title">🎰 차원 스카우트</div>
+    <div class="gacha-title">🎰 차원 스카우트 <span id="appVerLabel" class="app-ver-label"></span></div>
     <div class="gacha-currencies">
       <span class="gacha-cur-chip"><span style="color:#88ccff">💎</span> <span id="crystal-count">0</span></span>
       <span class="gacha-cur-chip"><span style="color:#ffd479">⭐</span> <span id="gacha-stardust">0</span></span>
     </div>
   </div>
 
-  <!-- 🎴 풀스크린 배너 (명조 스타일) — 큰 이미지 + 내부 오버레이 UI -->
-  <div class="gacha-fullbanner">
-    <!-- 배경 이미지 (배너별 동적 전환) — 비동기 디코딩으로 메인스레드 차단 X -->
-    <img id="gacha-banner-img" class="gacha-fullbanner-img" src="./icons/gacha-aria.png"
+  <!-- 🎴 배너 이미지 (가로 이미지 cover — 내용 안 겹침) -->
+  <div class="gacha-fullbanner" id="gacha-fullbanner">
+    <img id="gacha-banner-img" class="gacha-fullbanner-img" src="./icons/gacha-elemSumi.png"
          decoding="async" loading="eager" fetchpriority="low"
          onerror="this.src='./icons/gacha.png'; this.onerror=null;" />
     <div id="gacha-banner-fallback" class="gacha-fullbanner-fallback" style="display:none;">
@@ -4458,17 +5026,15 @@
       <div class="gacha-banner-title">DOT DEFENSE</div>
       <div class="gacha-banner-sub">캐릭터 픽업 · 차원 스카우트</div>
     </div>
-
-    <!-- 배너 좌/우 전환 화살표 -->
     <button id="gachaBannerPrev" class="gacha-banner-arrow gacha-arrow-left" title="이전 배너">◀</button>
     <button id="gachaBannerNext" class="gacha-banner-arrow gacha-arrow-right" title="다음 배너">▶</button>
+  </div>
 
-    <!-- 상단 좌측: 배너 타이틀 + 픽업 표시 -->
-    <div class="gacha-banner-top-overlay">
-      <div id="gacha-banner-name" class="gacha-banner-name">🌟 아리아 픽업</div>
-      <div id="gacha-banner-pickup-info" class="gacha-banner-pickup-info">SSR 1.0% · SR 5% · ⭐ 94%</div>
-    </div>
-    <!-- 🌌 v249 — 고대 유물 픽업 칩 (배너에 동봉된 ANCIENT 유물 표시) -->
+  <!-- 배너 정보 패널 (이미지 아래 — 이미지에 아무것도 겹치지 않음) -->
+  <div class="gacha-info-panel">
+    <div id="gacha-banner-name" class="gacha-banner-name">🌟 픽업 배너</div>
+    <div id="gacha-banner-pickup-info" class="gacha-banner-pickup-info"></div>
+    <div id="gacha-pickup-icons" class="gacha-pickup-icons"></div>
     <div id="gacha-banner-ancient-chip" class="gacha-banner-ancient-chip" style="display:none;">
       <img id="gacha-banner-ancient-img" src="" alt="ancient" />
       <div class="ancient-chip-text">
@@ -4476,11 +5042,6 @@
         <div class="ancient-chip-name" id="gacha-banner-ancient-name">—</div>
         <div class="ancient-chip-rate" id="gacha-banner-ancient-rate">—</div>
       </div>
-    </div>
-
-    <!-- 하단 오버레이: 픽업 칩만 (숨김). 뽑기 버튼은 배너 밖 콘솔로 이동 -->
-    <div class="gacha-banner-bottom-overlay">
-      <div id="gacha-pickup-icons" class="gacha-pickup-icons" style="display:none;"></div>
     </div>
   </div>
 
@@ -4506,14 +5067,42 @@
   </div>
 </div>
 
+<!-- ===== 🎛️ 주파수 조율 연출 화면 ===== -->
+<div id="gachaTuningScreen" class="screen">
+  <div class="tuning-sys-log" id="tuning-sys-log">[ INITIATING DIMENSIONAL SCAN... ]</div>
+  <div class="tuning-title">FREQUENCY CALIBRATION</div>
+  <canvas id="tuning-canvas"></canvas>
+  <div class="tuning-sync-label" id="tuning-sync-label">SYNC ·· 0%</div>
+  <div class="tuning-hint" id="tuning-hint">
+    <span class="tuning-hint-arr">◀</span>
+    MANUAL CALIBRATION REQUIRED
+    <span class="tuning-hint-arr">▶</span>
+  </div>
+  <div class="tuning-dial-wrap">
+    <div class="tuning-dial-track" id="tuning-dial-track">
+      <div class="tuning-dial-handle idle" id="tuning-dial-handle"></div>
+    </div>
+  </div>
+  <div class="tuning-ssr-warning" id="tuning-ssr-warning" style="display:none;">
+    [ !! DIMENSIONAL BREACH — CRITICAL SIGNAL !! ]
+  </div>
+  <button class="tuning-skip-btn" id="tuning-skip-btn">SKIP ▶▶</button>
+</div>
+
 <!-- ===== 🎰 가챠 결과 화면 ===== -->
 <div id="gachaResultScreen" class="screen">
-  <div class="gacha-result-title">뽑기 결과</div>
+  <div class="gacha-result-title">[ 차원 소환 기록부 ]</div>
   <div id="gacha-result-cards" class="gacha-result-cards"></div>
   <div id="gacha-result-summary" class="gacha-result-summary"></div>
   <div class="gacha-result-actions">
-    <button id="gachaResultAgain" class="gacha-pull-btn primary">🎰 다시 뽑기</button>
-    <button id="gachaResultClose" class="gacha-pull-btn">계속</button>
+    <button id="gachaRevealAll" class="gacha-pull-btn reveal-all-btn" style="display:none;">
+      <span class="btn-label">
+        <span class="ra-main">▶▶ REVEAL ALL</span>
+        <span class="ra-sub">[ INITIALIZING_DECRYPTION ]</span>
+      </span>
+    </button>
+    <button id="gachaResultAgain" class="gacha-pull-btn primary" style="display:none;"><span class="btn-label">↺ RE-SCAN</span></button>
+    <button id="gachaResultClose" class="gacha-pull-btn" style="display:none;"><span class="btn-label">CONFIRM ▶</span></button>
   </div>
 </div>
 
@@ -15929,8 +16518,8 @@
     { parts: ['chainStorm',     'frost'],    combo: 'absoluteThunder', tier: 3 },
     { parts: ['frostNova',      'fire'],     combo: 'elementalStorm',  tier: 3 },
     { parts: ['shotgunBurst',   'missile'],  combo: 'fusionCannon',    tier: 3 },
-    { parts: ['stormOrbit',     'sword'],    combo: 'galaxyOrbit',     tier: 3 },
-    { parts: ['steelBoomerang', 'missile'],  combo: 'titanMissile',    tier: 3 },
+    { parts: ['stormOrbit',     'homingBlade'],    combo: 'galaxyOrbit',     tier: 3 },
+    { parts: ['steelBoomerang', 'mortar'],  combo: 'titanMissile',    tier: 3 }, // 🔁 missile→mortar
     // ===== 액티브 + 패시브 조합 (서로 다른 카테고리) =====
     { parts: ['shot',      'precision'], combo: 'precisionShot' },
     { parts: ['multi',     'haste'],     combo: 'rapidBarrage' },
@@ -15943,7 +16532,7 @@
     // ===== 액티브 2-콤보 (기본) =====
     { parts: ['scatter',   'mortar'],    combo: 'shotgunBurst' },
     { parts: ['shot',      'multi'],     combo: 'precisionBurst' },
-    { parts: ['chain',     'thunder'],   combo: 'chainStorm' },
+    { parts: ['railgun',   'multi'],     combo: 'chainStorm' }, // 🔁 chain+thunder(둘다 진화-루트)→railgun+multi (전격 다발 연쇄)
     { parts: ['nova',      'frost'],     combo: 'frostNova' },
     { parts: ['laser',     'beam'],      combo: 'twinBeam' },
     { parts: ['orbital',   'tornado'],   combo: 'stormOrbit' },
@@ -15952,7 +16541,7 @@
     { parts: ['fire',      'iceLance'],  combo: 'frostfireSpear' },
     { parts: ['mine',      'drone'],     combo: 'kamikazeDrone' },
     { parts: ['meteor',    'blackhole'], combo: 'cosmicCollapse' },
-    { parts: ['sword',     'starfall'],  combo: 'swordRain' },
+    { parts: ['homingBlade', 'mortar'],  combo: 'swordRain' }, // 🔁 sword+starfall(둘다 진화-루트)→homingBlade+mortar (검우 낙하)
     // ===== 대체 조합 (자유도) — 정상 조합이 없을 때 활성화 =====
     { parts: ['shot',      'sniper'],    combo: 'headshot' },
     { parts: ['multi',     'scatter'],   combo: 'pelletGun' },
@@ -15969,28 +16558,28 @@
     { parts: ['executioner', 'reaper'],     combo: 'grandReaper' },
     { parts: ['resilience',  'fire'],       combo: 'pyreShield' },
     // 신규 트리플 (히든) — 조합 + 기본
-    { parts: ['plasmaBeam',    'thunder'],  combo: 'plasmaCataclysm', tier: 3 },
-    { parts: ['voidField',     'missile'],  combo: 'voidNova',        tier: 3 },
+    { parts: ['plasmaBeam',    'railgun'],  combo: 'plasmaCataclysm', tier: 3 }, // 🔁 thunder→railgun (plasmaArc 진화 1개만 필요)
+    { parts: ['voidField',     'mortar'],  combo: 'voidNova',        tier: 3 }, // 🔁 missile→mortar (frost 진화 1개만 필요)
     { parts: ['piercingChain', 'railgun'],  combo: 'siegeBeam',       tier: 3 },
     // ===== 🎰 가챠 R 조합 (3종) =====
-    { parts: ['torpedo',   'frost'],     combo: 'frozenTorpedo' },
-    { parts: ['sunspot',   'thunder'],   combo: 'solarStorm' },
-    { parts: ['pullField', 'frostNova'], combo: 'voidIceVortex' },
+    { parts: ['torpedo',   'iceLance'],     combo: 'frozenTorpedo' },
+    { parts: ['sunspot',   'railgun'],   combo: 'solarStorm' },
+    { parts: ['pullField', 'iceLance'], combo: 'voidIceVortex' },
     // ===== 🎰 가챠 R 트리플 (히든) =====
-    { parts: ['frozenTorpedo', 'missile'],  combo: 'deepSeaBarrage',  tier: 3 },
-    { parts: ['solarStorm',    'meteor'],   combo: 'stellarCollapse', tier: 3 },
+    { parts: ['frozenTorpedo', 'mortar'],  combo: 'deepSeaBarrage',  tier: 3 },
+    { parts: ['solarStorm',    'nova'],   combo: 'stellarCollapse', tier: 3 },
     { parts: ['voidIceVortex', 'timeStop'], combo: 'voidStop',        tier: 3 },
     // ===== 🎰 가챠 SR 조합 (2종) =====
-    { parts: ['sakuraSlash', 'sword'],      combo: 'sakuraStorm' },
-    { parts: ['moonShot',    'frost'],      combo: 'moonFrostArrow' },
+    { parts: ['sakuraSlash', 'homingBlade'],      combo: 'sakuraStorm' },
+    { parts: ['moonShot',    'iceLance'],      combo: 'moonFrostArrow' },
     // ===== 🎰 가챠 SSR 조합 (2종) =====
     { parts: ['starSong',      'nova'],     combo: 'cosmicChorus' },
     { parts: ['timeButterfly', 'timeStop'], combo: 'timePrison' },
     // ===== 🎰 가챠 SR 트리플 (히든) =====
     { parts: ['sakuraStorm',    'tornado'], combo: 'sakuraInferno',     tier: 3 },
-    { parts: ['moonFrostArrow', 'missile'], combo: 'moonBombardment',   tier: 3 },
+    { parts: ['moonFrostArrow', 'mortar'], combo: 'moonBombardment',   tier: 3 },
     // ===== 🎰 가챠 SSR 트리플 (히든) =====
-    { parts: ['cosmicChorus', 'meteor'],    combo: 'celestialSymphony', tier: 3 },
+    { parts: ['cosmicChorus', 'mortar'],    combo: 'celestialSymphony', tier: 3 },
     { parts: ['timePrison',   'blackhole'], combo: 'eternalMoment',     tier: 3 },
     // ===== 🎰 레비나 (번개술사 SR) — 기본조합/4돌파/8돌파 =====
     { parts: ['stormBrand',  'stunBomb'],  combo: 'levinLash' },
@@ -16003,14 +16592,14 @@
     { parts: ['inkSlash',        'sniper'],      combo: 'silentExecution', tier: 2 },
     { parts: ['silentExecution', 'executioner'], combo: 'sumiReaper',       tier: 3 },
     { parts: ['sumiReaper',      'reaper'],       combo: 'inkReaper',        tier: 4 },
-    { parts: ['spritling',      'thunder'], combo: 'windWolfSpirit' },
+    { parts: ['spritling',      'tornado'], combo: 'windWolfSpirit' },
     { parts: ['windWolfSpirit', 'fire'],    combo: 'phoenixSpirit',   tier: 3 },
-    { parts: ['phoenixSpirit',  'frost'],   combo: 'leviathanSpirit', tier: 4 },
-    { parts: ['deepSeaBarrage', 'orbital'], combo: 'abyssalSalvo', tier: 4 },
+    { parts: ['phoenixSpirit',  'iceLance'],   combo: 'leviathanSpirit', tier: 4 },
+    { parts: ['deepSeaBarrage', 'drone'], combo: 'abyssalSalvo', tier: 4 },
     { parts: ['stellarCollapse', 'blackhole'], combo: 'supernovaCollapse', tier: 4 },
     { parts: ['voidStop', 'blackhole'], combo: 'voidEternity', tier: 4 },
     { parts: ['sakuraInferno', 'blackhole'], combo: 'sakuraApocalypse', tier: 4 },
-    { parts: ['moonBombardment', 'meteor'],  combo: 'lunarApocalypse', tier: 4 },
+    { parts: ['moonBombardment', 'nova'],  combo: 'lunarApocalypse', tier: 4 },
     { parts: ['celestialSymphony', 'nova'], combo: 'stellarOpera', tier: 4 },
     { parts: ['eternalMoment', 'timeStop'], combo: 'eternalPrison', tier: 4 },
   ];
@@ -16779,6 +17368,8 @@
     // SSR 캐릭터 칭호
     ariaMaster:      { name: '천공의 노래꾼',   icon: '🌟', achId: 'char8_aria',    style: 'rainbow' },
     misakiMaster:    { name: '시공의 여행자',   icon: '🦋', achId: 'char8_misaki',  style: 'rainbow' },
+    elementiaMaster: { name: '정령들의 여왕', icon: '🔮', achId: 'char8_elementia', style: 'rainbow' },
+    sumikaMaster:    { name: '먹빛의 사신',   icon: '🖌️', achId: 'char8_sumika',    style: 'rainbow' },
     // 🔱 트리플 컬렉션 — 해당 트리플을 한 게임에서 형성하면 해금
     tcUltra:    { name: '탄막의 폭군',    icon: '🔫', achId: 'tc_ultraGatling',    style: 'glow', color: '#cfe0ff' },
     tcFrost:    { name: '동결뇌제',      icon: '❄️', achId: 'tc_absoluteThunder',  style: 'glow', color: '#bcd8ff' },
@@ -16837,7 +17428,7 @@
     asc1Title:'sparkle', asc5Title:'star', asc10Title:'starburst', asc15Title:'crown',
     trans1Title:'galaxy', trans3Title:'galaxy', trans5Title:'starburst', trans10Title:'crown', trans15Title:'starburst',
     starGazer:'star', marineMaster:'wave', solarMaster:'sun', gravitasMaster:'vortex',
-    sakuraMaster:'blossom', lunaMaster:'moon', ariaMaster:'star', misakiMaster:'butterfly',
+    sakuraMaster:'blossom', lunaMaster:'moon', ariaMaster:'star', misakiMaster:'butterfly', elementiaMaster:'sparkle', sumikaMaster:'skull',
     // 🔱 트리플 컬렉션
     tcUltra:'barrage', tcFrost:'bolt', tcElem:'sparkle', tcFusion:'cannon', tcGalaxy:'galaxy', tcTitan:'missile',
     tcPlasma:'bolt', tcVoidNova:'starburst', tcSiege:'beam', tcDeepSea:'wave', tcStellar:'sun', tcVoidStop:'vortex',
@@ -16847,7 +17438,7 @@
   const PLATE_TITLES = new Set([
     'conqueror', 'asc10Title', 'asc15Title',
     'trans1Title', 'trans3Title', 'trans5Title', 'trans10Title', 'trans15Title',
-    'sakuraMaster', 'lunaMaster', 'ariaMaster', 'misakiMaster',
+    'sakuraMaster', 'lunaMaster', 'ariaMaster', 'misakiMaster', 'elementiaMaster', 'sumikaMaster',
     'tripleSageTitle',   // 그랜드 — 한 게임 트리플 5개
   ]);
   function titleEmblemHtml(key, emojiFallback) {
@@ -16929,7 +17520,7 @@
     // 고등급 = 플레이트 배너 / 그 외 = 엠블럼 + 텍스트
     if (PLATE_TITLES.has(tid)) {
       const pr = t.style === 'rainbow' ? ' tp-rainbow' : '';
-      const variant = (tid === 'sakuraMaster' || tid === 'lunaMaster' || tid === 'ariaMaster' || tid === 'misakiMaster') ? 'tp-char'
+      const variant = (tid === 'sakuraMaster' || tid === 'lunaMaster' || tid === 'ariaMaster' || tid === 'misakiMaster' || tid === 'elementiaMaster' || tid === 'sumikaMaster') ? 'tp-char'
                     : (tid === 'tripleSageTitle') ? 'tp-grand'
                     : /^trans\d/.test(tid) ? 'tp-trans'   // 🌌 초월 = 프리미엄 우주 플레이트
                     : 'tp-rank';                           // 완전정복/승천 = 각진 계급장
@@ -17150,6 +17741,15 @@
   window.addEventListener('pagehide', flushPendingSync);
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) flushPendingSync();
+  });
+  // bfcache 복원 시 진행 중 게임 상태 초기화 — 앱을 닫았다 다시 열면 항상 새 메뉴로
+  window.addEventListener('pageshow', e => {
+    if (e.persisted && state && !state.gameOver) {
+      state = null;
+      paused = false;
+      if (currentScreen !== 'menu') showScreen('menu');
+      if (typeof refreshMenuButtons === 'function') refreshMenuButtons();
+    }
   });
   // 🛡 syncMetaToServer — 성공/실패 boolean 반환 (v206)
   //   v212: 성공 시각 추적 + 진단 로그 + 콘솔에서 _lastSyncSuccessAt 확인 가능
@@ -18712,6 +19312,19 @@
   function getCharStars(charId) {
     return (META.charStars && META.charStars[charId]) || 0;
   }
+  // 🛠 돌파(★) 정합성 보정 — 별 = (보유 복사본 수 − 1), 최대 8. 첫 획득 = 0돌파 보장 + 옛 빌드의 +1 누적 교정.
+  //    정상 플레이에선 이 불변식(charStars = gachaUnlocked − 1)이 항상 유지되므로 no-op. 레거시 데이터만 1회 교정.
+  (function _reconcileCharStars() {
+    if (!META.gachaUnlocked) return;
+    META.charStars = META.charStars || {};
+    let changed = false;
+    for (const cid in META.gachaUnlocked) {
+      const copies = META.gachaUnlocked[cid] || 0;
+      const correct = Math.max(0, Math.min(CHAR_MAX_STARS, copies - 1));
+      if ((META.charStars[cid] || 0) !== correct) { META.charStars[cid] = correct; changed = true; }
+    }
+    if (changed) { try { localStorage.setItem(META_KEY, _packMeta(META)); } catch (e) {} }
+  })();
   function isAt4Star(charId) { return getCharStars(charId) >= 4; }
   function isAt8Star(charId) { return getCharStars(charId) >= CHAR_MAX_STARS; }
   // 별 등급별 데미지 보너스 (해당 캐릭터의 startAbilities 에 적용)
@@ -19459,6 +20072,10 @@
       check: () => ((META.charStars || {}).aria     || 0) >= 8 },
     { id: 'char8_misaki',   name: '🦋 시공의 여행자',  desc: '🦋 미사키 8★ 달성',   reward: 1500,
       check: () => ((META.charStars || {}).misaki   || 0) >= 8 },
+    { id: 'char8_elementia',name: '🔮 정령들의 여왕',  desc: '🔮 엘레미아 8★ 달성', reward: 1500,
+      check: () => ((META.charStars || {}).elementia || 0) >= 8 },
+    { id: 'char8_sumika',   name: '🖌️ 먹빛의 사신',    desc: '🖌️ 스미카 8★ 달성',   reward: 1500,
+      check: () => ((META.charStars || {}).sumika    || 0) >= 8 },
     // === 🔱 트리플 컬렉션 — 해당 트리플을 한 게임에서 형성 시 (각각 고유 칭호) ===
     { id: 'tc_ultraGatling',   name: '🔫 탄막의 폭군',    desc: '초연사총(트리플) 형성',     reward: 150, check: s => s.tower.abilities.some(a => a.id === 'ultraGatling') },
     { id: 'tc_absoluteThunder',name: '❄️ 동결뇌제',       desc: '절대빙뢰(트리플) 형성',     reward: 150, check: s => s.tower.abilities.some(a => a.id === 'absoluteThunder') },
@@ -20539,8 +21156,9 @@
       return false;   // 남은 일반 파트너가 전부 소진 예정 + 트리플 X
     }
     // RANDOM_POOL_IDS 사용 → 가챠 고유 능력 카드 풀에서 완전 차단 (belt-and-suspenders)
-    const unownedActive  = RANDOM_POOL_IDS.filter(id => !owned.has(id) && allowed.has(id) && !ABILITY_DEFS[id].isPassive && abilityHasFutureUse(id));
-    const unownedPassive = RANDOM_POOL_IDS.filter(id => !owned.has(id) && allowed.has(id) &&  ABILITY_DEFS[id].isPassive && abilityHasFutureUse(id));
+    // 🌳 진화-루트 13개(R타워 능력)도 레벨업 신규 후보에서 제외 → 진화(라운드5 게이트)로만 획득
+    const unownedActive  = RANDOM_POOL_IDS.filter(id => !owned.has(id) && allowed.has(id) && !ABILITY_DEFS[id].isPassive && !_RTOWER_ABILITY_SET.has(id) && abilityHasFutureUse(id));
+    const unownedPassive = RANDOM_POOL_IDS.filter(id => !owned.has(id) && allowed.has(id) &&  ABILITY_DEFS[id].isPassive && !_RTOWER_ABILITY_SET.has(id) && abilityHasFutureUse(id));
     // ⭐ v209 — 현재 캐릭터의 별 해금 능력 추가 (4★/8★ 히든)
     //   getStarUnlockedAbilities() 는 모든 캐릭터의 별 해금을 반환하지만,
     //   레벨업 카드에는 현재 플레이 중인 캐릭터의 것만 등장해야 함.
@@ -20649,11 +21267,11 @@
       const aSlotsFree = activeCount() + newActiveCount < maxActiveSlots();
       const pSlotsFree = passiveCount() + newPassiveCount < maxPassiveSlots();
       const looseActive = RANDOM_POOL_IDS.filter(id =>
-        !owned.has(id) && allowed.has(id) && !ABILITY_DEFS[id].isPassive && !comboDead(id) &&
+        !owned.has(id) && allowed.has(id) && !ABILITY_DEFS[id].isPassive && !comboDead(id) && !_RTOWER_ABILITY_SET.has(id) &&
         !choices.some(c => c.action === 'new' && c.id === id)
       );
       const looseUnPassive = RANDOM_POOL_IDS.filter(id =>
-        !owned.has(id) && allowed.has(id) && ABILITY_DEFS[id].isPassive && !comboDead(id) &&
+        !owned.has(id) && allowed.has(id) && ABILITY_DEFS[id].isPassive && !comboDead(id) && !_RTOWER_ABILITY_SET.has(id) &&
         !choices.some(c => c.action === 'new' && c.id === id)
       );
       const canA = aSlotsFree && looseActive.length > 0;
@@ -26195,12 +26813,18 @@
       const tagsHtml = tags.length > 0
         ? `<div class="ability-tag-row">${tags.map(tagChipHtml).join('')}</div>`
         : '';
+      const _origin = (typeof _abilityOrigin === 'function') ? _abilityOrigin(a.id) : '';
+      const originBadge = _origin === 'evo'
+        ? '<span class="ab-origin evo" title="진화트리 능력 (진화 뿌리)">🌳</span>'
+        : _origin === 'uniq'
+        ? '<span class="ab-origin uniq" title="고유 능력 (캐릭터 전용)">✦</span>'
+        : '';
       const iconSize = wrapEl && wrapEl.classList.contains('portrait') ? 36 : 28;
       row.innerHTML = `
         <div class="ability-name">
           <div class="row-header">
             ${iconHtml(a.id, iconSize)}
-            <b style="color:${nameColor}">${def.name} ${lvLabel}</b>
+            <b style="color:${nameColor}">${def.name} ${lvLabel}</b>${originBadge}
           </div>
           ${tagsHtml}
           <small>${def.desc(a.level)}</small>
@@ -27386,6 +28010,15 @@
   };
   // ===== 🌳 진화 게이트 (R5→R / R20→SR / R40→SSR, 랜덤 + 진화/거절, 무손실 가산) =====
   const _RTOWER_TO_ACH = {}; for (const _a in ACH_TO_RTOWER) _RTOWER_TO_ACH[ACH_TO_RTOWER[_a]] = _a;
+  // 🌳 능력 출처 분류 — 게임 중 능력 리스트에서 진화-루트 / 고유 능력을 구분 표시
+  const _RTOWER_ABILITY_SET = new Set(Object.values(R_TOWERS).map(rt => rt.ability));   // 진화 루트 13개 ability
+  function _abilityOrigin(id) {
+    const d = ABILITY_DEFS[id];
+    if (!d) return '';
+    if (_RTOWER_ABILITY_SET.has(id)) return 'evo';   // 진화트리 뿌리(R타워) 능력
+    if (d.isGachaUnique) return 'uniq';              // 가챠 고유/캐릭터 능력
+    return '';
+  }
   function _gachaUnlocked(id) { return !!(META.gachaUnlocked && META.gachaUnlocked[id] && META.gachaUnlocked[id] > 0); }
   function _evoTowerUnlocked(id, kind) {
     if (kind === 'R') { const ach = _RTOWER_TO_ACH[id]; if (!ach) return false; try { return getUnlockedAchievements().has(ach); } catch (e) { return false; } }
@@ -28044,10 +28677,26 @@
   fitScaleSoon();
 
   // ===== 서비스워커 (오프라인 / PWA) =====
+  // 🛠 개발 환경(localhost·LAN)에선 SW를 등록하지 않고, 이미 등록된 SW/캐시를 제거 →
+  //    Live Server 등에서 새로고침할 때 항상 최신 코드가 즉시 반영됨 (캐시가 발목 잡는 문제 해결).
+  //    배포(실제 도메인)에선 기존대로 SW 등록 → 오프라인/PWA 동작 유지.
+  const _swHost = location.hostname;
+  const _isDevHost =
+    _swHost === 'localhost' || _swHost === '127.0.0.1' || _swHost === '0.0.0.0' ||
+    _swHost === '::1' || _swHost === '[::1]' || _swHost.endsWith('.local') ||
+    /^192\.168\./.test(_swHost) || /^10\./.test(_swHost) ||
+    /^172\.(1[6-9]|2\d|3[01])\./.test(_swHost) || _swHost === '';
   if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./sw.js').catch(() => {});
-    });
+    if (_isDevHost) {
+      // 개발: 기존 SW 해제 + 캐시 전부 삭제 (한 번만 하면 이후 새로고침은 항상 최신)
+      navigator.serviceWorker.getRegistrations()
+        .then(rs => rs.forEach(r => r.unregister())).catch(() => {});
+      if ('caches' in window) caches.keys().then(ns => ns.forEach(n => caches.delete(n))).catch(() => {});
+    } else {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js').catch(() => {});
+      });
+    }
   }
 
   // ===== 사운드 시스템 (Web Audio API — 파일 없이 합성) =====
@@ -28172,6 +28821,7 @@
   const difficultyScreenEl = document.getElementById('difficultyScreen');
   const gachaScreenEl = document.getElementById('gachaScreen');
   const gachaResultScreenEl = document.getElementById('gachaResultScreen');
+  const gachaTuningScreenEl = document.getElementById('gachaTuningScreen');
   const evoTreeScreenEl = document.getElementById('evoTreeScreen');
   const evoDetailScreenEl = document.getElementById('evoDetailScreen');
   const gameEl = document.getElementById('wrap');
@@ -28184,7 +28834,7 @@
     const abilityPermaEl = document.getElementById('abilityPerma');
     const allScreens = [menuEl, codexEl, recordsEl, recordDetailEl, shopEl,
       modeScreenEl, characterScreenEl, achievementsScreenEl, difficultyScreenEl,
-      gachaScreenEl, gachaResultScreenEl, evoTreeScreenEl, evoDetailScreenEl, globalRankEl, abilityPermaEl].filter(Boolean);
+      gachaScreenEl, gachaResultScreenEl, gachaTuningScreenEl, evoTreeScreenEl, evoDetailScreenEl, globalRankEl, abilityPermaEl].filter(Boolean);
     const outgoing = (prevScreen && prevScreen !== name)
       ? allScreens.find(s => s.classList.contains('show'))
       : null;
@@ -28209,6 +28859,7 @@
     difficultyScreenEl.classList.toggle('show', name === 'difficulty');
     gachaScreenEl.classList.toggle('show', name === 'gacha');
     gachaResultScreenEl.classList.toggle('show', name === 'gachaResult');
+    if (gachaTuningScreenEl) gachaTuningScreenEl.classList.toggle('show', name === 'gachaTuning');
     if (evoTreeScreenEl) evoTreeScreenEl.classList.toggle('show', name === 'evoTree');
     if (evoDetailScreenEl) evoDetailScreenEl.classList.toggle('show', name === 'evoDetail');
     if (globalRankEl) globalRankEl.classList.toggle('show', name === 'globalRank');
@@ -28285,18 +28936,7 @@
         startBtn.dataset.quickStart = '1';
       }
     }
-    if (qsPreview) {
-      if (!inProgress) {   // 진행 중일 땐 미리보기 숨김
-        const char = CHARACTERS[selectedCharacter] || CHARACTERS.standard;
-        const ascLabel = (typeof ascensionLabel === 'function')
-          ? ascensionLabel(getSelectedAscension())
-          : `승천 ${getSelectedAscension() || 0}`;
-        qsPreview.innerHTML = `<span class="qs-val" style="color:${char.color || '#cfd6e3'}">${char.name}</span> · <span class="qs-val">${ascLabel}</span>`;
-        qsPreview.style.display = '';
-      } else {
-        qsPreview.style.display = 'none';
-      }
-    }
+    if (qsPreview) qsPreview.style.display = 'none';
     // 🚀 v252 — 설정 변경 버튼: 진행 중에도 항상 노출 (이어하기/처음부터다시 옆에서도 모드 변경 가능)
     if (changeBtn) {
       changeBtn.style.display = '';
@@ -28909,6 +29549,7 @@
     // 헤더 정보 갱신
     document.getElementById('crystal-count').textContent = (META.crystals || 0).toLocaleString();
     document.getElementById('gacha-stardust').textContent = (META.stardust || 0).toLocaleString();
+    { const _vl = document.getElementById('appVerLabel'); if (_vl) _vl.textContent = 'v' + APP_VERSION; }   // 캐시 확인용 버전 라벨
 
     // 🎴 배너 갱신 — 현재 배너 이미지 + 픽업 표시
     const banner = getCurrentBanner();
@@ -28961,11 +29602,10 @@
       const featChar = banner.featured ? CHARACTERS[banner.featured] : null;
       const featName = featChar ? featChar.name : 'SSR';
       const _sdRate = Math.max(0, 1 - (r.SSR || 0) - (r.SR || 0));
-      let infoText = `픽업: ${featName} ${(r.SSR*100).toFixed(1)}% · SR ${(r.SR*100).toFixed(0)}% · ⭐ ${(_sdRate*100).toFixed(0)}%`;
-      // 🌌 v249 — 고대 유물 동봉 정보 추가
+      let infoText = `SSR ${(r.SSR*100).toFixed(1)}%  ·  SR ${(r.SR*100).toFixed(0)}%`;
       if (banner.ancientRelic) {
         const rate = ((banner.ancientRelicRate || 0) * 100).toFixed(2);
-        infoText += ` · 🌌 ANCIENT ${rate}%`;
+        infoText += `  ·  전용유물 ${rate}%`;
       }
       infoEl.textContent = infoText;
     }
@@ -29062,17 +29702,332 @@
   }
 
   let lastGachaCount = 1;
+  let _pendingGachaResults = null;
+  let _gachaTuningRaf = null;
+
   function doGachaPull(count) {
     const cost = count === 10 ? GACHA_COST_10 : GACHA_COST;
     if (!spendCrystals(cost)) return;
     lastGachaCount = count;
     const results = [];
-    for (let i = 0; i < count; i++) {
-      results.push(gachaPullOne());
+    for (let i = 0; i < count; i++) results.push(gachaPullOne());
+    SFX.combo && SFX.combo();
+    _pendingGachaResults = results;
+    const _isJackpot = results.some(r => r.rarity === 'SSR' || r.isAncient);
+    showScreen('gachaTuning');
+    requestAnimationFrame(() => _startGachaTuning(_isJackpot, () => {
+      buildGachaResult(_pendingGachaResults);
+      showScreen('gachaResult');
+    }));
+  }
+
+  function _startGachaTuning(isJackpot, onComplete) {
+    const canvas   = document.getElementById('tuning-canvas');
+    const syncLbl  = document.getElementById('tuning-sync-label');
+    const hint     = document.getElementById('tuning-hint');
+    const handle   = document.getElementById('tuning-dial-handle');
+    const track    = document.getElementById('tuning-dial-track');
+    const sysLog   = document.getElementById('tuning-sys-log');
+    const skipBtn  = document.getElementById('tuning-skip-btn');
+    const warningEl = document.getElementById('tuning-ssr-warning');
+    if (!canvas || !handle || !track) { onComplete(); return; }
+
+    if (_gachaTuningRaf) { cancelAnimationFrame(_gachaTuningRaf); _gachaTuningRaf = null; }
+
+    // 경고 초기화
+    if (warningEl) warningEl.style.display = 'none';
+    const screenEl = document.getElementById('gachaTuningScreen');
+    if (screenEl) screenEl.classList.remove('ssr-active');
+
+    const ctx = canvas.getContext('2d');
+    const dpr = window.devicePixelRatio || 1;
+
+    // 타겟 위치 (0~1, 유저에게 숨겨진 정답)
+    const targetNorm = 0.28 + Math.random() * 0.44; // 28%~72%
+    let sliderNorm   = targetNorm > 0.5 ? 0.08 : 0.92; // 반대편에서 시작
+    let hasInteracted = false, synced = false, completed = false;
+    let _warnShown = false;
+    let time = 0, syncHold = 0, _syncTimeout = null;
+
+    // 시스템 로그 텍스트 순환
+    // 처음엔 잭팟도 일반 메시지(정체 숨김). 주파수가 충분히 오르면 드라마틱 메시지로 전환(발견의 도파민).
+    const _neutralMsgs = [
+      '[ INITIATING DIMENSIONAL SCAN... ]',
+      '[ SCANNING SECTOR 04 // SIGNAL AT ????Hz ]',
+      '[ INTERFERENCE DETECTED // MANUAL OVERRIDE REQUIRED ]',
+      '[ AWAITING OPERATOR INPUT... ]',
+      '[ QUANTUM RESONANCE UNSTABLE ]',
+      '[ DIMENSIONAL GATE: STANDBY ]',
+    ];
+    const _jackpotMsgs = [
+      '[ ANOMALOUS RESONANCE DETECTED ]',
+      '[ HIGH-TIER ENTITY SIGNATURE: CONFIRMED ]',
+      '[ DIMENSIONAL BREACH: EXTREME ENERGY ]',
+      '[ WARNING: CRITICAL FREQUENCY SPIKE ]',
+      '[ OPERATOR FOCUS — CALIBRATE NOW ]',
+    ];
+    let sysMessages = _neutralMsgs;
+    let _jackpotMsgsRevealed = false;
+    let sysIdx = 0;
+    const _sysTimer = setInterval(() => {
+      sysIdx = (sysIdx + 1) % sysMessages.length;
+      if (sysLog) sysLog.textContent = sysMessages[sysIdx];
+    }, 2200);
+
+    function resizeCanvas() {
+      const rect = canvas.getBoundingClientRect();
+      canvas.width  = rect.width  * dpr;
+      canvas.height = rect.height * dpr;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     }
-    SFX.combo();
-    buildGachaResult(results);
-    showScreen('gachaResult');
+    resizeCanvas();
+
+    // 부드러운 노이즈 (sin 합성)
+    function sNoise(x, t) {
+      return Math.sin(x * 0.09 + t * 0.7)  * 0.45
+           + Math.sin(x * 0.22 + t * 1.3)  * 0.30
+           + Math.sin(x * 0.15 + t * 2.1)  * 0.25;
+    }
+
+    function drawFrame() {
+      const W = canvas.width / dpr, H = canvas.height / dpr;
+      ctx.clearRect(0, 0, W, H);
+
+      // 격자 (은은)
+      ctx.strokeStyle = 'rgba(0,180,100,0.04)';
+      ctx.lineWidth = 1;
+      for (let y = 0; y < H; y += 22) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
+      for (let x = 0; x < W; x += 44) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke(); }
+
+      const diff  = Math.abs(sliderNorm - targetNorm);
+      const sync  = Math.max(0, 1 - diff * 2.6);
+      const noise = (1 - sync) * 18;
+      // 진폭 통일(처음엔 잭팟 구분 불가). sync 후엔 공명이 잠긴 채 은은하게 맥동 → 멈춘 듯 안 보이고 자연스럽게 계속 동작
+      const amp   = H * 0.2 * (synced ? (1 + Math.sin(syncHold * 0.18) * 0.1) : 1), midY = H / 2, freq = 0.022;
+      // sync 후 잔향: 글리치/찢김을 점점 잦아들게 (1 → 0) → 깔끔한 공명 파형으로 정리
+      const calm = synced ? Math.max(0, 1 - syncHold / 24) : 1;
+
+      // 잭팟 황금빛 배경은 처음엔 숨김 — sync 50% 넘어서야 서서히 블룸 (발견의 도파민)
+      if (isJackpot && sync >= 0.5) {
+        const ga = (sync - 0.5) * 0.34;
+        const grd = ctx.createRadialGradient(W/2, midY, 0, W/2, midY, W * 0.6);
+        grd.addColorStop(0, `rgba(180,120,0,${ga})`);
+        grd.addColorStop(1, 'rgba(0,0,0,0)');
+        ctx.fillStyle = grd; ctx.fillRect(0, 0, W, H);
+      }
+
+      // 타겟 파형 — 잭팟/일반 동일 외형 (드라마는 고-sync 이펙트로만 드러남)
+      ctx.beginPath();
+      ctx.strokeStyle = `rgba(255,200,100,${0.65 + sync * 0.35})`;
+      ctx.lineWidth = 1.5;
+      ctx.shadowColor = 'rgba(255,200,100,0.35)';
+      ctx.shadowBlur = 4;
+      for (let x = 0; x <= W; x += 2) {
+        const y = midY + Math.sin(x * freq + time * 0.3) * amp;
+        x === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+      }
+      ctx.stroke(); ctx.shadowBlur = 0;
+
+      // 현재 파형 (네온, 슬라이더 따라 위상 이동)
+      const phaseShift = (sliderNorm - targetNorm) * 9;
+      ctx.beginPath();
+      ctx.strokeStyle = `rgba(0,229,255,${0.75 + sync * 0.25})`;
+      ctx.lineWidth = 1.5;
+      ctx.shadowColor = 'rgba(0,229,255,0.5)';
+      ctx.shadowBlur = (sync > 0.7 ? 9 : 3);
+      for (let x = 0; x <= W; x += 2) {
+        const n = noise > 0 ? sNoise(x, time + sliderNorm * 10) * noise : 0;
+        const y = midY + Math.sin(x * freq + phaseShift + time * 0.3) * amp + n;
+        x === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+      }
+      ctx.stroke(); ctx.shadowBlur = 0;
+
+      // 잭팟 하모닉스: sync 65% 넘으면 파형이 5줄로 분열
+      if (isJackpot && sync >= 0.65) {
+        const harmProg = Math.min(1, (sync - 0.65) / 0.22);
+        for (let h = 2; h <= 5; h++) {
+          const hAlpha = harmProg * (0.52 / (h - 1));
+          if (hAlpha < 0.02) continue;
+          const isGold = h % 2 === 0;
+          ctx.beginPath();
+          ctx.strokeStyle = isGold
+            ? `rgba(255,200,30,${hAlpha})`
+            : `rgba(255,40,200,${hAlpha})`;
+          ctx.lineWidth = isGold ? 1.5 : 1;
+          ctx.shadowColor = isGold ? 'rgba(255,200,30,0.5)' : 'rgba(255,40,200,0.45)';
+          ctx.shadowBlur = 5;
+          for (let x = 0; x <= W; x += 2) {
+            const y = midY + Math.sin(x * freq * h + phaseShift * h * 0.6 + time * 0.3 * h) * amp / (h * 0.78);
+            x === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+          }
+          ctx.stroke(); ctx.shadowBlur = 0;
+        }
+        // 캔버스 글리치 픽셀 플래시
+        const glitchChance = (sync - 0.65) * 0.18 * calm;
+        if (Math.random() < glitchChance) {
+          const gH = 2 + Math.floor(Math.random() * 5);
+          const gY = Math.floor(Math.random() * Math.max(1, H - gH));
+          const gX = (Math.random() - 0.5) * 18;
+          ctx.save();
+          ctx.globalCompositeOperation = 'screen';
+          ctx.fillStyle = Math.random() > 0.5 ? 'rgba(255,0,100,0.5)' : 'rgba(0,200,255,0.45)';
+          ctx.fillRect(gX, gY, W, gH);
+          ctx.restore();
+        }
+        // 발견 시점 — 시스템 로그를 드라마틱 메시지로 전환 (처음엔 일반과 동일했음)
+        if (!_jackpotMsgsRevealed) {
+          _jackpotMsgsRevealed = true;
+          sysMessages = _jackpotMsgs; sysIdx = 0;
+          if (sysLog) sysLog.textContent = sysMessages[0];
+        }
+        // 72% 도달 시 경고 HUD 표시
+        if (sync >= 0.72 && !_warnShown) {
+          _warnShown = true;
+          if (warningEl) warningEl.style.display = '';
+          if (screenEl) screenEl.classList.add('ssr-active');
+        }
+      }
+
+      // 🌀 70% 돌파 — 파장이 확 찢어지며 번지는 연출 (RGB 색수차 분열 + 수직 찢김 + 번짐 밴드)
+      if (isJackpot && sync >= 0.70) {
+        // 70% 넘는 즉시 0.5부터 시작해 "확 찢어지는" 순간감 → 88%까지 1.0으로 강화
+        const tearProg = (0.5 + Math.min(1, (sync - 0.70) / 0.18) * 0.5) * calm;
+        const split = 4 + tearProg * 8;   // RGB 채널이 좌우로 벌어지는 폭
+        ctx.save();
+        ctx.globalCompositeOperation = 'screen';   // 색이 더해지며 번짐
+        const chans = [
+          ['rgba(255,40,90,'  + (0.55 * tearProg) + ')', -split],
+          ['rgba(40,255,170,' + (0.50 * tearProg) + ')',  0],
+          ['rgba(70,130,255,' + (0.55 * tearProg) + ')',  split],
+        ];
+        for (let c = 0; c < 3; c++) {
+          ctx.beginPath();
+          ctx.strokeStyle = chans[c][0];
+          ctx.lineWidth = 2;
+          ctx.shadowColor = chans[c][0];
+          ctx.shadowBlur = 12;
+          const dx = chans[c][1];
+          for (let x = 0; x <= W; x += 2) {
+            // 수직 찢김: 구간마다 위/아래로 어긋나며 가끔 크게 튐
+            const seg = Math.sin(x * 0.4 + time * 5 + c);
+            const spike = (Math.sin(x * 1.7 + time * 9) > 0.86) ? tearProg * 14 : 0;
+            const tear = seg * tearProg * 7 + spike;
+            const y = midY + Math.sin(x * freq + phaseShift + time * 0.3) * amp + tear;
+            x === 0 ? ctx.moveTo(x + dx, y) : ctx.lineTo(x + dx, y);
+          }
+          ctx.stroke();
+        }
+        ctx.shadowBlur = 0;
+        // 번짐: 수평 찢김 밴드가 화면을 가로지르며 퍼짐
+        const bands = 2 + Math.floor(tearProg * 4);
+        for (let i = 0; i < bands; i++) {
+          const by = (Math.sin(time * 1.4 + i * 2.3) * 0.5 + 0.5) * H;
+          const bh = 1 + Math.random() * 3.5 * tearProg;
+          ctx.fillStyle = (i % 2)
+            ? 'rgba(255,60,120,' + (0.16 * tearProg) + ')'
+            : 'rgba(0,225,255,'  + (0.15 * tearProg) + ')';
+          ctx.fillRect(0, by, W, bh);
+        }
+        ctx.restore();
+      }
+
+      // 싱크 % 표시 (sync 전까지만 갱신 — sync 후엔 100% 고정 유지)
+      if (!synced && syncLbl) {
+        const pct = Math.round(sync * 100);
+        syncLbl.textContent = `SYNC ·· ${pct}%`;
+        syncLbl.className = 'tuning-sync-label' + (pct >= 85 ? ' syncing' : '');
+      }
+
+      // 자동 스냅 — 100% 도달 시 슬라이더만 고정. 연출은 멈추지 않고 계속 흐르며(글리치 잦아듦)
+      //            1.2초 잔향 후 부드럽게 화면 전환 (예전엔 여기서 RAF를 끊어 화면이 얼어붙었음).
+      if (sync >= 0.88 && !synced && !completed) {
+        synced = true;
+        sliderNorm = targetNorm;
+        updateHandlePos();
+        if (syncLbl) { syncLbl.textContent = 'SYNC ·· 100%'; syncLbl.className = 'tuning-sync-label synced'; }
+        if (sysLog) sysLog.textContent = '[ SYS_LOCK: FREQUENCY_SYNC_COMPLETE ]';
+        _syncTimeout = setTimeout(() => {
+          if (completed) return;
+          completed = true;
+          cleanup();
+          onComplete();
+        }, 1200);
+      }
+
+      if (synced) syncHold += 1;        // 잔향 진행 (calm 으로 글리치 잦아듦)
+      time += 0.04;
+      if (!completed) _gachaTuningRaf = requestAnimationFrame(drawFrame);   // sync 후에도 completed 전까진 계속 흐름
+    }
+
+    function updateHandlePos() {
+      handle.style.left = `${sliderNorm * 100}%`;
+    }
+
+    // 드래그 로직 — 절대 위치 추적 (터치 지점으로 즉시 점프 후 손가락 따라감)
+    let dragging = false;
+    // 트랙은 skewX(-12deg)라 getBoundingClientRect가 외접박스(과대폭)를 줌.
+    // 비-skew 부모(.tuning-dial-wrap)를 기준으로 좌표→정규화하면 정밀도 정확.
+    const dialWrap = track.parentElement;
+    function _normFromClientX(clientX) {
+      const r = (dialWrap || track).getBoundingClientRect();
+      if (!r.width) return sliderNorm;
+      return Math.max(0, Math.min(1, (clientX - r.left) / r.width));
+    }
+
+    function onDragStart(e) {
+      if (synced || completed) return;
+      dragging = true;
+      const cx = e.touches ? e.touches[0].clientX : e.clientX;
+      // 누른 지점으로 즉시 동기화 — stale 초기값(0.08/0.92)으로 왼쪽 튀는 버그 차단
+      sliderNorm = _normFromClientX(cx);
+      updateHandlePos();
+      handle.classList.remove('idle');
+      if (!hasInteracted) { hasInteracted = true; if (hint) hint.classList.add('hidden'); }
+      e.preventDefault();
+    }
+    function onDragMove(e) {
+      if (!dragging || synced || completed) return;
+      const cx = e.touches ? e.touches[0].clientX : e.clientX;
+      sliderNorm = _normFromClientX(cx);
+      updateHandlePos();
+      e.preventDefault();
+    }
+    function onDragEnd() { dragging = false; }
+
+    // 핸들 + 트랙 어디를 눌러도 그 지점으로 점프 후 드래그
+    handle.addEventListener('touchstart', onDragStart, { passive: false });
+    handle.addEventListener('mousedown',  onDragStart);
+    track.addEventListener('touchstart',  onDragStart, { passive: false });
+    track.addEventListener('mousedown',   onDragStart);
+    document.addEventListener('touchmove', onDragMove, { passive: false });
+    document.addEventListener('mousemove', onDragMove);
+    document.addEventListener('touchend',  onDragEnd);
+    document.addEventListener('mouseup',   onDragEnd);
+
+    // 스킵 버튼
+    if (skipBtn) skipBtn.onclick = () => {
+      if (completed) return;
+      completed = true; cleanup(); onComplete();
+    };
+
+    function cleanup() {
+      cancelAnimationFrame(_gachaTuningRaf);
+      clearInterval(_sysTimer);
+      if (_syncTimeout) { clearTimeout(_syncTimeout); _syncTimeout = null; }
+      if (warningEl) warningEl.style.display = 'none';
+      if (screenEl) screenEl.classList.remove('ssr-active');
+      handle.removeEventListener('touchstart', onDragStart);
+      handle.removeEventListener('mousedown',  onDragStart);
+      track.removeEventListener('touchstart',  onDragStart);
+      track.removeEventListener('mousedown',   onDragStart);
+      document.removeEventListener('touchmove', onDragMove);
+      document.removeEventListener('mousemove', onDragMove);
+      document.removeEventListener('touchend',  onDragEnd);
+      document.removeEventListener('mouseup',   onDragEnd);
+    }
+
+    updateHandlePos();
+    drawFrame();
   }
 
   function buildGachaResult(results) {
@@ -29112,7 +30067,9 @@
           <div class="card-name" style="color:#ff88ff;">${r.relicName}</div>
           ${status}
         `;
+        { const _f = document.createElement('div'); _f.className = 'card-face-front'; while (card.firstChild) _f.appendChild(card.firstChild); card.appendChild(_f); }
         cards.appendChild(card);
+        { const cov = document.createElement('div'); cov.className = 'card-back-cover hint-ancient'; cov.innerHTML = '<img src="./icons/card/back.png" class="back-img" alt="" />'; card.appendChild(cov); }
         if (r.isNew) newCount++;
         else if (r.starUp) starUpCount++;
         else totalRefund += r.refund;
@@ -29127,12 +30084,28 @@
         card.style.setProperty('--rarity-color', col);
         if (jp) card.style.boxShadow = '0 0 24px rgba(255,212,121,0.7)';
         card.innerHTML = `
-          <div class="card-rarity-tag" style="background:${col};color:#0b0d12;">${jp ? 'JACKPOT' : '⭐'}</div>
-          <div class="card-portrait" style="font-size:56px;">⭐</div>
-          <div class="card-name" style="color:${col};">${jp ? '스타더스트 대박!' : '스타더스트'}</div>
-          <div class="card-status"${jp ? ' style="color:#ffd479;font-weight:bold;"' : ''}>+${r.stardust} ⭐</div>
+          ${jp ? '<div class="card-critical-sync">CRITICAL SYNC</div>' : ''}
+          <div class="card-rarity-tag" style="background:${col};color:#020408;">${jp ? 'JACKPOT' : 'STARDUST'}</div>
+          <div class="card-portrait" style="background:radial-gradient(circle,${jp ? 'rgba(255,180,0,0.20)' : 'rgba(0,180,220,0.16)'},#020408);">
+            <div class="card-stardust-core${jp ? ' jackpot' : ''}">
+              <svg class="shard-svg" viewBox="0 0 100 100">
+                <polygon class="shard-outer" points="50,3 97,50 50,97 3,50"/>
+                <g class="shard-grid">
+                  <line x1="16" y1="40" x2="84" y2="40"/>
+                  <line x1="10" y1="50" x2="90" y2="50"/>
+                  <line x1="16" y1="60" x2="84" y2="60"/>
+                </g>
+                <polygon class="shard-inner" points="50,27 73,50 50,73 27,50"/>
+                <circle class="shard-dot" cx="50" cy="50" r="3"/>
+              </svg>
+            </div>
+          </div>
+          <div class="card-name" style="color:${col};">${jp ? 'STARDUST JACKPOT' : '스타더스트'}</div>
+          <div class="card-status"${jp ? ' style="color:#ffd479;font-weight:bold;"' : ''}>+${r.stardust} ◆</div>
         `;
+        { const _f = document.createElement('div'); _f.className = 'card-face-front'; while (card.firstChild) _f.appendChild(card.firstChild); card.appendChild(_f); }
         cards.appendChild(card);
+        { const hc = jp ? 'hint-ssr' : ''; const cov = document.createElement('div'); cov.className = 'card-back-cover' + (hc ? ' ' + hc : ''); cov.innerHTML = '<img src="./icons/card/back.png" class="back-img" alt="" />'; card.appendChild(cov); }
         totalStardust += r.stardust;
         if (jp) stardustJackpot = true;
         continue;
@@ -29171,7 +30144,9 @@
           else { const par = this.parentElement; this.remove(); if (par) par.innerHTML = '<span style="font-size:64px">' + emoji + '</span>'; }
         };
       }
+      { const _f = document.createElement('div'); _f.className = 'card-face-front'; while (card.firstChild) _f.appendChild(card.firstChild); card.appendChild(_f); }
       cards.appendChild(card);
+      { const hc = r.rarity === 'SSR' ? 'hint-ssr' : r.rarity === 'SR' ? 'hint-sr' : ''; const cov = document.createElement('div'); cov.className = 'card-back-cover' + (hc ? ' ' + hc : ''); cov.innerHTML = '<img src="./icons/card/back.png" class="back-img" alt="" />'; card.appendChild(cov); }
       if (r.isNew) newCount++;
       else if (r.starUp) starUpCount++;
       else totalRefund += r.refund;
@@ -29184,38 +30159,77 @@
     if (newCount > 0) parts.push(`<span style="color:#88ff88">NEW ×${newCount}</span>`);
     if (starUpCount > 0) parts.push(`<span style="color:#ffd060">강화 ×${starUpCount}</span>`);
     if (totalRefund > 0) parts.push(`<span style="color:#ffd479">★ +${totalRefund}</span>`);
-    if (bestRarity === 'ancient') parts.unshift('<span style="color:#ff88ff;font-weight:bold;text-shadow:0 0 8px rgba(255,136,255,0.7);">🌌 ANCIENT 등장!</span>');
-    else if (bestRarity === 'SSR') parts.unshift('<span style="color:#ffd479;font-weight:bold;">SSR 등장!</span>');
-    else if (bestRarity === 'SR') parts.unshift('<span style="color:#c084ff;">SR 등장!</span>');
-    if (ancientCount > 0 && bestRarity !== 'ancient') parts.push(`<span style="color:#ff88ff">🌌 ×${ancientCount}</span>`);
-    if (totalStardust > 0) parts.push(`<span style="color:#88e0ff">⭐ +${totalStardust}</span>`);
-    if (stardustJackpot) parts.unshift('<span style="color:#ffd479;font-weight:bold;text-shadow:0 0 8px rgba(255,212,121,0.7);">✨ 스타더스트 대박!</span>');
-    summary.innerHTML = parts.join('  ·  ');
-    // 🎬 v250 — 카드 순차 등장 (stagger). 10뽑은 빠르게, 1뽑은 즉시 (단일 = 지연 X)
+    if (bestRarity === 'ancient') parts.unshift('<span style="color:#ff88ff;font-weight:bold;letter-spacing:2px;">▲ ANCIENT ACQUIRED</span>');
+    else if (bestRarity === 'SSR') parts.unshift('<span style="color:#ffd479;font-weight:bold;letter-spacing:2px;">▲ SSR ACQUIRED</span>');
+    else if (bestRarity === 'SR') parts.unshift('<span style="color:#c084ff;letter-spacing:1px;">SR ACQUIRED</span>');
+    if (ancientCount > 0 && bestRarity !== 'ancient') parts.push(`<span style="color:#ff88ff">ANCIENT ×${ancientCount}</span>`);
+    if (totalStardust > 0) parts.push(`<span style="color:#88e0ff">STARDUST +${totalStardust} ◆</span>`);
+    if (stardustJackpot) parts.unshift('<span style="color:#ffaa00;font-weight:bold;letter-spacing:2px;">[ CRITICAL SYNC ]</span>');
+    summary.innerHTML = parts.join(' <span style="color:rgba(0,229,255,0.3)">//</span> ');
+    // 🎬 카드 뒤집기 모드 — Phase 1(해독): REVEAL_ALL만 / Phase 2(정산): 요약+RE-SCAN+CONFIRM
+    cards.classList.add('flip-mode');
     const cardEls = cards.querySelectorAll('.gacha-result-card');
     const isSingle = cardEls.length === 1;
-    const stagger = isSingle ? 0 : (cardEls.length >= 10 ? 90 : 130);
-    cardEls.forEach((el, i) => {
-      const d = i * stagger;
-      // SSR/ANCIENT 는 reveal + burst 두 애니메이션 → 각각 delay 지정 (burst 는 reveal 후 0.4s)
-      if (el.classList.contains('rarity-ssr') || el.classList.contains('rarity-ancient')) {
-        el.style.animationDelay = `${d}ms, ${d + 400}ms`;
-      } else {
-        el.style.animationDelay = `${d}ms`;
-      }
-    });
-    // 클릭으로 스킵 — 모든 카드 즉시 표시 + SFX 한 번
-    if (!isSingle && cardEls.length > 0) {
-      const skipAll = () => {
-        cardEls.forEach(el => {
-          el.style.animation = 'none';
-          el.style.opacity = '1';
-          el.style.transform = 'none';
-        });
-        cards.removeEventListener('click', skipAll);
-      };
-      cards.addEventListener('click', skipAll);
+    let unflipped = cardEls.length;
+
+    const revealBtn = document.getElementById('gachaRevealAll');
+    const againBtn  = document.getElementById('gachaResultAgain');
+    const closeBtn  = document.getElementById('gachaResultClose');
+
+    // ── Phase 1: 결과를 미리 노출하지 않음 (요약/정산버튼 숨김, REVEAL_ALL만) ──
+    if (summary) summary.style.display = 'none';
+    if (againBtn) { againBtn.style.display = 'none'; againBtn.classList.remove('docking'); }
+    if (closeBtn) { closeBtn.style.display = 'none'; closeBtn.classList.remove('docking'); }
+    if (revealBtn) revealBtn.style.display = (!isSingle && cardEls.length > 0) ? '' : 'none';
+
+    let _actionsShown = false;
+    function _showResultActions() {
+      if (_actionsShown) return;
+      _actionsShown = true;
+      if (revealBtn) revealBtn.style.display = 'none';
+      if (summary) { summary.style.display = ''; summary.classList.add('settling'); setTimeout(() => summary.classList.remove('settling'), 520); }
+      [againBtn, closeBtn].forEach(b => {
+        if (!b) return;
+        b.style.display = '';
+        b.classList.add('docking');
+        setTimeout(() => b.classList.remove('docking'), 440);
+      });
     }
+
+    function _flipCard(el) {
+      if (el.classList.contains('flipped')) return;
+      el.classList.add('flipped');
+      unflipped--;
+      const isPremium = el.classList.contains('rarity-ssr') || el.classList.contains('rarity-ancient');
+      if (isPremium) {
+        // 🌟 SSR/전용유물 공개 — 카드 자체 연출(블룸+홀로 광택)은 CSS가 처리. 여기선 승리 효과음만.
+        try { (SFX && SFX.victory ? SFX.victory() : (SFX && SFX.combo && SFX.combo())); } catch (e) {}
+      } else if (SFX && SFX.click) SFX.click();
+      if (unflipped <= 0) {
+        if (revealBtn) revealBtn.style.display = 'none';
+        // 마지막 카드 플립 애니메이션이 끝난 뒤 정산 단계로 전환
+        setTimeout(_showResultActions, 460);
+      }
+    }
+
+    cardEls.forEach((el, i) => {
+      el.style.setProperty('--fd', `${i * 40}ms`);
+      el.addEventListener('click', () => _flipCard(el), { once: true });
+    });
+
+    // (이론상) 카드가 없으면 즉시 정산 단계
+    if (cardEls.length === 0) _showResultActions();
+
+    if (revealBtn) revealBtn.onclick = () => {
+      revealBtn.style.display = 'none';
+      const toFlip = Array.from(cardEls).filter(el => !el.classList.contains('flipped'));
+      const normal  = toFlip.filter(el => !el.classList.contains('rarity-ssr') && !el.classList.contains('rarity-ancient'));
+      const premium = toFlip.filter(el =>  el.classList.contains('rarity-ssr') ||  el.classList.contains('rarity-ancient'));
+      let t = 0;
+      normal.forEach(el  => { setTimeout(() => _flipCard(el), t); t += 100; });
+      if (premium.length) t += 320; // 일반 카드 다 넘긴 뒤 잠깐 pause
+      premium.forEach(el => { setTimeout(() => _flipCard(el), t); t += 380; });
+    };
   }
 
   // ===== 🪐 v500 — 행성 난이도 선택 (3티어 = 기본/승천/초월. 31단계 래더 유지) =====
@@ -29454,7 +30468,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 534;
+  const APP_VERSION = 573;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
@@ -29582,7 +30596,7 @@
     // 🌌 초월 — 승천 15 이후 단계적
     trans:    ['trans1', 'trans3', 'trans5', 'trans10', 'trans15'],
     // ⭐ 캐릭터 돌파 — 별 등급
-    chars:    ['firstStar', 'char8_marine', 'char8_solar', 'char8_gravitas', 'char8_sakura', 'char8_luna', 'char8_aria', 'char8_misaki'],
+    chars:    ['firstStar', 'char8_marine', 'char8_solar', 'char8_gravitas', 'char8_sakura', 'char8_luna', 'char8_aria', 'char8_misaki', 'char8_elementia', 'char8_sumika'],
     special:  ['codexHalf', 'codexFull', 'allChars', 'speedrun', 'lowSlot',
                'lucky5', 'goldHold3k', 'gold5kRun',
                'relicFirst', 'relic3', 'relic5', 'relicRare', 'relicEpic', 'relicLeg', 'relicAllRar'],
@@ -29827,7 +30841,7 @@
     const n = disc.filter(Boolean).length;
     let stars = '';
     for (let i = 0; i < disc.length; i++) stars += `<span class="${disc[i] ? 'st-on' : 'st-off'}" title="${labels[i] || ''}">${disc[i] ? '★' : '☆'}</span>`;
-    return `<div class="evo-d-stars" style="--sc:${color}"><span class="evo-d-stars-lbl">돌파</span><span class="evo-d-stars-row">${stars}</span><span class="evo-d-stars-num">${n}/${disc.length} 발견</span></div>`;
+    return `<div class="evo-d-stars" style="--sc:${color}"><span class="evo-d-stars-lbl">돌파</span><span class="evo-d-stars-row">${stars}</span><span class="evo-d-stars-num">${n}/${disc.length}</span></div>`;
   }
   // 선택된 노드의 진화 경로를 한 줄 요약 (선택바용)
   function _evoPathBreadcrumb(kind, id) {
@@ -29921,7 +30935,14 @@
     const core = imgSrc
       ? `<div class="evo-star-core"><img src="${imgSrc}" alt="" onerror="this.style.display='none';this.parentElement.classList.add('noimg');this.parentElement.dataset.em='${em}';"></div>`
       : `<div class="evo-star-core noimg" data-em="${em}"></div>`;
-    el.innerHTML = core + `<div class="evo-star-name">${nm}</div>`;
+    // ★ 돌파 레벨 배지 — 상세 안 들어가도 진척 보이게 (해금된 가챠 캐릭터만)
+    let starBadge = '';
+    if ((kind === 'SR' || kind === 'SSR') && unlocked && CHARACTERS[id]) {
+      const cs = (typeof getCharStars === 'function') ? getCharStars(id) : 0;
+      const col = cs >= 8 ? '#ff80ff' : (cs >= 4 ? '#ffd060' : '#ffd479');
+      starBadge = `<div class="evo-star-lv" style="color:${col};">${cs}★</div>`;
+    }
+    el.innerHTML = core + `<div class="evo-star-name">${nm}</div>` + starBadge;
     el.onclick = function () { _evoTreeSelect(kind, id); };
     return el;
   }
@@ -29966,8 +30987,10 @@
       if (sig.length) {
         const labels = ['시그니처', '기본조합', '4돌파', '8돌파'];
         const disc = sig.map(aid => (typeof unlockedAbilities !== 'undefined') && unlockedAbilities.has(aid));
-        // 돌파 별 게이지 (기본조합/4돌파/8돌파 = 인덱스 1~3, 시그니처 제외)
-        if (disc.length > 1) body += _evoStarMeter(disc.slice(1), labels.slice(1), gc.color);
+        // ★ 돌파 게이지 — 캐릭터 별 레벨(0~8) 표시 (코덱스와 동일). 능력 단계는 아래 카드에서 확인.
+        const cstars = (typeof getCharStars === 'function') ? getCharStars(id) : 0;
+        const star8 = Array.from({ length: 8 }, (_, i) => i < cstars);
+        body += _evoStarMeter(star8, ['1★','2★','3★','4★','5★','6★','7★','8★'], gc.color);
         body += `<div class="evo-d-sec-title">고유 능력 · 조합 · 돌파</div><div class="evo-stage-grid">` + sig.map((aid, i) => _evoStageCard(aid, labels[i] || '', !disc[i])).join('') + `</div>`;
       } else if (kind === 'base') {
         body += `<div class="evo-d-sec-title">기본 능력</div><div class="evo-stage-grid">${_evoStageCard('shot', '시작')}</div>`;
@@ -31221,6 +32244,7 @@
   // ===== 시작 =====
   // 게임은 startBtn 클릭 시 reset() 호출됨. 여기서는 메뉴만 표시.
   reset();              // state 초기 구조만 만들어둠 (loop이 안전하게 동작하도록)
+  state.gameOver = true;  // 아직 게임 안 시작한 상태 — 이어하기 버튼 안 뜨게
   initBackground();     // 우주 배경 초기화 (별/행성/성운)
   // 🔄 로그인 상태면 서버에서 최신 데이터 pull (다기기 동기화 + 로컬 손실 복구)
   if (isAccountLoggedIn()) {
