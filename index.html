@@ -462,6 +462,8 @@
   .ability-row .ab-origin { font-size: 12px; line-height: 1; margin-left: 2px; flex-shrink: 0; }
   .ability-row .ab-origin.evo  { filter: drop-shadow(0 0 4px rgba(0,229,255,0.85)); }
   .ability-row .ab-origin.uniq { filter: drop-shadow(0 0 4px rgba(255,212,121,0.9)); }
+  /* 🧬 계보 공명 각성 칩 — 시그 이름 옆 히든 이름 상시 표시 */
+  .ability-row .ab-lineage { font-size: 9px; color: #aef0ff; border: 1px solid rgba(59,247,255,0.5); border-radius: 2px; padding: 0 3px; margin-left: 4px; white-space: nowrap; box-shadow: 0 0 6px rgba(59,247,255,0.3); flex-shrink: 0; letter-spacing: 0.02em; }
   .codex-card .card-header {
     display: flex; align-items: center; gap: 8px;
     margin-bottom: 4px;
@@ -4606,6 +4608,32 @@
   /* ===== 🌳 진화 트리 / 캐릭터 도감 화면 ===== */
   .evo-tree-scroll { flex:1; min-height:0; width:100%; max-width:1000px; margin:0 auto; overflow-y:auto; overflow-x:hidden; padding:0 10px 24px; scroll-padding:10px 0; }
   #evo-tree-rows { position:relative; }
+  /* 🧬 계보 공명 도감 — 접이식 드로어 (기본 접힘 → 진화트리 안 가림, 화살표로 열고 닫기) */
+  .evo-res-codex { flex-shrink: 0; margin: 4px 12px 8px; border: 1px solid rgba(59,247,255,0.22); border-radius: 4px; background: rgba(10,16,28,0.55); overflow: hidden; }
+  .evo-res-codex:empty { display: none; }
+  .evo-res-head { width: 100%; display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 8px 11px; background: transparent; border: 0; cursor: pointer; font-size: 13px; font-weight: 700; color: #aef0ff; letter-spacing: 0.04em; font-family: inherit; touch-action: manipulation; }
+  .evo-res-head:hover { background: rgba(59,247,255,0.06); }
+  .evo-res-head .evo-res-count { color: #7a8294; font-size: 11px; margin-left: 6px; }
+  .evo-res-arrow { color: #7a8294; font-size: 11px; transition: transform .25s; transform: rotate(-90deg); }
+  .evo-res-codex.expanded .evo-res-arrow { transform: rotate(0deg); }
+  .evo-res-body { max-height: 0; overflow: hidden; transition: max-height .3s ease; }
+  .evo-res-codex.expanded .evo-res-body { max-height: 44vh; overflow-y: auto; }
+  .evo-res-hint { font-size: 10.5px; color: rgba(154,163,179,0.72); margin: 0 11px 7px; }
+  /* 콘셉트1 — 네온 회로 칩 격자 (미해금=딤 와이어프레임 / 해금=골드 점등) */
+  .evo-res-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(148px, 1fr)); gap: 6px; padding: 0 11px 10px; }
+  .evo-res-row { display: flex; flex-direction: column; gap: 2px; padding: 6px 8px; border: 1px solid rgba(122,130,148,0.3); background: rgba(122,130,148,0.05); position: relative; cursor: pointer; }
+  .evo-res-row.sel { outline: 1px solid rgba(255,255,255,0.5); outline-offset: -1px; }
+  .evo-res-row.got { border-color: rgba(255,212,121,0.6); background: rgba(255,212,121,0.07); box-shadow: 0 0 8px rgba(255,212,121,0.18); }
+  .evo-res-row.locked { opacity: 0.5; }
+  .evo-res-name { color: #ffe89a; font-weight: 700; font-size: 11.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .evo-res-row.locked .evo-res-name { color: #6a7080; }
+  .evo-res-path { color: #8a93a5; font-size: 9.5px; font-family: ui-monospace, 'Courier New', monospace; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  /* 🌟 별자리 경로 점등 — 해금된 계보의 R타워→SR→SSR 선/노드 골드 발광 */
+  .evo-edge.res-lit { stroke: #ffd479 !important; stroke-width: 2.2 !important; opacity: 1 !important; filter: drop-shadow(0 0 4px rgba(255,212,121,0.85)); }
+  .evo-star.res-node { filter: drop-shadow(0 0 7px #ffd479) drop-shadow(0 0 3px rgba(255,212,121,0.9)); }
+  /* 미해금 계보 클릭 = 목표 경로 미리보기 (시안 점선) */
+  .evo-edge.res-goal { stroke: #3bf7ff !important; stroke-width: 2 !important; opacity: 0.9 !important; filter: drop-shadow(0 0 3px rgba(59,247,255,0.7)); stroke-dasharray: 5 4; }
+  .evo-star.res-goal { filter: drop-shadow(0 0 6px #3bf7ff); }
   .evo-row { display:flex; flex-direction:column; gap:8px; }
   .evo-row-head { font-size:13px; font-weight:700; color:#c8cdd8; display:flex; align-items:center; gap:8px; }
   .evo-row-tag { font-size:11px; font-weight:800; padding:2px 8px; border-radius:10px; border:1px solid; background:rgba(0,0,0,0.25); }
@@ -5084,6 +5112,7 @@
   <div class="evo-tree-scroll">
     <div id="evo-tree-rows"></div>
   </div>
+  <div id="evo-resonance-codex" class="evo-res-codex"></div>
   <div id="evo-sel-bar" class="evo-sel-bar" style="display:none">
     <div class="evo-sel-info" id="evo-sel-info"></div>
     <button id="evo-sel-detail" class="evo-sel-btn">📖 상세 보기</button>
@@ -17087,7 +17116,8 @@
       state.tower.abilities.push(ab);
       unlockAbility('shot');
     }
-    state.evoTier = 'base'; state.evoNode = null;   // 🌳 진화 단계 (base→R→SR→SSR)
+    state.evoTier = 'base'; state.evoNode = null; state.evoPath = [];   // 🌳 진화 단계(base→R→SR→SSR) + 🧬 계보 추적
+    state._lineageAxis = null; state._lineageSigSet = null; state._lineageAscended = false; state._lineageAscendName = null; state.lineageFx = null;   // 🧬 ②③ 계보 각인/공명 (SSR 진화 시 세팅)
     checkCombos();
     planRound();
     paused = false;
@@ -20858,6 +20888,10 @@
         (state.abilityDamageStats[state.currentAbilityId] || 0) + dmgApplied;
     }
     e.hp -= dmg;
+    // 🧬 ② 계보 자동 각인 — 현재 능력이 내 계보 SSR 시그면 축 효과 부착 (재귀 가드)
+    if (!state._inLineageHit && state._lineageAxis && state._lineageSigSet && state._lineageSigSet.has(state.currentAbilityId)) {
+      state._inLineageHit = true; try { _lineageOnHit(e); } catch (err) {} state._inLineageHit = false;
+    }
     e.hitFlash = state.t + 3;   // ✨ 피격 흰 플래시 (3프레임) — 타격감
     const [ex, ey] = enemyXY(e);
     // 데미지 숫자 — 평소엔 흰색, 큰 데미지(크리티컬)만 골드로 강조
@@ -21592,6 +21626,8 @@
           const newAb = { id: c.id, level: 1, acquiredRound: state.round || 1, _isNew: true };
           ABILITY_DEFS[c.id].init(newAb);
           state.tower.abilities.push(newAb);
+          // 🧬 계보 전파 — 재료 중 하나라도 계보 시그였으면 결과 조합도 계보 이펙트 계승 (모든 조합/돌파 트리에서 유지)
+          if (state._lineageSigSet && (state._lineageSigSet.has(recipe.parts[0]) || state._lineageSigSet.has(recipe.parts[1]))) state._lineageSigSet.add(c.id);
           // 화려한 형성 연출
           const isTriple = c.tier === 3;
           state.comboFlash = isTriple ? 50 : 30;
@@ -22479,6 +22515,7 @@
       }
     }
     state.currentAbilityId = null;
+    try { _lineageTick(); } catch (e) {}   // 🧬 ② 계보 상시 메카닉 (오라/리프트/랜스/오비탈)
     // 💎 천둥의 신 (Epic) — 3초마다 가장 강한 적에게 번개
     if (state.relicEffects && state.relicEffects.thunderGod) {
       state.relicEffects.thunderTimer = (state.relicEffects.thunderTimer || 0) - 1;
@@ -25146,6 +25183,7 @@
     drawAbilities();
     drawBullets();
     drawParticles();
+    try { _lineageDraw(); } catch (e) {}   // 🧬 ② 계보 상시 메카닉 렌더 (오라/리프트/아크/랜스/오비탈)
     drawMotifFx();          // 🎭 가챠 캐릭터 개성 모티프
     drawDamageNumbers();
     if (sk > 0.1) ctx.restore();
@@ -26992,12 +27030,16 @@
         : _origin === 'uniq'
         ? '<span class="ab-origin uniq" title="고유 능력 (캐릭터 전용)">✦</span>'
         : '';
+      // 🧬 계보 공명 각성 — 이 시그가 각성됐으면 히든 이름 칩 상시 표시
+      const lineageBadge = (state._lineageAscended && state._lineageSigSet && state._lineageSigSet.has(a.id) && state._lineageAscendName)
+        ? `<span class="ab-lineage" title="계보 공명 각성">✦ ${state._lineageAscendName}</span>`
+        : '';
       const iconSize = wrapEl && wrapEl.classList.contains('portrait') ? 36 : 28;
       row.innerHTML = `
         <div class="ability-name">
           <div class="row-header">
             ${iconHtml(a.id, iconSize)}
-            <b style="color:${nameColor}">${def.name} ${lvLabel}</b>${originBadge}
+            <b style="color:${nameColor}">${def.name} ${lvLabel}</b>${originBadge}${lineageBadge}
           </div>
           ${tagsHtml}
           <small>${def.desc(a.level)}</small>
@@ -28172,6 +28214,283 @@
     chariot:    { title: '돌격의 전차',   ability: 'rocketSwarm', sr: ['levina', 'solar'] },
   };
   const R_TOWER_ORDER = ['wheel','devil','star','sun','fool','magician','hierophant','justice','empress','world','lovers','strength','chariot'];
+  // ===== 🧬 계보 각인 (Lineage Imprint) — 진화 경로가 빌드를 가른다 (② 자동 각인 + ③ 공명 이벤트 공용 인프라) =====
+  // R-루트 13종 → 5축. SSR 고유능력 타격에 이 축 효과가 덧붙는다 (② 구현 예정).
+  const _R_ROOT_AXIS = {
+    frost:'ice',
+    thunder:'shock', chain:'shock', plasmaArc:'shock',
+    meteor:'blast', missile:'blast', rocketSwarm:'blast', starfall:'blast',
+    beam:'pierce', boomerang:'pierce', sword:'pierce',
+    clone:'echo', orbital:'echo',
+  };
+  function _lineageRootAbId() { const p = (state && state.evoPath) || []; for (const e of p) if (e.kind === 'R') return e.abId; return null; }
+  function _lineageAxis() { const r = _lineageRootAbId(); return r ? (_R_ROOT_AXIS[r] || null) : null; }
+  // 🧬 ② 자동 각인 — SSR 시그 능력 피격 시 계보 축 효과 1회 (damageEnemy에서 재귀가드로 호출).
+  //   ③ 공명 각성(state._lineageAscended) 시 증폭. 증폭은 state라 조합/돌파해도 시그 체인 전체에 유지됨. 수치는 플레이테스트로 튜닝.
+  function _lineageBase() { return (1 + (state.round || 1) * 0.2) * (state._lineageAscended ? 2.2 : 1); }
+  function _lineageOnHit(e) {   // 적중 트리거: blast=차원 리프트 / shock=전격 아크 스폰 (ice/pierce/echo는 상시 → _lineageTick)
+    const ax = state && state._lineageAxis; if (!ax || !e || e.hp <= 0) return;
+    if (!state.lineageFx) state.lineageFx = { rifts: [], arcs: [] };
+    const fx = state.lineageFx, asc = !!state._lineageAscended, [hx, hy] = enemyXY(e);
+    if (ax === 'blast') {                         // 💥 지연 차원 폭발 — 적중점에 리프트 → 0.5s 뒤 폭발
+      if (fx.rifts.length < 30) fx.rifts.push({ x: hx, y: hy, t: state.t, boom: 0, r: asc ? 66 : 48 });
+    } else if (ax === 'shock') {                  // ⚡ 연쇄 전격 아크 — 인근 N체 아크+데미지+슬로우
+      const hits = asc ? 2 : 1, done = new Set([e]); let fxp = hx, fyp = hy, base = _lineageBase();
+      for (let k = 0; k < hits; k++) {
+        let best = 150 * 150, tg = null;
+        for (const o of state.enemies) { if (done.has(o) || o.hp <= 0) continue; const [ox, oy] = enemyXY(o); const dd = (ox-fxp)*(ox-fxp)+(oy-fyp)*(oy-fyp); if (dd < best) { best = dd; tg = o; } }
+        if (!tg) break; const [tx, ty] = enemyXY(tg); done.add(tg); tg.slowFrames = Math.max(tg.slowFrames || 0, 16); damageEnemy(tg, base);
+        if (fx.arcs.length < 40) fx.arcs.push({ x1: fxp, y1: fyp, x2: tx, y2: ty, life: 9 });
+        fxp = tx; fyp = ty;
+      }
+    }
+  }
+  // 🧬 ② 상시 메카닉 — 매 프레임 (currentAbilityId=null 상태라 damageEnemy가 재귀로 _lineageOnHit 호출 안 함)
+  function _lineageTick() {
+    const ax = state && state._lineageAxis; if (!ax) return;
+    if (!state.lineageFx) state.lineageFx = { rifts: [], arcs: [] };
+    const fx = state.lineageFx, asc = !!state._lineageAscended, base = _lineageBase();
+    if (fx.arcs.length) { for (const a of fx.arcs) a.life--; compactInPlace(fx.arcs, a => a.life > 0); }
+    if (fx.rifts.length) {   // 💥 지연 폭발
+      for (const rf of fx.rifts) {
+        if (rf.boom > 0) { rf.boom--; continue; }
+        if (state.t - rf.t >= 30) { rf.boom = 10; const r2 = rf.r * rf.r;
+          for (const o of state.enemies) { if (o.hp <= 0) continue; const [ox, oy] = enemyXY(o); if ((ox-rf.x)*(ox-rf.x)+(oy-rf.y)*(oy-rf.y) < r2) damageEnemy(o, base * 1.5); } }
+      }
+      compactInPlace(fx.rifts, rf => !(rf.boom <= 0 && state.t - rf.t >= 40));
+    }
+    if (ax === 'ice') {                            // 🌀 감속 오라 — 타워 반경 내 적 상시 감속
+      const R = asc ? 175 : 140, R2 = R * R;
+      for (const o of state.enemies) { if (o.hp <= 0) continue; const [ox, oy] = enemyXY(o); if ((ox-CX)*(ox-CX)+(oy-CY)*(oy-CY) < R2) o.slowFrames = Math.max(o.slowFrames || 0, 8); }
+    } else if (ax === 'pierce') {                  // 🗡 호위 잔상 랜스 — 타워 주위 회전, 닿는 적 관통타
+      fx.lanceAng = (fx.lanceAng || 0) + 0.06;
+      fx._lt = (fx._lt || 0) + 1;
+      if (fx._lt >= 6) { fx._lt = 0; const n = asc ? 4 : 2, R = 92, hitR2 = 28 * 28;
+        for (let i = 0; i < n; i++) { const a = fx.lanceAng + i * (Math.PI * 2 / n), lx = CX + Math.cos(a) * R, ly = CY + Math.sin(a) * R;
+          for (const o of state.enemies) { if (o.hp <= 0) continue; const [ox, oy] = enemyXY(o); if ((ox-lx)*(ox-lx)+(oy-ly)*(oy-ly) < hitR2) damageEnemy(o, base); } } }
+    } else if (ax === 'echo') {                    // 🛰 분신 오비탈 — 도는 분신이 주기마다 무작위 적 사격
+      fx.echoAng = (fx.echoAng || 0) + 0.04;
+      fx.echoCd = (fx.echoCd || 0) - 1;
+      if (fx.echoCd <= 0) { fx.echoCd = asc ? 26 : 42;
+        const alive = state.enemies.filter(o => o.hp > 0);
+        if (alive.length) { const tg = alive[Math.floor(Math.random() * alive.length)], [tx, ty] = enemyXY(tg), ex = CX + Math.cos(fx.echoAng) * 72, ey = CY + Math.sin(fx.echoAng) * 72;
+          damageEnemy(tg, base); if (fx.arcs.length < 40) fx.arcs.push({ x1: ex, y1: ey, x2: tx, y2: ty, life: 8, echo: true }); } }
+    }
+  }
+  // 🧬 ② 상시 메카닉 렌더
+  function _lineageDraw() {
+    const ax = state && state._lineageAxis; const fx = state && state.lineageFx; if (!ax || !fx) return;
+    const asc = !!state._lineageAscended;
+    ctx.save();
+    if (fx.arcs && fx.arcs.length) {   // 전격/메아리 아크
+      ctx.globalCompositeOperation = 'lighter'; ctx.lineCap = 'round';
+      for (const a of fx.arcs) { ctx.globalAlpha = Math.max(0, a.life / 9); ctx.strokeStyle = a.echo ? '#b890ff' : '#aef0ff'; ctx.lineWidth = a.echo ? 2 : 2.6;
+        const mx = (a.x1+a.x2)/2 + (Math.random()-0.5)*10, my = (a.y1+a.y2)/2 + (Math.random()-0.5)*10;
+        ctx.beginPath(); ctx.moveTo(a.x1, a.y1); ctx.lineTo(mx, my); ctx.lineTo(a.x2, a.y2); ctx.stroke(); }
+      ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
+    }
+    if (fx.rifts && fx.rifts.length) {   // 차원 리프트 → 폭발
+      for (const rf of fx.rifts) {
+        if (rf.boom > 0) { const b = rf.boom / 10; ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = b; ctx.fillStyle = '#ff7adf'; ctx.beginPath(); ctx.arc(rf.x, rf.y, rf.r * (1.1 - b * 0.5), 0, Math.PI*2); ctx.fill(); ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over'; }
+        else { const prog = (state.t - rf.t) / 30; ctx.globalAlpha = 0.45 + 0.3 * Math.abs(Math.sin(state.t * 0.4)); ctx.strokeStyle = '#d06aff'; ctx.lineWidth = 1.6; ctx.beginPath(); ctx.arc(rf.x, rf.y, 5 + prog * 5, 0, Math.PI*2); ctx.stroke(); ctx.globalAlpha = 1; }
+      }
+    }
+    if (ax === 'ice') {   // 🌀 감속 오라 링
+      const R = asc ? 175 : 140, pulse = 0.5 + 0.5 * Math.sin(state.t * 0.06);
+      ctx.globalCompositeOperation = 'lighter';
+      ctx.globalAlpha = 0.09 + pulse * 0.05; ctx.fillStyle = '#3bf7ff'; ctx.beginPath(); ctx.arc(CX, CY, R, 0, Math.PI*2); ctx.fill();
+      ctx.globalAlpha = 0.5; ctx.strokeStyle = '#7df0ff'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(CX, CY, R, 0, Math.PI*2); ctx.stroke();
+      ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
+    } else if (ax === 'pierce') {   // 🗡 호위 랜스
+      const n = asc ? 4 : 2, R = 92, ang = fx.lanceAng || 0; ctx.globalCompositeOperation = 'lighter';
+      for (let i = 0; i < n; i++) { const a = ang + i * (Math.PI * 2 / n), lx = CX + Math.cos(a) * R, ly = CY + Math.sin(a) * R;
+        ctx.save(); ctx.translate(lx, ly); ctx.rotate(a + Math.PI/2);
+        ctx.globalAlpha = 0.3; ctx.fillStyle = '#fff'; ctx.fillRect(-3, -13, 6, 26);
+        ctx.globalAlpha = 0.9; ctx.fillStyle = '#aef0ff'; ctx.fillRect(-1.5, -11, 3, 22); ctx.restore(); }
+      ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
+    } else if (ax === 'echo') {   // 🛰 분신 오비탈
+      const a = fx.echoAng || 0, ex = CX + Math.cos(a) * 72, ey = CY + Math.sin(a) * 72; ctx.globalCompositeOperation = 'lighter';
+      ctx.globalAlpha = 0.5; ctx.fillStyle = '#b890ff'; ctx.beginPath(); ctx.arc(ex, ey, 7, 0, Math.PI*2); ctx.fill();
+      ctx.globalAlpha = 0.22; ctx.beginPath(); ctx.arc(ex, ey, 12, 0, Math.PI*2); ctx.fill();
+      ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
+    }
+    ctx.restore();
+  }
+  // 🧬 ③ 계보 공명 — 현재 (R-루트 + SSR) 조합이 공명 데이터에 있으면 키 반환
+  function _lineageResonanceKey() {
+    if (!state || state.evoTier !== 'SSR') return null;
+    const r = _lineageRootAbId(), ssr = state.evoNode;
+    if (!r || !ssr) return null;
+    const key = r + '_' + ssr;
+    return LINEAGE_RESONANCE[key] ? key : null;
+  }
+  // 🧬 ③ 공명 융합 이벤트 — SR×SSR이 대화하며 힘을 합침 → 시그 각인 증폭(각성). openEvolutionEvent 패턴.
+  function openLineageResonanceEvent(key) {
+    if (!state || state.gameOver) return;
+    const d = LINEAGE_RESONANCE[key]; if (!d || state._lineageAscended) return;   // 이미 각성했으면 스킵
+    paused = true;
+    _activeEvent = { _curse: false, _resolved: false, choices: [
+      { label: '✦ 힘을 합친다', desc: '계보 공명 — ' + d.name + ' 각성 (시그 능력 영구 강화)',
+        resolve() {
+          state._lineageAscended = true; state._lineageAscendName = d.name;
+          try { _markResonanceSeen(key); } catch (e) {}   // 🧬 도감 점진공개
+
+          if (!state._lineageSigSet || !state._lineageSigSet.size) state._lineageSigSet = new Set((typeof CHAR_SIG_ABILITIES !== 'undefined' && CHAR_SIG_ABILITIES[d.ssr]) || []);
+          if (!state._lineageAxis) state._lineageAxis = d.axis;
+          try { state.comboFlash = 50; state.comboFlashColor = (CHARACTERS[d.ssr] && CHARACTERS[d.ssr].color) || '#ffd479'; } catch (e) {}
+          try { if (typeof renderPanel === 'function') renderPanel(); } catch (e) {}
+          return '✦ ' + d.name + ' — 계보 공명 각성!';
+        } },
+    ] };
+    // 포트레이트 — SR + SSR 두 캐릭터 나란히 (힘을 합치는 그림)
+    try {
+      const pe = document.getElementById('eventNpcPortrait');
+      if (pe) {
+        pe.innerHTML = '';
+        [d.sr, d.ssr].filter(Boolean).forEach(cid => {
+          if (typeof _charPortraitImg === 'function' && CHARACTERS[cid]) {
+            const im = _charPortraitImg(cid, ''); im.style.maxHeight = '70%'; im.style.maxWidth = '52%'; im.style.objectFit = 'contain';
+            im.style.filter = 'drop-shadow(0 4px 14px ' + ((CHARACTERS[cid] && CHARACTERS[cid].color) || '#7ad7ff') + '88)';
+            pe.appendChild(im);
+          }
+        });
+        pe.style.display = 'flex'; pe.style.alignItems = 'flex-end'; pe.style.justifyContent = 'center'; pe.style.gap = '3%';
+      }
+    } catch (e) {}
+    const te = document.getElementById('eventTitle'); if (te) te.textContent = '공명 // ' + d.name;
+    const ge = document.getElementById('eventGold'); if (ge) ge.textContent = String(Math.floor(state.gold));
+    // 대사 — 화자별 캐릭터 색 (다중 NPC 명확화)
+    const tx = document.getElementById('eventText');
+    if (tx) {
+      const _cn = cid => (typeof _stripEvEmoji === 'function' ? _stripEvEmoji((CHARACTERS[cid] && CHARACTERS[cid].name) || '') : ((CHARACTERS[cid] && CHARACTERS[cid].name) || ''));
+      tx.innerHTML = (d.lines || []).map(line => {
+        const ci = line.indexOf(': ');
+        if (ci > 0 && ci < 8) {
+          const who = line.slice(0, ci).trim(), rest = line.slice(ci + 2);
+          let cid = null;
+          if (d.sr && _cn(d.sr) === who) cid = d.sr; else if (_cn(d.ssr) === who) cid = d.ssr;
+          const c = cid ? ((CHARACTERS[cid] && CHARACTERS[cid].color) || '#9fb0c8') : '#9fb0c8';
+          return '<div style="margin-bottom:7px"><b style="color:' + c + '">' + who + '</b><span style="opacity:.85">: ' + rest + '</span></div>';
+        }
+        return '<div style="margin-bottom:7px;opacity:.85;font-style:italic">' + line + '</div>';
+      }).join('');
+    }
+    const choicesEl = document.getElementById('eventChoices');
+    if (choicesEl) {
+      choicesEl.innerHTML = '';
+      _activeEvent.choices.forEach((ch, i) => {
+        const btn = document.createElement('button'); btn.className = 'event-choice';
+        btn.innerHTML = '<div class="ec-label">' + ch.label + '</div><div class="ec-desc">' + (ch.desc || '') + '</div>';
+        btn.onclick = () => resolveEventChoice(i);
+        choicesEl.appendChild(btn);
+      });
+    }
+    const foot = document.getElementById('eventFoot'); if (foot) foot.style.display = 'none';
+    const scn = document.getElementById('eventScene'); if (scn) { scn.classList.remove('jackpot', 'curse'); scn.classList.add('show'); }
+  }
+  // ③ 계보 공명 — (R-루트 + SSR) 조합. 키 = `${rRoot}_${ssr}`. 진화 정점에서 SR×SSR 융합 이벤트로 히든 능력 각성.
+  // 대사 톤: SSR은 이미 싸우는 중 → SR이 합류해 힘을 보탬 (SR=건네는 말투 / SSR=받아 터뜨리는 말투). 전 계보 커버.
+  const LINEAGE_RESONANCE = {
+    // ── 🌟 아리아 (우주·노래) ──
+    starfall_aria:        { sr:'solar',    ssr:'aria',      axis:'blast', name:'유성 교향곡',
+                            lines:['솔라: 별빛 가루, 네 무대에 뿌려줄게!', '아리아: 좋아 — 별이 쏟아지는 합창으로!'] },
+    meteor_aria:          { sr:'solar',    ssr:'aria',      axis:'blast', name:'초신성 합창',
+                            lines:['솔라: 내가 불을 붙인다 — 네 클라이맥스에!', '아리아: 마지막 음에, 초신성을!'] },
+    rocketSwarm_aria:     { sr:'solar',    ssr:'aria',      axis:'blast', name:'포화 협주곡',
+                            lines:['솔라: 탄막 다발, 박자 맞춰 쏟아부을게!', '아리아: 그럼 화력의 협주곡이야 — 가자!'] },
+    // ── 🦋 미사키 (시공·나비) ──
+    thunder_misaki:       { sr:'gravitas', ssr:'misaki',    axis:'shock', name:'뇌전 태엽',
+                            lines:['그라비타스: 전하를 시간에 감아둘게.', '미사키: 멈춘 순간에 — 벼락을.'] },
+    chain_misaki:         { sr:'gravitas', ssr:'misaki',    axis:'shock', name:'연쇄 시간굴레',
+                            lines:['그라비타스: 사슬을 시간축에 묶었어.', '미사키: 끊길 때마다… 시간이 되감겨.'] },
+    starfall_misaki:      { sr:'luna',     ssr:'misaki',    axis:'blast', name:'유성 시계탑',
+                            lines:['루나: 달빛으로 별을 끌어올게.', '미사키: 느려진 하늘에서, 별이 떨어진다.'] },
+    beam_misaki:          { sr:'luna',     ssr:'misaki',    axis:'pierce',name:'시공 천공빔',
+                            lines:['루나: 달의 궤적으로 조준할게.', '미사키: 멈춘 시간을 가르는, 한 줄기.'] },
+    frost_misaki:         { sr:null,       ssr:'misaki',    axis:'ice',   name:'빙결 시계탑',
+                            lines:['멈춘 시간이 그대로 얼어붙는다.', '미사키: 이 순간을 — 얼려서 가둬버리자.'] },
+    orbital_misaki:       { sr:null,       ssr:'misaki',    axis:'echo',  name:'궤도 시계장치',
+                            lines:['위성들이 시곗바늘처럼 정렬한다.', '미사키: 내 주위를 도는, 시간의 톱니.'] },
+    missile_misaki:       { sr:'luna',     ssr:'misaki',    axis:'blast', name:'시공 폭격',
+                            lines:['루나: 달의 화살, 시간차로 떨궈줄게.', '미사키: 느려진 적 위로 — 시차 폭격.'] },
+    // ── 🖌️ 스미카 (먹·암살) ──
+    chain_sumika:         { sr:'cardista', ssr:'sumika',    axis:'shock', name:'먹빛 연환참',
+                            lines:['카르타: 패를 엮듯, 표식을 이어줄게.', '스미카: 한 획이… 열 갈래로 번진다.'] },
+    boomerang_sumika:     { sr:'cardista', ssr:'sumika',    axis:'pierce',name:'귀환 먹참',
+                            lines:['카르타: 던진 패는 반드시 돌아오지.', '스미카: 베고 — 돌아와, 다시 벤다.'] },
+    beam_sumika:          { sr:'sakura',   ssr:'sumika',    axis:'pierce',name:'먹빛 관통도',
+                            lines:['사쿠라: 내 검을 곧게 세울게.', '스미카: …꿰뚫는 한 줄, 숨까지.'] },
+    clone_sumika:         { sr:'cardista', ssr:'sumika',    axis:'echo',  name:'그림자 분신',
+                            lines:['카르타: 분신 한 장, 슬쩍 끼워줄게.', '스미카: 그림자가… 같은 곳을 벤다.'] },
+    missile_sumika:       { sr:'sakura',   ssr:'sumika',    axis:'blast', name:'먹빛 폭격',
+                            lines:['사쿠라: 표식한 곳으로 전부 보낼게!', '스미카: 숨, 멈춰 — 먹비가 내린다.'] },
+    sword_sumika:         { sr:'sakura',   ssr:'sumika',    axis:'pierce',name:'먹빛 검무',
+                            lines:['사쿠라: 내 검, 네 먹에 맡길게.', '스미카: …한 획에, 천 개의 칼날.'] },
+    // ── 🔮 엘레미아 (정령·원소) ──
+    thunder_elementia:    { sr:'levina',   ssr:'elementia', axis:'shock', name:'뇌전 정령왕',
+                            lines:['레비나: 번개 정령, 너한테 보낼게 — 번쩍!', '엘레미아: 정령들아 — 벼락을 둘러!'] },
+    meteor_elementia:     { sr:'levina',   ssr:'elementia', axis:'blast', name:'운석 정령왕',
+                            lines:['레비나: 하늘의 불덩이, 네 정령에게!', '엘레미아: 정령들아 — 별을 떨어뜨려!'] },
+    boomerang_elementia:  { sr:'marine',   ssr:'elementia', axis:'pierce',name:'질풍 정령',
+                            lines:['마린: 돌아오는 칼날, 바람에 실어줄게!', '엘레미아: 질풍 정령 — 휘감아 돌아!'] },
+    plasmaArc_elementia:  { sr:null,       ssr:'elementia', axis:'shock', name:'플라즈마 정령',
+                            lines:['정령들이 플라즈마를 머금는다.', '엘레미아: 타올라 — 전부 녹여버려!'] },
+    clone_elementia:      { sr:'marine',   ssr:'elementia', axis:'echo',  name:'분신 정령왕',
+                            lines:['마린: 혼자선 외롭잖아 — 분신 데려왔어!', '엘레미아: 정령들아, 둘로 나뉘어 휩쓸어!'] },
+    sword_elementia:      { sr:'levina',   ssr:'elementia', axis:'pierce',name:'검령 군주',
+                            lines:['레비나: 칼에 정령을 실어줄게!', '엘레미아: 검의 정령 — 베고 또 베!'] },
+    rocketSwarm_elementia:{ sr:'levina',   ssr:'elementia', axis:'blast', name:'화룡 정령',
+                            lines:['레비나: 다연장, 정령에게 맡겨!', '엘레미아: 화룡 정령 — 전탄 발사!'] },
+  };
+  // 🧬 ③ 계보 공명 — 각성한 것 추적(기기-로컬, META 분리) + 진화트리 도감(떡밥 + 점진공개)
+  function _getResonanceSeen() { try { return JSON.parse(localStorage.getItem('_dd_resonance') || '{}') || {}; } catch (e) { return {}; } }
+  function _markResonanceSeen(key) { try { const o = _getResonanceSeen(); o[key] = 1; localStorage.setItem('_dd_resonance', JSON.stringify(o)); } catch (e) {} }
+  function _buildResonanceCodex() {
+    const host = document.getElementById('evo-resonance-codex'); if (!host) return;
+    const seen = _getResonanceSeen();
+    const _cn = id => (typeof _stripEvEmoji === 'function' ? _stripEvEmoji((CHARACTERS[id] && CHARACTERS[id].name) || id) : ((CHARACTERS[id] && CHARACTERS[id].name) || id));
+    const _rname = ab => { for (const k in R_TOWERS) if (R_TOWERS[k].ability === ab) return R_TOWERS[k].title; return ab; };
+    const keys = Object.keys(LINEAGE_RESONANCE);
+    let rows = '';
+    for (const key of keys) {
+      const d = LINEAGE_RESONANCE[key], rRoot = key.split('_')[0];
+      const path = _rname(rRoot) + ' → ' + (d.sr ? _cn(d.sr) : '?') + ' → ' + _cn(d.ssr);
+      const got = !!seen[key];
+      rows += '<div class="evo-res-row ' + (got ? 'got' : 'locked') + '" data-key="' + key + '">'
+        + '<span class="evo-res-name">' + (got ? '✦ ' + d.name : '✦ ???') + '</span>'
+        + '<span class="evo-res-path">' + path + '</span></div>';
+    }
+    const gotN = keys.filter(k => seen[k]).length;
+    host.innerHTML = '<button class="evo-res-head" type="button"><span>✦ 계보 공명 <span class="evo-res-count">' + gotN + '/' + keys.length + '</span></span><span class="evo-res-arrow">▾</span></button>'
+      + '<div class="evo-res-body"><div class="evo-res-hint">진화 경로(R → SR → SSR)를 완주하면 두 동료가 힘을 합쳐 숨은 능력이 각성한다.</div>'
+      + '<div class="evo-res-list">' + rows + '</div></div>';
+    const head = host.querySelector('.evo-res-head');
+    if (head) head.onclick = () => host.classList.toggle('expanded');   // 기본 접힘 → 진화트리 안 가림, 화살표로 열고 닫기
+    host.querySelectorAll('.evo-res-row').forEach(row => {   // 칩 클릭 → 그 계보 1개만 별자리 점등 (전부 상시점등 폐기)
+      row.onclick = () => { host.querySelectorAll('.evo-res-row.sel').forEach(r => r.classList.remove('sel')); row.classList.add('sel'); try { _applyResonanceGlow(row.dataset.key); } catch (e) {} };
+    });
+  }
+  // 🌟 별자리 경로 점등 — 선택한 계보 1개만 (해금=골드 / 미해금=시안 점선 목표 미리보기). key 없으면 전부 끔.
+  function _applyResonanceGlow(key) {
+    const host = document.getElementById('evo-tree-rows'); if (!host) return;
+    host.querySelectorAll('.evo-edge.res-lit, .evo-edge.res-goal').forEach(e => e.classList.remove('res-lit', 'res-goal'));
+    host.querySelectorAll('.evo-star.res-node, .evo-star.res-goal').forEach(n => n.classList.remove('res-node', 'res-goal'));
+    const d = key && LINEAGE_RESONANCE[key]; if (!d) return;
+    const got = !!_getResonanceSeen()[key];
+    const ec = got ? 'res-lit' : 'res-goal', nc = got ? 'res-node' : 'res-goal';
+    const rTowerOf = ab => { for (const k in R_TOWERS) if (R_TOWERS[k].ability === ab) return k; return null; };
+    const litNode = (kind, id) => { const n = host.querySelector('.evo-star[data-kind="' + kind + '"][data-id="' + id + '"]'); if (n) n.classList.add(nc); };
+    const litEdge = (a, b) => { const e = host.querySelector('.evo-edge[data-a="' + a + '"][data-b="' + b + '"]'); if (e) e.classList.add(ec); };
+    const rTower = rTowerOf(key.split('_')[0]), ssr = d.ssr;
+    if (rTower) litNode('R', rTower);
+    litNode('SSR', ssr);
+    if (d.sr) { litNode('SR', d.sr); if (rTower) litEdge('R:' + rTower, 'SR:' + d.sr); litEdge('SR:' + d.sr, 'SSR:' + ssr); }
+    else if (rTower) {   // SR 모호 — 해당 SSR로 가는 SR들 전부 점등
+      for (const s of (R_TOWERS[rTower].sr || [])) if (SR_TO_SSR[s] === ssr) { litNode('SR', s); litEdge('R:' + rTower, 'SR:' + s); litEdge('SR:' + s, 'SSR:' + ssr); }
+    }
+    const ssrNode = host.querySelector('.evo-star[data-kind="SSR"][data-id="' + ssr + '"]');
+    if (ssrNode && ssrNode.scrollIntoView) { try { ssrNode.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch (e) {} }
+  }
   // SR → SSR 진화 종착 (R25)
   const SR_TO_SSR = { marine:'elementia', levina:'elementia', luna:'misaki', gravitas:'misaki', sakura:'sumika', cardista:'sumika', solar:'aria' };
   // 무료 해금 SR (가챠 불필요 — 무과금 척추)
@@ -28284,6 +28603,14 @@
   function applyEvolution(kind, id, abId) {
     if (!state) return;
     state.evoTier = kind; state.evoNode = id;
+    if (!state.evoPath) state.evoPath = [];
+    state.evoPath.push({ kind: kind, id: id, abId: abId || null });   // 🧬 계보 추적 (각인/공명 이벤트용)
+    if (kind === 'SSR') {   // 🧬 ② 계보 자동 각인 발동 — 거쳐온 R-루트 축이 이 SSR 시그 체인 타격에 부착
+      state._lineageAxis = _lineageAxis();
+      state._lineageSigSet = new Set((typeof CHAR_SIG_ABILITIES !== 'undefined' && CHAR_SIG_ABILITIES[id]) || []);
+      const _rk = _lineageResonanceKey();   // 🧬 ③ 계보 공명 — 매칭 계보면 정점 직후(조합 전) SR×SSR 융합 이벤트
+      if (_rk) setTimeout(() => { try { openLineageResonanceEvent(_rk); } catch (e) {} }, 1600);
+    }
     // 🌳 본체 패시브 적용 — 진화한 캐릭터(SR/SSR)의 패시브를 입힘 (옛 캐릭 선택과 동일). R타워는 캐릭터가 아니라 패시브 없음.
     try {
       const ch = CHARACTERS[id];
@@ -30646,7 +30973,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 585;
+  const APP_VERSION = 595;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
@@ -31234,6 +31561,7 @@
     tier('SR', '★ SR', SRids);
     tier('SSR', '✦ SSR', SSRids);
     requestAnimationFrame(_evoLayoutEdges);
+    try { _buildResonanceCodex(); } catch (e) {}   // 🧬 계보 공명 도감 (칩 클릭 시 그 계보만 별자리 점등 — 상시 전체점등 X)
   }
   // 별자리 연결선 좌표를 실제 DOM 위치에서 측정해 설정 (화면 표시 후/리사이즈 시 호출)
   function _evoLayoutEdges() {
