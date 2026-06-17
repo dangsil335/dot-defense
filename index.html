@@ -4139,8 +4139,8 @@
   .reward-card {
     width: 100%; max-width: 440px; max-height: 86vh; display: flex; flex-direction: column;
     background: linear-gradient(180deg, #1a2030, #11151e);
-    border: 1px solid #3a4256; border-radius: 16px;
-    box-shadow: 0 18px 60px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.05), 0 0 40px rgba(122,215,255,0.08);
+    border: 1px solid rgba(255,212,121,0.42); border-radius: 6px;
+    box-shadow: 0 18px 60px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.05), 0 0 32px rgba(255,212,121,0.12);
     padding: 18px 16px 14px; box-sizing: border-box;
     animation: rewardIn .34s cubic-bezier(.2,.9,.3,1.12);
   }
@@ -4148,15 +4148,15 @@
   .reward-head { text-align: center; margin-bottom: 12px; }
   .reward-title { font-size: 19px; font-weight: bold; color: #ffd479; text-shadow: 0 0 16px rgba(255,212,121,0.4); }
   .reward-sub { display: block; font-size: 12px; color: #9aa3b3; margin-top: 4px; }
-  .reward-body { overflow-y: auto; display: flex; flex-direction: column; gap: 8px; padding: 2px; }
+  .reward-body { overflow-y: auto; display: flex; flex-direction: column; gap: 8px; padding: 11px 3px 4px; }   /* 🔧 상단 패딩 — NEW 뱃지(top:-7px) 잘림 방지 */
   .reward-row {
     display: flex; align-items: center; gap: 12px; padding: 11px 12px;
-    background: linear-gradient(180deg, #1c2333, #141a28); border: 1px solid #2a3140;
-    border-radius: 11px; position: relative;
+    background: linear-gradient(180deg, rgba(26,34,52,0.72), rgba(16,22,36,0.82)); border: 1px solid rgba(122,180,255,0.24);
+    border-radius: 3px; position: relative;
   }
   .reward-row.hot { border-color: rgba(255,212,121,0.5); box-shadow: 0 0 14px rgba(255,212,121,0.13); }
   .reward-ico {
-    width: 46px; height: 46px; flex-shrink: 0; border-radius: 10px; overflow: hidden;
+    width: 46px; height: 46px; flex-shrink: 0; border-radius: 4px; overflow: hidden;
     display: flex; align-items: center; justify-content: center; font-size: 24px;
     background: #0e1320; border: 1px solid #2a3140;
   }
@@ -4180,7 +4180,7 @@
   .reward-ok {
     margin-top: 14px; padding: 13px; width: 100%;
     font-family: inherit; font-size: 15px; font-weight: bold; color: #0b0d12; cursor: pointer;
-    background: linear-gradient(180deg, #ffe49a, #ffd479); border: none; border-radius: 11px;
+    background: linear-gradient(180deg, #ffe49a, #ffd479); border: none; border-radius: 4px;
     box-shadow: 0 4px 14px rgba(255,212,121,0.3); transition: transform .08s, box-shadow .12s;
     touch-action: manipulation;
   }
@@ -5399,11 +5399,12 @@
   .event-choice .ec-desc { font-size: 11.5px; color: #9aa3b3; line-height: 1.4; margin-top: 3px; }
   .event-outcome { font-size: 13.5px; line-height: 1.6; color: #ffe070; background: #161a10; border: 1px solid #3a3a20; border-radius: 10px; padding: 13px 14px; white-space: pre-wrap; animation: rewardIn .25s ease; }
   /* 🆕 이벤트 결과 능력 아이콘 (삭제/획득/강화) */
-  .eo-icons { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-bottom: 10px; animation: rewardIn .25s ease; }
-  .eo-icon { position: relative; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 6px 8px 5px; background: #11141c; border: 2px solid #888; border-radius: 10px; min-width: 56px; }
-  .eo-icon img { width: 40px; height: 40px; image-rendering: auto; border-radius: 6px; }
-  .eo-badge { position: absolute; top: -7px; right: -7px; width: 18px; height: 18px; border-radius: 50%; color: #0b0e14; font-weight: 900; font-size: 13px; line-height: 18px; text-align: center; box-shadow: 0 1px 4px rgba(0,0,0,.5); }
-  .eo-name { font-size: 10px; color: #cfd6e3; font-weight: bold; max-width: 64px; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  /* 🛸 이벤트 능력변동 표시 — 네온 HUD 칩 + 배지 잘림 방지(상단 패딩) */
+  .eo-icons { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin: 2px 0 12px; padding-top: 11px; animation: rewardIn .25s ease; }
+  .eo-icon { position: relative; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 8px 9px 6px; background: rgba(14,22,38,0.6); border: 1px solid rgba(59,247,255,0.4); border-radius: 0; min-width: 58px; box-shadow: inset 0 0 10px rgba(0,180,255,0.06); }
+  .eo-icon img { width: 40px; height: 40px; image-rendering: auto; border-radius: 4px; }
+  .eo-badge { position: absolute; top: -8px; right: -8px; width: 20px; height: 20px; border-radius: 50%; color: #0b0e14; font-weight: 900; font-size: 11px; line-height: 20px; text-align: center; box-shadow: 0 1px 5px rgba(0,0,0,.6); z-index: 2; }
+  .eo-name { font-size: 10px; color: #cfd6e3; font-weight: 600; letter-spacing: 0.02em; max-width: 66px; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   /* ⬆ 상점 강화 결과 팝업 행 */
   .shop-confirm .sc-up-row { display: flex; align-items: center; justify-content: center; gap: 12px; margin: 10px 0 4px; }
   .shop-confirm .sc-up-row img { width: 48px; height: 48px; image-rendering: auto; border-radius: 8px; border: 2px solid #ffaa55; }
@@ -19644,6 +19645,7 @@
       }
     }
     saveMeta();
+    try { checkUnlockAchievements(); } catch (e) {}   // 🏆 가챠 해금 즉시 캐릭터/별 업적 체크 (게임 끝까지 안 기다림)
     return { rarity, charId, isNew, refund, starUp, newStars: getCharStars(charId) };
   }
 
@@ -20350,6 +20352,24 @@
       state.repeatStardust = repeatEarned;
       state.repeatHits = repeatHits;
     }
+  }
+  // 🏆 캐릭터/별 해금 업적 — 게임 밖(가챠 등)에서 META 변화 즉시 체크. state 기반(전투/반복) 업적은 인자 없으면 throw → try/catch로 스킵(오발 방지).
+  function checkUnlockAchievements() {
+    const have = getUnlockedAchievements();
+    let earned = 0; const newOnes = [];
+    for (const ach of ACHIEVEMENTS) {
+      if (have.has(ach.id)) continue;
+      let ok = false; try { ok = !!ach.check(undefined); } catch (e) { ok = false; }   // state 없이 통과 = META 기반(캐릭/별/올해금)만
+      if (ok) { have.add(ach.id); earned += (ach.reward || 0); newOnes.push(ach); }
+    }
+    if (newOnes.length) {
+      META.achievements = [...have];
+      META.stardust = (META.stardust || 0) + earned;
+      META.stardustEarned = (META.stardustEarned || 0) + earned;
+      saveMeta();
+      newOnes.forEach(a => { try { toast('🏆 업적 달성 — ' + (a.name || '')); } catch (e) {} });
+    }
+    return newOnes;
   }
 
   // ===== 🎁 게임 결과 — 획득 보상 집계 + 패널 (v322) =====
@@ -30973,7 +30993,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 595;
+  const APP_VERSION = 597;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
