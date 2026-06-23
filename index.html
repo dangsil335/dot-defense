@@ -62,9 +62,12 @@
     transform-origin: center center;
     will-change: transform;
   }
-  #wrap { display: flex; gap: 12px; }
+  /* 🛸 v600 — 그리드: 상단 HUD 전폭(top top) + 아래 캔버스|패널. 세로는 top/game/panel 세로 스택. */
+  #wrap { display: grid; gap: 12px; row-gap: 8px; grid-template-columns: auto 260px; grid-template-areas: "top top" "game panel"; align-items: start; width: max-content; flex-shrink: 0; margin: 0 auto; }   /* 🛸 v604 — max-content + flex-shrink:0: body flex가 #wrap을 뷰포트로 줄이지 못하게 막음(그리드 min=0이라 0까지 줄던 문제). 콘텐츠폭 유지 → fitScale이 축소. 상단바 전폭+캔버스 안잘림 */
   /* 세로 모드: 패널을 캔버스 아래로 쌓고 터치 친화적으로 크게 */
-  #wrap.portrait { flex-direction: column; }
+  #wrap.portrait { grid-template-columns: minmax(0, 1fr); grid-template-areas: "top" "game" "panel"; }
+  #game { grid-area: game; justify-self: start; align-self: start; }
+  #wrap > #panel { grid-area: panel; }
   #wrap.portrait #panel {
     width: 644px; height: auto;
     font-size: 15px;
@@ -3068,6 +3071,134 @@
   #panel #randomBtn, #panel .relic-view-btn, #panel .speed-btn { font-weight: 600; letter-spacing: 0.05em; }
   #panel .ability-name b { font-weight: 600; letter-spacing: 0.01em; }
 
+  /* ===== 🛸 v598 — 능력 도크(프로토타입, 가로 전용): 풀행 리스트 → 컴팩트 아이콘 칩 그리드.
+     기존 디자인 토큰만 사용(시안 #3bf7ff·글래스·골드 #ffd479·그린 #52e07a·직각+좌측 액센트바).
+     up/rm 버튼·refreshAbilityAffordability 보존(버튼 DOM 유지, 접힘 시 숨김만). 세로는 미변경(다음 단계). ===== */
+  .ab-chip-dot { display: none; }   /* 기본 숨김 — 도크 접힘 칩에서만 노출 */
+  #wrap:not(.portrait) #panel #abilities.dock {
+    display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px; align-content: start; flex: 1 1 0; min-height: 0; overflow-y: auto; padding-right: 2px;
+  }
+  #wrap:not(.portrait) #panel #abilities.dock .ability-row {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 4px; padding: 9px 6px 8px; min-height: 60px; cursor: pointer;
+    text-align: center; overflow: hidden;
+  }
+  #wrap:not(.portrait) #panel #abilities.dock .ability-row .ability-name { align-items: center; width: 100%; }
+  #wrap:not(.portrait) #panel #abilities.dock .ability-row .row-header { flex-direction: column; gap: 3px; margin: 0; width: 100%; }
+  #wrap:not(.portrait) #panel #abilities.dock .ability-row .ability-name b {
+    font-size: 10px; line-height: 1.18; max-width: 100%;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  }
+  /* 타입 컬러닷 — 칩 우상단 (능력 고유색 def.color) */
+  #wrap:not(.portrait) #panel #abilities.dock .ability-row:not(.expanded) .ab-chip-dot {
+    display: block; position: absolute; right: 6px; top: 6px;
+    width: 7px; height: 7px; border-radius: 50%; box-shadow: 0 0 5px currentColor; z-index: 2;
+  }
+  /* 접힘: 설명/조합힌트/태그/강화·삭제 버튼 숨김 */
+  #wrap:not(.portrait) #panel #abilities.dock .ability-row:not(.expanded) .ability-name small,
+  #wrap:not(.portrait) #panel #abilities.dock .ability-row:not(.expanded) .ability-tag-row,
+  #wrap:not(.portrait) #panel #abilities.dock .ability-row:not(.expanded) > button { display: none; }
+  /* 펼침(탭) = 전폭 1행 복귀 → 기존 능력행 레이아웃 그대로(강화/삭제 노출) */
+  #wrap:not(.portrait) #panel #abilities.dock .ability-row.expanded {
+    grid-column: 1 / -1;
+    display: grid; grid-template-columns: 1fr auto auto; gap: 4px;
+    align-items: center; text-align: left; cursor: default;
+    box-shadow: 0 0 14px rgba(0,210,255,0.18) !important;
+  }
+  #wrap:not(.portrait) #panel #abilities.dock .ability-row.expanded .ability-name { align-items: stretch; }
+  #wrap:not(.portrait) #panel #abilities.dock .ability-row.expanded .row-header { flex-direction: row; align-items: center; gap: 6px; }
+  #wrap:not(.portrait) #panel #abilities.dock .ability-row.expanded .ability-name b {
+    font-size: inherit; display: inline; overflow: visible;
+  }
+  #wrap:not(.portrait) #panel #abilities.dock .ability-row:not(.expanded):hover { border-color: rgba(120,250,255,0.7) !important; }
+  /* 빈 슬롯 칩 — 흐린 점선 */
+  #wrap:not(.portrait) #panel #abilities.dock .ability-row.empty {
+    min-height: 60px; flex-direction: row; font-size: 10px;
+    color: rgba(122,180,255,0.4); cursor: default;
+    border-style: dashed !important; border-color: rgba(122,180,255,0.18) !important;
+  }
+  #wrap:not(.portrait) #panel #abilities.dock .ability-row.empty::before { display: none; }
+
+  /* ===== 🛸 v599 — 상단 HUD 바: 캔버스 위 오버레이로 라운드·적·골드 + 배속(▶▶)·일시정지 컨트롤.
+     기존 토큰만(글래스·시안 #3bf7ff·골드 #ffd479·직각+코너꺾쇠). 스탯 span/버튼은 #panel에서 이동(업데이트·핸들러 보존). ===== */
+  .top-hud {
+    grid-area: top; width: 100%; box-sizing: border-box; justify-self: stretch; position: relative;
+    display: flex; flex-direction: column; align-items: stretch; gap: 4px;
+    font-family: var(--hud-font); letter-spacing: 0.03em;
+  }
+  /* 🛸 v604 — 그리드로 확정 배치: [라운드 auto][골드 auto][적바 1fr 늘어남][컨트롤 auto 우측끝]. flex-grow 변덕 제거 */
+  .top-hud .th-row { display: grid; grid-template-columns: auto auto minmax(0, 1fr) auto; align-items: stretch; gap: 6px; width: 100%; box-sizing: border-box; }
+  .top-hud .th-chip {
+    position: relative; display: flex; align-items: center; gap: 7px; white-space: nowrap;
+    padding: 5px 13px; min-height: 38px; box-sizing: border-box;
+    background: rgba(14,22,38,0.72); border: 1px solid rgba(59,247,255,0.4);
+    box-shadow: inset 0 0 10px rgba(0,180,255,0.06);
+  }
+  .top-hud .th-round { min-width: 56px; justify-content: space-between; }   /* 🛸 v601 — R100 (3자리)도 안 잘리게 여유 */
+  .top-hud .th-k { color: #6f93b6; font-size: 11px; font-weight: 600; letter-spacing: 0.06em; }
+  .top-hud .th-round span:last-child { color: #eaf6ff; font-size: 21px; font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1; }
+  .top-hud .th-gold { border-color: rgba(255,206,90,0.5); }
+  .top-hud .th-gold .th-k { color: #ffd479; }
+  .top-hud .th-gold span:last-child { color: #ffd479; font-size: 19px; font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1; }
+  .top-hud .th-enemy { flex: 1 1 0%; min-width: 0; flex-direction: column; align-items: stretch; justify-content: center; gap: 3px; }   /* 🛸 v603 — basis 0 → 남는 폭 전부 흡수(컨트롤 우측 끝 보장) */
+  .top-hud .th-enemy-top { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+  .top-hud .th-enemy #s-enemies { color: #aef0ff; font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .top-hud .th-bar { height: 5px; background: rgba(11,22,38,0.9); border: 1px solid rgba(59,247,255,0.28); overflow: hidden; }
+  .top-hud .th-bar > i { display: block; height: 100%; background: #43e7ff; box-shadow: 0 0 6px rgba(67,231,255,0.7); }
+  .top-hud .th-ctrl { display: flex; gap: 6px; flex: 0 0 auto; margin-left: auto; }   /* 🛸 v603 — 우측 끝 강제(여백 제거) */
+  .top-hud .speed-btn {
+    position: relative; flex: 0 0 auto; min-height: 36px; min-width: 46px; padding: 4px 11px; font-size: 13px;
+    background: rgba(14,22,38,0.72) !important; border: 1px solid rgba(59,247,255,0.45) !important;
+    color: #cdd9ee !important; border-radius: 0 !important; cursor: pointer;
+    font-family: var(--hud-font); letter-spacing: 0.04em; line-height: 1;
+  }
+  .top-hud .speed-btn:hover { border-color: rgba(120,250,255,0.9) !important; box-shadow: 0 0 12px rgba(0,210,255,0.3) !important; }
+  .top-hud #speedCycle.active { background: rgba(0,120,180,0.34) !important; border-color: rgba(120,250,255,0.95) !important; color: #eaf6ff !important; }
+  .top-hud .spd-arrows { letter-spacing: -2px; font-size: 14px; color: #43e7ff; }
+  .top-hud .spd-mult { font-size: 12px; font-weight: 700; margin-left: 4px; }
+  .top-hud #speedCycle { min-width: 60px; }   /* 🛸 v601 — 배속 버튼 가시성 ▶ + N× */
+  .top-hud .th-chip::before, .top-hud .speed-btn::before {
+    content: ''; position: absolute; inset: -1px; pointer-events: none; z-index: 1;
+    --bc: #3bf7ff; --bl: 6px; --bt: 2px;
+    background:
+      linear-gradient(var(--bc),var(--bc)) top left/var(--bl) var(--bt) no-repeat,
+      linear-gradient(var(--bc),var(--bc)) top left/var(--bt) var(--bl) no-repeat,
+      linear-gradient(var(--bc),var(--bc)) top right/var(--bl) var(--bt) no-repeat,
+      linear-gradient(var(--bc),var(--bc)) top right/var(--bt) var(--bl) no-repeat,
+      linear-gradient(var(--bc),var(--bc)) bottom left/var(--bl) var(--bt) no-repeat,
+      linear-gradient(var(--bc),var(--bc)) bottom left/var(--bt) var(--bl) no-repeat,
+      linear-gradient(var(--bc),var(--bc)) bottom right/var(--bl) var(--bt) no-repeat,
+      linear-gradient(var(--bc),var(--bc)) bottom right/var(--bt) var(--bl) no-repeat;
+    filter: drop-shadow(0 0 2px rgba(59,247,255,0.6));
+  }
+  .top-hud .th-gold::before { --bc: #ffd479; filter: drop-shadow(0 0 2px rgba(255,206,90,0.6)); }
+  /* 시간 진행바 — 상단 바 아래 전폭 얇은 라인 */
+  .top-hud .th-timebar { display: flex; align-items: center; gap: 8px; padding: 0 3px; }
+  .top-hud .th-timebar .th-k { font-size: 10px; }
+  .top-hud .th-tb-track { flex: 1; height: 5px; background: rgba(11,22,38,0.9); border: 1px solid rgba(59,247,255,0.2); overflow: hidden; }
+  .top-hud .th-tb-track > i { display: block; height: 100%; background: #ffd479; box-shadow: 0 0 6px rgba(255,206,90,0.5); }
+  .top-hud #th-time { color: #9fb6cf; font-size: 11px; font-variant-numeric: tabular-nums; min-width: 44px; text-align: right; }
+  /* 🛸 v606 — 보조정보 ▾ 트레이 (점수·킬·레벨·강화버프). 평소 숨김, 탭하면 드롭다운 */
+  .top-hud .th-tray-btn {
+    flex: 0 0 auto; min-width: 26px; height: 22px; padding: 0 6px; cursor: pointer;
+    background: rgba(14,22,38,0.72); border: 1px solid rgba(59,247,255,0.4); color: #9fc8e6;
+    border-radius: 0; font: 12px var(--hud-font); line-height: 1;
+  }
+  .top-hud .th-tray-btn:hover { border-color: rgba(120,250,255,0.9); }
+  .top-hud .th-tray-btn.open { background: rgba(0,120,180,0.34); border-color: rgba(120,250,255,0.95); color: #eaf6ff; }
+  .top-hud .th-tray {
+    display: none; position: absolute; top: 100%; right: 0; margin-top: 4px; z-index: 10;
+    min-width: 170px; flex-direction: column;
+    background: rgba(10,16,28,0.96); border: 1px solid rgba(59,247,255,0.4);
+    box-shadow: 0 6px 18px rgba(0,0,0,0.5), inset 0 0 12px rgba(0,180,255,0.06); padding: 4px 2px;
+  }
+  .top-hud .th-tray.open { display: flex; }
+  .top-hud .th-tray .row { display: flex; justify-content: space-between; align-items: baseline; padding: 5px 11px; font-size: 12px; }
+  .top-hud .th-tray .row .label { color: #6f93b6; }
+  .top-hud .th-tray .row span:last-child { color: #dfeafc; font-variant-numeric: tabular-nums; }
+  .top-hud .th-tray .row + .row { border-top: 1px solid rgba(59,247,255,0.1); }
+
   /* ===== 🌌 별자리 체인 — 능력 영구강화 리스트 (노드 + 세로 빛줄기로 리스트 느낌 탈피) ===== */
   .perma-list { position: relative; }
   .perma-row { position: relative; }
@@ -5633,6 +5764,25 @@
 
 <div id="wrap" style="position:relative; display:none;">
   <canvas id="game" width="640" height="640"></canvas>
+  <!-- 🛸 v599 — 상단 HUD 오버레이 (캔버스 위): 라운드·적·골드 + 배속/일시정지 (스탯/버튼은 init에서 #panel→여기로 이동) -->
+  <div id="topHud" class="top-hud" style="display:none">
+    <div class="th-row">
+      <div class="th-chip th-round" id="th-round"><span class="th-k">R</span></div>
+      <div class="th-chip th-gold" id="th-gold"><span class="th-k">G</span></div>
+      <div class="th-chip th-enemy">
+        <div class="th-enemy-top" id="th-enemy-top"><span class="th-k">적</span></div>
+        <div class="th-bar" id="th-enemy-bar"></div>
+      </div>
+      <div class="th-ctrl" id="th-ctrl"></div>
+    </div>
+    <div class="th-timebar">
+      <span class="th-k">시간</span>
+      <div class="th-tb-track" id="th-tb-track"></div>
+      <span id="th-time"></span>
+      <button id="th-tray-btn" class="th-tray-btn" title="상세 정보 (점수·킬·레벨)" aria-label="상세 정보">▾</button>
+    </div>
+    <div id="th-tray" class="th-tray"></div>
+  </div>
   <div id="panel">
     <div id="stats">
       <!-- 🔝 핵심 스탯 — 라운드 + 골드 (큼, 강조) -->
@@ -10865,6 +11015,49 @@
         ab.bonus = Math.min(max, stacks * perStack);
         // 🛡 v256 — additive stacking
         state.metaMods.resilienceBonus += ab.bonus;
+      },
+    },
+    // 🛸 v607 — 순수 패시브 4종 (활성 조합 없음 → 항상 패시브 슬롯 유지. 최적 빌드에서도 슬롯이 충분)
+    onslaught: {
+      name: '맹공', isPassive: true, baseCost: 65, color: '#ff9a5b',
+      desc: lv => `체력 50% 초과 적에게 데미지 +${lv*12}%`,
+      init() {},
+      tick(ab) {
+        if (!state.metaMods) return;
+        const perma = 1 + getAbilityPermaBonus('onslaught');
+        state.metaMods.onslaughtBonus += ab.level * 0.12 * perma;
+      },
+    },
+    cull: {
+      name: '토벌', isPassive: true, baseCost: 60, color: '#9ad36b',
+      desc: lv => `일반 적(비보스) 데미지 +${lv*10}%`,
+      init() {},
+      tick(ab) {
+        if (!state.metaMods) return;
+        const perma = 1 + getAbilityPermaBonus('cull');
+        state.metaMods.cullBonus += ab.level * 0.10 * perma;
+      },
+    },
+    press: {
+      name: '쇄도', isPassive: true, baseCost: 70, color: '#ff77c2',
+      desc: lv => `화면의 적 1마리당 데미지 +${lv}% (최대 +${lv*15}%)`,
+      init() {},
+      tick(ab) {
+        if (!state.metaMods) return;
+        const perma = 1 + getAbilityPermaBonus('press');
+        const n = (state.enemies ? state.enemies.length : 0);
+        state.metaMods.pressBonus += Math.min(ab.level * 0.15 * perma, n * ab.level * 0.01 * perma);
+      },
+    },
+    awaken: {
+      name: '각성', isPassive: true, baseCost: 70, color: '#c9a3ff',
+      desc: lv => `라운드마다 데미지 +${lv}% (최대 +${lv*20}%)`,
+      init() {},
+      tick(ab) {
+        if (!state.metaMods) return;
+        const perma = 1 + getAbilityPermaBonus('awaken');
+        const r = (state.round || 1);
+        state.metaMods.awakenBonus += Math.min(ab.level * 0.20 * perma, r * ab.level * 0.01 * perma);
       },
     },
 
@@ -16364,6 +16557,10 @@
     ironwill:      ['버프', '최강적'],
     executioner:   ['버프'],
     resilience:    ['버프'],
+    onslaught:     ['버프'],
+    cull:          ['버프'],
+    press:         ['버프'],
+    awaken:        ['버프'],
     // 조합
     shotgunBurst:    ['다중공격', '폭발', '광역'],
     precisionBurst:  ['다중공격', '유도'],
@@ -20881,6 +21078,11 @@
         // 🛡 v257 — resilienceBonus cap
         mul *= (1 + cap(mm.resilienceBonus));
       }
+      // 🛸 v607 — 신규 순수 패시브 (조건부 데미지)
+      if (!e.isBoss && mm.onslaughtBonus && e.maxHp > 0 && e.hp / e.maxHp > 0.5) mul *= (1 + cap(mm.onslaughtBonus));  // 맹공: 체력 50% 초과
+      if (!e.isBoss && mm.cullBonus) mul *= (1 + cap(mm.cullBonus));    // 토벌: 비보스
+      if (mm.pressBonus)  mul *= (1 + cap(mm.pressBonus));              // 쇄도: 적 수
+      if (mm.awakenBonus) mul *= (1 + cap(mm.awakenBonus));             // 각성: 라운드 램프
       // 조합/트리플 위계 보너스 — 메타 강화 적용 (comboPower)
       // 사용자 요청: 기본 능력 2개 max 합친 거니까 조합 = 기본max × 2 이상,
       //              트리플 = 기본max × 3 이상의 위력이어야 함
@@ -22240,6 +22442,10 @@
     mm.ironwillBonus   = 0;
     mm.executionerBonus= 0;
     mm.resilienceBonus = 0;
+    mm.onslaughtBonus  = 0;   // 🛸 v607 — 맹공(>50% HP)
+    mm.cullBonus       = 0;   // 🛸 v607 — 토벌(비보스)
+    mm.pressBonus      = 0;   // 🛸 v607 — 쇄도(적 수)
+    mm.awakenBonus     = 0;   // 🛸 v607 — 각성(라운드)
     mm.vampiricFlat    = 0;   // 💉 v276 — 흡혈 처치당 고정 골드 (%→+N 전환)
     // 1 로 리셋되는 슬롯들 (기본값 1, min 머지 — scholarMul 은 할인이라 작을수록 좋음)
     mm.scholarMul      = 1;
@@ -26735,6 +26941,7 @@
   const $ = id => document.getElementById(id);
   const elRandom = $('randomBtn');
   const elAb     = $('abilities');
+  const ABILITY_DOCK = true;   // 🛸 v598 — 능력 도크 프로토타입(가로): 풀행→아이콘 칩 그리드. false면 기존 풀행 리스트로 복귀
   const elToast  = $('toast');
 
   elRandom.onclick = actRandomAcquire;
@@ -26964,6 +27171,7 @@
       relicBtn.classList.toggle('empty', n === 0);
     }
     elAb.innerHTML = '';
+    if (ABILITY_DOCK) elAb.classList.add('dock');   // 🛸 v598 — 도크 모드(가로 전용 CSS가 칩 그리드로 변환)
     // 카테고리에 맞는 능력만 필터링
     const isPassiveTab = currentAbTab === 'passive';
     const filtered = state.tower.abilities.filter(a =>
@@ -27006,7 +27214,18 @@
       } else if (COMBO_PARTNERS[a.id]) {
         const ownedSet = new Set(state.tower.abilities.map(x => x.id));
         // 보유 중인 파트너 먼저, 그 다음 미보유. 가챠 고유는 캐릭터 매칭 안 되면 숨김.
-        const allP = COMBO_PARTNERS[a.id] || [];
+        // 🛸 v608 — 못 얻는 파트너(미보유 진화-루트/가챠 고유)는 힌트에서 제외:
+        //   진화-루트는 런당 1개만, 가챠 고유는 해당 캐릭/진화로만 → 안 가졌으면 이번 런엔 영영 안 옴.
+        //   "조합 표시는 뜨는데 재료 카드가 안 나옴" 혼란 방지. (능력 자체는 풀에 그대로 등장 = 액티브 안 줄어듦)
+        const _hintObtainable = pid => {
+          if (ownedSet.has(pid)) return true;
+          const d = ABILITY_DEFS[pid];
+          if (!d) return false;
+          if (_RTOWER_ABILITY_SET.has(pid)) return false;   // 미보유 진화-루트
+          if (d.isGachaUnique) return false;                // 미보유 가챠 고유
+          return true;                                      // 드로우 가능한 기본
+        };
+        const allP = (COMBO_PARTNERS[a.id] || []).filter(p => _hintObtainable(p.partner));
         const sorted = [...allP].sort((p1, p2) => {
           const o1 = ownedSet.has(p1.partner) ? 1 : 0;
           const o2 = ownedSet.has(p2.partner) ? 1 : 0;
@@ -27056,6 +27275,7 @@
         : '';
       const iconSize = wrapEl && wrapEl.classList.contains('portrait') ? 36 : 28;
       row.innerHTML = `
+        <span class="ab-chip-dot" style="background:${nameColor}; color:${nameColor}"></span>
         <div class="ability-name">
           <div class="row-header">
             ${iconHtml(a.id, iconSize)}
@@ -27073,12 +27293,23 @@
       elAb.appendChild(row);
     }
     elAb.querySelectorAll('button').forEach(btn => {
-      btn.onclick = () => {
+      btn.onclick = (ev) => {
+        if (ev && ev.stopPropagation) ev.stopPropagation();   // 🛸 v598 — 칩 펼침 토글로 버블링 방지
         const i = +btn.dataset.i;
         if (btn.dataset.act === 'up') actEnhance(i);
         else actDelete(i, btn);   // 🗑 v260 — 버튼 참조 전달 (2단계 삭제 무장 표시용)
       };
     });
+    // 🛸 v598 — 칩 탭 → 그 칩만 전폭 펼침(단일 오픈 아코디언). 빈 슬롯 제외. (도크 모드만)
+    if (ABILITY_DOCK) {
+      elAb.querySelectorAll('.ability-row:not(.empty)').forEach(row => {
+        row.onclick = () => {
+          const open = row.classList.contains('expanded');
+          elAb.querySelectorAll('.ability-row.expanded').forEach(r => r.classList.remove('expanded'));
+          if (!open) row.classList.add('expanded');
+        };
+      });
+    }
   }
 
   let toastTimer = 0;
@@ -28809,7 +29040,8 @@
     gameSpeed = s;
     const cycleBtn = document.getElementById('speedCycle');
     if (cycleBtn) {
-      cycleBtn.textContent = '⏩ ×' + s;
+      cycleBtn.innerHTML = '<span class="spd-arrows">' + '▶▶▶'.slice(0, s) + '</span><span class="spd-mult">' + s + '×</span>';   // 🛸 v601 — 가시성: ▶ 화살표 + N×
+      cycleBtn.title = '배속 ×' + s;
       cycleBtn.classList.toggle('active', s !== 1);
     }
   }
@@ -28823,6 +29055,74 @@
     document.getElementById('pauseBtn').textContent = paused ? '▶ 재개' : '⏸ 일시정지';
   }
   document.getElementById('pauseBtn').onclick = togglePause;
+
+  // 🛸 v602 — 상단 HUD는 세로(portrait)에서만. 가로(landscape)는 옛 우측 패널 그대로.
+  //   orientation 전환 시 스탯 span/컨트롤 버튼을 #topHud ↔ #panel 로 이동(업데이트·핸들러 보존).
+  let _hudCap = null, _hudMode = null;
+  function _capHud() {
+    if (_hudCap) return _hudCap;
+    const g = id => document.getElementById(id);
+    const mk = el => el ? { el, parent: el.parentNode, before: el.nextSibling } : null;
+    _hudCap = {
+      // DOM 원래 순서로 캡처 → 가로 복원 시 푸터 버튼 순서 보존
+      nodes: ['s-round','s-gold','s-enemies','s-enemybar','s-time','s-timebar','pauseBtn','resetBtn','menuBtn','speedCycle'].map(g).map(mk).filter(Boolean),
+      rows: [
+        g('s-round') && g('s-round').closest('.row'),
+        g('s-gold') && g('s-gold').closest('.row'),
+        g('s-enemies') && g('s-enemies').closest('.row'),
+        g('s-enemybar') && g('s-enemybar').closest('.bar'),
+        g('s-time') && g('s-time').closest('.row'),
+        g('s-timebar') && g('s-timebar').closest('.bar'),
+      ].filter(Boolean),
+      // 🛸 v606 — 보조정보(점수·강화버프·레벨·누적킬) → 세로 ▾ 트레이로 이동할 행들
+      trayRows: [
+        g('s-score') && g('s-score').closest('.row'),
+        g('s-buffs'),
+        g('s-plevel') && g('s-plevel').closest('.row'),
+        g('s-totalkills') && g('s-totalkills').closest('.row'),
+      ].filter(Boolean).map(mk),
+      footer: document.querySelector('#panel .footer'),
+    };
+    return _hudCap;
+  }
+  function applyHudLayout(portrait) {
+    const hud = document.getElementById('topHud');
+    if (!hud) return;
+    const cap = _capHud();
+    const g = id => document.getElementById(id);
+    if (portrait) {
+      const put = (id, host) => { const e = g(id), h = g(host); if (e && h) h.appendChild(e); };
+      put('s-round','th-round'); put('s-gold','th-gold'); put('s-enemies','th-enemy-top'); put('s-enemybar','th-enemy-bar');
+      put('s-timebar','th-tb-track'); put('s-time','th-time');
+      ['pauseBtn','speedCycle','resetBtn','menuBtn'].forEach(id => { const b = g(id); if (b) g('th-ctrl').appendChild(b); });
+      const pb = g('pauseBtn'); if (pb) pb.style.flex = '0 0 auto';
+      const rb = g('resetBtn'); if (rb) { rb.textContent = '⟳'; rb.title = '리셋'; rb.style.flex = '0 0 auto'; }
+      const mb = g('menuBtn'); if (mb) { mb.textContent = '🏠'; mb.title = '메뉴'; mb.style.flex = '0 0 auto'; }
+      cap.rows.forEach(r => { if (r) r.style.display = 'none'; });
+      if (cap.footer) cap.footer.style.display = 'none';
+      const _tray = g('th-tray'); if (_tray) cap.trayRows.forEach(n => _tray.appendChild(n.el));   // 보조정보 → 트레이
+      hud.style.display = '';
+    } else {
+      // 가로 = 옛날 그대로 — 노드를 패널 원위치로 복원, 상단바 숨김
+      cap.nodes.forEach(n => {
+        if (n.before && n.before.parentNode === n.parent) n.parent.insertBefore(n.el, n.before);
+        else n.parent.appendChild(n.el);
+      });
+      const pb = g('pauseBtn'); if (pb) pb.style.flex = '';
+      const rb = g('resetBtn'); if (rb) { rb.textContent = '⟳ 리셋'; rb.title = ''; rb.style.flex = ''; }
+      const mb = g('menuBtn'); if (mb) { mb.textContent = '🏠 메뉴'; mb.title = ''; mb.style.flex = ''; }
+      // 보조정보 → 패널 원위치 복원
+      cap.trayRows.forEach(n => { if (n.before && n.before.parentNode === n.parent) n.parent.insertBefore(n.el, n.before); else n.parent.appendChild(n.el); });
+      const _tray = g('th-tray'); if (_tray) _tray.classList.remove('open');
+      const _tb = g('th-tray-btn'); if (_tb) _tb.classList.remove('open');
+      cap.rows.forEach(r => { if (r) r.style.display = ''; });
+      if (cap.footer) cap.footer.style.display = '';
+      hud.style.display = 'none';
+    }
+    try { setSpeed(gameSpeed); } catch (e) {}
+  }
+  // 🛸 v606 — 상단 ▾ 트레이 토글
+  (function(){ const tb = document.getElementById('th-tray-btn'); if (tb) tb.onclick = () => { const t = document.getElementById('th-tray'); if (!t) return; const open = t.classList.toggle('open'); tb.classList.toggle('open', open); }; })();
   (function(){ const b = document.getElementById('shopCloseBtn'); if (b) b.onclick = () => { if (SFX && SFX.click) SFX.click(); closeShop(); }; })();
   // 🛸 v583 — 이벤트 타이틀 이모지 스트립 (💀🌳🔮⚡💰 등 제거 → 시스템 텍스트만). 한글/[]/▶/◇ 등은 보존.
   function _evTitle(s){ return String(s||'').replace(/[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{2B00}-\u{2BFF}️]/gu,'').replace(/\s+/g,' ').trim(); }
@@ -29140,6 +29440,7 @@
     wrapEl.classList.toggle('portrait', usePortrait);
     if (usePortrait && !wasPortrait) collapseAbilities(true, false);
     else if (!usePortrait && wasPortrait) collapseAbilities(false, false);
+    if (_hudMode !== usePortrait) { try { applyHudLayout(usePortrait); } catch (e) {} _hudMode = usePortrait; }   // 🛸 v602 — 세로만 상단 바, 가로는 옛 패널
     wrapEl.style.transform = 'none';
     // 강제 reflow — transform 제거 후 정확한 natural size 측정
     void wrapEl.offsetWidth;
@@ -29401,7 +29702,7 @@
         outgoing._fadeOutTimer = null;
       }, 160);
     }
-    gameEl.style.display = name === 'game' ? 'flex' : 'none';
+    gameEl.style.display = name === 'game' ? 'grid' : 'none';   // 🛸 v600 — #wrap 그리드(상단 전폭 + 캔버스/패널)
     if (name === 'game') {
       // 🏰 캔버스 논리 크기 적용 — 모든 모드 640×640 (모바일 오른쪽 여백 제거)
       const isDefenseLayout = state && state.mode === 'defense';
@@ -30993,7 +31294,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 597;
+  const APP_VERSION = 608;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
