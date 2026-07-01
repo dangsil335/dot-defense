@@ -4872,6 +4872,12 @@
   .evo-d-dot span { font-size:10px; color:#9aa3b3; }
   .evo-d-desc { font-size:12px; color:#c8cdd8; line-height:1.5; }
   .evo-d-passive { font-size:11.5px; color:#ffd479; line-height:1.45; }
+  /* 📖 v613 — 캐릭터 스토리: 상세화면엔 칩만(짧게), 본문은 별도 리더 화면에서 */
+  .evo-story-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .evo-story-chip { font-size: 11.5px; padding: 6px 11px; border-radius: 20px; background: #1a2030; border: 1px solid #3a4256; color: #cdd5e3; cursor: pointer; font-family: inherit; }
+  .evo-story-chip:hover { border-color: #7ad7ff; }
+  .evo-story-chip.locked { opacity: 0.5; cursor: default; color: #6b7283; }
+  .story-text { flex: 1 1 auto; font-size: 13px; line-height: 1.75; color: #cdd5e3; background: #0e1320; border: 1px solid #232a3a; border-radius: 10px; padding: 14px 15px; margin-bottom: 10px; overflow-y: auto; white-space: pre-wrap; }
   .evo-d-unlock { font-size:11px; color:#9aa3b3; margin-top:2px; }
   .evo-d-sec-title { font-size:12px; font-weight:800; color:#8aa0c0; margin:16px 0 8px; padding-bottom:5px; border-bottom:1px solid rgba(122,215,255,0.14); }
   .evo-stage-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:8px; }
@@ -5792,6 +5798,22 @@
       <div class="event-choices" id="eventChoices"></div>
       <div class="npc-panel-foot" id="eventFoot" style="display:none;">
         <button class="npc-btn" id="eventCloseBtn">[ CONTINUE ]</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 📖 캐릭터 스토리 리더 — 진화트리 상세의 이야기 칩에서 열림 (★ 돌파로만 게이트) -->
+<div id="charStoryScene" class="npc-scene">
+  <div class="npc-scene-inner">
+    <div class="npc-portrait" id="storyPortrait"></div>
+    <div class="npc-panel">
+      <div class="npc-panel-head">
+        <span class="npc-panel-title" id="storyTitle">이야기</span>
+      </div>
+      <div class="story-text" id="storyText"></div>
+      <div class="npc-panel-foot">
+        <button class="npc-btn" id="storyCloseBtn">[ 닫기 ]</button>
       </div>
     </div>
   </div>
@@ -20351,6 +20373,46 @@
       passive: { dmgMul: 1.25, bossDmgMul: 1.15, slotMod: 0, levelUpMul: 0.95, slowMul: 1.45 },
       unlockBy: 'gacha:marine',
       isGacha: true, rarity: 'SR',
+      story: [
+        { star: 0, title: '첫 만남', text: `정박한 함선의 격납고 문이 열리자마자, 젖은 발자국 소리가 먼저 들렸다.
+
+"함장님! 저 마린이에요!"
+
+인사도 하기 전에 손부터 번쩍 들었다. 손끝에 걸려 있는 건 누가 봐도 군용 어뢰 — 그것도 아직 물이 뚝뚝 떨어지는 채로.
+
+"이거 항구에 떠내려온 걸 제가 건졌거든요? 그러니까 이제 제 거예요."
+
+함장이 뭐라 답하기도 전에, 그녀는 이미 어뢰를 어깨에 걸치고 격납고 안을 두리번거리고 있었다. 정식 배속 서류도, 신원 확인도 없었다. 그냥 그렇게, 젖은 옷자락을 펄럭이며 함교 계단을 두 칸씩 뛰어올라갔다.
+
+누군가 말리려 했지만, 어느새 마린은 조타실 창문에 매달려 바다를 내려다보고 있었다.
+
+"우와, 여기서 보니까 훨씬 크네요! 함장님, 저 여기 마음에 들어요."
+
+정작 그날 밤, 마린은 격납고 구석에서 어뢰를 끌어안고 잠들어 있었다. 마치 잃어버렸던 걸 되찾은 사람처럼.` },
+        { star: 4, title: '"쟤 괜찮아?"라고 아무도 안 묻는다', text: `함대가 협곡 사이로 진입하던 날, 좌현 보급함이 어뢰 공격에 선체가 갈라지기 시작했다. 관제실에 경보가 울리기도 전에, 마린은 이미 함미 갑판에서 바다로 뛰어들고 있었다.
+
+"어이, 거기 서 있지 말고 밸브 잠가요! 내가 막을 테니까!"
+
+수면 아래서 부유어뢰 세 발이 동시에 발사됐다. 정확히 균열 지점을 노려, 파도로 파편을 밀어내며 구멍을 틀어막는 임시방편이었다. 교본에도 없는 방법이었다.
+
+보급함이 겨우 항구로 복귀했을 때, 함교의 부관은 더 이상 마린에게 "신참"이라는 말을 붙이지 않았다.
+
+"오늘은 운이 좋았을 뿐이에요." 마린이 젖은 머리를 털며 웃었다. "다음엔 운 없이도 되게 만들어 볼게요."` },
+        { star: 8, title: '딱 한 번 진지해진 순간', text: `야간 정박 중, 함장이 우연히 격납고를 지나다 불빛도 없이 혼자 앉아 있는 마린을 봤다.
+
+"안 자요?"
+"어… 그냥, 파도 소리 듣고 있었어요."
+
+평소답지 않게 목소리가 낮았다. 함장이 옆에 앉자, 마린은 한참 만에 입을 열었다.
+
+"바다는 안 무서워요. 무서운 건 가라앉는 동안 아무도 안 불러주는 거지."
+
+그러곤 곧바로 다시 웃으며 어뢰를 툭 던져 올렸다.
+
+"근데 이제 안 그럴 거잖아요? 함장님이 있으니까."
+
+다음 날 아침, 마린은 평소처럼 격납고 문을 박차고 나와 "출항!"을 외쳤다. 어젯밤 일은 아무 일도 없었다는 듯이. 하지만 함장은 그 후로 마린이 혼자 야간 당직을 서겠다고 할 때마다, 한 번씩 격납고에 들르게 됐다.` },
+      ],
     },
     solar: {
       name: '☀️ 솔라', color: '#ffaa44',
@@ -20359,6 +20421,41 @@
       passive: { dmgMul: 1.35, bossDmgMul: 1.30, slotMod: 0, levelUpMul: 0.92, slowMul: 1 },
       unlockBy: 'gacha:solar',
       isGacha: true, rarity: 'SR',
+      story: [
+        { star: 0, title: '그늘 아래', text: `훈련장 구석, 아무도 안 보는 그늘에 앉아 있던 그녀를 처음 발견한 건 순찰 중이던 함장이었다.
+
+"거기, 왜 혼자 있어요?"
+
+솔라는 놀라서 손에 쥐고 있던 작은 빛 덩어리 — 흑점 하나를 뚝 떨어뜨릴 뻔했다.
+
+"어, 아니 그냥... 빛은 만드는데 정작 저는 그늘이 편해서요. 웃기죠?"
+
+멋쩍은 듯 웃던 그녀는, 함장이 손을 내밀자 잠시 멈칫하다가 그 손을 잡고 일어났다.
+
+"함장님 그늘 아래 서 있어도 돼요? 저 빛은 잘 만드니까, 대신 그늘은 함장님이 만들어 주시는 걸로."
+
+그날 이후로 솔라는 함교에서 제일 먼저 인사하는 사람이 됐다. 아무도 시키지 않았는데.` },
+        { star: 4, title: '세 번째는 이긴다', text: `작전이 두 번 연속 실패하고 함대 전체가 가라앉은 분위기였던 날, 회의실에 먼저 들어온 건 솔라였다.
+
+"다들 왜 그런 표정이에요?"
+
+"...두 번이나 졌잖아."
+
+"그러니까 세 번째는 이길 확률이 올라갔죠!" 솔라가 흑점을 손바닥 위에 띄우며 씩 웃었다. "저 이거 알아요. 계속 밝게 굴면 진짜로 밝아질 때가 온다는 거."
+
+터무니없는 논리였지만, 이상하게 회의실 분위기가 풀렸다. 그날 밤 작전은 실제로 성공했다.` },
+        { star: 8, title: '하나로 응축된 빛', text: `유일하게 그녀만 후계자가 하나뿐이라는 사실을 알게 된 밤, 솔라는 별생각 없다는 듯 말했다.
+
+"제 빛은 한 사람한테만 가는 거였나 보네요."
+
+살짝 씁쓸해 보이는 미소였지만, 오래가지 않았다.
+
+"근데 그거 알아요? 하나로 응축된 빛이 훨씬 멀리까지 가요."
+
+그녀는 아리아가 있는 방향을 바라보며 조용히 웃었다.
+
+"내가 어두운 데 있어봐서 알아. 진짜 빛은, 딱 한 사람한테만 닿아도 충분해."` },
+      ],
     },
     gravitas: {
       name: '🌀 그래비타스', color: '#a070d0',
@@ -20367,6 +20464,37 @@
       passive: { dmgMul: 1.28, bossDmgMul: 1.20, slotMod: 0, levelUpMul: 0.95, slowMul: 1.30 },
       unlockBy: 'gacha:gravitas',
       isGacha: true, rarity: 'SR',
+      story: [
+        { star: 0, title: '도망 못 가요', text: `첫 만남부터 그래비타스는 인사 대신 장난을 걸었다. 함장이 격납고를 지나가는 순간, 갑자기 발밑이 살짝 당겨지는 느낌이 들었다.
+
+"어라, 걸렸다."
+
+돌아보니 그녀가 손가락을 까딱거리며 웃고 있었다.
+
+"미안해요, 그냥 한번 당겨보고 싶어서. 사람들이 제일 놀라는 게 그거거든요, 자기도 모르게 끌려가는 거."
+
+"위험한 장난이네요."
+
+"에이, 진짜 위험한 건 안 해요. 그냥… 가끔 붙잡아 두고 싶은 사람이 있어서 연습하는 거예요."
+
+그러곤 다시 발밑을 당겨서, 함장을 자기 쪽으로 한 걸음 끌어당겼다.
+
+"이제 우리 팀이니까, 도망 못 가요."` },
+        { star: 4, title: '놓치기 싫은 게 많아지면', text: `전장에서 아군이 낙오되어 고립될 뻔한 순간, 그래비타스가 인력장을 펼쳐 순식간에 전원을 자기 쪽으로 끌어모았다.
+
+"자, 다들 이리 와요! 흩어지면 위험하니까!"
+
+장난스러운 말투와 달리, 손끝은 한 치의 오차도 없이 정확했다. 작전이 끝난 뒤 누군가 물었다. "그거 어떻게 그렇게 정확하게 해요?"
+
+"놓치기 싫은 게 많아지면, 저절로 정확해지더라고요."` },
+        { star: 8, title: '다정한 붙잡음', text: `미사키가 그녀의 힘 일부를 물려받았다는 걸 알게 된 날, 그래비타스는 평소처럼 장난스럽게 웃었다.
+
+"오, 잘됐다. 나 대신 붙잡아줘, 미사키. 나보다 더 오래."
+
+말은 가벼웠지만, 그날 그녀는 평소보다 조금 더 오래 미사키를 바라보고 있었다.
+
+"…농담이고, 그냥 알아뒀으면 좋겠어서. 붙잡는다는 거, 사실 되게 다정한 거였다는 거."` },
+      ],
     },
     // ===== 🎰 가챠 SR 캐릭터 (2명) =====
     sakura: {
@@ -20376,6 +20504,47 @@
       passive: { dmgMul: 1.35, bossDmgMul: 1.35, slotMod: 0, levelUpMul: 0.90, slowMul: 1 },
       unlockBy: 'gacha:sakura',
       isGacha: true, rarity: 'SR',
+      story: [
+        { star: 0, title: '가장 아름다운 순간에만', text: `벚꽃이 흩날리는 훈련장에서, 사쿠라는 정확히 한 번의 베기로 표적을 갈랐다. 함장이 다가가자 그녀는 검을 거두며 정중히 고개를 숙였다.
+
+"실례했습니다. 연습 중이었어요."
+
+"방금 그거, 한 번에 벤 거예요?"
+
+"두 번은… 아름답지 않으니까요."
+
+담담한 대답이었다. 함장이 웃자, 그녀도 살짝 미소 지었다.
+
+"함대에 들어가면, 제가 벨 건 표적뿐인가요?"
+
+"아마도요."
+
+"그럼 다행이네요. 전 제일 아름다운 순간에만 검을 뽑고 싶거든요."` },
+        { star: 4, title: '멋있는 것과 아름다운 것', text: `카르타가 장난삼아 사쿠라의 검을 슬쩍 가져가 흉내를 내던 날, 사쿠라는 화내는 대신 조용히 지켜봤다.
+
+"…자세가 틀렸어요."
+
+"어, 미안, 그냥 멋있어 보여서."
+
+"멋있는 거랑 아름다운 건 달라요. 보여드릴까요?"
+
+사쿠라가 검을 다시 받아 든 순간, 벚꽃잎 하나가 정확히 두 조각으로 갈라져 떨어졌다. 카르타가 눈을 크게 떴다.
+
+"…나도 저렇게 되고 싶다."
+
+"연습하면요."
+
+그 후로 카르타는 종종 사쿠라의 연습을 몰래 지켜봤다.` },
+        { star: 8, title: '제 몫은 다 했다', text: `스미카가 자신과 카르타의 스타일을 이어받아 완성했다는 소식을 들은 날, 사쿠라는 조용히 고개를 끄덕였다.
+
+"제 몫은 다 한 것 같네요."
+
+"아쉽지 않아요?"
+
+"전혀요. 한 획의 아름다움이 계속 이어진다는 거잖아요. 그거면 충분해요."
+
+그녀는 다시 검을 들고 벚꽃 아래 섰다. 여전히, 가장 아름다운 순간을 위해.` },
+      ],
     },
     luna: {
       name: '🌙 루나', color: '#aaccff',
@@ -20384,6 +20553,33 @@
       passive: { dmgMul: 1.30, bossDmgMul: 1.10, slotMod: 1, levelUpMul: 0.95, slowMul: 1.60 },
       unlockBy: 'gacha:luna',
       isGacha: true, rarity: 'SR',
+      story: [
+        { star: 0, title: '달이 뜨면 저도 떠요', text: `야간 훈련장에서 처음 마주쳤을 때, 루나는 반쯤 졸린 눈으로 활시위를 당기고 있었다.
+
+"…어, 함장님?"
+
+"자고 있었어요?"
+
+"아뇨, 그냥… 낮엔 눈이 잘 안 떠져서요. 근데 지금은 완전히 깼어요."
+
+말과 동시에 화살이 어둠 속 표적을 정확히 꿰뚫었다. 함장이 놀라자, 루나는 나른하게 웃었다.
+
+"달이 뜨면 저도 뜨는 거예요. 반대로 낮에 저 깨우려고 하지 마세요, 사수 실력 반토막 나요."` },
+        { star: 4, title: '밤은 저한테 유리한 시간', text: `기지가 야간 기습을 받던 날, 아무도 루나를 깨울 필요가 없었다. 경보가 울리기도 전에 그녀는 이미 옥상에서 활을 겨누고 있었다.
+
+"다들 낮에는 못 보는 걸, 저는 봐요."
+
+정확히 그림자 속에 숨은 적 저격수의 위치를 짚어내며, 루나는 화살 한 발로 전황을 뒤집었다.
+
+"밤은 저한테 유리한 시간이거든요."` },
+        { star: 8, title: '자기만의 시간에서 제일 빛나길', text: `미사키에게 자신의 "고요함"이 이어졌다는 걸 안 날, 루나는 평소처럼 나른하게 웃었다.
+
+"밤에만 또렷했던 내가, 이제 시간 전체를 갖게 됐네."
+
+그녀는 달을 올려다보며 중얼거렸다.
+
+"…그 애도 나처럼, 자기만의 시간에서 제일 빛났으면 좋겠다."` },
+      ],
     },
     // ===== 🎰 가챠 SR 캐릭터 (신규) — ⚡ 레비나 (번개술사) =====
     levina: {
@@ -20393,6 +20589,35 @@
       passive: { dmgMul: 1.28, bossDmgMul: 1.18, slotMod: 0, levelUpMul: 0.95, slowMul: 1.35 },
       unlockBy: 'gacha:levina',
       isGacha: true, rarity: 'SR',
+      story: [
+        { star: 0, title: '이런 날씨엔 손해예요', text: `폭풍이 몰아치던 날, 함장이 대피 경보를 울리려던 순간 레비나가 오히려 갑판 위로 뛰쳐나갔다.
+
+"오, 이거 물건이네!"
+
+번개가 그녀 주위로 몰려들었지만, 무섭기는커녕 신난 표정이었다.
+
+"함장님! 이 폭풍 제가 가져도 돼요? 완전 제 취향이에요!"
+
+"…위험한데요."
+
+"위험해야 재밌죠!" 그녀가 지팡이를 치켜들자 벼락이 그대로 빨려 들어갔다. "이런 날씨엔 집에 있는 게 오히려 손해예요."` },
+        { star: 4, title: '번개 맞는 기분', text: `훈련 대련에서 레비나는 매번 자신보다 강한 상대를 골라 도전했다.
+
+"왜 자꾸 이길 확률 낮은 상대만 골라요?" 누군가 묻자, 그녀는 어깨를 으쓱했다.
+
+"쉬운 상대 이겨봤자 짜릿한 게 없잖아요. 지든 이기든, 번개 맞는 기분이 나야죠."
+
+그날도 그녀는 지고 나서 오히려 더 신나 보였다. "다음엔 이길 것 같아요! 느낌이 와요!"` },
+        { star: 8, title: '같이 놀자', text: `엘레미아가 자신의 에너지를 물려받았다는 걸 알고, 레비나는 눈을 반짝였다.
+
+"오! 그럼 걔도 폭풍 좋아하게 되는 거예요?"
+
+"그럴… 수도요."
+
+"잘됐다! 다음에 셋이 같이 놀자고 해야지. 마린이랑, 그 꼬맹이랑, 나랑."
+
+그녀는 벌써부터 신난 표정으로 다음 폭풍을 기다리기 시작했다.` },
+      ],
     },
     cardista: {
       name: '🎴 카르타', color: '#e0b13a',
@@ -20401,6 +20626,35 @@
       passive: { dmgMul: 1.30, bossDmgMul: 1.25, slotMod: 0, levelUpMul: 0.92, slowMul: 1.10 },
       unlockBy: 'gacha:cardista',
       isGacha: true, rarity: 'SR',
+      story: [
+        { star: 0, title: '오늘의 운명, 한 장', text: `함장이 처음 카르타를 만난 곳은 도박장 뒷골목이었다. 카드 한 벌을 화려하게 펼치며 그녀가 웃었다.
+
+"어서 오세요, 손님. 오늘의 운명, 한 장 뽑아보실래요?"
+
+"…스카우트하러 왔는데요."
+
+"어머, 그럼 이야기가 다르네." 그녀가 카드 한 장을 뒤집자 거기엔 함대의 문양이 그려져 있었다. "이것도 준비해뒀어요. 손님이 올 줄 알았거든요."
+
+"그거 진짜 예언이에요, 아니면 그냥 다 준비해온 거예요?"
+
+카르타가 윙크했다. "둘 다면 재미없나요?"` },
+        { star: 4, title: '무대에서 제일 멋있어 보이는 순서', text: `전투 중 위기 상황에서도 카르타는 카드를 뽑아 던지며 여유롭게 웃었다.
+
+"자, 다음 카드는... 이거네요!"
+
+정확히 적의 약점을 노린 카드가 명중했다. 누군가 물었다. "그거 진짜 확률 계산한 거예요?"
+
+"에이, 그럼 재미없잖아요. 그냥 무대에서 제일 멋있어 보이는 순서로 던지는 거예요. 근데 신기하게, 그게 늘 맞더라고요."` },
+        { star: 8, title: '같은 무대 위에서', text: `스미카가 자신의 "무대 매너"를 물려받았다는 얘기를 듣고, 카르타는 신난 듯 손뼉을 쳤다.
+
+"오, 걔도 이제 쇼맨십이 생기는 거예요?"
+
+"…절제된 쪽이라던데요."
+
+"그것도 매력이지! 화려한 거랑 절제된 거, 결국 같은 무대 위에서 하는 거잖아요."
+
+그녀는 카드 한 장을 스미카가 있는 방향으로 살짝 던졌다. "잘해봐, 후배."` },
+      ],
     },
     // ===== 🎰 가챠 SSR 캐릭터 — 🖌️ 스미카 (먹빛 암살자) =====
     sumika: {
@@ -20410,6 +20664,32 @@
       passive: { dmgMul: 1.55, bossDmgMul: 1.75, slotMod: 0, levelUpMul: 0.75, slowMul: 1 },
       unlockBy: 'gacha:sumika',
       isGacha: true, rarity: 'SSR',
+      story: [
+        { star: 0, title: '흉내 내봐', text: `사쿠라와 카르타가 장난스레 붙여준 대련이었다.
+
+"자, 한번 흉내 내봐." 카르타가 웃으며 말했다. "쟤 검이랑 내 카드, 둘 다 배워보라고."
+
+스미카는 말없이 검을 들었다. 사쿠라의 자세를 따라 하다가, 어느 순간 카르타처럼 손끝에 여유를 담아봤다. 어색했다.
+
+"…아직 멀었네요."
+
+"당연하지, 우리도 몇 년 걸렸어." 사쿠라가 담담히 말했다. "근데 방금 그 어색한 동작, 나쁘지 않았어요."` },
+        { star: 4, title: '흉내가 자기 것이 되던 순간', text: `몇 달 후, 스미카가 검을 뽑는 순간을 지켜본 사쿠라와 카르타는 동시에 입을 다물었다.
+
+한 획. 그걸로 끝이었다. 화려하지도, 지나치게 절제되지도 않은, 완전히 다른 무언가였다.
+
+"…저거 우리 흉내 낸 거 맞아?" 카르타가 물었다.
+"아니." 사쿠라가 고개를 저었다. "이제 자기 거예요."
+
+스미카는 아무 말 없이 검을 거뒀다. 칭찬을 듣고도 표정 하나 바뀌지 않았지만, 검집을 닫는 손끝이 평소보다 조금 더 조심스러웠다.` },
+        { star: 8, title: '한 획이면 끝나', text: `전장에서 누군가 그녀를 "먹빛의 사신"이라 부르는 걸 처음 들었을 때, 스미카는 딱히 반응하지 않았다.
+
+"별명, 마음에 안 들어요?" 함장이 물었다.
+
+"…상관없어요." 그녀가 검을 검집에 넣으며 답했다. "부르는 이름이 뭐든, 제가 하는 건 똑같으니까."
+
+"한 획이면 끝나."` },
+      ],
     },
     elementia: {
       name: '🔮 엘레미아', color: '#4fd6c2',
@@ -20418,6 +20698,28 @@
       passive: { dmgMul: 1.55, bossDmgMul: 1.60, slotMod: 1, levelUpMul: 0.78, slowMul: 1.35 },
       unlockBy: 'gacha:elementia',
       isGacha: true, rarity: 'SSR',
+      story: [
+        { star: 0, title: '물이랑 번개랑 불이랑', text: `마린과 레비나가 동시에 발견한 작은 정령이었다. 물속에서 반짝이던 그것이 갑자기 번개를 맞고 파닥거리며 튀어나왔다.
+
+"어? 얘 뭐예요?" 마린이 물었다.
+"몰라, 근데 귀엽지 않아?" 레비나가 손을 뻗자, 정령은 겁내지 않고 오히려 손바닥 위에서 작은 불꽃을 튕겨냈다.
+
+"우와, 신기하다! 얘 물이랑 번개랑 불이랑 다 되는 거예요?"
+
+정령은 대답 대신 신난 듯 반짝이며 두 사람 사이를 맴돌았다.` },
+        { star: 4, title: '그때 가봐야 알아요', text: `엘레미아는 매번 다른 모습으로 나타났다. 어느 날은 늑대, 어느 날은 작은 불사조.
+
+"오늘은 뭐가 될 거야?" 마린이 묻자, 정령은 어깨를 으쓱하듯 흔들렸다.
+
+"비밀이에요! 저도 사실 그때 가봐야 알아요."
+
+"그게 더 재밌지." 레비나가 웃었다. "예측 가능하면 재미없잖아."` },
+        { star: 8, title: '제일 재밌는 부분만 골라서', text: `"오늘은 늑대! 다음엔 불새! 다다음엔... 비밀이에요, 헤헤."
+
+전투가 끝난 뒤, 함장이 물었다. "네 안에 마린이랑 레비나가 좀 있는 것 같아."
+
+엘레미아는 신나게 웃었다. "맞아요! 신남이랑 짜릿함, 둘 다 제 거예요. 근데 저는 저예요. 그냥… 둘의 제일 재밌는 부분만 골라서 가진 것 같아요."` },
+      ],
     },
     // ===== 🎰 가챠 SSR 캐릭터 (2명) — 승천 13~15 클리어용 핵심 픽 =====
     aria: {
@@ -20427,6 +20729,31 @@
       passive: { dmgMul: 1.60, bossDmgMul: 1.80, slotMod: 0, levelUpMul: 0.70, slowMul: 1, enhanceMul: 0.75 },
       unlockBy: 'gacha:aria',
       isGacha: true, rarity: 'SSR',
+      story: [
+        { star: 0, title: '빛이 들리는 것 같았어요', text: `솔라가 유일하게 데려온 아이였다. 처음 만난 자리에서 아리아는 조금 긴장한 듯 두 손을 모으고 있었다.
+
+"저… 노래해도 될까요?"
+
+솔라가 옆에서 고개를 끄덕이자, 아리아는 눈을 감고 첫 소절을 불렀다. 함교 전체가 잠시 조용해졌다.
+
+"…어때요?"
+
+"빛이 들리는 것 같았어요." 함장이 솔직하게 답했다. 아리아의 얼굴이 환해졌다.` },
+        { star: 4, title: '제가 알잖아요', text: `공연을 마친 뒤, 아리아는 늘 자기 노래를 되짚어봤다.
+
+"오늘 마지막 소절, 반음 낮았던 것 같아요." 옆에서 듣던 솔라가 웃었다. "너 그거 아무도 몰라, 완벽했어."
+
+"제가 알잖아요." 아리아가 단호하게 답했다. "다음엔 완벽하게 할 거예요."` },
+        { star: 8, title: '세상에서 제일 큰 합창', text: `솔라의 힘을 이어받은 게 자신 하나뿐이라는 걸 알게 된 날, 아리아는 잠시 말이 없었다.
+
+"…부담스러워요?"
+
+"아뇨." 그녀가 고개를 저었다. "스승님이 그늘에서 동경했던 빛을, 이제 제가 노래로 온 세상에 들려줄 수 있다는 거잖아요."
+
+아리아가 하프를 들어 올렸다.
+
+"다 같이 불러볼까요? 세상에서 제일 큰 합창을."` },
+      ],
     },
     misaki: {
       name: '🦋 미사키', color: '#cc88ff',
@@ -20435,6 +20762,25 @@
       passive: { dmgMul: 1.50, bossDmgMul: 1.40, slotMod: 2, levelUpMul: 0.80, slowMul: 1.80 },
       unlockBy: 'gacha:misaki',
       isGacha: true, rarity: 'SSR',
+      story: [
+        { star: 0, title: '시간이 아주 잠깐 멈춘 것처럼', text: `루나와 그래비타스가 함께 발견한 나비였다. 밤하늘 아래 홀로 떠 있던 그것을, 그래비타스가 무심코 끌어당겼다.
+
+"어, 이거 도망 안 가네?"
+
+"당연하지." 루나가 나른하게 웃었다. "얘도 밤이 편한 애야."
+
+나비는 두 사람 사이를 천천히 맴돌다가, 함장의 손등에 살포시 앉았다. 시간이 아주 잠깐, 멈춘 것처럼 느껴졌다.` },
+        { star: 4, title: '나비처럼 다시 찾아오는 순간', text: `미사키는 가끔 이상한 말을 했다. "이 장면, 예전에도 본 것 같아요." 함장이 의아해하면, 그녀는 웃으며 얼버무렸다.
+
+"신경 쓰지 마세요. 그냥… 좋은 순간은 나비처럼 다시 찾아오나 봐요."` },
+        { star: 8, title: '이 순간도, 나중에 또 들를게요', text: `루나의 고요함과 그래비타스의 다정함이 자신 안에 있다는 걸 알게 된 날, 미사키는 하늘을 올려다보며 웃었다.
+
+"시간은 강물 같아서… 좋은 곳은 두 번, 세 번 들러도 괜찮아요."
+
+그녀는 함장을 향해 나비처럼 손을 뻗었다.
+
+"이 순간도, 나중에 또 들를게요."` },
+      ],
     },
   };
   // 모든 캐릭터에 대해 이미지 사전 로드 시도 (chroma key 처리됨)
@@ -29096,6 +29442,22 @@
     img.src = './icons/illust/' + charId + '.png';
     return img;
   }
+  // 📖 v613 — 캐릭터 스토리 리더 (★ 돌파로만 게이트, 능력/조합과 무관)
+  function openCharStory(charId, idx) {
+    const ch = CHARACTERS[charId]; if (!ch || !ch.story) return;
+    const chapter = ch.story[idx]; if (!chapter) return;
+    const stars = (typeof getCharStars === 'function') ? getCharStars(charId) : 0;
+    if (stars < chapter.star) return;
+    const portrait = document.getElementById('storyPortrait');
+    if (portrait) { portrait.innerHTML = ''; portrait.appendChild(_charPortraitImg(charId)); }
+    const titleEl = document.getElementById('storyTitle');
+    if (titleEl) titleEl.textContent = `${ch.name} · ${chapter.star}★ ${chapter.title}`;
+    const textEl = document.getElementById('storyText');
+    if (textEl) textEl.textContent = chapter.text;
+    const scn = document.getElementById('charStoryScene'); if (scn) scn.classList.add('show');
+  }
+  function closeCharStory() { const scn = document.getElementById('charStoryScene'); if (scn) scn.classList.remove('show'); }
+  (function () { const b = document.getElementById('storyCloseBtn'); if (b) b.onclick = closeCharStory; })();
   // 캐릭터 컷인 → 전용 이벤트
   function openCharAmbush(charId) {
     const char = CHARACTERS[charId];
@@ -31542,7 +31904,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 612;
+  const APP_VERSION = 613;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
@@ -32069,6 +32431,16 @@
       } else if (kind === 'base') {
         body += `<div class="evo-d-sec-title">기본 능력</div><div class="evo-stage-grid">${_evoStageCard('shot', '시작')}</div>`;
       }
+      // 📖 v613 — 캐릭터 스토리 칩 (보유 캐릭만 노출, 그 안에서는 ★ 돌파로만 게이트 — 조합/능력 진행과 무관)
+      if (isChar && unlocked && ch.story && ch.story.length) {
+        const cstars2 = (typeof getCharStars === 'function') ? getCharStars(id) : 0;
+        body += `<div class="evo-d-sec-title">이야기</div><div class="evo-story-chips">` + ch.story.map((c, i) => {
+          const un = cstars2 >= c.star;
+          return un
+            ? `<button class="evo-story-chip" data-char="${id}" data-idx="${i}">${c.star}★ ${c.title}</button>`
+            : `<button class="evo-story-chip locked" disabled>🔒 ${c.star}★</button>`;
+        }).join('') + `</div>`;
+      }
       const rid = (typeof ANCIENT_RELIC_BY_CHAR !== 'undefined') ? ANCIENT_RELIC_BY_CHAR[id] : null;
       if (rid && RELICS[rid]) {
         const r = RELICS[rid]; const rar = (RELIC_RARITY[r.rarity] || { color: '#ff88ff' });
@@ -32090,6 +32462,9 @@
 
     illustEl.innerHTML = illustHTML + `<div class="evo-ds-nameplate"><div class="evo-ds-grade" style="background:${gc.color}26;color:${gc.color};border:1px solid ${gc.color}">${gradeLabel}</div><div class="evo-ds-name" style="color:${gc.color}">${displayName}</div></div>`;
     bodyEl.innerHTML = body;
+    bodyEl.querySelectorAll('.evo-story-chip:not(.locked)').forEach(btn => {
+      btn.onclick = () => openCharStory(btn.dataset.char, +btn.dataset.idx);
+    });
     if (titleEl) titleEl.textContent = displayName;
     if (scroll) scroll.scrollTop = 0;
     showScreen('evoDetail');
