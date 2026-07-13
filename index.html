@@ -897,6 +897,17 @@
   .menu-cta-group {
     display: flex; flex-direction: column; gap: 6px;
   }
+  /* 🌀 v614 — 주간 모디파이어 + 📋 일일 임무 패널 (menu) */
+  .weekly-panel { width: 100%; max-width: 380px; margin: 0 auto 10px; box-sizing: border-box; background: linear-gradient(90deg,#1a1a2e,#1a2030); border: 1px solid #3a4250; border-radius: 8px; padding: 9px 12px; font-size: 12px; }
+  .weekly-mod-row { display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap; margin-bottom: 6px; }
+  .weekly-mod-badge { color: #c9a3ff; font-weight: bold; font-size: 11px; flex-shrink: 0; }
+  .weekly-mod-name { color: #ffd479; font-weight: bold; }
+  .weekly-mod-desc { color: #9aa3b3; font-size: 11px; }
+  .daily-quest-list { display: flex; flex-direction: column; gap: 2px; margin-bottom: 5px; }
+  .daily-quest-row { display: flex; align-items: center; gap: 6px; font-size: 11.5px; color: #cdd5e3; }
+  .daily-quest-row.done { color: #6b7283; text-decoration: line-through; }
+  .dq-check { font-size: 11px; }
+  .weekly-quest-progress { font-size: 11px; color: #c9a3ff; text-align: right; }
   /* v223 — 빠른 시작 미리보기 (Primary 버튼 바로 아래 작은 텍스트) */
   .quick-start-preview {
     font-size: 11px;
@@ -4417,6 +4428,17 @@
       <!-- 동적으로 채워짐 — refreshMenuCharPreview() -->
     </div>
 
+    <!-- 🌀 주간 모디파이어 + 📋 일일 임무 -->
+    <div class="weekly-panel" id="weekly-panel">
+      <div class="weekly-mod-row">
+        <span class="weekly-mod-badge">🌀 이번 주</span>
+        <span class="weekly-mod-name" id="weekly-mod-name">-</span>
+        <span class="weekly-mod-desc" id="weekly-mod-desc">-</span>
+      </div>
+      <div class="daily-quest-list" id="daily-quest-list"></div>
+      <div class="weekly-quest-progress" id="weekly-quest-progress">-</div>
+    </div>
+
     <!-- 메인 CTA: 이어하기 / 빠른 시작 / 새 게임 / 난이도 -->
     <div class="menu-cta-group">
       <button id="continueBtn" class="menu-btn menu-btn-primary" style="display:none;">▶ 이어하기</button>
@@ -4444,6 +4466,7 @@
     </div>
 
     <!-- 글로벌 랭킹 (와이드) -->
+    <button id="coreMgrBtn" class="menu-btn menu-btn-wide">🔩 전술 코어 관리</button>
     <button id="globalRankBtn" class="menu-btn menu-btn-wide">글로벌 랭킹</button>
   </div>
 
@@ -4893,6 +4916,105 @@
   .evo-relic-ico { flex:0 0 40px; }
   .evo-relic-name { font-size:14px; font-weight:800; margin-bottom:3px; }
   .evo-relic-desc { font-size:10.5px; color:#aeb6c4; line-height:1.45; }
+  /* 🔩 전술 코어 — 일러스트 양옆 슬롯 (플랭크): 크게·세로로 길게·일러스트에 바짝 */
+  .evo-ds-illust.has-gear { height:34vh; min-height:210px; }
+  .gear-flank { position:absolute; inset:0; display:flex; justify-content:space-between; align-items:center; padding:0 clamp(8px,11vw,64px); pointer-events:none; z-index:4; }
+  .gear-flank-col { display:flex; flex-direction:column; gap:12px; pointer-events:auto; }
+  .gear-fslot { width:56px; height:74px; border:1.5px solid #3a4256; border-radius:13px; background:rgba(10,13,20,0.74); backdrop-filter:blur(3px); -webkit-backdrop-filter:blur(3px); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; cursor:pointer; transition:transform .12s; }
+  .gear-fslot:hover { transform:scale(1.07); }
+  .gear-fslot.empty { border-style:dashed; opacity:0.6; }
+  .gear-fslot-ico { font-size:26px; line-height:1; }
+  .gear-fslot-lv { font-size:9px; font-weight:800; letter-spacing:.3px; color:#8a94a6; }
+  /* 인벤토리 그리드 */
+  .gear-inv { display:grid; grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:8px; }
+  .gear-inv-item { background:#11151e; border:1px solid #2a2f3a; border-radius:10px; padding:8px 10px; cursor:pointer; transition:filter .12s, transform .12s; }
+  .gear-inv-item:hover { filter:brightness(1.18); transform:translateY(-1px); }
+  .gear-inv-item.on { border-width:2px; box-shadow:0 0 12px rgba(122,215,255,0.28); }
+  .gear-inv-head { display:flex; align-items:center; gap:5px; margin-bottom:5px; }
+  .gear-inv-head .gear-fslot-ico { font-size:13px; }
+  .gear-on-badge { margin-left:auto; font-size:9px; font-weight:800; color:#0b0d12; background:#7ad7ff; padding:1px 6px; border-radius:6px; }
+  .gear-slot-name { font-size:11.5px; font-weight:800; color:#cdd5e3; }
+  .gear-slot-rar { margin-left:4px; font-size:9.5px; font-weight:800; letter-spacing:.4px; }
+  .gear-lines { display:flex; flex-direction:column; gap:2px; }
+  .gear-line { display:flex; justify-content:space-between; gap:8px; font-size:10.5px; color:#aeb6c4; }
+  .gear-line b { color:#e8eef7; font-weight:700; flex-shrink:0; }
+  .gear-inv-empty { font-size:11.5px; color:#6b7283; padding:12px; text-align:center; border:1px dashed #2a2f3a; border-radius:9px; line-height:1.6; }
+  .gear-sec-sub { font-size:10px; font-weight:600; opacity:0.55; }
+  /* 🔩 코어 관리 모달 (재설정/장착/분해) */
+  .gear-modal-ov { display:none; position:fixed; inset:0; z-index:200; background:rgba(4,6,12,0.72); backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px); align-items:center; justify-content:center; padding:16px; }
+  .gear-modal { width:100%; max-width:400px; background:#0e131e; border:1.5px solid #3a4256; border-radius:16px; padding:16px; box-shadow:0 12px 40px rgba(0,0,0,0.6); }
+  .gcm-head { display:flex; align-items:center; gap:8px; margin-bottom:14px; }
+  .gcm-ico { font-size:22px; line-height:1; }
+  .gcm-name { font-size:15px; font-weight:800; color:#e8eef7; }
+  .gcm-rar { font-size:11.5px; font-weight:800; letter-spacing:.4px; }
+  .gcm-x { margin-left:auto; background:none; border:none; color:#8a94a6; font-size:16px; cursor:pointer; padding:2px 6px; font-family:inherit; }
+  .gcm-body { display:flex; align-items:stretch; gap:9px; margin-bottom:14px; }
+  .gcm-col { flex:1; min-width:0; background:#141a26; border:1px solid #232c3c; border-radius:10px; padding:9px 10px; }
+  .gcm-col.new { border-color:#7ad7ff; box-shadow:0 0 12px rgba(122,215,255,0.22); }
+  .gcm-col-t { font-size:9.5px; font-weight:800; color:#8aa0c0; margin-bottom:7px; letter-spacing:.4px; }
+  .gcm-arrow { display:flex; align-items:center; color:#7ad7ff; font-size:18px; font-weight:800; }
+  .gcm-line { display:flex; align-items:center; gap:6px; font-size:11px; color:#c3cbd8; padding:3px 0; }
+  .gcm-line .gcm-lbl { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .gcm-line b { margin-left:auto; color:#fff; font-weight:800; flex-shrink:0; }
+  .gcm-tier { font-size:8px; font-weight:900; padding:1px 4px; border-radius:5px; background:#232c3c; color:#9aa3b3; flex-shrink:0; }
+  .gcm-tier.t3 { background:#22344f; color:#7ad7ff; } .gcm-tier.t4 { background:#2f2450; color:#c98bff; } .gcm-tier.t5 { background:#4a3f1a; color:#ffd479; }
+  .gcm-shards { font-size:11px; color:#ffd479; margin-bottom:8px; text-align:right; }
+  .gcm-actions { display:flex; gap:7px; flex-wrap:wrap; }
+  .gcm-btn { flex:1; min-width:84px; padding:11px 6px; border-radius:10px; border:1px solid #3a4256; background:#1a2130; color:#e8eef7; font-size:12px; font-weight:700; font-family:inherit; cursor:pointer; transition:filter .12s; }
+  .gcm-btn:hover:not(:disabled) { filter:brightness(1.22); }
+  .gcm-btn:disabled { opacity:0.4; cursor:default; }
+  .gcm-btn.roll { border-color:#7ad7ff; color:#aef0ff; }
+  .gcm-btn.apply { border-color:#88dda8; color:#bcf0d2; background:#16241c; }
+  .gcm-btn.dism { border-color:#5a4256; color:#e0a8c0; }
+  .gcm-cost { font-size:10px; opacity:0.85; }
+  /* ===== 🔩 전술 코어 관리 화면 ===== */
+  #coreMgrScreen .codex-header { position:relative; }
+  .cm-shardhud { position:absolute; right:14px; top:50%; transform:translateY(-50%); font-size:13px; font-weight:800; color:#ffd479; }
+  .cm-wrap { flex:1; display:flex; flex-direction:column; min-height:0; padding:8px 12px calc(14px + env(safe-area-inset-bottom)); gap:10px; max-width:640px; width:100%; margin:0 auto; box-sizing:border-box; }
+  .cm-hero { position:relative; flex:0 0 auto; height:26vh; min-height:188px; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; border-radius:16px; overflow:hidden; background:radial-gradient(circle at 50% 34%, rgba(122,215,255,0.18), rgba(11,13,18,0) 66%), linear-gradient(180deg,#0e1524,#0a0d14); border:1px solid #232c3c; }
+  .cm-char { position:absolute; inset:0; display:flex; align-items:flex-end; justify-content:center; }
+  .cm-char img { height:100%; object-fit:contain; object-position:bottom center; filter:drop-shadow(0 6px 20px rgba(0,0,0,.5)); }
+  .cm-char.noimg::after { content:attr(data-emoji); font-size:88px; align-self:center; }
+  .cm-char-ph { font-size:82px; align-self:center; }
+  .cm-charbtn { position:absolute; top:10px; right:10px; z-index:3; padding:7px 12px; font-size:11.5px; font-weight:700; font-family:inherit; color:#aef0ff; background:rgba(10,16,26,0.7); border:1px solid #3a5570; border-radius:20px; cursor:pointer; backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px); transition:all .15s; }
+  .cm-charbtn:hover { border-color:#7ad7ff; box-shadow:0 0 12px rgba(122,215,255,0.35); }
+  .cm-charname { position:absolute; bottom:58px; z-index:2; font-size:15px; font-weight:800; color:#fff; text-shadow:0 2px 8px rgba(0,0,0,0.75); pointer-events:none; }
+  .cm-slots { position:absolute; bottom:10px; z-index:2; display:flex; gap:8px; }
+  .cm-slot { width:42px; height:42px; border:1.5px solid #3a4256; border-radius:11px; background:rgba(10,13,20,0.8); display:flex; align-items:center; justify-content:center; font-size:19px; cursor:pointer; transition:transform .12s; }
+  .cm-slot.filled:hover { transform:scale(1.1); }
+  .cm-slot.empty { opacity:0.45; border-style:dashed; }
+  .cm-cols { flex:1; min-height:0; display:flex; gap:10px; }
+  .cm-list { flex:0 0 118px; overflow-y:auto; display:flex; flex-direction:column; gap:6px; padding-right:2px; }
+  .cm-litem { display:flex; align-items:center; gap:6px; padding:8px; border-radius:9px; background:#11151e; border:1px solid #232c3c; border-left:3px solid var(--rc,#3a4256); cursor:pointer; transition:filter .12s, border-color .12s; }
+  .cm-litem:hover { filter:brightness(1.2); }
+  .cm-litem.sel { border-color:var(--rc,#7ad7ff); box-shadow:0 0 10px rgba(122,215,255,0.2); background:#161d2b; }
+  .cm-li-ico { font-size:16px; flex-shrink:0; }
+  .cm-li-info { font-size:10.5px; color:#c3cbd8; line-height:1.25; min-width:0; }
+  .cm-li-on { margin-left:auto; font-size:8px; font-weight:900; color:#0b0d12; background:#7ad7ff; width:15px; height:15px; border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .cm-detail { flex:1; min-width:0; overflow-y:auto; background:#0e131e; border:1px solid #232c3c; border-radius:12px; padding:14px; }
+  .cm-empty { color:#6b7283; font-size:12px; text-align:center; padding:30px 10px; line-height:1.7; }
+  .cm-d-head { display:flex; align-items:center; gap:10px; padding-bottom:12px; margin-bottom:12px; border-bottom:1px solid; }
+  .cm-d-ico { font-size:26px; }
+  .cm-d-name { font-size:15px; font-weight:800; color:#e8eef7; }
+  .cm-d-rar { font-size:12px; font-weight:800; letter-spacing:.4px; margin-top:2px; }
+  .cm-d-cols { display:flex; align-items:stretch; gap:9px; margin-bottom:14px; }
+  .cm-d-col { flex:1; min-width:0; background:#141a26; border:1px solid #232c3c; border-radius:10px; padding:10px; }
+  .cm-d-col.new { border-color:#7ad7ff; box-shadow:0 0 12px rgba(122,215,255,0.2); }
+  .cm-d-colt { font-size:9.5px; font-weight:800; color:#8aa0c0; margin-bottom:8px; letter-spacing:.4px; }
+  .cm-d-arrow { display:flex; align-items:center; color:#7ad7ff; font-size:18px; font-weight:800; }
+  .cm-d-acts { display:flex; gap:7px; flex-wrap:wrap; }
+  .cm-pop { display:none; position:fixed; inset:0; z-index:210; background:rgba(4,6,12,0.75); backdrop-filter:blur(5px); -webkit-backdrop-filter:blur(5px); align-items:center; justify-content:center; padding:18px; }
+  .cm-pop.show { display:flex; }
+  .cm-pop-inner { width:100%; max-width:440px; max-height:76vh; display:flex; flex-direction:column; background:#0e131e; border:1.5px solid #3a5570; border-radius:16px; padding:16px; }
+  .cm-pop-head { display:flex; align-items:center; font-size:15px; font-weight:800; color:#e8eef7; margin-bottom:14px; }
+  .cm-pop-head .gcm-x { margin-left:auto; }
+  .cm-pop-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(84px,1fr)); gap:10px; overflow-y:auto; }
+  .cm-pop-c { border-radius:12px; border:1.5px solid #232c3c; background:#141a26; padding:8px 6px; cursor:pointer; text-align:center; transition:all .15s; }
+  .cm-pop-c:hover { border-color:#5a7590; }
+  .cm-pop-c.on { border-color:#7ad7ff; box-shadow:0 0 12px rgba(122,215,255,0.3); }
+  .cm-pop-thumb { height:64px; display:flex; align-items:center; justify-content:center; font-size:38px; overflow:hidden; }
+  .cm-pop-thumb img { height:100%; object-fit:contain; }
+  .cm-pop-name { font-size:10px; color:#c3cbd8; margin-top:5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .evo-lineage { display:flex; align-items:center; flex-wrap:wrap; gap:6px; }
   .evo-chip { display:flex; align-items:center; gap:4px; font-size:11px; font-weight:700; padding:3px 9px 3px 4px; border-radius:12px; border:1px solid; background:rgba(0,0,0,.25); }
   .evo-chip.self { background:rgba(255,255,255,0.08); }
@@ -5343,6 +5465,28 @@
     <div class="evo-ds-illust" id="evo-ds-illust"></div>
     <div class="evo-ds-body" id="evo-ds-body"></div>
   </div>
+</div>
+
+<!-- 🔩 전술 코어 관리 화면 (좌: 리스트 / 중: 캐릭터 / 우: 옵션) -->
+<div id="coreMgrScreen" class="screen">
+  <div class="codex-header">
+    <button class="codex-back" id="coreMgrBack">←</button>
+    <h2>전술 코어</h2>
+    <span class="cm-shardhud" id="cm-shardhud"></span>
+  </div>
+  <div class="cm-wrap">
+    <div class="cm-hero">
+      <button class="cm-charbtn" id="cm-charbtn">🔄 캐릭터 변경</button>
+      <div class="cm-char" id="cm-char"></div>
+      <div class="cm-charname" id="cm-charname"></div>
+      <div class="cm-slots" id="cm-slots"></div>
+    </div>
+    <div class="cm-cols">
+      <div class="cm-list" id="cm-list"></div>
+      <div class="cm-detail" id="cm-detail"></div>
+    </div>
+  </div>
+  <div class="cm-pop" id="cm-charpop"></div>
 </div>
 
 <!-- ===== 🎰 가챠 화면 ===== -->
@@ -5941,8 +6085,9 @@
         <button id="resetBtn" class="speed-btn">⟳ 리셋</button>
         <button id="menuBtn" class="speed-btn">🏠 메뉴</button>
         <button id="speedCycle" class="speed-btn" title="배속 순환">⏩ ×1</button>
+        <button id="autoBtn" class="speed-btn" title="자동진행 (카드 자동선택 + 라운드 자동시작)">🤖 AUTO</button>
       </div>
-      <div class="hotkey-hint">Space: 일시정지 · R: 리셋 · ⏩: 배속</div>
+      <div class="hotkey-hint">Space: 일시정지 · R: 리셋 · ⏩: 배속 · 🤖: 자동</div>
     </div>
   </div>
   <div id="toast" class="toast"></div>
@@ -6272,9 +6417,74 @@
   // ===== 능력 정의 (각 능력은 독립적인 공격) =====
   // 각 ability instance: { id, level, cooldown, ...각 ability별 상태 }
   // def에는 init(ab), tick(ab), draw?(ab) 메서드가 있음
+  // ===== 🔩 전술 코어(영구장비) — Phase 2a: 데이터 + 효과주입 =====
+  const GEAR_SLOTS = ['offense','targeting','supply','control'];
+  const GEAR_SLOT_LABEL = { offense:'화력', targeting:'조준', supply:'보급', control:'제어' };
+  const GEAR_RARITY = ['common','rare','epic'];
+  const GEAR_RARITY_LABEL = { common:'커먼', rare:'레어', epic:'에픽' };
+  const GEAR_RARITY_LINES = { common:1, rare:2, epic:2 };
+  // 슬롯별 옵션 풀 — 전부 "빌드타임 metaMods 필드"에만 매핑 (패시브 파생 필드는 매프레임 리셋되므로 제외)
+  const GEAR_OPTIONS = {
+    offense:   [ {key:'dmgBoost',        op:'add', label:'데미지',      base:0.02},
+                 {key:'comboPowerBonus', op:'add', label:'조합 위력',   base:0.02} ],
+    targeting: [ {key:'bossDmgMul',      op:'mul', label:'보스 데미지',  base:0.04},
+                 {key:'dmgBoost',        op:'add', label:'정밀 데미지',  base:0.02} ],
+    supply:    [ {key:'goldMul',         op:'mul', label:'골드 획득',    base:0.03},
+                 {key:'scoreMul',        op:'mul', label:'점수',        base:0.03} ],
+    control:   [ {key:'slowMul',         op:'mul', label:'슬로우',      base:0.03},
+                 {key:'luckyChanceBonus',op:'add', label:'행운',        base:0.01},
+                 {key:'roundTimeBonus',  op:'add', label:'라운드 시간',  base:1, flat:true} ],
+  };
+  // 라인 티어 롤 (하드코어 = 바닥 두꺼움). tier mult 로 값 스케일.
+  const GEAR_LINE_TIERS = [
+    {tier:1, mult:1,   w:60}, {tier:2, mult:1.8, w:27}, {tier:3, mult:2.8, w:10}, {tier:4, mult:4, w:2.5}, {tier:5, mult:6, w:0.5},
+  ];
+  // 장비 "기여분" 캡 (총합 아님 → 기존 비-장비 밸런스 불변)
+  const GEAR_CAP = { dmgBoost:2, comboPowerBonus:2, bossDmgMul:2, goldMul:2, scoreMul:2, slowMul:1.5, luckyChanceBonus:0.4, roundTimeBonus:15 };
+  function _gearWpick(arr, wkey) { let t=0; for(const a of arr) t+=a[wkey]; let r=Math.random()*t; for(const a of arr){ r-=a[wkey]; if(r<=0) return a; } return arr[arr.length-1]; }
+  function _gearRollLine(slot) {
+    const pool = GEAR_OPTIONS[slot];
+    const opt = pool[Math.floor(Math.random()*pool.length)];
+    const t = _gearWpick(GEAR_LINE_TIERS, 'w');
+    const raw = opt.base * t.mult * (0.85 + Math.random()*0.3);   // 값 범위 ±15%
+    const val = opt.flat ? Math.max(1, Math.round(raw)) : Math.round(raw*1000)/1000;
+    return { key:opt.key, op:opt.op, label:opt.label, flat:!!opt.flat, tier:t.tier, val };
+  }
+  function _ensureGear() {
+    if (!META.gear || typeof META.gear !== 'object') META.gear = { equipped:{}, inv:[], nextId:1 };
+    if (!META.gear.equipped) META.gear.equipped = {};
+    if (!Array.isArray(META.gear.inv)) META.gear.inv = [];
+    if (!META.gear.nextId) META.gear.nextId = 1;
+    return META.gear;
+  }
+  function _gearById(id) { const g=_ensureGear(); return g.inv.find(x=>x.id===id) || null; }
+  function createGear(slot, rarity) {
+    const g = _ensureGear();
+    const n = GEAR_RARITY_LINES[rarity] || 1;
+    const lines = []; for (let i=0;i<n;i++) lines.push(_gearRollLine(slot));
+    return { id: g.nextId++, slot, rarity, level:0, lines, v:1 };
+  }
+  // 장착 코어의 라인을 metaMods에 합산 (주간모디파이어 apply와 동일 패턴). add=합산, mul=(1+합)배.
+  function applyGearEffects(mm) {
+    const g = META.gear; if (!g || !g.equipped) return;
+    const add = {}, mul = {};
+    for (const slot of GEAR_SLOTS) {
+      const id = g.equipped[slot]; if (id == null) continue;
+      const item = g.inv.find(x => x.id === id); if (!item || !item.lines) continue;
+      const lvlMul = 1 + (item.level || 0) * 0.1;   // 레벨당 +10% (P3에서 골드로 레벨업)
+      for (const ln of item.lines) {
+        const v = ln.val * (ln.flat ? 1 : lvlMul);
+        if (ln.op === 'add') add[ln.key] = (add[ln.key] || 0) + v;
+        else mul[ln.key] = (mul[ln.key] || 0) + v;
+      }
+    }
+    for (const k in add) { let d = add[k]; if (GEAR_CAP[k]!=null) d = Math.min(d, GEAR_CAP[k]); mm[k] = (mm[k] || 0) + d; }
+    for (const k in mul) { let d = mul[k]; if (GEAR_CAP[k]!=null) d = Math.min(d, GEAR_CAP[k]); mm[k] = (mm[k] || 1) * (1 + d); }
+  }
+
   const ABILITY_DEFS = {
     shot: {
-      name: '샷', baseCost: 30, color: '#ffe28a',
+      name: '샷', single: true, baseCost: 30, color: '#ffe28a',
       desc: lv => `단발 유도 · DMG ${1+lv}`,
       init(ab) { ab.cooldown = 0; },
       tick(ab) {
@@ -7210,7 +7420,7 @@
       },
     },
     inkSlash: {
-      name: '먹빛 도', isGachaUnique: true, baseCost: 130, color: '#3a3a3a',
+      name: '먹빛 도', isGachaUnique: true, single: true, baseCost: 130, color: '#3a3a3a',
       desc: lv => `가장 가까운 단일 적 먹빛 베기 · 크리 25%(×2.2) · 처형표식(최대5, 표식당 +DMG) · DMG ${7+lv*4}`,
       init(ab) { ab.cooldown = 24; ab.slashes = []; ab.motes = []; },
       tick(ab) {
@@ -9563,7 +9773,7 @@
     },
 
     sniper: {
-      name: '저격', baseCost: 75, color: '#aaffaa',
+      name: '저격', single: true, baseCost: 75, color: '#aaffaa',
       desc: lv => `최강 적 저격 · DMG ${5+lv*3}`,
       init(ab) { ab.cooldown = 60; },
       tick(ab) {
@@ -10477,7 +10687,7 @@
     },
 
     fury: {
-      name: '분노', isPassive: true, baseCost: 60, color: '#ff4466',
+      name: '분노', isPassive: true, mobSynergy: true, baseCost: 60, color: '#ff4466',
       desc: lv => `활성 적 5마리당 데미지 +${lv*5}% (모든 능력 영향)`,
       // 패시브 — 적 수에 비례 데미지 증가. damageEnemy에서 알아서 적용됨. (액티브 아님 → 처치 규칙 제외)
       init(ab) {},
@@ -11145,7 +11355,7 @@
       },
     },
     cull: {
-      name: '토벌', isPassive: true, baseCost: 60, color: '#9ad36b',
+      name: '토벌', isPassive: true, mobSynergy: true, baseCost: 60, color: '#9ad36b',
       desc: lv => `일반 적(비보스) 데미지 +${lv*10}%`,
       init() {},
       tick(ab) {
@@ -11155,7 +11365,7 @@
       },
     },
     press: {
-      name: '쇄도', isPassive: true, baseCost: 70, color: '#ff77c2',
+      name: '쇄도', isPassive: true, mobSynergy: true, baseCost: 70, color: '#ff77c2',
       desc: lv => `화면의 적 1마리당 데미지 +${lv}% (최대 +${lv*15}%)`,
       init() {},
       tick(ab) {
@@ -17148,6 +17358,95 @@
     }
     return Math.ceil(base * ABILITY_BUFF_HP_COMP);
   }
+  // ===== 🌀 v614 — 주간 모디파이어: 매주 게임 규칙이 바뀜. 서버 불필요 — 날짜 기반 계산이라 전 클라이언트가 동일하게 결정.
+  //   랭킹엔 태그 안 함(요청: 게임 규칙만). 시즌 리셋(getSeasonStartTime)과 같은 주 경계로 갱신됨. =====
+  const WEEKLY_MODIFIERS = [
+    { id: 'elite',  name: '초개체 경보',   desc: '적 체력 +30% · 처치 골드 +25%',
+      enemyHpMul: 1.30, apply(mm) { mm.goldMul = (mm.goldMul || 1) * 1.25; } },
+    { id: 'gold',   name: '황금 궤도',     desc: '골드 획득 +50% · 점수 -15%',
+      enemyHpMul: 1.0,  apply(mm) { mm.goldMul = (mm.goldMul || 1) * 1.50; mm.scoreMul = (mm.scoreMul || 1) * 0.85; } },
+    { id: 'fusion', name: '융합 공명',     desc: '조합 위력 +25% · 강화 비용 +20%',
+      enemyHpMul: 1.0,  apply(mm) { mm.comboPowerBonus = (mm.comboPowerBonus || 0) + 0.25; mm.enhanceMul = (mm.enhanceMul || 1) * 1.20; } },
+    { id: 'purge',  name: '처단 프로토콜', desc: '보스 데미지 +30% · 일반 데미지 -10%',
+      enemyHpMul: 1.0,  apply(mm) { mm.bossDmgMul = (mm.bossDmgMul || 1) * 1.30; mm.dmgMul = (mm.dmgMul || 1) * 0.90; } },
+  ];
+  function getWeeklyModifierIndex() {
+    const weekNum = Math.floor(getSeasonStartTime() / (7 * 86400000));
+    return ((weekNum % WEEKLY_MODIFIERS.length) + WEEKLY_MODIFIERS.length) % WEEKLY_MODIFIERS.length;
+  }
+  function getActiveWeeklyModifier() { return WEEKLY_MODIFIERS[getWeeklyModifierIndex()]; }
+
+  // ===== 📋 v614 — 일일 임무: 매일 리셋(UTC 기준), 완료 시 소량 재화. 별조각은 주간 7일 완주 보너스로만 지급(요청사항). =====
+  const DAILY_QUESTS = [
+    { id: 'play',    name: '한 게임 플레이',   check: s => true,                       reward: { stardust: 60 } },
+    { id: 'round10', name: 'R10 도달',         check: s => (s.round || 0) >= 10,       reward: { stardust: 100 } },
+    { id: 'kills',   name: '200처치 달성',     check: s => (s.totalKills || 0) >= 200, reward: { crystal: 1 } },
+  ];
+  const WEEKLY_QUEST_SHARD_BONUS = 20;   // 7일 모두 완료 시 별조각 보너스 (조정 가능)
+  function _dailyTodayKey() { const d = new Date(); return d.getUTCFullYear() + '-' + (d.getUTCMonth() + 1) + '-' + d.getUTCDate(); }
+  function _ensureDailyReset() {
+    const today = _dailyTodayKey();
+    if (META.dailyDate !== today) {
+      META.dailyDate = today;
+      META.dailyProgress = {};
+      META.dailyClaimed = false;
+    }
+    if (!META.dailyProgress) META.dailyProgress = {};
+    const weekStart = getSeasonStartTime();
+    if (META.dailyWeekStart !== weekStart) {
+      META.dailyWeekStart = weekStart;
+      META.dailyWeekDays = 0;
+      META.dailyWeekBonusClaimed = false;
+    }
+  }
+  function evaluateDailyQuests() {
+    _ensureDailyReset();
+    let newlyDone = [];
+    for (const q of DAILY_QUESTS) {
+      if (META.dailyProgress[q.id]) continue;   // 이미 오늘 완료
+      let ok = false;
+      try { ok = !!q.check(state); } catch (e) { ok = false; }
+      if (!ok) continue;
+      META.dailyProgress[q.id] = true;
+      newlyDone.push(q.name);
+      if (q.reward.stardust) { META.stardust = (META.stardust || 0) + q.reward.stardust; META.stardustEarned = (META.stardustEarned || 0) + q.reward.stardust; }
+      if (q.reward.crystal)  { META.crystals = (META.crystals || 0) + q.reward.crystal; META.crystalsEarned = (META.crystalsEarned || 0) + q.reward.crystal; }
+    }
+    const allDone = DAILY_QUESTS.every(q => META.dailyProgress[q.id]);
+    let weekBonusGained = 0;
+    if (allDone && !META.dailyClaimed) {
+      META.dailyClaimed = true;
+      META.dailyWeekDays = (META.dailyWeekDays || 0) + 1;
+      if (META.dailyWeekDays >= 7 && !META.dailyWeekBonusClaimed) {
+        META.dailyWeekBonusClaimed = true;
+        META.starShards = (META.starShards || 0) + WEEKLY_QUEST_SHARD_BONUS;
+        META.starShardsEarned = (META.starShardsEarned || 0) + WEEKLY_QUEST_SHARD_BONUS;
+        weekBonusGained = WEEKLY_QUEST_SHARD_BONUS;
+      }
+    }
+    saveMeta();
+    if (weekBonusGained > 0) { try { toast(`🏁 주간 임무 7/7 완료! 💠 별조각 +${weekBonusGained}`); } catch (e) {} }
+    else if (newlyDone.length) { try { toast(`📋 임무 완료: ${newlyDone.join(', ')}`); } catch (e) {} }
+    return { newlyDone, weekBonusGained };
+  }
+  function refreshWeeklyPanel() {
+    _ensureDailyReset();
+    const wm = getActiveWeeklyModifier();
+    const nameEl = document.getElementById('weekly-mod-name');
+    const descEl = document.getElementById('weekly-mod-desc');
+    if (nameEl) nameEl.textContent = wm.name;
+    if (descEl) descEl.textContent = wm.desc;
+    const listEl = document.getElementById('daily-quest-list');
+    if (listEl) {
+      listEl.innerHTML = DAILY_QUESTS.map(q => {
+        const done = !!META.dailyProgress[q.id];
+        return `<div class="daily-quest-row${done ? ' done' : ''}"><span class="dq-check">${done ? '✅' : '⬜'}</span><span class="dq-name">${q.name}</span></div>`;
+      }).join('');
+    }
+    const weekEl = document.getElementById('weekly-quest-progress');
+    if (weekEl) weekEl.textContent = `주간 완주 ${META.dailyWeekDays || 0}/7 · 💠+${WEEKLY_QUEST_SHARD_BONUS}`;
+  }
+
   function roundConfig(n) {
     const baseHp = enemyHpFor(n);
     const isFinal = n === MAX_ROUND;
@@ -17202,8 +17501,10 @@
     const eventComp = 1 + Math.min(0.25, Math.max(0, n - 5) * 0.005);   // R5부터 +0.5%/R, 최대 +25% (적 누적·렉 완화 위해 하향)
     // 🌳 진화 파워 보정 — R20+(SR 합류)·R40+(SSR 합류) 구간 적·보스 HP 상향 (무손실+패시브 진화로 강해진 만큼). ⚙ 값은 플레이테스트로 튜닝.
     const evoDiff = (n >= 40) ? 1.45 : (n >= 20) ? 1.20 : 1.0;
-    const hp = Math.ceil(baseHp * effEnemyHpMul * tdHpMul * eventComp * evoDiff);
-    const bossHp = Math.ceil(baseHp * (isFinal ? 13 : 10) * effBossHpMul * relicBossHp * tdBossHpMul * eventComp * evoDiff);
+    // 🌀 v614 — 주간 모디파이어 적 체력 배율 (기본 1.0, "초개체 경보" 주에만 1.30)
+    const _wmHpMul = (typeof getActiveWeeklyModifier === 'function' && getActiveWeeklyModifier().enemyHpMul) || 1;
+    const hp = Math.ceil(baseHp * effEnemyHpMul * tdHpMul * eventComp * evoDiff * _wmHpMul);
+    const bossHp = Math.ceil(baseHp * (isFinal ? 13 : 10) * effBossHpMul * relicBossHp * tdBossHpMul * eventComp * evoDiff * _wmHpMul);
     const baseTime = isFinal ? 180 : 30;
     const duration = Math.max(15, Math.floor((baseTime + (mm.roundTimeBonus || 0)) * asc.roundTimeMul)) * FPS;
     const baseSpawn = isFinal ? 30 : (isBoss ? 10 : 20);
@@ -17399,6 +17700,9 @@
       defenseSlowBonus:      mods.defenseSlowBonus || 0,
       defenseRevive:         mods.defenseRevive || 0,
     };
+    // 🌀 v614 — 주간 모디파이어 적용 (게임 규칙만, 랭킹 태그 없음)
+    try { const _wm = getActiveWeeklyModifier(); if (_wm && _wm.apply) _wm.apply(state.metaMods); state.weeklyModifierId = _wm.id; } catch (e) {}
+    try { applyGearEffects(state.metaMods); } catch (e) {}   // 🔩 장비 효과 주입 (metaMods에 합산)
     // 🏰 디펜스 모드 (TD): 본진 HP + 타워 entity 배열
     if (state.mode === 'defense') {
       state.towerMaxHP = 40 + (mods.towerHPBonus || 0);   // 기본 40 (강화소 설명과 일치)
@@ -17615,6 +17919,7 @@
     state.gameOverAnimStart = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
     earnStardust();
     earnCrystals();
+    try { evaluateDailyQuests(); } catch (e) {}   // 📋 v614 — 일일 임무 정산 (러닝 종료마다 체크)
     // 🎖️ v498 — 함장 경험치 적립 (점수/라운드/승천/승리). UI 전용 통화, 게임플레이 로직 무관
     try {
       const _runXp = Math.floor((state.score || 0) / 300) + (state.round || 1) * 4 + (state.ascension || 0) * 15 + (win ? 80 : 0);
@@ -18495,6 +18800,52 @@
       merged.starShardsEarned = Math.max(localShEarned, serverShEarned);
       merged.starShardsSpent  = Math.max(localShSpent,  serverShSpent);
       merged.starShards = Math.max(0, merged.starShardsEarned - merged.starShardsSpent);
+
+      // ━━━ 🔩 장비(gear) — inv는 id+버전(v) 유니온(파밍 append-only), 장착은 최근우선(metaUpdatedAt) ━━━
+      {
+        const lg = (META.gear && Array.isArray(META.gear.inv)) ? META.gear.inv : [];
+        const sg = (server.gear && Array.isArray(server.gear.inv)) ? server.gear.inv : [];
+        const byId = new Map();
+        for (const it of sg) if (it && it.id != null) byId.set(it.id, it);
+        for (const it of lg) if (it && it.id != null) {
+          const ex = byId.get(it.id);
+          if (!ex || (it.v || 1) >= (ex.v || 1)) byId.set(it.id, it);   // 높은 v(리롤) 우선
+        }
+        const inv = [...byId.values()];
+        const localNewer = (META.metaUpdatedAt || 0) >= (server.metaUpdatedAt || 0);
+        const equipped = localNewer ? ((META.gear && META.gear.equipped) || {}) : ((server.gear && server.gear.equipped) || {});
+        const nextId = Math.max((META.gear && META.gear.nextId) || 1, (server.gear && server.gear.nextId) || 1, inv.reduce((m,x)=>Math.max(m,(x.id||0)+1),1));
+        merged.gear = { equipped, inv, nextId };
+      }
+
+      // 📋 v615 — 일일 임무: 기본 규칙({...server,...META})이면 로컬이 무조건 이김 → 기기 전환마다
+      //   "오늘 아직 안 함" 상태로 리셋돼 무한 재획득 가능(실제 버그였음). 오늘 진행은 유니온(어느 기기든
+      //   깼으면 인정, 되돌릴 수 없음), 주간 카운터/보너스는 max·OR로 단조 증가만 허용.
+      const _today = (typeof _dailyTodayKey === 'function') ? _dailyTodayKey() : null;
+      const _locToday = META.dailyDate === _today;
+      const _srvToday = server.dailyDate === _today;
+      if (_locToday || _srvToday) {
+        merged.dailyDate = _today;
+        merged.dailyProgress = (_locToday && _srvToday)
+          ? { ...(server.dailyProgress || {}), ...(META.dailyProgress || {}) }
+          : (_locToday ? (META.dailyProgress || {}) : (server.dailyProgress || {}));
+        merged.dailyClaimed = _locToday && _srvToday ? !!(META.dailyClaimed || server.dailyClaimed)
+                            : _locToday ? !!META.dailyClaimed : !!server.dailyClaimed;
+      } else {
+        merged.dailyDate = _today; merged.dailyProgress = {}; merged.dailyClaimed = false;
+      }
+      const _curWeek = (typeof getSeasonStartTime === 'function') ? getSeasonStartTime() : null;
+      const _locWeekCur = META.dailyWeekStart === _curWeek;
+      const _srvWeekCur = server.dailyWeekStart === _curWeek;
+      if (_locWeekCur || _srvWeekCur) {
+        merged.dailyWeekStart = _curWeek;
+        merged.dailyWeekDays = (_locWeekCur && _srvWeekCur) ? Math.max(META.dailyWeekDays || 0, server.dailyWeekDays || 0)
+                             : (_locWeekCur ? (META.dailyWeekDays || 0) : (server.dailyWeekDays || 0));
+        merged.dailyWeekBonusClaimed = (_locWeekCur && _srvWeekCur) ? !!(META.dailyWeekBonusClaimed || server.dailyWeekBonusClaimed)
+                             : (_locWeekCur ? !!META.dailyWeekBonusClaimed : !!server.dailyWeekBonusClaimed);
+      } else {
+        merged.dailyWeekStart = _curWeek; merged.dailyWeekDays = 0; merged.dailyWeekBonusClaimed = false;
+      }
 
       // ━━━ 3) 진행도 객체들 — 키별 max ━━━
       const mergeMaxObject = (localObj, serverObj) => {
@@ -22925,11 +23276,21 @@
   }
   function update() {
     // 자동 카드 선택 타이머 — 실시간 deadline 방식 (게임 속도 배율 영향 X)
-    if (state.levelUpChoices && !paused && state.autoCardTimer > 0) {
-      if (performance.now() >= state.autoCardTimer) {
-        // 스타더스트 카드 우선 자동 선택, 없으면 첫 보너스 카드
-        const idx = state.levelUpChoices.findIndex(c => c.action === 'bonusStardust');
-        applyLevelUpChoice(idx >= 0 ? idx : 0);
+    if (state.levelUpChoices && !paused) {
+      // 🤖 autoPlay: 모달이 뜬 어떤 경로든 타이머가 0이면 짧게(0.6s) 세팅 → 스마트 선택
+      if (autoPlay && state.autoCardTimer === 0) {
+        state.autoCardTimer = performance.now() + (document.hidden ? 0 : 600);  // 🤖 백그라운드는 즉시 선택
+      }
+      if (state.autoCardTimer > 0 && performance.now() >= state.autoCardTimer) {
+        let idx;
+        if (autoPlay) {
+          idx = bestCardIndex(state.levelUpChoices);   // 🤖 스마트 최고점 카드
+        } else {
+          // 스타더스트 카드 우선 자동 선택, 없으면 첫 보너스 카드 (기존 all-bonus 로직)
+          idx = state.levelUpChoices.findIndex(c => c.action === 'bonusStardust');
+          if (idx < 0) idx = 0;
+        }
+        applyLevelUpChoice(idx);
         return;
       }
     }
@@ -22941,7 +23302,20 @@
     // 라운드 진행
     const cfg = roundConfig(state.round);
     // 🏰 TD Prep Phase — Start 버튼 누르기 전까지 라운드 진행/스폰 정지
-    if (state.tdPrepPhase) return;
+    if (state.tdPrepPhase) {
+      // 🤖 autoPlay: prep 화면에서 0.8s 뒤 자동 시작 (완전 무개입 킥오프)
+      if (autoPlay) {
+        if (!state._autoPrepAt) state._autoPrepAt = performance.now() + 800;
+        else if (performance.now() >= state._autoPrepAt) {
+          state._autoPrepAt = 0;
+          state.tdPrepPhase = false;
+          state._tdStartBtn = null;
+          SFX.click && SFX.click();
+          toast(`🤖 R${state.round} 자동 시작`);
+        }
+      }
+      return;
+    }
     state.roundFrame++;
     while (state.spawnPlan.length && state.spawnPlan[0] <= state.roundFrame) {
       state.spawnPlan.shift();
@@ -26967,6 +27341,57 @@
       label: '◆ SUPER LUCKY +3',
     },
   };
+  // 🤖 자동진행 — 카드 스마트 점수 (높을수록 우선). AUTO 토글 시 bestCardIndex로 자동선택.
+  function _ownedAbilitySet() {
+    const s = new Set();
+    if (state.tower && state.tower.abilities) for (const a of state.tower.abilities) s.add(a.id);
+    return s;
+  }
+  function _isAoeHeavyBuild() {
+    const abs = (state.tower && state.tower.abilities) || [];
+    let act = 0, single = 0;
+    for (const a of abs) {
+      const d = ABILITY_DEFS[a.id];
+      if (!d || d.isPassive) continue;      // 액티브만 카운트
+      act++; if (d.single) single++;
+    }
+    if (act < 3) return false;              // 초반엔 판단 보류
+    return (act - single) / act >= 0.6;     // 액티브의 60%+ 가 광역 → 광역 위주
+  }
+  // 이 능력이 미완성 조합의 재료로 쓸모있는가? (트리플 경로 우선)
+  function _comboPathScore(id, owned) {
+    const partners = COMBO_PARTNERS[id];
+    if (!partners || !partners.length) return 0;
+    const useful = partners.filter(p => !owned.has(p.combo));  // 이미 만든 조합 제외
+    if (!useful.length) return 0;
+    if (useful.some(p => p.tier === 3)) return 800;            // 트리플로 가는 재료
+    return 700;                                                // 일반 조합으로 가는 재료
+  }
+  function scoreCard(c) {
+    if (!c) return -Infinity;
+    const owned = _ownedAbilitySet();
+    if (c.action === 'combo') return c.tier === 3 ? 1000 : 900;      // 1·2: 트리플 > 일반조합
+    if (c.action === 'new' || c.action === 'level') {
+      const path = _comboPathScore(c.id, owned);                    // 3·4: 조합 재료 우선
+      if (path) return path;
+      const d = ABILITY_DEFS[c.id];
+      if (d && d.isPassive && d.mobSynergy && _isAoeHeavyBuild()) return 650;  // 5: 광역 위주면 몹시너지 패시브
+      if (c.action === 'level') return c.lucky === 2 ? 620 : (c.lucky === 1 ? 600 : 500);  // 6: 강화(럭키 가점)
+      return 400;                                                   // 7: 신규(조합 경로 없음)
+    }
+    if (c.action === 'ascendant') return 300;                       // 8
+    if (c.action === 'bonusStardust') return 200;                   // 9: 보너스
+    if (c.action === 'bonusScore') return 100;
+    return 50;
+  }
+  function bestCardIndex(choices) {
+    let bi = 0, bs = -Infinity;
+    for (let i = 0; i < choices.length; i++) {
+      const s = scoreCard(choices[i]);
+      if (s > bs) { bs = s; bi = i; }
+    }
+    return bi;
+  }
   function getCardTier(c) {
     if (c.action === 'level') {
       if (c.lucky === 2) return 'superLucky';
@@ -27385,7 +27810,7 @@
       ctx.font = '12px Rajdhani, "IBM Plex Sans KR", sans-serif';
       ctx.textAlign = 'center';
       ctx.fillStyle = '#9aa3b3';
-      ctx.fillText('스타더스트 자동 선택', CX, countY);
+      ctx.fillText(autoPlay ? '🤖 자동 선택' : '스타더스트 자동 선택', CX, countY);
       // 카운트다운 숫자 — 작게 강조
       ctx.font = 'bold 18px Rajdhani, "IBM Plex Sans KR", sans-serif';
       ctx.fillStyle = sec <= 1 ? '#ff8898' : (sec <= 2 ? '#ffd479' : '#88dda8');
@@ -29538,6 +29963,16 @@
     setSpeed(gameSpeed === 1 ? 2 : (gameSpeed === 2 ? 3 : 1));
   };
 
+  // 🤖 자동진행 토글 — ON이면 카드 스마트 자동선택 + 라운드 자동시작 (게임오버 시 정지)
+  let autoPlay = false;
+  function setAutoPlay(on) {
+    autoPlay = !!on;
+    const b = document.getElementById('autoBtn');
+    if (b) { b.classList.toggle('active', autoPlay); b.textContent = autoPlay ? '🤖 ON' : '🤖 AUTO'; }
+    try { META.prefAutoPlay = autoPlay; saveMeta(); } catch (e) {}
+  }
+  { const _ab = document.getElementById('autoBtn'); if (_ab) _ab.onclick = () => setAutoPlay(!autoPlay); }
+
   // ===== Pause / Reset 버튼 (모바일에서 키보드 없을 때) =====
   function togglePause() {
     paused = !paused;
@@ -29554,7 +29989,7 @@
     const mk = el => el ? { el, parent: el.parentNode, before: el.nextSibling } : null;
     _hudCap = {
       // DOM 원래 순서로 캡처 → 가로 복원 시 푸터 버튼 순서 보존
-      nodes: ['s-round','s-gold','s-enemies','s-enemybar','s-time','s-timebar','pauseBtn','resetBtn','menuBtn','speedCycle'].map(g).map(mk).filter(Boolean),
+      nodes: ['s-round','s-gold','s-enemies','s-enemybar','s-time','s-timebar','pauseBtn','resetBtn','menuBtn','speedCycle','autoBtn'].map(g).map(mk).filter(Boolean),
       rows: [
         g('s-round') && g('s-round').closest('.row'),
         g('s-gold') && g('s-gold').closest('.row'),
@@ -29609,6 +30044,7 @@
       hud.style.display = 'none';
     }
     try { setSpeed(gameSpeed); } catch (e) {}
+    try { setAutoPlay(!!(META && META.prefAutoPlay)); } catch (e) {}
   }
   // 🛸 v606 — 상단 ▾ 트레이 토글
   (function(){ const tb = document.getElementById('th-tray-btn'); if (tb) tb.onclick = () => { const t = document.getElementById('th-tray'); if (!t) return; const open = t.classList.toggle('open'); tb.classList.toggle('open', open); }; })();
@@ -30145,11 +30581,12 @@
     // 새 화면은 기존 _screen-fade-in 으로 자동 등장, 이전 화면은 inline display 로 잠시 유지하며 페이드 아웃
     const prevScreen = currentScreen;
     const modeScreenEl = document.getElementById('modeScreen');
+    const coreMgrEl = document.getElementById('coreMgrScreen');
     const globalRankEl = document.getElementById('globalRankScreen');
     const abilityPermaEl = document.getElementById('abilityPerma');
     const allScreens = [menuEl, codexEl, recordsEl, recordDetailEl, shopEl,
       modeScreenEl, characterScreenEl, achievementsScreenEl, difficultyScreenEl,
-      gachaScreenEl, gachaResultScreenEl, gachaTuningScreenEl, evoTreeScreenEl, evoDetailScreenEl, globalRankEl, abilityPermaEl].filter(Boolean);
+      gachaScreenEl, gachaResultScreenEl, gachaTuningScreenEl, evoTreeScreenEl, evoDetailScreenEl, globalRankEl, abilityPermaEl, coreMgrEl].filter(Boolean);
     const outgoing = (prevScreen && prevScreen !== name)
       ? allScreens.find(s => s.classList.contains('show'))
       : null;
@@ -30169,6 +30606,7 @@
     recordDetailEl.classList.toggle('show', name === 'recordDetail');
     shopEl.classList.toggle('show', name === 'shop');
     if (modeScreenEl) modeScreenEl.classList.toggle('show', name === 'mode');
+    if (coreMgrEl) coreMgrEl.classList.toggle('show', name === 'coreMgr');
     characterScreenEl.classList.toggle('show', name === 'character');
     achievementsScreenEl.classList.toggle('show', name === 'achievements');
     difficultyScreenEl.classList.toggle('show', name === 'difficulty');
@@ -30206,6 +30644,7 @@
     }
     if (name === 'menu') {
       refreshMenuButtons();
+      try { refreshWeeklyPanel(); } catch (e) {}   // 🌀📋 v614 — 주간 모디파이어 + 일일 임무 패널
       if (typeof refreshMenuNickname === 'function') refreshMenuNickname();   // 🎖️ 함장 레벨/XP/닉 갱신(게임 후 XP 반영)
       if (typeof maybeShowPromotion === 'function') setTimeout(() => { try { maybeShowPromotion(); } catch (e) {} }, 500);   // 🎖️ 진급 시 시네마틱
       if (typeof refreshMenuHero === 'function') refreshMenuHero();  // 로테이션 간판 캐릭터 (진입 1회)
@@ -30322,6 +30761,7 @@
   }
   try { refreshMenuHero(); } catch (e) {}   // 🛰️ 초기 로드 1회 (메뉴가 정적 show로 뜨고 init은 showScreen('menu') 미호출)
   try { refreshMenuNickname(); } catch (e) {}   // 🎖️ 함장 크리덴셜 초기 1회
+  try { refreshWeeklyPanel(); } catch (e) {}   // 🌀📋 v614 — 주간 모디파이어 + 일일 임무 초기 1회 (같은 이유)
 
   // 🎴 v221 — 메뉴 캐릭터 미리보기 (카드 스타일)
   //   이미지 있으면 이미지 + 텍스트, 없으면 텍스트만. 카드 색상은 등급별/캐릭터별 자동.
@@ -30425,6 +30865,17 @@
       const n = parseInt(m[1], 10);
       addCrystals(n);
       cheatFeedback(`💎 결정 +${n} (현재: ${META.crystals})`);
+      return;
+    }
+    // 🔩 gear <slot> <rarity> — 테스트용 코어 부여+장착 (예: gear offense epic)
+    m = cmd.match(/^gear(?:\s+(\w+))?(?:\s+(\w+))?$/);
+    if (m) {
+      const slot = GEAR_SLOTS.includes(m[1]) ? m[1] : 'offense';
+      const rarity = GEAR_RARITY.includes(m[2]) ? m[2] : 'epic';
+      const item = createGear(slot, rarity);
+      const g = _ensureGear(); g.inv.push(item); g.equipped[slot] = item.id;
+      saveMeta();
+      cheatFeedback(`🔩 ${GEAR_RARITY_LABEL[rarity]} ${GEAR_SLOT_LABEL[slot]} 코어 장착: ` + item.lines.map(l => `${l.label} +${l.flat ? l.val : Math.round(l.val*100)+'%'}(T${l.tier})`).join(', '));
       return;
     }
     // stardust N / s N
@@ -30759,6 +31210,10 @@
   document.getElementById('recordsBack').onclick = () => showScreen('menu');
   document.getElementById('recordDetailBack').onclick = () => showScreen('records');
   document.getElementById('shopBtn').onclick = () => { buildShop(); showScreen('shop'); };
+  // 🔩 전술 코어 관리 화면 배선
+  { const b = document.getElementById('coreMgrBtn'); if (b) b.onclick = () => openCoreMgr(); }
+  { const b = document.getElementById('coreMgrBack'); if (b) b.onclick = () => showScreen('menu'); }
+  { const b = document.getElementById('cm-charbtn'); if (b) b.onclick = () => _cmOpenCharPop(); }
   document.getElementById('shopBack').onclick = () => showScreen('menu');
   // ⚙ 설정 모달 (v218)
   const _settingsBtn = document.getElementById('settingsBtn');
@@ -31904,7 +32359,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 613;
+  const APP_VERSION = 623;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
@@ -32382,6 +32837,189 @@
     el.onclick = function () { _evoTreeSelect(kind, id); };
     return el;
   }
+  // 🔩 전술 코어 — 일러스트 양옆 슬롯 + 인벤토리 그리드 (계정 공용, 캐릭터 상세)
+  const _GEAR_RARCOL = { common:'#9aa3b3', rare:'#7ad7ff', epic:'#c98bff' };
+  const _GEAR_SLOTICO = { offense:'🔥', targeting:'🎯', supply:'💰', control:'⚙️' };
+  function _gearFlankSlot(slot, g) {
+    const id = g.equipped[slot];
+    const item = (id != null) ? g.inv.find(x => x.id === id) : null;
+    const ico = _GEAR_SLOTICO[slot];
+    if (item) {
+      const col = _GEAR_RARCOL[item.rarity] || '#9aa3b3';
+      return `<div class="gear-fslot filled" data-slot="${slot}" style="border-color:${col};box-shadow:0 0 10px ${col}55" title="탭하면 해제"><span class="gear-fslot-ico">${ico}</span><span class="gear-fslot-lv" style="color:${col}">${GEAR_RARITY_LABEL[item.rarity] || ''}</span></div>`;
+    }
+    return `<div class="gear-fslot empty" data-slot="${slot}"><span class="gear-fslot-ico">${ico}</span><span class="gear-fslot-lv">${GEAR_SLOT_LABEL[slot]}</span></div>`;
+  }
+  function _gearInvHtml(g) {
+    if (!g.inv.length) return `<div class="gear-inv-empty">보유한 코어가 없습니다.<br>플레이로 획득할 수 있어요 (드랍 예정).</div>`;
+    const rOrd = { epic:0, rare:1, common:2 };
+    const inv = g.inv.slice().sort((a, b) => GEAR_SLOTS.indexOf(a.slot) - GEAR_SLOTS.indexOf(b.slot) || (rOrd[a.rarity] || 9) - (rOrd[b.rarity] || 9));
+    let h = '<div class="gear-inv">';
+    for (const it of inv) {
+      const col = _GEAR_RARCOL[it.rarity] || '#9aa3b3';
+      const on = g.equipped[it.slot] === it.id;
+      const lines = it.lines.map(l => `<div class="gear-line"><span>${l.label}</span><b>${l.flat ? '+' + l.val + 's' : '+' + Math.round(l.val * 100) + '%'}</b></div>`).join('');
+      h += `<div class="gear-inv-item${on ? ' on' : ''}" data-id="${it.id}" style="border-color:${col}"><div class="gear-inv-head"><span class="gear-fslot-ico">${_GEAR_SLOTICO[it.slot]}</span><span class="gear-slot-name">${GEAR_SLOT_LABEL[it.slot]}</span><span class="gear-slot-rar" style="color:${col}">${GEAR_RARITY_LABEL[it.rarity]}</span>${on ? '<span class="gear-on-badge">장착</span>' : ''}</div><div class="gear-lines">${lines}</div></div>`;
+    }
+    return h + '</div>';
+  }
+  // 슬롯 오버레이 + 인벤을 host에 채우고 클릭(장착/해제) 배선. 장착 변경 시 자기 자신 재호출(스크롤 보존).
+  function _gearRenderDetail() {
+    const flank = document.getElementById('gear-flank-host');
+    const invHost = document.getElementById('gear-inv-host');
+    const g = _ensureGear();
+    if (flank) flank.innerHTML = `<div class="gear-flank-col">${_gearFlankSlot('offense', g)}${_gearFlankSlot('supply', g)}</div><div class="gear-flank-col">${_gearFlankSlot('targeting', g)}${_gearFlankSlot('control', g)}</div>`;
+    if (invHost) invHost.innerHTML = _gearInvHtml(g);
+    if (flank) flank.querySelectorAll('.gear-fslot.filled').forEach(el => { el.onclick = () => { const id = _ensureGear().equipped[el.dataset.slot]; if (id != null) _openGearCore(id); }; });
+    if (invHost) invHost.querySelectorAll('.gear-inv-item').forEach(el => { el.onclick = () => _openGearCore(+el.dataset.id); });
+  }
+  // ===== 🔩 코어 관리 모달 (장착/해제 · 재설정(리롤·꽝) · 분해) =====
+  const GEAR_REROLL_COST = { common:6, rare:12, epic:25 };   // 하드코어
+  const GEAR_DISM_REFUND = { common:1, rare:3, epic:8 };
+  let _gearModalId = null, _gearRerollPending = null;
+  function _openGearCore(id) {
+    _gearModalId = id; _gearRerollPending = null;
+    let ov = document.getElementById('gearCoreModal');
+    if (!ov) { ov = document.createElement('div'); ov.id = 'gearCoreModal'; ov.className = 'gear-modal-ov'; ov.onclick = (e) => { if (e.target === ov) _closeGearCore(); }; document.body.appendChild(ov); }
+    ov.style.display = 'flex';
+    _renderGearCore();
+  }
+  function _closeGearCore() { const ov = document.getElementById('gearCoreModal'); if (ov) ov.style.display = 'none'; _gearModalId = null; _gearRerollPending = null; }
+  function _gearLineRow(l) { return `<div class="gcm-line"><span class="gcm-tier t${l.tier}">T${l.tier}</span><span class="gcm-lbl">${l.label}</span><b>${l.flat ? '+' + l.val + 's' : '+' + Math.round(l.val * 100) + '%'}</b></div>`; }
+  function _renderGearCore() {
+    const ov = document.getElementById('gearCoreModal'); if (!ov) return;
+    const g = _ensureGear();
+    const it = g.inv.find(x => x.id === _gearModalId);
+    if (!it) { _closeGearCore(); return; }
+    const col = _GEAR_RARCOL[it.rarity] || '#9aa3b3';
+    const equipped = g.equipped[it.slot] === it.id;
+    const cost = GEAR_REROLL_COST[it.rarity] || 10;
+    const refund = GEAR_DISM_REFUND[it.rarity] || 1;
+    const shards = META.starShards || 0;
+    let h = `<div class="gear-modal" style="border-color:${col}"><div class="gcm-head"><span class="gcm-ico">${_GEAR_SLOTICO[it.slot]}</span><span class="gcm-name">${GEAR_SLOT_LABEL[it.slot]} 코어</span><span class="gcm-rar" style="color:${col}">${GEAR_RARITY_LABEL[it.rarity]}${equipped ? ' · 장착중' : ''}</span><button class="gcm-x" data-act="close">✕</button></div><div class="gcm-body"><div class="gcm-col"><div class="gcm-col-t">현재 잠재능력</div>${it.lines.map(_gearLineRow).join('')}</div>`;
+    if (_gearRerollPending) h += `<div class="gcm-arrow">→</div><div class="gcm-col new"><div class="gcm-col-t">새 잠재능력</div>${_gearRerollPending.map(_gearLineRow).join('')}</div>`;
+    h += `</div>`;
+    if (_gearRerollPending) {
+      h += `<div class="gcm-actions"><button class="gcm-btn apply" data-act="applyRoll">✅ 교체 적용</button><button class="gcm-btn" data-act="keepRoll">유지 (되돌리기)</button></div>`;
+    } else {
+      h += `<div class="gcm-shards">💠 보유 별조각 ${shards}</div><div class="gcm-actions"><button class="gcm-btn eq" data-act="equip">${equipped ? '🔓 해제' : '🔩 장착'}</button><button class="gcm-btn roll" data-act="reroll"${shards < cost ? ' disabled' : ''}>🎲 재설정 <span class="gcm-cost">💠${cost}</span></button><button class="gcm-btn dism" data-act="dismantle">🔨 분해 <span class="gcm-cost">→💠${refund}</span></button></div>`;
+    }
+    h += `</div>`;
+    ov.innerHTML = h;
+    ov.querySelectorAll('[data-act]').forEach(b => b.onclick = () => _gearCoreAction(b.dataset.act));
+  }
+  function _gearCoreAction(act) {
+    if (act === 'close') return _closeGearCore();
+    const g = _ensureGear();
+    const it = g.inv.find(x => x.id === _gearModalId); if (!it) return;
+    if (act === 'equip') {
+      g.equipped[it.slot] = (g.equipped[it.slot] === it.id) ? null : it.id;
+      saveMeta(); _renderGearCore(); _gearRenderDetail(); SFX.click && SFX.click();
+    } else if (act === 'reroll') {
+      const cost = GEAR_REROLL_COST[it.rarity] || 10;
+      if (!spendShards(cost)) { toast('💠 별조각이 부족합니다'); return; }
+      _gearRerollPending = it.lines.map(() => _gearRollLine(it.slot));   // 같은 라인 수, 새로 롤(꽝 다수)
+      SFX.click && SFX.click(); _renderGearCore();
+    } else if (act === 'applyRoll') {
+      if (_gearRerollPending) { it.lines = _gearRerollPending; it.v = (it.v || 1) + 1; _gearRerollPending = null; saveMeta(); _renderGearCore(); _gearRenderDetail(); toast('✅ 잠재능력 교체됨'); }
+    } else if (act === 'keepRoll') {
+      _gearRerollPending = null; _renderGearCore();
+    } else if (act === 'dismantle') {
+      if (g.equipped[it.slot] === it.id) g.equipped[it.slot] = null;
+      const refund = GEAR_DISM_REFUND[it.rarity] || 1;
+      g.inv = g.inv.filter(x => x.id !== it.id);
+      grantShards(refund); saveMeta(); _closeGearCore(); _gearRenderDetail(); toast(`🔨 분해 → 💠${refund} 별조각`);
+    }
+  }
+  // ===== 🔩 전용 "코어 관리" 화면 (좌:리스트 / 중:캐릭터 / 우:옵션) =====
+  let _cmSel = null;
+  function openCoreMgr() {
+    const g = _ensureGear();
+    if (_cmSel == null || !g.inv.find(x => x.id === _cmSel)) _cmSel = g.inv.length ? g.inv[0].id : null;
+    _gearRerollPending = null;
+    showScreen('coreMgr');
+    _renderCoreMgr();
+  }
+  function _cmCharIllust(id) {
+    if (!id || id === 'standard') return `<div class="cm-char-ph">🔰</div>`;
+    const ch = CHARACTERS[id] || {}; const emoji = ch.name ? ch.name.split(' ')[0] : '⭐';
+    return `<img src="./icons/illust/${id}.png" alt="" onerror="this.style.display='none';this.parentElement.classList.add('noimg');this.parentElement.dataset.emoji='${emoji}';">`;
+  }
+  function _renderCoreMgr() {
+    const g = _ensureGear();
+    const charEl = document.getElementById('cm-char');
+    if (charEl) { charEl.className = 'cm-char'; charEl.innerHTML = _cmCharIllust(selectedCharacter); }
+    const nameEl = document.getElementById('cm-charname');
+    if (nameEl) { const ch = CHARACTERS[selectedCharacter] || {}; nameEl.textContent = ch.name || '기본 도트 타워'; }
+    const slotsEl = document.getElementById('cm-slots');
+    if (slotsEl) {
+      slotsEl.innerHTML = GEAR_SLOTS.map(slot => {
+        const id = g.equipped[slot]; const it = id != null ? g.inv.find(x => x.id === id) : null;
+        const col = it ? (_GEAR_RARCOL[it.rarity] || '#9aa3b3') : '#3a4256';
+        return `<div class="cm-slot ${it ? 'filled' : 'empty'}" data-id="${it ? it.id : ''}" style="border-color:${col}">${_GEAR_SLOTICO[slot]}</div>`;
+      }).join('');
+      slotsEl.querySelectorAll('.cm-slot.filled').forEach(el => el.onclick = () => { _cmSel = +el.dataset.id; _gearRerollPending = null; _renderCoreMgr(); });
+    }
+    const listEl = document.getElementById('cm-list');
+    if (listEl) {
+      if (!g.inv.length) listEl.innerHTML = `<div class="cm-empty">보유 코어 없음<br>플레이로 획득</div>`;
+      else {
+        const rOrd = { epic:0, rare:1, common:2 };
+        const inv = g.inv.slice().sort((a, b) => GEAR_SLOTS.indexOf(a.slot) - GEAR_SLOTS.indexOf(b.slot) || (rOrd[a.rarity] || 9) - (rOrd[b.rarity] || 9));
+        listEl.innerHTML = inv.map(it => {
+          const col = _GEAR_RARCOL[it.rarity] || '#9aa3b3';
+          const on = g.equipped[it.slot] === it.id, sel = it.id === _cmSel;
+          return `<div class="cm-litem${sel ? ' sel' : ''}" data-id="${it.id}" style="--rc:${col}"><span class="cm-li-ico">${_GEAR_SLOTICO[it.slot]}</span><span class="cm-li-info"><b style="color:${col}">${GEAR_RARITY_LABEL[it.rarity]}</b> ${GEAR_SLOT_LABEL[it.slot]}</span>${on ? '<span class="cm-li-on">E</span>' : ''}</div>`;
+        }).join('');
+        listEl.querySelectorAll('.cm-litem').forEach(el => el.onclick = () => { _cmSel = +el.dataset.id; _gearRerollPending = null; _renderCoreMgr(); });
+      }
+    }
+    const detEl = document.getElementById('cm-detail');
+    if (detEl) {
+      const it = g.inv.find(x => x.id === _cmSel);
+      detEl.innerHTML = it ? _cmCoreDetailHtml(it, g) : `<div class="cm-empty">← 코어를 선택하세요</div>`;
+      detEl.querySelectorAll('[data-act]').forEach(b => b.onclick = () => _cmAction(b.dataset.act));
+    }
+    const sh = document.getElementById('cm-shardhud');
+    if (sh) sh.textContent = `💠 ${META.starShards || 0}`;
+  }
+  function _cmCoreDetailHtml(it, g) {
+    const col = _GEAR_RARCOL[it.rarity] || '#9aa3b3';
+    const equipped = g.equipped[it.slot] === it.id;
+    const cost = GEAR_REROLL_COST[it.rarity] || 10, refund = GEAR_DISM_REFUND[it.rarity] || 1;
+    const shards = META.starShards || 0;
+    let h = `<div class="cm-d-head" style="border-color:${col}"><span class="cm-d-ico">${_GEAR_SLOTICO[it.slot]}</span><div><div class="cm-d-name">${GEAR_SLOT_LABEL[it.slot]} 코어</div><div class="cm-d-rar" style="color:${col}">${GEAR_RARITY_LABEL[it.rarity]}${equipped ? ' · 장착중' : ''}</div></div></div><div class="cm-d-cols"><div class="cm-d-col"><div class="cm-d-colt">현재 잠재능력</div>${it.lines.map(_gearLineRow).join('')}</div>`;
+    if (_gearRerollPending) h += `<div class="cm-d-arrow">→</div><div class="cm-d-col new"><div class="cm-d-colt">새 잠재능력</div>${_gearRerollPending.map(_gearLineRow).join('')}</div>`;
+    h += `</div>`;
+    if (_gearRerollPending) h += `<div class="cm-d-acts"><button class="gcm-btn apply" data-act="applyRoll">✅ 교체 적용</button><button class="gcm-btn" data-act="keepRoll">유지 (되돌리기)</button></div>`;
+    else h += `<div class="cm-d-acts"><button class="gcm-btn eq" data-act="equip">${equipped ? '🔓 해제' : '🔩 장착'}</button><button class="gcm-btn roll" data-act="reroll"${shards < cost ? ' disabled' : ''}>🎲 재설정 <span class="gcm-cost">💠${cost}</span></button><button class="gcm-btn dism" data-act="dismantle">🔨 분해 <span class="gcm-cost">→💠${refund}</span></button></div>`;
+    return h;
+  }
+  function _cmAction(act) {
+    const g = _ensureGear();
+    const it = g.inv.find(x => x.id === _cmSel); if (!it) return;
+    if (act === 'equip') { g.equipped[it.slot] = (g.equipped[it.slot] === it.id) ? null : it.id; saveMeta(); _renderCoreMgr(); SFX.click && SFX.click(); }
+    else if (act === 'reroll') { const cost = GEAR_REROLL_COST[it.rarity] || 10; if (!spendShards(cost)) { toast('💠 별조각이 부족합니다'); return; } _gearRerollPending = it.lines.map(() => _gearRollLine(it.slot)); SFX.click && SFX.click(); _renderCoreMgr(); }
+    else if (act === 'applyRoll') { if (_gearRerollPending) { it.lines = _gearRerollPending; it.v = (it.v || 1) + 1; _gearRerollPending = null; saveMeta(); _renderCoreMgr(); toast('✅ 잠재능력 교체됨'); } }
+    else if (act === 'keepRoll') { _gearRerollPending = null; _renderCoreMgr(); }
+    else if (act === 'dismantle') { if (g.equipped[it.slot] === it.id) g.equipped[it.slot] = null; const refund = GEAR_DISM_REFUND[it.rarity] || 1; g.inv = g.inv.filter(x => x.id !== it.id); grantShards(refund); _cmSel = g.inv.length ? g.inv[0].id : null; _gearRerollPending = null; saveMeta(); _renderCoreMgr(); toast(`🔨 분해 → 💠${refund} 별조각`); }
+  }
+  function _cmOpenCharPop() {
+    const pop = document.getElementById('cm-charpop'); if (!pop) return;
+    const ids = ['standard'].concat(Object.keys(CHARACTERS).filter(id => id !== 'standard' && (typeof isCharUnlocked !== 'function' || isCharUnlocked(id))));
+    pop.innerHTML = `<div class="cm-pop-inner"><div class="cm-pop-head">캐릭터 변경 <button class="gcm-x" id="cm-pop-x">✕</button></div><div class="cm-pop-grid">` + ids.map(id => {
+      const ch = CHARACTERS[id] || {}; const on = id === selectedCharacter;
+      const thumb = (id === 'standard') ? '🔰' : `<img src="./icons/illust/${id}.png" alt="" onerror="this.replaceWith(document.createTextNode('⭐'))">`;
+      return `<div class="cm-pop-c${on ? ' on' : ''}" data-char="${id}"><div class="cm-pop-thumb">${thumb}</div><div class="cm-pop-name">${ch.name || '기본 타워'}</div></div>`;
+    }).join('') + `</div></div>`;
+    pop.classList.add('show');
+    pop.onclick = (e) => { if (e.target === pop) pop.classList.remove('show'); };
+    const x = document.getElementById('cm-pop-x'); if (x) x.onclick = () => pop.classList.remove('show');
+    pop.querySelectorAll('.cm-pop-c').forEach(el => el.onclick = () => {
+      selectedCharacter = el.dataset.char; META.selectedCharacter = el.dataset.char; saveMeta();
+      pop.classList.remove('show'); _renderCoreMgr(); SFX.click && SFX.click();
+    });
+  }
   function _evoShowDetail(kind, id) {
     const illustEl = document.getElementById('evo-ds-illust');
     const bodyEl = document.getElementById('evo-ds-body');
@@ -32391,8 +33029,10 @@
     _evoDetailFrom = (currentScreen && currentScreen !== 'evoDetail') ? currentScreen : 'evoTree';
     const gc = EVO_GRADE[kind] || EVO_GRADE.base;
     const unlocked = (kind === 'base') ? true : _evoTowerUnlocked(id, kind);
+    const _showGear = (kind !== 'R');   // 🔩 장비: 일러스트 있는 상세(기본/캐릭터/SR/SSR)에 표시
     illustEl.style.setProperty('--gcA', (typeof _hexA === 'function') ? _hexA(gc.color, 0.30) : 'rgba(120,160,255,0.26)');
     let illustHTML = '', displayName = '', gradeLabel = gc.label, body = '';
+    // (전술 코어 UI는 전용 '코어 관리' 화면으로 이관됨 — 캐릭터 상세엔 표시 안 함)
 
     if (kind === 'R') {
       const rt = R_TOWERS[id] || {};
@@ -32431,6 +33071,7 @@
       } else if (kind === 'base') {
         body += `<div class="evo-d-sec-title">기본 능력</div><div class="evo-stage-grid">${_evoStageCard('shot', '시작')}</div>`;
       }
+      // 🔩 전술 코어 인벤토리는 body 최상단으로 이동됨 (조작 우선 노출 — _showGear 시 body 초기값에 주입)
       // 📖 v613 — 캐릭터 스토리 칩 (보유 캐릭만 노출, 그 안에서는 ★ 돌파로만 게이트 — 조합/능력 진행과 무관)
       if (isChar && unlocked && ch.story && ch.story.length) {
         const cstars2 = (typeof getCharStars === 'function') ? getCharStars(id) : 0;
@@ -33716,9 +34357,18 @@
   const FRAME_MS = 1000 / FPS;
   const MAX_CATCHUP_FRAMES = 30 * 60 * FPS; // 최대 30분치 catch-up
 
+  // 🤖 AUTO: 대기 중인 카드 모달을 딜레이 없이 즉시 연쇄 자동선택 (백그라운드/캐치업 전용)
+  function _autoResolveCards() {
+    let guard = 0;
+    while (autoPlay && state.levelUpChoices && !state.gameOver && guard++ < 30) {
+      applyLevelUpChoice(bestCardIndex(state.levelUpChoices));
+    }
+  }
   function runGameTick() {
     if (currentScreen !== 'game') return;
-    if (paused || state.gameOver || state.levelUpChoices) return;
+    if (paused || state.gameOver) return;
+    _autoResolveCards();                 // 🤖 AUTO면 대기 카드 즉시 처리
+    if (state.levelUpChoices) return;    // 비-AUTO거나 미해결 모달 → 멈춤 (기존 동작 보존)
     const steps = gameSpeed || 1;
     for (let i = 0; i < steps; i++) update();
   }
@@ -33767,8 +34417,8 @@
           for (let s = 0; s < steps; s++) update();
           if (state.gameOver) break;
           if (state.levelUpChoices) {
-            SFX.levelup();
-            break; // 레벨업 모달 뜨면 catch-up 중단 — 유저가 처리
+            if (autoPlay) { _autoResolveCards(); }   // 🤖 AUTO: 즉시 자동선택 후 catch-up 계속
+            else { SFX.levelup(); break; }           // 비-AUTO: 유저 처리 위해 중단
           }
         }
       }
