@@ -6749,6 +6749,9 @@
       e._pol = (n % 2 === 0) ? 1 : -1; e._polUntil = state.t + 300; n++;
     }
   }
+  // 🎭 트리나 — _phantomDmg 플래그를 쓰는 능력들. standingOvation 이 재생 대상에서 제외해야 한다.
+  //    (공유 플래그라, 재생된 능력의 finally 가 바깥 finally 보다 먼저 플래그를 꺼버린다.)
+  const TRINA_PHANTOM_IDS = new Set(['phantomStage', 'chromaticSplit', 'encore', 'standingOvation']);
   const ABILITY_DEFS = {
     shot: {
       name: '샷', single: true, baseCost: 30, color: '#ffe28a',
@@ -17935,7 +17938,7 @@
               CX = p.x; CY = p.y;
               for (const t of state.tower.abilities) {
                 const def = ABILITY_DEFS[t.id];
-                if (!def || def.isPassive || t.id === 'standingOvation') continue;
+                if (!def || def.isPassive || TRINA_PHANTOM_IDS.has(t.id)) continue;
                 try { if (def.tick) def.tick(t); } catch (err) {}
               }
             } finally {
