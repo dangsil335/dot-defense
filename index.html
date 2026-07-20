@@ -17978,7 +17978,12 @@
         ab.exp = Math.min(ab.maxExp, ab.exp + 1);
         // ⭐ 별 퍽 — 임계 인원이 낮아질수록 자주 터진다
         const need = Math.max(2, 6 - Math.floor(ab.level / 3) - permaCount('longExposure'));
-        const inFrame = state.enemies.filter(e => e.hp > 0 && (() => { const [x, y] = enemyXY(e); return Math.abs(x - CX) < 150 && Math.abs(y - CY) < 150; })());
+        const inFrame = [];
+        for (const e of state.enemies) {
+          if (e.hp <= 0) continue;
+          const [x, y] = enemyXY(e);
+          if (Math.abs(x - CX) < 150 && Math.abs(y - CY) < 150) inFrame.push(e);
+        }
         const full = ab.exp >= ab.maxExp;
         if (!full && inFrame.length < need) return;
         if (ab.exp < 30) return;
@@ -18028,7 +18033,7 @@
             if (dx * dx + dy * dy < 24 * 24) damageEnemy(e, dmg / 10);
           }
         }
-        compactInPlace(arr, g => g.life > 0);
+        compactInPlace(arr, _alivePredLife);
         if (--ab.cooldown > 0) return;
         ab.cooldown = Math.max(60, 120 - ab.level * 3);
         // 프레임 안의 적 위치를 필름에 태운다
@@ -18071,9 +18076,25 @@
         for (const c of ab.cells) {
           if (c.fl > 0) c.fl--;
           if (c.cd > 0) { c.cd--; continue; }
-          const hit = state.enemies.filter(e => e.hp > 0 && (() => { const [x, y] = enemyXY(e); return Math.abs(x - c.x) < 52 && Math.abs(y - c.y) < 52; })());
-          if (hit.length < 2) continue;
-          for (const e of hit) damageEnemy(e, dmg);
+          // 🚀 per-cell 배열/클로저 없이 state.enemies 를 직접 2회 스캔 (카운트→적용).
+          //    길이를 루프 시작 시 한 번만 캡처해 filter()의 스냅샷 시맨틱과 동일하게 유지
+          //    (스캔 도중 분열 등으로 새로 push된 개체는 이번 셀 판정에 섞이지 않음).
+          const enemies = state.enemies;
+          const len = enemies.length;
+          let hitCount = 0;
+          for (let i = 0; i < len; i++) {
+            const e = enemies[i];
+            if (e.hp <= 0) continue;
+            const [ex, ey] = enemyXY(e);
+            if (Math.abs(ex - c.x) < 52 && Math.abs(ey - c.y) < 52) hitCount++;
+          }
+          if (hitCount < 2) continue;
+          for (let i = 0; i < len; i++) {
+            const e = enemies[i];
+            if (e.hp <= 0) continue;
+            const [ex, ey] = enemyXY(e);
+            if (Math.abs(ex - c.x) < 52 && Math.abs(ey - c.y) < 52) damageEnemy(e, dmg);
+          }
           c.cd = Math.max(40, 90 - ab.level * 2); c.fl = 10;
         }
       },
