@@ -22162,6 +22162,22 @@
       ancientRelicPool: ['blanchePrism', 'kairaFang'],
       ancientRelicRate: 0.005,
     },
+    {
+      id: 'ferroPole',
+      name: '🧲 페리아 픽업',
+      desc: '두 개의 극 — 단독 픽업',
+      bannerImg: './icons/gacha-ferroPole.jpg',
+      pool: {
+        SSR: ['feria'],                               // 단독 픽업
+        SR:  _GACHA_SR_ALL,
+        R:   [],
+      },
+      rates: { SR: 0.05, SSR: 0.01 },
+      featured: 'feria',
+      ancientRelic: 'ferroCore',
+      ancientRelicPool: ['ferroCore'],
+      ancientRelicRate: 0.005,
+    },
   ];
   // 현재 선택된 배너 인덱스 (META 에 저장)
   function getCurrentBannerIdx() {
@@ -31846,10 +31862,10 @@
     sun:        { title: '백열의 태양',   ability: 'meteor',      sr: ['levina', 'solar', 'lara'] },
     fool:       { title: '방랑의 바보',   ability: 'boomerang',   sr: ['cardista', 'marine', 'chloe'] },
     magician:   { title: '변성의 마법사', ability: 'plasmaArc',   sr: ['levina', 'marine', 'galatea'] },
-    hierophant: { title: '신성의 교황',   ability: 'beam',        sr: ['luna', 'sakura', 'amy'] },
-    justice:    { title: '심판의 정의',   ability: 'frost',       sr: ['luna', 'gravitas'] },
-    empress:    { title: '풍요의 여황제', ability: 'clone',       sr: ['cardista', 'marine', 'lara'] },
-    world:      { title: '완성의 세계',   ability: 'orbital',     sr: ['luna', 'gravitas'] },
+    hierophant: { title: '신성의 교황',   ability: 'beam',        sr: ['luna', 'sakura', 'amy', 'iris'] },
+    justice:    { title: '심판의 정의',   ability: 'frost',       sr: ['luna', 'gravitas', 'iris'] },
+    empress:    { title: '풍요의 여황제', ability: 'clone',       sr: ['cardista', 'marine', 'lara', 'trina'] },
+    world:      { title: '완성의 세계',   ability: 'orbital',     sr: ['luna', 'gravitas', 'trina'] },
     lovers:     { title: '결속의 연인',   ability: 'missile',     sr: ['luna', 'sakura'] },
     strength:   { title: '야수의 힘',     ability: 'sword',       sr: ['levina', 'sakura', 'galatea'] },
     chariot:    { title: '돌격의 전차',   ability: 'rocketSwarm', sr: ['levina', 'solar', 'chloe'] },
@@ -32100,6 +32116,15 @@
                             lines:['라라: 분신 몇 마리, 무대에 세워줄게.', '카이라: 무리라 — 사냥은 원래 여럿이 하는 거야.'] },
     meteor_kaira:         { sr:'lara',     ssr:'kaira',     axis:'blast', name:'낙하 강습',
                             lines:['라라: 하늘에서 떨궈줄게 — 신호에 맞춰!', '카이라: 떨어지는 순간, 그 위로 도약한다.'] },
+    // ── 🧲 페리아 (자력·쌍극) ── 브릿지: trina·iris
+    clone_feria:          { sr:'trina',    ssr:'feria',     axis:'echo',  name:'복제 자장',
+                            lines:['트리나: 분신 세워둘게 — 자리는 내가 잡아.', '페리아: 좋아. …전부 같은 극으로 묶는다.'] },
+    orbital_feria:        { sr:'trina',    ssr:'feria',     axis:'echo',  name:'궤도 정렬',
+                            lines:['트리나: 궤도는 맞춰뒀어. 신호만 줘.', '페리아: 궤도가 있으면 — 끌어당기기 쉬워지지.'] },
+    frost_feria:          { sr:'iris',     ssr:'feria',     axis:'ice',   name:'정지 노출',
+                            lines:['아이리스: 움직이지 말라니까. 셔터 열어둘게.', '페리아: 멈춘 건 …자석에서 못 벗어나.'] },
+    beam_feria:           { sr:'iris',     ssr:'feria',     axis:'pierce',name:'관통 인화',
+                            lines:['아이리스: 한 줄로 세워줘. 그럼 한 컷에 담겨.', '페리아: 정렬 완료. …꿰뚫는다.'] },
   };
   // 🧬 ③ 계보 공명 — 각성한 것 추적(기기-로컬, META 분리) + 진화트리 도감(떡밥 + 점진공개)
   function _getResonanceSeen() { try { return JSON.parse(localStorage.getItem('_dd_resonance') || '{}') || {}; } catch (e) { return {}; } }
@@ -32153,7 +32178,7 @@
   // SR → SSR 진화 종착 (R25)
   // 무료 진화트리(R→SR→SSR) 전용. 신규 SR도 편입 — 단 _evoTowerUnlocked가 가챠해금 게이팅하므로 무료 유출 없음(가챠로 뽑아야 트리 도달가능).
   //   신규 SR→신규 SSR 브릿지: amy·galatea→blanche / chloe·lara→kaira (계보 공명 축 분배용, R_TOWERS.sr에도 편입됨).
-  const SR_TO_SSR = { marine:'elementia', levina:'elementia', luna:'misaki', gravitas:'misaki', sakura:'sumika', cardista:'sumika', solar:'aria', amy:'blanche', galatea:'blanche', chloe:'kaira', lara:'kaira' };
+  const SR_TO_SSR = { marine:'elementia', levina:'elementia', luna:'misaki', gravitas:'misaki', sakura:'sumika', cardista:'sumika', solar:'aria', amy:'blanche', galatea:'blanche', chloe:'kaira', lara:'kaira', trina:'feria', iris:'feria' };
   // 무료 해금 SR (가챠 불필요 — 무과금 척추)
   const FREE_UNLOCK_SR = ['cardista', 'levina', 'luna'];
   // 업적 → R 타워 해금 매핑 (능력 해금 폐지, 타워 해금으로 일원화)
@@ -34882,7 +34907,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 672;
+  const APP_VERSION = 673;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
