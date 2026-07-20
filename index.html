@@ -17967,6 +17967,162 @@
         ctx.restore(); ctx.globalAlpha = 1;
       },
     },
+    // 📷 아이리스(SR) — 사진 킷 (발사 거부 · 노출 충전 · 임계 섬광)
+    //   ⚠️ 개체당 피해는 노출시간만으로 산정한다. 적 수를 곱하지 않는다.
+    longExposure: {
+      name: '장노출', baseCost: 65, color: '#c0392b', isGachaUnique: true,
+      desc: lv => `발사 안 하고 노출 충전 · 프레임 내 적 ${Math.max(2, 6 - Math.floor(lv / 3) - permaCount('longExposure'))}체 또는 최대 노출 시 섬광 · 피해는 노출시간으로만 산정 · DMG ${18 + lv * 9}`,
+      init(ab) { ab.exp = 0; ab.flash = 0; ab.maxExp = 150; },
+      tick(ab) {
+        if (ab.flash > 0) ab.flash--;
+        ab.exp = Math.min(ab.maxExp, ab.exp + 1);
+        // ⭐ 별 퍽 — 임계 인원이 낮아질수록 자주 터진다
+        const need = Math.max(2, 6 - Math.floor(ab.level / 3) - permaCount('longExposure'));
+        const inFrame = state.enemies.filter(e => e.hp > 0 && (() => { const [x, y] = enemyXY(e); return Math.abs(x - CX) < 150 && Math.abs(y - CY) < 150; })());
+        const full = ab.exp >= ab.maxExp;
+        if (!full && inFrame.length < need) return;
+        if (ab.exp < 30) return;
+        // 개체당 피해 = 노출시간만. 적 수는 대상 수에만 영향.
+        const dmg = (18 + ab.level * 9) * (ab.exp / ab.maxExp);
+        for (const e of inFrame) damageEnemy(e, dmg);
+        ab.flash = 12; ab.exp = 0;
+      },
+      draw(ab) {
+        const p = ab.exp / ab.maxExp;
+        ctx.save();
+        // 조리개 6엽 — 노출이 찰수록 닫힌다
+        ctx.globalAlpha = 0.5; ctx.strokeStyle = '#c0392b'; ctx.lineWidth = 2;
+        const r = 34 - p * 18;
+        for (let i = 0; i < 6; i++) {
+          const a0 = (Math.PI * 2 / 6) * i + p * 0.5;
+          ctx.beginPath();
+          ctx.moveTo(CX + Math.cos(a0) * r, CY + Math.sin(a0) * r);
+          ctx.lineTo(CX + Math.cos(a0 + Math.PI * 2 / 6) * r, CY + Math.sin(a0 + Math.PI * 2 / 6) * r);
+          ctx.stroke();
+        }
+        // 뷰파인더 프레임 + 모서리 브래킷
+        ctx.globalAlpha = 0.28; ctx.strokeStyle = '#d8d8d8'; ctx.lineWidth = 1.5;
+        ctx.strokeRect(CX - 150, CY - 150, 300, 300);
+        if (ab.flash > 0) {
+          ctx.globalCompositeOperation = 'lighter';
+          ctx.globalAlpha = ab.flash / 12 * 0.55; ctx.fillStyle = '#ffffff';
+          ctx.fillRect(CX - 150, CY - 150, 300, 300);
+        }
+        ctx.restore(); ctx.globalAlpha = 1;
+      },
+    },
+    // 📷 기본조합 (장노출+mine) — 과노출
+    overexposed: {
+      name: '과노출', baseCost: 150, color: '#a03028', isCombo: true,
+      desc: lv => `장노출 섬광에 잡힌 적이 흑백 잔상으로 잔류 · 잔상 접촉 지속 DMG ${9 + lv * 5} · 잔상 4s`,
+      init(ab) { ab.cooldown = 0; state._irisGhosts = []; },
+      tick(ab) {
+        const arr = state._irisGhosts || (state._irisGhosts = []);
+        const dmg = 9 + ab.level * 5;
+        for (const g of arr) {
+          g.life--;
+          for (const e of state.enemies) {
+            if (e.hp <= 0) continue;
+            const [ex, ey] = enemyXY(e);
+            const dx = ex - g.x, dy = ey - g.y;
+            if (dx * dx + dy * dy < 24 * 24) damageEnemy(e, dmg / 10);
+          }
+        }
+        compactInPlace(arr, g => g.life > 0);
+        if (--ab.cooldown > 0) return;
+        ab.cooldown = Math.max(60, 120 - ab.level * 3);
+        // 프레임 안의 적 위치를 필름에 태운다
+        let n = 0;
+        for (const e of state.enemies) {
+          if (e.hp <= 0 || n >= 6) continue;
+          const [ex, ey] = enemyXY(e);
+          if (Math.abs(ex - CX) > 150 || Math.abs(ey - CY) > 150) continue;
+          arr.push({ x: ex, y: ey, life: 240 }); n++;
+        }
+      },
+      draw(ab) {
+        const arr = state._irisGhosts || [];
+        ctx.save();
+        for (const g of arr) {
+          const a = Math.min(1, g.life / 60) * 0.4;
+          ctx.globalAlpha = a; ctx.strokeStyle = '#d8d8d8'; ctx.lineWidth = 1.5;
+          ctx.beginPath(); ctx.arc(g.x, g.y, 13, 0, Math.PI * 2); ctx.stroke();
+          ctx.globalAlpha = a * 0.4; ctx.fillStyle = '#8a8a8a';
+          ctx.beginPath(); ctx.arc(g.x, g.y, 11, 0, Math.PI * 2); ctx.fill();
+        }
+        ctx.restore(); ctx.globalAlpha = 1;
+      },
+    },
+    // 📷 4돌파 (과노출+turret) — 컨택트시트
+    contactSheet: {
+      name: '컨택트시트', baseCost: 240, color: '#8a2a24', isCombo: true, isTriple: true,
+      desc: lv => `필드에 프레임 격자 ${4 + Math.floor(lv / 4)}칸 · 각 칸이 자기 임계(2체) 도달 시 독립 발화 · 칸당 DMG ${24 + lv * 11}`,
+      init(ab) { ab.cells = []; },
+      tick(ab) {
+        const n = 4 + Math.floor(ab.level / 4);
+        if (ab.cells.length !== n) {
+          ab.cells = [];
+          for (let i = 0; i < n; i++) {
+            const a = (Math.PI * 2 / n) * i;
+            ab.cells.push({ x: CX + Math.cos(a) * ARENA_R * 0.55, y: CY + Math.sin(a) * ARENA_R * 0.55, cd: 0, fl: 0 });
+          }
+        }
+        const dmg = 24 + ab.level * 11;
+        for (const c of ab.cells) {
+          if (c.fl > 0) c.fl--;
+          if (c.cd > 0) { c.cd--; continue; }
+          const hit = state.enemies.filter(e => e.hp > 0 && (() => { const [x, y] = enemyXY(e); return Math.abs(x - c.x) < 52 && Math.abs(y - c.y) < 52; })());
+          if (hit.length < 2) continue;
+          for (const e of hit) damageEnemy(e, dmg);
+          c.cd = Math.max(40, 90 - ab.level * 2); c.fl = 10;
+        }
+      },
+      draw(ab) {
+        ctx.save();
+        for (const c of ab.cells) {
+          ctx.globalAlpha = c.fl > 0 ? 0.6 : 0.2;
+          ctx.strokeStyle = c.fl > 0 ? '#ffffff' : '#c0392b'; ctx.lineWidth = 1.5;
+          ctx.strokeRect(c.x - 52, c.y - 52, 104, 104);
+          for (const [ox, oy] of [[-52, -52], [52, -52], [-52, 52], [52, 52]]) {
+            ctx.beginPath(); ctx.moveTo(c.x + ox, c.y + oy);
+            ctx.lineTo(c.x + ox * 0.7, c.y + oy); ctx.stroke();
+          }
+        }
+        ctx.restore(); ctx.globalAlpha = 1;
+      },
+    },
+    // 📷 8돌파 (컨택트시트+timeStop) — 현상액
+    developingTray: {
+      name: '현상액', baseCost: 350, color: '#c0392b', isCombo: true, isTriple: true, isEighth: true,
+      desc: lv => `[8돌파] 5s마다 화면 정지 후 모든 잔상 일괄 인화 · 전체 DMG ${50 + lv * 22} + 잔상 1개당 추가 ${6 + lv * 2}`,
+      init(ab) { ab.cooldown = 180; ab.fx = 0; },
+      tick(ab) {
+        if (ab.fx > 0) ab.fx--;
+        if (--ab.cooldown > 0) return;
+        ab.cooldown = Math.max(220, 340 - ab.level * 6);
+        ab.fx = 30;
+        const ghosts = Math.min(20, (state._irisGhosts || []).length);
+        const dmg = (50 + ab.level * 22) + ghosts * (6 + ab.level * 2);
+        for (const e of state.enemies) {
+          if (e.hp <= 0) continue;
+          damageEnemy(e, dmg);
+          e.slowFrames = Math.max(e.slowFrames || 0, 60);
+        }
+        if (state._irisGhosts) state._irisGhosts.length = 0;
+        if (typeof shake === 'function') shake(14, 20);
+      },
+      draw(ab) {
+        if (ab.fx <= 0) return;
+        const p = 1 - ab.fx / 30;
+        ctx.save();
+        ctx.globalAlpha = (1 - p) * 0.35; ctx.fillStyle = '#1a1a1a';
+        ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+        ctx.globalCompositeOperation = 'lighter';
+        ctx.globalAlpha = (1 - p) * 0.7; ctx.strokeStyle = '#c0392b'; ctx.lineWidth = 3;
+        ctx.beginPath(); ctx.arc(CX, CY, p * 300, 0, Math.PI * 2); ctx.stroke();
+        ctx.restore(); ctx.globalAlpha = 1;
+      },
+    },
   };
   // ⭐ 별 해금 능력 매핑 — 캐릭터 4★ / 8★ 도달 시 해금
   const CHAR_STAR_UNLOCKS = {
