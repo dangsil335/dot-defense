@@ -17476,6 +17476,298 @@
         }
       },
     },
+    // 🧲 페리아(SSR) — 자력 킷 (쌍극자장 · 곡선 역선 · 견인/반발) + 별해금 2종
+    //   밸런스: 극성 부여를 최대 20체로 캡 → 쌍 충돌 스캔이 20×20/2=200회로 상한이 걸린다.
+    //   개체당 20프레임 충돌 쿨로 N² 데미지를 N 으로 내린다.
+    polarField: {
+      name: '극성장', baseCost: 65, color: '#3b7fe0', isGachaUnique: true,
+      desc: lv => `적 ${Math.min(20, 4 + lv * 2)}체에 N/S 극성 부여 · 역선 견인 · 같은 극 충돌 파편 DMG ${8 + lv * 4}(개체당 0.33s 쿨)`,
+      init(ab) { ab.cooldown = 0; ab.rot = 0; ab.nx = CX; ab.ny = CY; ab.sx = CX; ab.sy = CY; },
+      tick(ab) {
+        ab.rot += 0.012;
+        const pd = 44 + ab.level * 2;
+        ab.nx = CX + Math.cos(ab.rot) * pd; ab.ny = CY + Math.sin(ab.rot) * pd;
+        ab.sx = CX - Math.cos(ab.rot) * pd; ab.sy = CY - Math.sin(ab.rot) * pd;
+        // 극성 부여 (상한 20체)
+        if (--ab.cooldown <= 0) {
+          const cap = Math.min(20, 4 + ab.level * 2 + permaCount('polarField'));
+          let n = 0;
+          for (const e of state.enemies) {
+            if (e.hp <= 0) continue;
+            if (e._pol && e._polUntil > state.t) { n++; continue; }
+            if (n >= cap) break;
+            e._pol = (n % 2 === 0) ? 1 : -1; e._polUntil = state.t + 300; n++;
+          }
+          ab.cooldown = 34;
+        }
+        // 견인 — 극성별로 반경을 밀거나 당긴다
+        const charged = [];
+        for (const e of state.enemies) {
+          if (e.hp <= 0 || !e._pol) continue;
+          if (e._polUntil <= state.t) { e._pol = 0; continue; }
+          e.radius = Math.max(34, e.radius + (e._pol > 0 ? 0.55 : -0.35));
+          if (e.targetRadius !== undefined) e.targetRadius = e.radius;
+          e._xyT = -1;
+          charged.push(e);
+        }
+        // 같은 극 충돌 — charged 가 20체 이하라 스캔 상한이 잡혀 있다
+        const dmg = 8 + ab.level * 4;
+        let events = 0;
+        for (let i = 0; i < charged.length && events < 12; i++) {
+          const a = charged[i]; const [ax, ay] = enemyXY(a);
+          for (let j = i + 1; j < charged.length && events < 12; j++) {
+            const b = charged[j];
+            if (a._pol !== b._pol) continue;
+            const [bx, by] = enemyXY(b);
+            const dx = ax - bx, dy = ay - by;
+            if (dx * dx + dy * dy > 26 * 26) continue;
+            for (const t of [a, b]) {
+              if (t._magHitUntil && t._magHitUntil > state.t) continue;
+              t._magHitUntil = state.t + 20;
+              damageEnemy(t, dmg);
+            }
+            spawnParticles((ax + bx) / 2, (ay + by) / 2, '#b8c0cc', 4);
+            events++;
+          }
+        }
+      },
+      draw(ab) {
+        ctx.save(); ctx.globalCompositeOperation = 'lighter';
+        // 쌍극자 역선 — 두 극을 잇는 대칭 베지어 16가닥
+        for (let i = 0; i < 16; i++) {
+          const t = (i / 15) - 0.5, bow = t * 150;
+          const mx = (ab.nx + ab.sx) / 2 - Math.sin(ab.rot) * bow;
+          const my = (ab.ny + ab.sy) / 2 + Math.cos(ab.rot) * bow;
+          const g = ctx.createLinearGradient(ab.nx, ab.ny, ab.sx, ab.sy);
+          g.addColorStop(0, '#3b7fe0'); g.addColorStop(1, '#e04b4b');
+          ctx.strokeStyle = g; ctx.globalAlpha = 0.30 - Math.abs(t) * 0.28; ctx.lineWidth = 1.4;
+          ctx.beginPath(); ctx.moveTo(ab.nx, ab.ny); ctx.quadraticCurveTo(mx, my, ab.sx, ab.sy); ctx.stroke();
+        }
+        // 극
+        ctx.globalAlpha = 0.9;
+        for (const [px, py, c] of [[ab.nx, ab.ny, '#3b7fe0'], [ab.sx, ab.sy, '#e04b4b']]) {
+          ctx.fillStyle = c; ctx.beginPath(); ctx.arc(px, py, 5, 0, Math.PI * 2); ctx.fill();
+        }
+        // 극성 표시 — 충돌 쿨 중이면 회색으로 죽여서 왜 지금 안 아픈지 보이게 한다
+        ctx.lineWidth = 1.6;
+        for (const e of state.enemies) {
+          if (e.hp <= 0 || !e._pol) continue;
+          const [ex, ey] = enemyXY(e);
+          const cooling = e._magHitUntil && e._magHitUntil > state.t;
+          ctx.globalAlpha = cooling ? 0.25 : 0.85;
+          ctx.strokeStyle = cooling ? '#8a8f98' : (e._pol > 0 ? '#3b7fe0' : '#e04b4b');
+          ctx.beginPath(); ctx.arc(ex, ey, 11, 0, Math.PI * 2); ctx.stroke();
+        }
+        ctx.restore(); ctx.globalAlpha = 1;
+      },
+    },
+    // 🧲 기본조합 (극성장+frost) — 역극전환
+    reversePolarity: {
+      name: '역극전환', baseCost: 150, color: '#5a6fd0', isCombo: true,
+      desc: lv => `2s마다 양극 반전 · 역선 위 적 급가속 충돌 · 광역 DMG ${16 + lv * 7} · 반전 시 둔화`,
+      init(ab) { ab.cooldown = 90; ab.flash = 0; },
+      tick(ab) {
+        if (ab.flash > 0) ab.flash--;
+        if (--ab.cooldown > 0) return;
+        ab.cooldown = Math.max(60, 120 - ab.level * 3);
+        ab.flash = 18;
+        const dmg = 16 + ab.level * 7;
+        for (const e of state.enemies) {
+          if (e.hp <= 0 || !e._pol) continue;
+          e._pol = -e._pol;
+          e.slowFrames = Math.max(e.slowFrames || 0, 70);
+          if (e._magHitUntil && e._magHitUntil > state.t) continue;
+          e._magHitUntil = state.t + 20;
+          damageEnemy(e, dmg);
+          const [ex, ey] = enemyXY(e);
+          spawnParticles(ex, ey, e._pol > 0 ? '#3b7fe0' : '#e04b4b', 6);
+        }
+      },
+      draw(ab) {
+        if (ab.flash <= 0) return;
+        const a = ab.flash / 18;
+        ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = a * 0.5;
+        ctx.strokeStyle = '#8aa0ff'; ctx.lineWidth = 3;
+        ctx.beginPath(); ctx.arc(CX, CY, (1 - a) * 220, 0, Math.PI * 2); ctx.stroke();
+        ctx.restore(); ctx.globalAlpha = 1;
+      },
+    },
+    // 🧲 4돌파 (역극전환+railgun) — 자기 레일건  ※ id 는 magRail (railgun 은 기존 재료라 충돌)
+    magRail: {
+      name: '자기 레일건', baseCost: 240, color: '#6d8bf0', isCombo: true, isTriple: true,
+      desc: lv => `1.6s마다 양극 정렬 관통 사격 · DMG ${30 + lv * 14} · 쇳가루 40개까지 위력 누적(개당 +3%)`,
+      init(ab) { ab.cooldown = 60; ab.shots = []; },
+      tick(ab) {
+        for (const s of ab.shots) s.life--;
+        compactInPlace(ab.shots, s => s.life > 0);
+        if (--ab.cooldown > 0) return;
+        ab.cooldown = Math.max(50, 96 - ab.level * 3);
+        const pool = state.enemies.filter(e => e.hp > 0);
+        if (!pool.length) { ab.cooldown = 20; return; }
+        const tgt = pool[Math.floor(Math.random() * pool.length)];
+        const [tx, ty] = enemyXY(tgt);
+        const ang = Math.atan2(ty - CY, tx - CX);
+        // 쇳가루 누적 — 상한 40 (후반 웨이브 폭주 차단)
+        const filings = Math.min(40, (state._ferroShards || []).length);
+        const dmg = (30 + ab.level * 14) * (1 + filings * 0.03);
+        const ex2 = CX + Math.cos(ang) * (ARENA_R + 80), ey2 = CY + Math.sin(ang) * (ARENA_R + 80);
+        for (const e of state.enemies) {
+          if (e.hp <= 0) continue;
+          const [px, py] = enemyXY(e);
+          const t = ((px - CX) * Math.cos(ang) + (py - CY) * Math.sin(ang));
+          if (t < 0) continue;
+          const dx = px - (CX + Math.cos(ang) * t), dy = py - (CY + Math.sin(ang) * t);
+          if (dx * dx + dy * dy < 20 * 20) damageEnemy(e, dmg);
+        }
+        ab.shots.push({ x2: ex2, y2: ey2, life: 14 });
+      },
+      draw(ab) {
+        ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.lineCap = 'round';
+        for (const s of ab.shots) {
+          const a = s.life / 14;
+          const g = ctx.createLinearGradient(CX, CY, s.x2, s.y2);
+          g.addColorStop(0, '#e04b4b'); g.addColorStop(0.5, '#ffffff'); g.addColorStop(1, '#3b7fe0');
+          ctx.strokeStyle = g; ctx.globalAlpha = a; ctx.lineWidth = 2 + a * 7;
+          ctx.beginPath(); ctx.moveTo(CX, CY); ctx.lineTo(s.x2, s.y2); ctx.stroke();
+        }
+        ctx.restore(); ctx.globalAlpha = 1;
+      },
+    },
+    // 🧲 8돌파 (레일건+blackhole) — 자기폭풍 (단극 붕괴)
+    magnetStorm: {
+      name: '자기폭풍', baseCost: 350, color: '#4060e0', isCombo: true, isTriple: true, isEighth: true,
+      desc: lv => `[8돌파] 4s마다 단극 붕괴 · 전체 나선 견인 후 전방위 파편 폭발 DMG ${44 + lv * 20}`,
+      init(ab) { ab.cooldown = 140; ab.phase = 0; ab.t = 0; },
+      tick(ab) {
+        if (ab.phase === 1) {
+          ab.t++;
+          for (const e of state.enemies) {
+            if (e.hp <= 0) continue;
+            e.radius = Math.max(28, e.radius - 2.4);
+            if (e.targetRadius !== undefined) e.targetRadius = e.radius;
+            e.angle = (e.angle || 0) + 0.05;
+            e._xyT = -1;
+            e.slowFrames = Math.max(e.slowFrames || 0, 30);
+          }
+          if (ab.t >= 45) {
+            ab.phase = 2; ab.t = 0;
+            const dmg = 44 + ab.level * 20;
+            for (const e of state.enemies) { if (e.hp > 0) damageEnemy(e, dmg); }
+            for (let i = 0; i < 30; i++) {
+              const a = (Math.PI * 2 / 30) * i;
+              spawnParticles(CX + Math.cos(a) * 40, CY + Math.sin(a) * 40, i % 2 ? '#3b7fe0' : '#e04b4b', 3);
+            }
+            if (typeof shake === 'function') shake(16, 22);
+          }
+          return;
+        }
+        if (ab.phase === 2) { if (++ab.t > 20) { ab.phase = 0; ab.t = 0; } return; }
+        if (--ab.cooldown > 0) return;
+        ab.cooldown = Math.max(150, 260 - ab.level * 5);
+        ab.phase = 1; ab.t = 0;
+      },
+      draw(ab) {
+        if (ab.phase === 0) return;
+        ctx.save(); ctx.globalCompositeOperation = 'lighter';
+        if (ab.phase === 1) {
+          const p = ab.t / 45;
+          for (let i = 0; i < 10; i++) {
+            const a0 = (Math.PI * 2 / 10) * i + p * 5;
+            ctx.strokeStyle = i % 2 ? '#3b7fe0' : '#e04b4b';
+            ctx.globalAlpha = 0.5; ctx.lineWidth = 2;
+            ctx.beginPath();
+            for (let k = 0; k <= 20; k++) {
+              const r = (1 - p) * 210 * (1 - k / 26), a = a0 + k * 0.22;
+              const px = CX + Math.cos(a) * r, py = CY + Math.sin(a) * r;
+              if (k === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+            }
+            ctx.stroke();
+          }
+        } else {
+          const p = ab.t / 20;
+          ctx.globalAlpha = (1 - p) * 0.8; ctx.lineWidth = 6 * (1 - p) + 1;
+          ctx.strokeStyle = '#ffffff';
+          ctx.beginPath(); ctx.arc(CX, CY, p * 260, 0, Math.PI * 2); ctx.stroke();
+        }
+        ctx.restore(); ctx.globalAlpha = 1;
+      },
+    },
+    // 🧲 페리아 4★ 별해금 — 강자성 파편 (처치 시 쇳가루 잔류 → magRail 누적과 시너지)
+    ferroShard: {
+      name: '강자성 파편', isGachaUnique: true, isStarUnlock: true, baseCost: 280, color: '#8fa3c8',
+      desc: lv => `[4★히든] 적 처치 시 쇳가루 잔류(최대 ${Math.min(40, 12 + lv * 3)}개) · 접촉 DMG ${5 + lv * 3} · 레일건 위력에 누적`,
+      init(ab) { state._ferroShards = []; ab.tick0 = 0; },
+      tick(ab) {
+        const arr = state._ferroShards || (state._ferroShards = []);
+        const cap = Math.min(40, 12 + ab.level * 3);
+        // 쇳가루 생성 — "죽은 적 감지"가 아니라 "자기 충돌을 맞은 적"에서 떨어져 나온다.
+        //   죽은 적은 배열에서 곧바로 제거될 수 있어 다음 tick 에서 관측이 보장되지 않는다.
+        //   e._magHitUntil 은 polarField/monopole 이 충돌 순간에 세우므로 같은 프레임에 확실히 잡힌다.
+        for (const e of state.enemies) {
+          if (e.hp <= 0 || !e._magHitUntil) continue;
+          if (e._magHitUntil !== state.t + 20) continue;   // 방금 세워진 것만 (중복 방지)
+          if (arr.length >= cap) break;
+          const [ex, ey] = enemyXY(e);
+          arr.push({ x: ex, y: ey, a: Math.random() * Math.PI * 2, life: 420 });
+        }
+        const dmg = 5 + ab.level * 3;
+        for (const s of arr) {
+          s.life--; s.a += 0.04;
+          const ang = Math.atan2(CY - s.y, CX - s.x);
+          s.x += Math.cos(ang) * 0.25; s.y += Math.sin(ang) * 0.25;
+          for (const e of state.enemies) {
+            if (e.hp <= 0) continue;
+            if (e._magHitUntil && e._magHitUntil > state.t) continue;
+            const [ex, ey] = enemyXY(e);
+            const dx = ex - s.x, dy = ey - s.y;
+            if (dx * dx + dy * dy < 16 * 16) { e._magHitUntil = state.t + 20; damageEnemy(e, dmg); }
+          }
+        }
+        compactInPlace(arr, s => s.life > 0);
+      },
+      draw(ab) {
+        const arr = state._ferroShards || [];
+        ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.fillStyle = '#b8c0cc';
+        for (const s of arr) {
+          ctx.globalAlpha = Math.min(1, s.life / 60) * 0.85;
+          ctx.save(); ctx.translate(s.x, s.y); ctx.rotate(s.a);
+          ctx.fillRect(-3, -1, 6, 2);
+          ctx.restore();
+        }
+        ctx.restore(); ctx.globalAlpha = 1;
+      },
+    },
+    // 🧲 페리아 8★ 별해금 — 단극자 (상시 흡입 + 극성 적 처형)
+    monopole: {
+      name: '단극자', isGachaUnique: true, isStarUnlock: true, baseCost: 480, color: '#2f57d8',
+      desc: lv => `[8★히든] 상시 흡입장 · 극성 적 지속 DMG ${10 + lv * 6} · 극성 적 HP ${8 + lv}% 이하 처형`,
+      init(ab) { ab.pulse = 0; },
+      tick(ab) {
+        ab.pulse += 0.05;
+        const dmg = 10 + ab.level * 6, thr = (8 + ab.level) / 100;
+        for (const e of state.enemies) {
+          if (e.hp <= 0) continue;
+          e.radius = Math.max(30, e.radius - 0.5);
+          if (e.targetRadius !== undefined) e.targetRadius = e.radius;
+          e._xyT = -1;
+          if (!e._pol) continue;
+          if (e._magHitUntil && e._magHitUntil > state.t) continue;
+          e._magHitUntil = state.t + 20;
+          if (!e.isBoss && e.maxHp > 0 && e.hp / e.maxHp <= thr) { damageEnemy(e, e.hp + 1); continue; }
+          damageEnemy(e, dmg);
+        }
+      },
+      draw(ab) {
+        ctx.save(); ctx.globalCompositeOperation = 'lighter';
+        for (let i = 0; i < 3; i++) {
+          const r = 60 + i * 55 + Math.sin(ab.pulse + i) * 8;
+          ctx.globalAlpha = 0.22 - i * 0.05; ctx.lineWidth = 2;
+          ctx.strokeStyle = i % 2 ? '#3b7fe0' : '#e04b4b';
+          ctx.beginPath(); ctx.arc(CX, CY, r, 0, Math.PI * 2); ctx.stroke();
+        }
+        ctx.restore(); ctx.globalAlpha = 1;
+      },
+    },
   };
   // ⭐ 별 해금 능력 매핑 — 캐릭터 4★ / 8★ 도달 시 해금
   const CHAR_STAR_UNLOCKS = {
