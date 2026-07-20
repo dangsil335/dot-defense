@@ -17785,6 +17785,7 @@
     misaki: { 4: ['temporalLoop'],   8: ['paradoxFreeze'] },
     blanche:{ 4: ['refractionField'],8: ['whiteEclipse'] },
     kaira:  { 4: ['beastForm'],       8: ['apexPredator'] },
+    feria:  { 4: ['ferroShard'],      8: ['monopole'] },
     // SR (SSR 보다 약하지만 쓸만함)
     sakura: { 4: ['petalStorm'],     8: ['cherrySingularity'] },
     luna:   { 4: ['lunarRain'],      8: ['eclipsePiercer'] },
@@ -18054,10 +18055,19 @@
       apply: (st) => { applyAncientRelic(st, 'kairaFang'); },
       unlockBy: 'ancient:kairaFang',
     },
+    // 🧲 Feria 전용 — 자력·견인·관통 능력 각성
+    ferroCore: {
+      name: '자기 코어', icon: '🧲', rarity: 'ancient',
+      isAncient: true, characterId: 'feria',
+      triggerAbilities: ['polarField', 'reversePolarity', 'magRail', 'magnetStorm'],
+      desc: '🧲 Feria 전용 · ★별마다 강해짐.\n[기본] 데미지 +16%·둔화 +10% (Feria 시너지 +36%·+20%)\n[★4 각성 1] 자력 능력 max 도달 시 — 데미지 +50%·저체력 처형\n[★8 각성 2] 자력 능력 2개 이상 max — 연쇄 방전 + 데미지 +20%',
+      apply: (st) => { applyAncientRelic(st, 'ferroCore'); },
+      unlockBy: 'ancient:ferroCore',
+    },
   };
   // 🌌 v245 — ANCIENT 매핑 & 헬퍼
-  const ANCIENT_RELIC_IDS = ['ariaHarp', 'misakiHourglass', 'elementiaSeal', 'sumikaBrush', 'blanchePrism', 'kairaFang'];
-  const ANCIENT_RELIC_BY_CHAR = { aria: 'ariaHarp', misaki: 'misakiHourglass', elementia: 'elementiaSeal', sumika: 'sumikaBrush', blanche: 'blanchePrism', kaira: 'kairaFang' };
+  const ANCIENT_RELIC_IDS = ['ariaHarp', 'misakiHourglass', 'elementiaSeal', 'sumikaBrush', 'blanchePrism', 'kairaFang', 'ferroCore'];
+  const ANCIENT_RELIC_BY_CHAR = { aria: 'ariaHarp', misaki: 'misakiHourglass', elementia: 'elementiaSeal', sumika: 'sumikaBrush', blanche: 'blanchePrism', kaira: 'kairaFang', feria: 'ferroCore' };
   const ANCIENT_MAX_STARS = 8;
   function getAncientRelicStars(rid) {
     return (META.ancientRelics && META.ancientRelics[rid] && META.ancientRelics[rid].stars) || 0;
@@ -18107,6 +18117,10 @@
       const baseDmg = synergy ? (1.34 + stars * 0.08) : (1.15 + stars * 0.05);
       st.metaMods.dmgMul = (st.metaMods.dmgMul || 1) * baseDmg;
       st.metaMods.luckyChanceBonus = (st.metaMods.luckyChanceBonus || 0) + (synergy ? 0.08 : 0.04);
+    } else if (rid === 'ferroCore') {
+      const baseDmg = synergy ? (1.36 + stars * 0.08) : (1.16 + stars * 0.05);
+      st.metaMods.dmgMul = (st.metaMods.dmgMul || 1) * baseDmg;
+      st.metaMods.slowMul = (st.metaMods.slowMul || 1) * (synergy ? 1.20 : 1.10);
     }
   }
   // 각성 효과 발동 — 능력 max 도달 시 체크
@@ -18201,6 +18215,16 @@
         state.relicEffects.chainLightning = true;
         state.metaMods.dmgMul *= 1.20;
         toast(`🐾🌟 야수왕의 송곳니 · 포식 각성!`);
+      }
+    } else if (relic.id === 'ferroCore') {
+      if (level === 1) {
+        state.metaMods.dmgMul *= 1.50;
+        state.relicEffects.executeBelow = Math.max(state.relicEffects.executeBelow || 0, 0.10);
+        toast(`🧲✨ 자기 코어 · 자극 각성!`);
+      } else if (level === 2) {
+        state.relicEffects.chainLightning = true;
+        state.metaMods.dmgMul *= 1.20;
+        toast(`🧲🌟 자기 코어 · 단극 각성!`);
       }
     }
     state.comboFlash = 60;
@@ -18655,6 +18679,8 @@
     'prismBolt', 'spectrumBeam', 'chromaBurst', 'prismCataclysm', 'refractionField', 'whiteEclipse',
     // 🆕 카이라(SSR) 수인/변신 킷 + 별해금 2종
     'huntingClaw', 'savageRend', 'beastCyclone', 'primalRampage', 'beastForm', 'apexPredator',
+    // 🆕 페리아(SSR) 자력 킷 + 별해금 2종
+    'polarField', 'reversePolarity', 'magRail', 'magnetStorm', 'ferroShard', 'monopole',
   ];
   // (구 숫자 매핑 ABILITY_ICON_NUMBER/getIconNumber 제거 — 파일명이 id가 되어 불필요. ABILITY_ICON_ORDER는 프리로드 목록으로 유지)
   function getIconPath(id) {
@@ -18868,6 +18894,10 @@
     { parts: ['huntingClaw', 'sword'],         combo: 'savageRend' },
     { parts: ['savageRend', 'tornado'],        combo: 'beastCyclone', tier: 3 },
     { parts: ['beastCyclone', 'frenzy'],       combo: 'primalRampage', tier: 4 },
+    // 🧲 페리아(자력) 조합 체인
+    { parts: ['polarField', 'frost'],          combo: 'reversePolarity' },
+    { parts: ['reversePolarity', 'railgun'],   combo: 'magRail', tier: 3 },
+    { parts: ['magRail', 'blackhole'],         combo: 'magnetStorm', tier: 4 },
     { parts: ['sunspot',   'railgun'],   combo: 'solarStorm' },
     { parts: ['pullField', 'iceLance'], combo: 'voidIceVortex' },
     // ===== 🎰 가챠 R 트리플 (히든) =====
@@ -19782,6 +19812,7 @@
     sumikaMaster:    { name: '먹빛의 사신',   icon: '🖌️', achId: 'char8_sumika',    style: 'rainbow' },
     blancheMaster:   { name: '분광의 마녀',   icon: '🌈', achId: 'char8_blanche',   style: 'rainbow' },
     kairaMaster:     { name: '야수왕',       icon: '🐾', achId: 'char8_kaira',     style: 'rainbow' },
+    feriaMaster:     { name: '자력의 지배자',   icon: '🧲', achId: 'char8_feria',     style: 'rainbow' },
     // 🔱 트리플 컬렉션 — 해당 트리플을 한 게임에서 형성하면 해금
     tcUltra:    { name: '탄막의 폭군',    icon: '🔫', achId: 'tc_ultraGatling',    style: 'glow', color: '#cfe0ff' },
     tcFrost:    { name: '동결뇌제',      icon: '❄️', achId: 'tc_absoluteThunder',  style: 'glow', color: '#bcd8ff' },
@@ -19840,7 +19871,7 @@
     asc1Title:'sparkle', asc5Title:'star', asc10Title:'starburst', asc15Title:'crown',
     trans1Title:'galaxy', trans3Title:'galaxy', trans5Title:'starburst', trans10Title:'crown', trans15Title:'starburst',
     starGazer:'star', marineMaster:'wave', solarMaster:'sun', gravitasMaster:'vortex', amyMaster:'missile', chloeMaster:'flask', laraMaster:'masks', galateaMaster:'gem',
-    sakuraMaster:'blossom', lunaMaster:'moon', ariaMaster:'star', misakiMaster:'butterfly', elementiaMaster:'sparkle', sumikaMaster:'skull', blancheMaster:'starburst', kairaMaster:'dragon',
+    sakuraMaster:'blossom', lunaMaster:'moon', ariaMaster:'star', misakiMaster:'butterfly', elementiaMaster:'sparkle', sumikaMaster:'skull', blancheMaster:'starburst', kairaMaster:'dragon', feriaMaster:'vortex',
     // 🔱 트리플 컬렉션
     tcUltra:'barrage', tcFrost:'bolt', tcElem:'sparkle', tcFusion:'cannon', tcGalaxy:'galaxy', tcTitan:'missile',
     tcPlasma:'bolt', tcVoidNova:'starburst', tcSiege:'beam', tcDeepSea:'wave', tcStellar:'sun', tcVoidStop:'vortex',
@@ -19850,7 +19881,7 @@
   const PLATE_TITLES = new Set([
     'conqueror', 'asc10Title', 'asc15Title',
     'trans1Title', 'trans3Title', 'trans5Title', 'trans10Title', 'trans15Title',
-    'sakuraMaster', 'lunaMaster', 'ariaMaster', 'misakiMaster', 'elementiaMaster', 'sumikaMaster', 'blancheMaster', 'kairaMaster',
+    'sakuraMaster', 'lunaMaster', 'ariaMaster', 'misakiMaster', 'elementiaMaster', 'sumikaMaster', 'blancheMaster', 'kairaMaster', 'feriaMaster',
     'tripleSageTitle',   // 그랜드 — 한 게임 트리플 5개
   ]);
   function titleEmblemHtml(key, emojiFallback) {
@@ -21683,7 +21714,7 @@
   const GACHA_POOL = {
     R:   [],   // 🆕 R 등급 폐지 — 마린/솔라/그래비타스는 SR로 승격
     SR:  ['sakura', 'luna', 'marine', 'solar', 'gravitas', 'cardista', 'levina', 'amy', 'chloe', 'lara', 'galatea'],
-    SSR: ['aria', 'misaki', 'elementia', 'sumika', 'blanche', 'kaira'],
+    SSR: ['aria', 'misaki', 'elementia', 'sumika', 'blanche', 'kaira', 'feria'],
   };
   const GACHA_RATES = { SR: 0.05, SSR: 0.01 };   // (구) 단일 배너 호환용 — 나머지(0.94)는 스타더스트
   const GACHA_REFUND = { R: 150, SR: 400, SSR: 800 };  // 중복 시 스타더스트 환불
@@ -22079,6 +22110,7 @@
         'temporalLoop', 'paradoxFreeze',                    // misaki 4/8★
         'prismBolt', 'spectrumBeam', 'chromaBurst', 'prismCataclysm', 'refractionField', 'whiteEclipse',   // 🆕 blanche
         'huntingClaw', 'savageRend', 'beastCyclone', 'primalRampage', 'beastForm', 'apexPredator',          // 🆕 kaira
+        'polarField', 'reversePolarity', 'magRail', 'magnetStorm', 'ferroShard', 'monopole',                // 🆕 feria
       ]);
       const srAbilities = new Set([
         'sakuraSlash', 'moonShot',                          // SR start
@@ -22570,6 +22602,31 @@
 "택한 게 아냐. …난 원래부터 정점이었어. 인간의 탈은, 그냥 사냥을 위한 위장이었을 뿐이지."
 
 그녀가 도약했다. 전장의 그 무엇도, 그녀보다 빠르지 못했다.` },
+      ],
+    },
+    feria: {
+      name: '🧲 페리아', color: '#3b7fe0',
+      desc: '[SSR] 극성장으로 시작. 데미지 +53% / 보스 +50% / 레벨업 -21% / 슬롯 +1 / 둔화 +20%. 극성장 + 서리 = 역극전환. ★4 강자성 파편 · ★8 단극자.',
+      startAbilities: ['polarField'],
+      passive: { dmgMul: 1.53, bossDmgMul: 1.50, slotMod: 1, levelUpMul: 0.79, slowMul: 1.20 },
+      unlockBy: 'gacha:feria',
+      isGacha: true, rarity: 'SSR',
+      story: [
+        { star: 0, title: '입지 않는 갑옷', text: `페리아는 갑옷을 몸에 걸치지 않는다. 강철 조각들은 언제나 그녀 주위를 맴돌 뿐이다.
+
+"무겁잖아. …그리고, 붙여두면 쓸 수가 없어."
+
+손끝을 까딱이자 파편들이 일제히 방향을 틀었다. 보이지 않는 선을 따라, 하나도 어긋나지 않고.` },
+        { star: 4, title: '두 개의 극', text: `"당기는 것만 할 줄 아는 줄 알았는데."
+
+포위망 한가운데서 페리아가 손바닥을 뒤집었다. 끌려오던 것들이 순식간에 튕겨 나갔다.
+
+"밀어내는 것도 힘이야. 사람들은 자꾸 그걸 잊더라."` },
+        { star: 8, title: '하나로 수렴', text: `그녀가 두 손을 모으자, 흩어져 있던 극이 한 점으로 합쳐졌다.
+
+"…쌍극이 아니라 단극. 원래는 존재할 수 없는 거야."
+
+전장의 모든 쇳조각이 비명을 지르며 그 한 점으로 빨려 들어갔다. 그리고, 터졌다.` },
       ],
     },
     blanche: {
@@ -23126,6 +23183,8 @@
       check: () => ((META.charStars || {}).blanche || 0) >= 8 },
     { id: 'char8_kaira',    name: '🐾 야수왕',         desc: '🐾 카이라 8★ 달성',   reward: 1500,
       check: () => ((META.charStars || {}).kaira || 0) >= 8 },
+    { id: 'char8_feria',    name: '🧲 자력의 지배자',  desc: '🧲 페리아 8★ 달성',   reward: 1500,
+      check: () => ((META.charStars || {}).feria || 0) >= 8 },
     // SR 캐릭터 8★
     { id: 'char8_sakura',   name: '🌸 벚꽃의 검객',    desc: '🌸 사쿠라 8★ 달성',   reward: 800,
       check: () => ((META.charStars || {}).sakura   || 0) >= 8 },
@@ -27780,6 +27839,7 @@
     'medusaGaze', 'eternalPetrify',                                        // 갈라테아 (부채꼴/전체 석화)
     'spectrumBeam', 'prismCataclysm', 'refractionField', 'whiteEclipse',   // 블랑슈 (광선/전체 분광)
     'primalRampage', 'apexPredator',                                       // 카이라 (전체 강습)
+    'magRail', 'magnetStorm', 'monopole',                                  // 페리아 (관통/전체 붕괴/흡입장)
   ]);
   // 🎯 능력별 표적 사거리 — TD 모드 사거리 캡 + 시각 표시용
   // def.range(lv) 가 정의돼있으면 사용, 아니면 능력 타입/티어별 기본값
@@ -30919,6 +30979,7 @@
     galatea:   '움직이지 마. …이제 넌 내 작품이야.',
     blanche:   '빛은 꺾일 뿐, 결코 꺾이지 않아.',
     kaira:     '숨어도 소용없어. …냄새로 다 찾아낼 거야.',
+    feria:     '전부 끌어당겨. …도망칠 방향이 없게.',
     sakura:    '벚꽃과 함께… 이 검을 받으렴.',
     luna:      '달빛이 너를 비춘다… 조용히, 받으렴.',
     cardista:  '운 좋은 패네 — 이 힘, 한번 베팅해봐!',
@@ -31227,6 +31288,7 @@
     galatea:  '자, 가만히 있어봐. 예쁘게 굳혀줄게.',
     blanche:  '일곱 빛깔, 전부 보여줄게. 눈부실 거야.',
     kaira:    '사냥 시간이야. …도망칠 수 있으면 도망쳐봐.',
+    feria:    '쇳조각 좀 뿌려놨어. 밟으면 아플 거야.',
     sakura:   '한 송이, 베어줄게. 준비됐어?',
     luna:     '달빛 아래선… 아무도 못 도망가.',
     aria:     '이 무대의 주인공은 너야. 노래, 맞춰줄게!',
@@ -31262,6 +31324,7 @@
       sumika:    { title: '🌌 먹의 인장',     text: '"…이 붓에 네 이름을 새긴다. 받아."' },
       blanche:   { title: '🌌 분광의 프리즘',   text: '"이 프리즘, 네 빛으로 채워봐. 일곱 색이 널 따를 거야."' },
       kaira:     { title: '🌌 야수왕의 송곳니', text: '"이 송곳니… 네 안의 야수가 반응하고 있어. 가져."' },
+      feria:     { title: '🌌 자기 코어',       text: '"이 코어… 네 극에 맞춰 돌기 시작했어. 가져."' },
     };
     const lo = lore[charId] || { title: `🌌 ${rn}`, text: '"이 유물, 너에게 어울려."' };
     return { title: lo.title, text: lo.text, choices: [
@@ -31282,6 +31345,8 @@
                 { avail: () => _ancientAvail('blanche'), make: () => _charRelicEv('blanche') } ],
     kaira:    [ { make: () => _charEv('🐾 카이라의 사냥',      '"인간형으로 사거리를 늘릴까, 야수형으로 물어뜯을까?"',     'dmg',  22, 'huntingClaw') },
                 { avail: () => _ancientAvail('kaira'), make: () => _charRelicEv('kaira') } ],
+    feria:    [ { make: () => _charEv('🧲 페리아의 자장',      '"당겨서 뭉칠까, 밀어서 흩을까?"',                       'dmg',  22, 'polarField') },
+                { avail: () => _ancientAvail('feria'), make: () => _charRelicEv('feria') } ],
     sakura:   [ { make: () => _charEv('🌸 사쿠라의 만개',     '"꽃잎처럼 흩날리는 칼날, 더 날카롭게 해줄까?"',             'dmg',  22, 'sakuraSlash') } ],
     luna:     [ { make: () => _charEv('🌙 루나의 월광',       '"달빛을 더 퍼뜨릴까, 월광탄을 더 키울까?"',                 'dmg',  18, 'moonShot') } ],
     aria:     [ { make: () => _charEv('🌟 아리아의 합창',     '"이 별의 노래, 너한테 맞춰 부를게. 어느 쪽이 좋아?"',       'dmg',  24, 'starSong') },
@@ -31315,6 +31380,7 @@
     galatea:  ['petrifyGaze', 'petraShatter', 'medusaGaze', 'eternalPetrify'],
     blanche:  ['prismBolt', 'spectrumBeam', 'chromaBurst', 'prismCataclysm'],
     kaira:    ['huntingClaw', 'savageRend', 'beastCyclone', 'primalRampage'],
+    feria:    ['polarField', 'reversePolarity', 'magRail', 'magnetStorm'],
     sakura:   ['sakuraSlash', 'sakuraStorm', 'sakuraInferno', 'sakuraApocalypse'],
     luna:     ['moonShot', 'moonFrostArrow', 'moonBombardment', 'lunarApocalypse'],
     aria:     ['starSong', 'cosmicChorus', 'celestialSymphony', 'stellarOpera'],
@@ -32749,7 +32815,7 @@
 
   // 🛰️ v461 — 메인 메뉴 로테이션 간판 캐릭터 백드롭 (메뉴 진입마다 순환)
   // ⚠️ refreshMenuButtons가 아니라 showScreen('menu') 진입에서만 호출 — refreshMenuButtons는 서버 pull 후에도 재호출돼 중복 회전/캐시-onload 버그 유발.
-  const MENU_HERO_IDS = ['aria','misaki','elementia','sumika','blanche','kaira','solar','marine','gravitas','luna','sakura','cardista','levina','amy','chloe','lara','galatea'];
+  const MENU_HERO_IDS = ['aria','misaki','elementia','sumika','blanche','kaira','feria','solar','marine','gravitas','luna','sakura','cardista','levina','amy','chloe','lara','galatea'];
   let _menuHeroIdx = -1;
   function refreshMenuHero() {
     const el = document.getElementById('menu-hero-bg');
@@ -34497,7 +34563,7 @@
     // 🌌 초월 — 승천 15 이후 단계적
     trans:    ['trans1', 'trans3', 'trans5', 'trans10', 'trans15'],
     // ⭐ 캐릭터 돌파 — 별 등급
-    chars:    ['firstStar', 'char8_marine', 'char8_solar', 'char8_gravitas', 'char8_sakura', 'char8_luna', 'char8_aria', 'char8_misaki', 'char8_elementia', 'char8_sumika', 'char8_amy', 'char8_chloe', 'char8_lara', 'char8_galatea', 'char8_blanche', 'char8_kaira'],
+    chars:    ['firstStar', 'char8_marine', 'char8_solar', 'char8_gravitas', 'char8_sakura', 'char8_luna', 'char8_aria', 'char8_misaki', 'char8_elementia', 'char8_sumika', 'char8_amy', 'char8_chloe', 'char8_lara', 'char8_galatea', 'char8_blanche', 'char8_kaira', 'char8_feria'],
     special:  ['codexHalf', 'codexFull', 'allChars', 'speedrun', 'lowSlot',
                'lucky5', 'goldHold3k', 'gold5kRun',
                'relicFirst', 'relic3', 'relic5', 'relicRare', 'relicEpic', 'relicLeg', 'relicAllRar'],
