@@ -17797,9 +17797,11 @@
         for (const j of ab.q) {
           if (j.d > 0) continue;
           j.done = true;
+          const pool = state.enemies.filter(e => e.hp > 0);
+          if (!pool.length) continue;
+          const tgt = pool[Math.floor(Math.random() * pool.length)];
           _phantomDmg = true; _phantomScale = 0.40;
-          try { for (const e of state.enemies) { if (e.hp > 0 && !e._trinaHit) damageEnemy(e, j.dmg); } }
-          finally { _phantomDmg = false; _phantomScale = 1; }
+          try { damageEnemy(tgt, j.dmg); } finally { _phantomDmg = false; _phantomScale = 1; }
         }
         compactInPlace(ab.q, j => !j.done);
         if (--ab.cooldown > 0) return;
