@@ -16392,7 +16392,7 @@
       desc: lv => `${1 + Math.floor((lv + 1) / 2)}기 요격 드론 · 유도 미사일 · DMG ${4 + lv * 3}`,
       init(ab) { ab.angle = 0; ab.drones = []; },
       tick(ab) {
-        const want = 1 + Math.floor((ab.level + 1) / 2);
+        const want = 1 + Math.floor((ab.level + 1) / 2) + permaCount('interceptorDrone');
         while (ab.drones.length < want) ab.drones.push({ cd: 0, x: CX, y: CY });
         while (ab.drones.length > want) ab.drones.pop();
         ab.angle += 0.02;
@@ -16522,8 +16522,8 @@
         const pool = state.enemies.filter(e => e.hp > 0);
         if (!pool.length) { ab.cooldown = 30; return; }
         let sx = 0, sy = 0; for (const e of pool) { const [ex, ey] = enemyXY(e); sx += ex; sy += ey; }
-        ab.pools.push({ x: sx / pool.length, y: sy / pool.length, r: 50 + ab.level * 2, dmg: 3 + ab.level * 2, life: 150, max: 150 });
-        ab.cooldown = Math.max(40, 84 - ab.level * 3);
+        ab.pools.push({ x: sx / pool.length, y: sy / pool.length, r: (50 + ab.level * 2) * permaAoeMul('acidFlask'), dmg: 3 + ab.level * 2, life: 150, max: 150 });
+        ab.cooldown = Math.max(40, Math.floor((84 - ab.level * 3) * permaCdMul('acidFlask')));
       },
       draw(ab) {
         ctx.save();
@@ -16627,7 +16627,7 @@
       desc: lv => `${1 + Math.floor((lv + 2) / 3)}기 자율 인형 · 실 공격 DMG ${5 + lv * 3}`,
       init(ab) { ab.puppets = []; },
       tick(ab) {
-        const want = 1 + Math.floor((ab.level + 2) / 3);
+        const want = 1 + Math.floor((ab.level + 2) / 3) + permaCount('marionette');
         while (ab.puppets.length < want) ab.puppets.push({ x: CX + (Math.random() - 0.5) * 80, y: CY + (Math.random() - 0.5) * 80, cd: 0 });
         while (ab.puppets.length > want) ab.puppets.pop();
         const dmg = 5 + ab.level * 3;
@@ -16758,7 +16758,7 @@
         const pool = state.enemies.filter(e => e.hp > 0);
         if (!pool.length) { ab.cooldown = 30; return; }
         pool.sort((p, q) => (p.radius || 999) - (q.radius || 999));
-        const n = 1 + Math.floor(ab.level / 2), dur = 60 + ab.level * 6, dmg = 6 + ab.level * 3;
+        const n = 1 + Math.floor(ab.level / 2) + permaCount('petrifyGaze'), dur = 60 + ab.level * 6, dmg = 6 + ab.level * 3;
         for (let i = 0; i < Math.min(n, pool.length); i++) {
           const e = pool[i]; const [ex, ey] = enemyXY(e);
           if (e.isBoss) { e.slowFrames = Math.max(e.slowFrames || 0, Math.floor(dur * 1.5)); }
@@ -16873,7 +16873,7 @@
         if (--ab.cooldown > 0) return;
         const pool = state.enemies.filter(e => e.hp > 0);
         if (!pool.length) { ab.cooldown = 20; return; }
-        const nBolt = 1 + Math.floor(ab.level / 3), dmg = 5 + ab.level * 3, nShard = 2 + Math.floor(ab.level / 2);
+        const nBolt = 1 + Math.floor(ab.level / 3) + permaCount('prismBolt'), dmg = 5 + ab.level * 3, nShard = 2 + Math.floor(ab.level / 2);
         for (let b = 0; b < nBolt; b++) {
           const tgt = pool[Math.floor(Math.random() * pool.length)]; const [tx, ty] = enemyXY(tgt); const ang = Math.atan2(ty - CY, tx - CX);
           state.bullets.push({ x: CX + Math.cos(ang) * 20, y: CY + Math.sin(ang) * 20, vx: Math.cos(ang) * 7, vy: Math.sin(ang) * 7, dmg, life: 90, color: '#d8c0ff', target: tgt, leader: null, offsetAngle: 0, sourceId: state.currentAbilityId || null });
@@ -17046,7 +17046,7 @@
         if (--ab.cooldown > 0) return;
         const pool = state.enemies.filter(e => e.hp > 0);
         if (!pool.length) { ab.cooldown = 20; return; }
-        const n = 2 + Math.floor(ab.level / 2), dmg = 6 + ab.level * 3, spd = 9;
+        const n = 2 + Math.floor(ab.level / 2) + permaCount('huntingClaw'), dmg = 6 + ab.level * 3, spd = 9;
         for (let i = 0; i < n; i++) { const tgt = pool[Math.floor(Math.random() * pool.length)]; const [tx, ty] = enemyXY(tgt); const ang = Math.atan2(ty - CY, tx - CX) + (Math.random() - 0.5) * 0.25; ab.waves.push({ x: CX + Math.cos(ang) * 18, y: CY + Math.sin(ang) * 18, vx: Math.cos(ang) * spd, vy: Math.sin(ang) * spd, ang, dmg, life: 46, hit: new Set() }); }
         ab.cooldown = Math.max(20, 44 - ab.level * 2);
       },
@@ -17881,6 +17881,26 @@
         state.metaMods.dmgMul *= 1.20;
         toast(`🖌️🌟 먹의 인장 · 묵사신 각성!`);
       }
+    } else if (relic.id === 'blanchePrism') {
+      if (level === 1) {
+        state.metaMods.dmgMul *= 1.50;
+        state.relicEffects.aoeDmgMul *= 1.20;
+        toast(`🌈✨ 분광의 프리즘 · 굴절 각성!`);
+      } else if (level === 2) {
+        state.relicEffects.chainLightning = true;
+        state.relicEffects.aoeDmgMul *= 1.30;
+        toast(`🌈🌟 분광의 프리즘 · 백광 각성!`);
+      }
+    } else if (relic.id === 'kairaFang') {
+      if (level === 1) {
+        state.metaMods.dmgMul *= 1.50;
+        state.relicEffects.executeBelow = Math.max(state.relicEffects.executeBelow || 0, 0.10);
+        toast(`🐾✨ 야수왕의 송곳니 · 광포 각성!`);
+      } else if (level === 2) {
+        state.relicEffects.chainLightning = true;
+        state.metaMods.dmgMul *= 1.20;
+        toast(`🐾🌟 야수왕의 송곳니 · 포식 각성!`);
+      }
     }
     state.comboFlash = 60;
     state.comboFlashColor = '#ff88ff';
@@ -18355,37 +18375,14 @@
   }
   loadAbilityIcons();
 
-  // ===== 🖼️ 캐릭터 이미지 로더 (검정 배경 → 투명 chroma key) =====
-  // 검정 배경 PNG 받아서 알파 채널 자동 적용.
-  // chroma key가 실패하면 (file:// CORS 등) 원본 이미지 그대로 사용 (검정 배경 보임).
-  // 항상 SOMETHING이 보이도록 multi-tier fallback.
+  // ===== 🖼️ 캐릭터 이미지 로더 =====
+  // 🚫 v672 — chroma key 제거. icons/characters/*.png 는 전부 알파 채널이 있는 투명 PNG라
+  //    키잉이 불필요했고, 오히려 R+G+B<30 픽셀을 지워서 검은 옷에 구멍을 냈다
+  //    (라라의 검은 드레스는 불투명 픽셀의 약 14%가 뚫리고 있었음).
+  //    캐릭터당 전체 픽셀 루프 + toDataURL PNG 인코딩도 같이 사라져 로딩이 가벼워진다.
+  // ⚠️ 전제: icons/characters/*.png 는 반드시 투명 배경으로 넣을 것.
   const characterImages = {};        // charId → entry | 'loading' | 'missing'
-  // entry shape: { img: HTMLImageElement, keyed: Canvas|null, src: string,
-  //                dataUrl: string|null, w: number, h: number }
-  const CHROMA_THRESHOLD = 30;
-  const CHROMA_EDGE_BLEND = 60;
-
-  function chromaKeyImage(img) {
-    const c = document.createElement('canvas');
-    c.width  = img.naturalWidth  || img.width;
-    c.height = img.naturalHeight || img.height;
-    const cx = c.getContext('2d');
-    cx.drawImage(img, 0, 0);
-    // getImageData가 tainted canvas (file://) 에서 throw하면 캐치
-    const data = cx.getImageData(0, 0, c.width, c.height);
-    const d = data.data;
-    for (let i = 0; i < d.length; i += 4) {
-      const sum = d[i] + d[i + 1] + d[i + 2];
-      if (sum < CHROMA_THRESHOLD) {
-        d[i + 3] = 0;
-      } else if (sum < CHROMA_EDGE_BLEND) {
-        const t = (sum - CHROMA_THRESHOLD) / (CHROMA_EDGE_BLEND - CHROMA_THRESHOLD);
-        d[i + 3] = Math.round(d[i + 3] * t);
-      }
-    }
-    cx.putImageData(data, 0, 0);
-    return c;
-  }
+  // entry shape: { img: HTMLImageElement, src: string, w: number, h: number }
 
   function loadCharacterImage(charId) {
     if (characterImages[charId]) return;
@@ -18393,34 +18390,25 @@
     const img = new Image();
     const src = `./icons/characters/${charId}.png`;
     img.onload = () => {
-      let keyed = null;
-      let dataUrl = null;
-      // 1단계: chroma key 시도
-      try { keyed = chromaKeyImage(img); } catch (e) { keyed = null; }
-      // 2단계: toDataURL 시도 (tainted canvas면 실패)
-      if (keyed) {
-        try { dataUrl = keyed.toDataURL('image/png'); }
-        catch (e) { dataUrl = null; }
-      }
       characterImages[charId] = {
-        img, keyed, src, dataUrl,
+        img, src,
         w: img.naturalWidth, h: img.naturalHeight,
       };
     };
     img.onerror = () => { characterImages[charId] = 'missing'; };
     img.src = src;
   }
-  // 캔버스 그리기용: 키잉된 canvas 우선, 안되면 raw img (검정 배경 보임)
+  // 캔버스 그리기용 — 원본 이미지 그대로 (이미 투명 PNG)
   function getCharacterImage(charId) {
     const v = characterImages[charId];
     if (!v || v === 'loading' || v === 'missing') return null;
-    return v.keyed || v.img;
+    return v.img;
   }
-  // HTML <img src>용: dataURL 우선, 안되면 원본 경로
+  // HTML <img src>용 — 원본 경로 그대로
   function getCharacterImageSrc(charId) {
     const v = characterImages[charId];
     if (!v || v === 'loading' || v === 'missing') return null;
-    return v.dataUrl || v.src;
+    return v.src;
   }
   // 🆕 이름 앞 이모지 제거 — 캐릭터 이미지가 함께 표시될 땐 이모지가 중복이라 뗌 (예: "🌊 마린" → "마린")
   function charNameNoEmoji(name) {
@@ -18436,34 +18424,10 @@
     for (const id of Object.keys(CHARACTERS)) loadCharacterImage(id);
   }
 
-  // ===== 🖼️ 가챠 배너 이미지도 chroma key 처리 =====
-  // file:// 환경에서는 toDataURL 실패 → 원본 src 유지 (검정 배경 그대로 보임)
-  function processGachaBanner() {
-    const bannerEl = document.getElementById('gacha-banner-img');
-    if (!bannerEl) return;
-    const probe = new Image();
-    probe.onload = () => {
-      try {
-        const keyed = chromaKeyImage(probe);
-        try {
-          const dataUrl = keyed.toDataURL('image/png');
-          bannerEl.src = dataUrl;
-          bannerEl.style.background = 'transparent';
-        } catch (e) {
-          // toDataURL 실패 (tainted canvas) → 원본 src 유지
-        }
-      } catch (e) {
-        // getImageData 실패 → 원본 src 유지
-      }
-    };
-    probe.onerror = () => { /* gacha.png 없으면 HTML onerror가 fallback div 표시 */ };
-    probe.src = `./icons/gacha.png?_k=${Date.now()}`;
-  }
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', processGachaBanner);
-  } else {
-    processGachaBanner();
-  }
+  // 🚫 v672 — processGachaBanner 제거.
+  //    존재하지 않는 ./icons/gacha.png 를 프로브하던 죽은 코드였고 (항상 onerror),
+  //    배너는 gacha-banner-img 에 배너별 이미지가 직접 세팅되어 따로 관리된다.
+  //    배너는 배경이 있는 일러라 애초에 키잉 대상도 아니었다.
 
   // 캔버스용 아이콘 그리기 (이미지 있으면 그림, 없으면 fallback)
   function drawAbilityIcon(id, x, y, size) {
@@ -21812,6 +21776,8 @@
         'celestialSymphony', 'eternalMoment',               // SSR triple
         'celestialEcho', 'sirensSong',                      // aria 4/8★
         'temporalLoop', 'paradoxFreeze',                    // misaki 4/8★
+        'prismBolt', 'spectrumBeam', 'chromaBurst', 'prismCataclysm', 'refractionField', 'whiteEclipse',   // 🆕 blanche
+        'huntingClaw', 'savageRend', 'beastCyclone', 'primalRampage', 'beastForm', 'apexPredator',          // 🆕 kaira
       ]);
       const srAbilities = new Set([
         'sakuraSlash', 'moonShot',                          // SR start
@@ -21819,6 +21785,10 @@
         'sakuraInferno', 'moonBombardment',                 // SR triple
         'petalStorm', 'cherrySingularity',                  // sakura 4/8★
         'lunarRain', 'eclipsePiercer',                      // luna 4/8★
+        'interceptorDrone', 'laserPod', 'homingArtillery', 'orbitalFortress',    // 🆕 amy
+        'acidFlask', 'toxicCloud', 'chemBarrage', 'grandDissolution',            // 🆕 chloe
+        'marionette', 'threadDance', 'puppetLegion', 'curtainCall',              // 🆕 lara
+        'petrifyGaze', 'petraShatter', 'medusaGaze', 'eternalPetrify',           // 🆕 galatea
       ]);
       if (ssrAbilities.has(id)) {
         if (def.isTriple) return 5.0;
@@ -27490,6 +27460,13 @@
     'celestialEcho', 'sirensSong', 'temporalLoop', 'paradoxFreeze',
     // ⭐ SR 별 해금 히든 능력 (전 맵 효과)
     'petalStorm', 'cherrySingularity', 'lunarRain', 'eclipsePiercer',
+    // 🆕 신규 캐릭 전 맵/장거리 능력
+    'homingArtillery', 'orbitalFortress', 'laserPod',                      // 에이미 (장거리 미사일/레이저)
+    'chemBarrage', 'grandDissolution',                                     // 클로에 (투하/전체 부식)
+    'curtainCall',                                                         // 라라 (방사 실폭발)
+    'medusaGaze', 'eternalPetrify',                                        // 갈라테아 (부채꼴/전체 석화)
+    'spectrumBeam', 'prismCataclysm', 'refractionField', 'whiteEclipse',   // 블랑슈 (광선/전체 분광)
+    'primalRampage', 'apexPredator',                                       // 카이라 (전체 강습)
   ]);
   // 🎯 능력별 표적 사거리 — TD 모드 사거리 캡 + 시각 표시용
   // def.range(lv) 가 정의돼있으면 사용, 아니면 능력 타입/티어별 기본값
@@ -30970,6 +30947,8 @@
       misaki: { title: '🌌 시간의 모래시계', text: '"이 모래시계, 네 시간에 맞춰 돌아갈 거야. 가져."' },
       elementia: { title: '🌌 정령왕의 인장', text: '"정령들이 너를 인정했어. 이 인장, 받아줘."' },
       sumika:    { title: '🌌 먹의 인장',     text: '"…이 붓에 네 이름을 새긴다. 받아."' },
+      blanche:   { title: '🌌 분광의 프리즘',   text: '"이 프리즘, 네 빛으로 채워봐. 일곱 색이 널 따를 거야."' },
+      kaira:     { title: '🌌 야수왕의 송곳니', text: '"이 송곳니… 네 안의 야수가 반응하고 있어. 가져."' },
     };
     const lo = lore[charId] || { title: `🌌 ${rn}`, text: '"이 유물, 너에게 어울려."' };
     return { title: lo.title, text: lo.text, choices: [
@@ -30986,8 +30965,10 @@
     chloe:    [ { make: () => _charEv('⚗ 클로에의 배합',      '"부식을 더 넓게 퍼뜨릴까, 아니면 한 곳을 진하게 녹일까?"', 'dmg',  20, 'acidFlask') } ],
     lara:     [ { make: () => _charEv('🎭 라라의 무대',       '"인형을 더 풀어놓을까, 아니면 실을 더 날카롭게 벼릴까?"',   'dmg',  20, 'marionette') } ],
     galatea:  [ { make: () => _charEv('🗿 갈라테아의 시선',   '"넓게 굳혀둘까, 아니면 한 놈을 완전히 부숴버릴까?"',       'dmg',  20, 'petrifyGaze') } ],
-    blanche:  [ { make: () => _charEv('🌈 블랑슈의 분광',      '"빛을 더 넓게 흩뿌릴까, 아니면 한 점으로 모아 태울까?"',   'dmg',  22, 'prismBolt') } ],
-    kaira:    [ { make: () => _charEv('🐾 카이라의 사냥',      '"인간형으로 사거리를 늘릴까, 야수형으로 물어뜯을까?"',     'dmg',  22, 'huntingClaw') } ],
+    blanche:  [ { make: () => _charEv('🌈 블랑슈의 분광',      '"빛을 더 넓게 흩뿌릴까, 아니면 한 점으로 모아 태울까?"',   'dmg',  22, 'prismBolt') },
+                { avail: () => _ancientAvail('blanche'), make: () => _charRelicEv('blanche') } ],
+    kaira:    [ { make: () => _charEv('🐾 카이라의 사냥',      '"인간형으로 사거리를 늘릴까, 야수형으로 물어뜯을까?"',     'dmg',  22, 'huntingClaw') },
+                { avail: () => _ancientAvail('kaira'), make: () => _charRelicEv('kaira') } ],
     sakura:   [ { make: () => _charEv('🌸 사쿠라의 만개',     '"꽃잎처럼 흩날리는 칼날, 더 날카롭게 해줄까?"',             'dmg',  22, 'sakuraSlash') } ],
     luna:     [ { make: () => _charEv('🌙 루나의 월광',       '"달빛을 더 퍼뜨릴까, 월광탄을 더 키울까?"',                 'dmg',  18, 'moonShot') } ],
     aria:     [ { make: () => _charEv('🌟 아리아의 합창',     '"이 별의 노래, 너한테 맞춰 부를게. 어느 쪽이 좋아?"',       'dmg',  24, 'starSong') },
@@ -32455,7 +32436,7 @@
 
   // 🛰️ v461 — 메인 메뉴 로테이션 간판 캐릭터 백드롭 (메뉴 진입마다 순환)
   // ⚠️ refreshMenuButtons가 아니라 showScreen('menu') 진입에서만 호출 — refreshMenuButtons는 서버 pull 후에도 재호출돼 중복 회전/캐시-onload 버그 유발.
-  const MENU_HERO_IDS = ['aria','misaki','elementia','sumika','solar','marine','gravitas','luna','sakura','cardista','levina'];
+  const MENU_HERO_IDS = ['aria','misaki','elementia','sumika','blanche','kaira','solar','marine','gravitas','luna','sakura','cardista','levina','amy','chloe','lara','galatea'];
   let _menuHeroIdx = -1;
   function refreshMenuHero() {
     const el = document.getElementById('menu-hero-bg');
@@ -34075,7 +34056,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 669;
+  const APP_VERSION = 672;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
