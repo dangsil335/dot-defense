@@ -17962,7 +17962,7 @@
               // (render() 가 같은 state.t 로 뒤이어 돌기 때문에 여기서 안 지우면 122px 어긋난 채 굳는다)
               for (const e of state.enemies) e._xyT = -1;
               // 🔫 탄은 tick 이 아니라 이후 탄 루프에서 데미지를 넣는다 → 그때 게이트를 다시 걸도록 태깅
-              for (let i = _b0; i < state.bullets.length; i++) state.bullets[i]._ph = 0.25;
+              for (let i = _b0; i < state.bullets.length; i++) state.bullets[i]._ph = _phantomScale;   // ⚠️ 아래 _phantomScale = 1 리셋보다 반드시 위
               state.currentAbilityTier = _oTier; state.currentAbilityId = _oId;
               _phantomDmg = false; _phantomScale = 1;
             }
@@ -18088,10 +18088,16 @@
         const n = 4 + Math.floor(ab.level / 4);
         if (ab.cells.length !== n) {
           ab.cells = [];
-          for (let i = 0; i < n; i++) {
-            const a = (Math.PI * 2 / n) * i;
-            ab.cells.push({ x: CX + Math.cos(a) * ARENA_R * 0.55, y: CY + Math.sin(a) * ARENA_R * 0.55, cd: 0, fl: 0 });
-          }
+          for (let i = 0; i < n; i++) ab.cells.push({ x: CX, y: CY, cd: 0, fl: 0 });
+        }
+        // 📷 셀 원점은 매 틱 현재 CX/CY 기준으로 다시 놓는다. 생성 시점 1회만 배치하면
+        //    그 프레임이 기립박수 재생 구간(CX/CY 가 ~122px 치환된 상태)일 때 런 내내
+        //    어긋난 채 굳는다. (레벨 4·8… 에서 칸 수가 늘어 재생성될 때도 같은 함정)
+        //    반지름·각도는 동일 — 원점만 항상 현재 값을 따른다.
+        for (let i = 0; i < n; i++) {
+          const a = (Math.PI * 2 / n) * i;
+          ab.cells[i].x = CX + Math.cos(a) * ARENA_R * 0.55;
+          ab.cells[i].y = CY + Math.sin(a) * ARENA_R * 0.55;
         }
         const dmg = 24 + ab.level * 11;
         // 📷 자립 잔상 — overexposed 가 자기 조합(+turret)으로 소진되면 잔상 생산이 영구히 멈춰서
@@ -18145,9 +18151,26 @@
     developingTray: {
       name: '현상액', baseCost: 350, color: '#c0392b', isCombo: true, isTriple: true, isEighth: true,
       desc: lv => `[8돌파] 5s마다 화면 정지 후 모든 잔상 일괄 인화 · 전체 DMG ${50 + lv * 22} + 잔상 1개당 추가 ${6 + lv * 2}`,
-      init(ab) { ab.cooldown = 180; ab.fx = 0; },
+      init(ab) { ab.cooldown = 180; ab.fx = 0; ab.snapCd = 0; },
       tick(ab) {
         if (ab.fx > 0) ab.fx--;
+        // 📷 자립 잔상 — 잔상 생산자(overexposed·contactSheet)는 둘 다 자기 조합으로 소진된
+        //    뒤라, 현상액이 존재하는 시점엔 살아있는 생산자가 하나도 없다. 게다가 발동마다
+        //    배열을 비우므로 남아있던 잔상은 첫 발동에서 한 번 정산되고 이후 영구히 0이 된다.
+        //    → 페리아 _feriaCharge 와 같은 원칙: 상위 티어가 스스로 생산해 킷을 자립시킨다.
+        //    (잔상은 집계용 가산 보너스일 뿐 — 개체당 피해식에는 적 수가 절대 끼지 않는다)
+        if (--ab.snapCd <= 0) {
+          ab.snapCd = 30;
+          const gh = state._irisGhosts || (state._irisGhosts = []);
+          const ghCap = Math.min(40, 12 + ab.level * 3);
+          for (const e of state.enemies) {
+            if (e.hp <= 0) continue;
+            if (gh.length >= ghCap) break;
+            const [ex, ey] = enemyXY(e);
+            if (Math.abs(ex - CX) > 150 || Math.abs(ey - CY) > 150) continue;
+            gh.push({ x: ex, y: ey, life: 240 });
+          }
+        }
         if (--ab.cooldown > 0) return;
         ab.cooldown = Math.max(220, 340 - ab.level * 6);
         ab.fx = 30;
