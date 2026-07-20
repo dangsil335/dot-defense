@@ -18871,6 +18871,8 @@
     'huntingClaw', 'savageRend', 'beastCyclone', 'primalRampage', 'beastForm', 'apexPredator',
     // 🆕 페리아(SSR) 자력 킷 + 별해금 2종
     'polarField', 'reversePolarity', 'magRail', 'magnetStorm', 'ferroShard', 'monopole',
+    // 🆕 트리나(SR) 환영 킷
+    'phantomStage', 'chromaticSplit', 'encore', 'standingOvation',
   ];
   // (구 숫자 매핑 ABILITY_ICON_NUMBER/getIconNumber 제거 — 파일명이 id가 되어 불필요. ABILITY_ICON_ORDER는 프리로드 목록으로 유지)
   function getIconPath(id) {
@@ -19088,6 +19090,10 @@
     { parts: ['polarField', 'frost'],          combo: 'reversePolarity' },
     { parts: ['reversePolarity', 'railgun'],   combo: 'magRail', tier: 3 },
     { parts: ['magRail', 'blackhole'],         combo: 'magnetStorm', tier: 4 },
+    // 🎭 트리나(환영) 조합 체인
+    { parts: ['phantomStage', 'clone'],        combo: 'chromaticSplit' },
+    { parts: ['chromaticSplit', 'orbital'],    combo: 'encore', tier: 3 },
+    { parts: ['encore', 'turret'],             combo: 'standingOvation', tier: 4 },
     { parts: ['sunspot',   'railgun'],   combo: 'solarStorm' },
     { parts: ['pullField', 'iceLance'], combo: 'voidIceVortex' },
     // ===== 🎰 가챠 R 트리플 (히든) =====
@@ -19992,6 +19998,7 @@
     chloeMaster:     { name: '연성술사',         icon: '⚗', achId: 'char8_chloe',   style: 'normal', color: '#a0e050' },
     laraMaster:      { name: '인형사',           icon: '🎭', achId: 'char8_lara',    style: 'normal', color: '#d070c0' },
     galateaMaster:   { name: '조각가',           icon: '🗿', achId: 'char8_galatea', style: 'normal', color: '#c8b890' },
+    trinaMaster:     { name: '대역 배우',         icon: '🎭', achId: 'char8_trina',   style: 'normal', color: '#e0489f' },
     // SR 캐릭터 칭호
     sakuraMaster:    { name: '벚꽃의 검객',     icon: '🌸', achId: 'char8_sakura',  style: 'glow',   color: '#ff88bb' },
     lunaMaster:      { name: '달빛의 사수',     icon: '🌙', achId: 'char8_luna',    style: 'glow',   color: '#aaccff' },
@@ -20060,7 +20067,7 @@
     codex50:'book', codexMast:'book', allHeroes:'masks', speedrun:'bolt', oneTrick:'bullseye',
     asc1Title:'sparkle', asc5Title:'star', asc10Title:'starburst', asc15Title:'crown',
     trans1Title:'galaxy', trans3Title:'galaxy', trans5Title:'starburst', trans10Title:'crown', trans15Title:'starburst',
-    starGazer:'star', marineMaster:'wave', solarMaster:'sun', gravitasMaster:'vortex', amyMaster:'missile', chloeMaster:'flask', laraMaster:'masks', galateaMaster:'gem',
+    starGazer:'star', marineMaster:'wave', solarMaster:'sun', gravitasMaster:'vortex', amyMaster:'missile', chloeMaster:'flask', laraMaster:'masks', galateaMaster:'gem', trinaMaster:'masks',
     sakuraMaster:'blossom', lunaMaster:'moon', ariaMaster:'star', misakiMaster:'butterfly', elementiaMaster:'sparkle', sumikaMaster:'skull', blancheMaster:'starburst', kairaMaster:'dragon', feriaMaster:'vortex',
     // 🔱 트리플 컬렉션
     tcUltra:'barrage', tcFrost:'bolt', tcElem:'sparkle', tcFusion:'cannon', tcGalaxy:'galaxy', tcTitan:'missile',
@@ -21903,7 +21910,7 @@
   // 가챠 캐릭터 풀 (등급별)
   const GACHA_POOL = {
     R:   [],   // 🆕 R 등급 폐지 — 마린/솔라/그래비타스는 SR로 승격
-    SR:  ['sakura', 'luna', 'marine', 'solar', 'gravitas', 'cardista', 'levina', 'amy', 'chloe', 'lara', 'galatea'],
+    SR:  ['sakura', 'luna', 'marine', 'solar', 'gravitas', 'cardista', 'levina', 'amy', 'chloe', 'lara', 'galatea', 'trina'],
     SSR: ['aria', 'misaki', 'elementia', 'sumika', 'blanche', 'kaira', 'feria'],
   };
   const GACHA_RATES = { SR: 0.05, SSR: 0.01 };   // (구) 단일 배너 호환용 — 나머지(0.94)는 스타더스트
@@ -21921,7 +21928,7 @@
   // 🎴 배너별 가챠 정의 — 픽업 캐릭터, 풀, 확률
   // 각 배너는 자기 SSR만 픽업 (다른 SSR 제외), SR/R 풀은 동일
   // 🎴 배너 2개 — 각 배너 SSR 픽업 2명(어느 쪽이 나올진 운), SR은 전체 동일. 엘레미아·스미카 우선.
-  const _GACHA_SR_ALL = ['sakura', 'luna', 'marine', 'solar', 'gravitas', 'cardista', 'levina', 'amy', 'chloe', 'lara', 'galatea'];
+  const _GACHA_SR_ALL = ['sakura', 'luna', 'marine', 'solar', 'gravitas', 'cardista', 'levina', 'amy', 'chloe', 'lara', 'galatea', 'trina'];
   const GACHA_BANNERS = [
     {
       id: 'elemSumi',
@@ -22312,6 +22319,7 @@
         'acidFlask', 'toxicCloud', 'chemBarrage', 'grandDissolution',            // 🆕 chloe
         'marionette', 'threadDance', 'puppetLegion', 'curtainCall',              // 🆕 lara
         'petrifyGaze', 'petraShatter', 'medusaGaze', 'eternalPetrify',           // 🆕 galatea
+        'phantomStage', 'chromaticSplit', 'encore', 'standingOvation',           // 🆕 trina
       ]);
       if (ssrAbilities.has(id)) {
         if (def.isTriple) return 5.0;
@@ -22935,6 +22943,31 @@
 그녀가 플라스크를 던졌다. 전장이 통째로 부식의 빛에 잠겼다.` },
       ],
     },
+    trina: {
+      name: '🎭 트리나', color: '#e0489f',
+      desc: '[SR] 환영 무대로 시작. 데미지 +26% / 보스 +10% / 레벨업 -8% / 슬롯 +1. 환영 + 분신 = 색수차 분열. 환영은 피해만 주고 판정은 굴리지 않는다.',
+      startAbilities: ['phantomStage'],
+      passive: { dmgMul: 1.26, bossDmgMul: 1.10, slotMod: 1, levelUpMul: 0.92, slowMul: 1 },
+      unlockBy: 'gacha:trina',
+      isGacha: true, rarity: 'SR',
+      story: [
+        { star: 0, title: '대기실', text: `무대에 서는 건 언제나 다른 사람이었다. 트리나는 커튼 뒤에서 모든 대사를 외웠다.
+
+"괜찮아. 나는 언제든 설 수 있게 준비만 해두면 되니까."
+
+거울 속 그녀의 윤곽이, 아주 살짝 어긋나 보였다.` },
+        { star: 4, title: '세 번 인쇄된 사람', text: `"너… 방금 세 명이었어?"
+
+트리나는 어깨를 으쓱했다. 그녀의 그림자는 분명 세 방향으로 갈라져 있었다.
+
+"대역이 하나뿐이면 곤란하잖아. 나는 늘 여분을 준비해둬."` },
+        { star: 8, title: '전원 등장', text: `막이 오르고, 무대 위에는 그녀 하나뿐이었다. 그런데 박수는 사방에서 터져 나왔다.
+
+"주연이 못 되면 어때. …전부 내가 하면 되잖아."
+
+세 개의 윤곽이 동시에 인사했다. 어느 쪽이 진짜인지, 아무도 알 수 없었다.` },
+      ],
+    },
     sakura: {
       name: '🌸 사쿠라', color: '#ff88bb',
       desc: '[SR] 벚꽃검으로 시작. 데미지 +35% / 보스 데미지 +35% / 레벨업 -10%. 벚꽃검 + 검 = 벚꽃폭풍.',
@@ -23369,6 +23402,8 @@
       check: () => ((META.charStars || {}).lara || 0) >= 8 },
     { id: 'char8_galatea',  name: '🗿 조각가',         desc: '🗿 갈라테아 8★ 달성', reward: 300,
       check: () => ((META.charStars || {}).galatea || 0) >= 8 },
+    { id: 'char8_trina',    name: '🎭 대역 배우',      desc: '🎭 트리나 8★ 달성',   reward: 300,
+      check: () => ((META.charStars || {}).trina || 0) >= 8 },
     { id: 'char8_blanche',  name: '🌈 분광의 마녀',     desc: '🌈 블랑슈 8★ 달성',   reward: 1500,
       check: () => ((META.charStars || {}).blanche || 0) >= 8 },
     { id: 'char8_kaira',    name: '🐾 야수왕',         desc: '🐾 카이라 8★ 달성',   reward: 1500,
@@ -28030,6 +28065,7 @@
     'spectrumBeam', 'prismCataclysm', 'refractionField', 'whiteEclipse',   // 블랑슈 (광선/전체 분광)
     'primalRampage', 'apexPredator',                                       // 카이라 (전체 강습)
     'magRail', 'magnetStorm', 'monopole',                                  // 페리아 (관통/전체 붕괴/흡입장)
+    'standingOvation',                                                     // 트리나 (전체 키트 재생)
   ]);
   // 🎯 능력별 표적 사거리 — TD 모드 사거리 캡 + 시각 표시용
   // def.range(lv) 가 정의돼있으면 사용, 아니면 능력 타입/티어별 기본값
@@ -31178,6 +31214,7 @@
     misaki:    '시간이… 너를 선택했어. 받아들여.',
     sumika:    '…한 획. 이 힘, 너에게 새긴다.',
     elementia: '정령들이 너와 함께할 거야 — 받아줘!',
+    trina:     '자, 막을 올릴게 — 오늘은 내가 주연이야.',
   };
   // 🌳 R 진화 이벤트 — 카드로 고른 타로 NPC가 등장해 대사 + 타워 진화 (무조건 승낙)
   function openEvolutionEvent(rtKey) {
@@ -31487,6 +31524,7 @@
     sumika:   '…한 획이면 충분해. 숨, 멈추지 마.',
     cardista: '카드는 이미 뽑혔어 — 자, 베팅 가자!',
     levina:   '번개는 망설이지 않아. 따라올 수 있겠어?',
+    trina:    '대역 셋 데려왔어. 누가 진짜인지 맞춰볼래?',
   };
   // 공통 빌더 — 버프(테마, 스케일 정직) + 시작능력 강화 택1
   function _charEv(title, text, kind, base, abId) {
@@ -31549,6 +31587,7 @@
                 { avail: () => _ancientAvail('sumika'), make: () => _charRelicEv('sumika') } ],
     cardista: [ { make: () => _charEv('🎴 카르타의 패',       '"이번 패, 골드로 받을래 아니면 카드를 더 키울래?"',         'gold', 22, 'cardThrow') } ],
     levina:   [ { make: () => _charEv('⚡ 레비나의 뇌격',      '"번개를 더 키울까, 아니면 낙뢰 자체를 강하게 할까?"',       'dmg',  22, 'stormBrand') } ],
+    trina:    [ { make: () => _charEv('🎭 트리나의 무대',      '"환영을 늘릴까, 아니면 한 기를 더 진하게 만들까?"',       'dmg',  20, 'phantomStage') } ],
   };
   // 시작능력 +1 강화 (없으면 재획득, 만렙이면 무작위 +1로 대체)
   function _evBoostAbility(id) {
@@ -31579,6 +31618,7 @@
     cardista: ['cardThrow', 'riggedDeck', 'royalFlush', 'grandSlam'],
     sumika:   ['inkSlash', 'silentExecution', 'sumiReaper', 'inkReaper'],
     elementia: ['spritling', 'windWolfSpirit', 'phoenixSpirit', 'leviathanSpirit'],
+    trina:    ['phantomStage', 'chromaticSplit', 'encore', 'standingOvation'],
   };
   // ===== 🌳 진화 트리 데이터 (운빨 진화 로그라이크) =====
   // R 타워 13종 — 일러 없음, 기존 액티브 재활용+개명. 업적으로 해금. sr = R15 진화 2택.
@@ -33005,7 +33045,7 @@
 
   // 🛰️ v461 — 메인 메뉴 로테이션 간판 캐릭터 백드롭 (메뉴 진입마다 순환)
   // ⚠️ refreshMenuButtons가 아니라 showScreen('menu') 진입에서만 호출 — refreshMenuButtons는 서버 pull 후에도 재호출돼 중복 회전/캐시-onload 버그 유발.
-  const MENU_HERO_IDS = ['aria','misaki','elementia','sumika','blanche','kaira','feria','solar','marine','gravitas','luna','sakura','cardista','levina','amy','chloe','lara','galatea'];
+  const MENU_HERO_IDS = ['aria','misaki','elementia','sumika','blanche','kaira','feria','solar','marine','gravitas','luna','sakura','cardista','levina','amy','chloe','lara','galatea','trina'];
   let _menuHeroIdx = -1;
   function refreshMenuHero() {
     const el = document.getElementById('menu-hero-bg');
@@ -34753,7 +34793,7 @@
     // 🌌 초월 — 승천 15 이후 단계적
     trans:    ['trans1', 'trans3', 'trans5', 'trans10', 'trans15'],
     // ⭐ 캐릭터 돌파 — 별 등급
-    chars:    ['firstStar', 'char8_marine', 'char8_solar', 'char8_gravitas', 'char8_sakura', 'char8_luna', 'char8_aria', 'char8_misaki', 'char8_elementia', 'char8_sumika', 'char8_amy', 'char8_chloe', 'char8_lara', 'char8_galatea', 'char8_blanche', 'char8_kaira', 'char8_feria'],
+    chars:    ['firstStar', 'char8_marine', 'char8_solar', 'char8_gravitas', 'char8_sakura', 'char8_luna', 'char8_aria', 'char8_misaki', 'char8_elementia', 'char8_sumika', 'char8_amy', 'char8_chloe', 'char8_lara', 'char8_galatea', 'char8_trina', 'char8_blanche', 'char8_kaira', 'char8_feria'],
     special:  ['codexHalf', 'codexFull', 'allChars', 'speedrun', 'lowSlot',
                'lucky5', 'goldHold3k', 'gold5kRun',
                'relicFirst', 'relic3', 'relic5', 'relicRare', 'relicEpic', 'relicLeg', 'relicAllRar'],
