@@ -17608,6 +17608,7 @@
         compactInPlace(ab.shots, s => s.life > 0);
         if (--ab.cooldown > 0) return;
         ab.cooldown = Math.max(50, 96 - ab.level * 3);
+        _feriaCharge(Math.min(20, 8 + ab.level));   // polarField 소진 후에도 자립 태깅
         const pool = state.enemies.filter(e => e.hp > 0);
         if (!pool.length) { ab.cooldown = 20; return; }
         const tgt = pool[Math.floor(Math.random() * pool.length)];
@@ -17671,6 +17672,7 @@
         if (--ab.cooldown > 0) return;
         ab.cooldown = Math.max(150, 260 - ab.level * 5);
         ab.phase = 1; ab.t = 0;
+        _feriaCharge(Math.min(20, 10 + ab.level));   // polarField 소진 후에도 자립 태깅
       },
       draw(ab) {
         if (ab.phase === 0) return;
