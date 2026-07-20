@@ -6738,6 +6738,17 @@
     ctx.globalAlpha = al * 0.65; ctx.strokeStyle = '#fff6ea'; ctx.lineWidth = 2;
     for (let k = 0; k < 8; k++) { const sa = (Math.PI * 2 / 8) * k, l1 = sc * (0.4 + (1 - al) * 0.35); ctx.beginPath(); ctx.moveTo(bx + Math.cos(sa) * sc * 0.15, by + Math.sin(sa) * sc * 0.15); ctx.lineTo(bx + Math.cos(sa) * l1, by + Math.sin(sa) * l1); ctx.stroke(); }
   }
+  // 🧲 페리아 공용 — 극성 부여 (상한 cap 체). 조합으로 polarField 가 소진돼도
+  //    상위 티어가 스스로 태깅할 수 있어야 킷이 죽지 않는다.
+  function _feriaCharge(cap) {
+    let n = 0;
+    for (const e of state.enemies) {
+      if (e.hp <= 0) continue;
+      if (e._pol && e._polUntil > state.t) { n++; continue; }
+      if (n >= cap) break;
+      e._pol = (n % 2 === 0) ? 1 : -1; e._polUntil = state.t + 300; n++;
+    }
+  }
   const ABILITY_DEFS = {
     shot: {
       name: '샷', single: true, baseCost: 30, color: '#ffe28a',
@@ -17491,13 +17502,7 @@
         // 극성 부여 (상한 20체)
         if (--ab.cooldown <= 0) {
           const cap = Math.min(20, 4 + ab.level * 2 + permaCount('polarField'));
-          let n = 0;
-          for (const e of state.enemies) {
-            if (e.hp <= 0) continue;
-            if (e._pol && e._polUntil > state.t) { n++; continue; }
-            if (n >= cap) break;
-            e._pol = (n % 2 === 0) ? 1 : -1; e._polUntil = state.t + 300; n++;
-          }
+          _feriaCharge(cap);
           ab.cooldown = 34;
         }
         // 견인 — 극성별로 반경을 밀거나 당긴다
@@ -17571,6 +17576,7 @@
         if (--ab.cooldown > 0) return;
         ab.cooldown = Math.max(60, 120 - ab.level * 3);
         ab.flash = 18;
+        _feriaCharge(Math.min(20, 6 + ab.level * 2));   // polarField 소진 후에도 자립 태깅
         const dmg = 16 + ab.level * 7;
         for (const e of state.enemies) {
           if (e.hp <= 0 || !e._pol) continue;
@@ -17615,7 +17621,7 @@
           if (e.hp <= 0) continue;
           const [px, py] = enemyXY(e);
           const t = ((px - CX) * Math.cos(ang) + (py - CY) * Math.sin(ang));
-          if (t < 0) continue;
+          if (t < 0 || t > 700) continue;
           const dx = px - (CX + Math.cos(ang) * t), dy = py - (CY + Math.sin(ang) * t);
           if (dx * dx + dy * dy < 20 * 20) damageEnemy(e, dmg);
         }
@@ -17692,23 +17698,23 @@
         ctx.restore(); ctx.globalAlpha = 1;
       },
     },
-    // 🧲 페리아 4★ 별해금 — 강자성 파편 (처치 시 쇳가루 잔류 → magRail 누적과 시너지)
+    // 🧲 페리아 4★ 별해금 — 강자성 파편 (극성 적에게서 쇳가루 생성, 틱 순서 무관 자체 쿨다운 → magRail 누적과 시너지)
     ferroShard: {
       name: '강자성 파편', isGachaUnique: true, isStarUnlock: true, baseCost: 280, color: '#8fa3c8',
-      desc: lv => `[4★히든] 적 처치 시 쇳가루 잔류(최대 ${Math.min(40, 12 + lv * 3)}개) · 접촉 DMG ${5 + lv * 3} · 레일건 위력에 누적`,
-      init(ab) { state._ferroShards = []; ab.tick0 = 0; },
+      desc: lv => `[4★히든] 0.4s마다 극성 적에게서 쇳가루 생성(최대 ${Math.min(40, 12 + lv * 3)}개) · 접촉 DMG ${5 + lv * 3} · 레일건 위력에 누적`,
+      init(ab) { state._ferroShards = []; ab.spawnCd = 0; },
       tick(ab) {
         const arr = state._ferroShards || (state._ferroShards = []);
         const cap = Math.min(40, 12 + ab.level * 3);
-        // 쇳가루 생성 — "죽은 적 감지"가 아니라 "자기 충돌을 맞은 적"에서 떨어져 나온다.
-        //   죽은 적은 배열에서 곧바로 제거될 수 있어 다음 tick 에서 관측이 보장되지 않는다.
-        //   e._magHitUntil 은 polarField/monopole 이 충돌 순간에 세우므로 같은 프레임에 확실히 잡힌다.
-        for (const e of state.enemies) {
-          if (e.hp <= 0 || !e._magHitUntil) continue;
-          if (e._magHitUntil !== state.t + 20) continue;   // 방금 세워진 것만 (중복 방지)
-          if (arr.length >= cap) break;
-          const [ex, ey] = enemyXY(e);
-          arr.push({ x: ex, y: ey, a: Math.random() * Math.PI * 2, life: 420 });
+        // 쇳가루 생성 — 틱 순서에 의존하지 않도록 자체 쿨다운으로 극성 적에게서 떨어져 나온다
+        if (--ab.spawnCd <= 0) {
+          ab.spawnCd = 24;
+          for (const e of state.enemies) {
+            if (e.hp <= 0 || !e._pol) continue;
+            if (arr.length >= cap) break;
+            const [ex, ey] = enemyXY(e);
+            arr.push({ x: ex, y: ey, a: Math.random() * Math.PI * 2, life: 420 });
+          }
         }
         const dmg = 5 + ab.level * 3;
         for (const s of arr) {
@@ -17741,9 +17747,10 @@
     monopole: {
       name: '단극자', isGachaUnique: true, isStarUnlock: true, baseCost: 480, color: '#2f57d8',
       desc: lv => `[8★히든] 상시 흡입장 · 극성 적 지속 DMG ${10 + lv * 6} · 극성 적 HP ${8 + lv}% 이하 처형`,
-      init(ab) { ab.pulse = 0; },
+      init(ab) { ab.pulse = 0; ab.chargeCd = 0; },
       tick(ab) {
         ab.pulse += 0.05;
+        if (--ab.chargeCd <= 0) { ab.chargeCd = 30; _feriaCharge(Math.min(20, 8 + ab.level)); }   // polarField 소진 후에도 자립 태깅
         const dmg = 10 + ab.level * 6, thr = (8 + ab.level) / 100;
         for (const e of state.enemies) {
           if (e.hp <= 0) continue;
