@@ -6744,14 +6744,20 @@
     let n = 0;
     for (const e of state.enemies) {
       if (e.hp <= 0) continue;
-      if (e._pol && e._polUntil > state.t) { n++; continue; }
-      if (n >= cap) break;
+      // ⏳ 만료 스윕 — polarField 가 자기 조합으로 소진되면 만료 극성을 지우는 곳이 사라진다.
+      //    하위 소비처는 !e._pol 만 검사하므로(_polUntil 재확인 안 함) 여기서 확실히 0 으로 되돌린다.
+      if (e._pol && e._polUntil <= state.t) e._pol = 0;
+      if (e._pol) { n++; continue; }
+      if (n >= cap) continue;   // 상한 도달 후에도 스윕은 끝까지 돌아야 하므로 break 하지 않는다
       e._pol = (n % 2 === 0) ? 1 : -1; e._polUntil = state.t + 300; n++;
     }
   }
   // 🎭 트리나 — _phantomDmg 플래그를 쓰는 능력들. standingOvation 이 재생 대상에서 제외해야 한다.
   //    (공유 플래그라, 재생된 능력의 finally 가 바깥 finally 보다 먼저 플래그를 꺼버린다.)
   const TRINA_PHANTOM_IDS = new Set(['phantomStage', 'chromaticSplit', 'encore', 'standingOvation']);
+  // 🎭 standingOvation 재생 제외 — 월드에 영속 엔티티를 배치하는 능력.
+  //    치환된 CX/CY 기준으로 깔려서 적 궤도(62~270) 밖에 떨어지고 슬롯만 점유한다.
+  const TRINA_REPLAY_SKIP = new Set(['mine', 'blackhole']);
   const ABILITY_DEFS = {
     shot: {
       name: '샷', single: true, baseCost: 30, color: '#ffe28a',
@@ -17531,7 +17537,7 @@
             if (dx * dx + dy * dy > 26 * 26) continue;
             for (const t of [a, b]) {
               if (t._magHitUntil && t._magHitUntil > state.t) continue;
-              t._magHitUntil = state.t + 20;
+              if (!_phantomDmg) t._magHitUntil = state.t + 20;   // 환영 틱은 실 틱의 쿨 창을 소모하지 않는다
               damageEnemy(t, dmg);
             }
             spawnParticles((ax + bx) / 2, (ay + by) / 2, '#b8c0cc', 4);
@@ -17586,7 +17592,7 @@
           e._pol = -e._pol;
           e.slowFrames = Math.max(e.slowFrames || 0, 70);
           if (e._magHitUntil && e._magHitUntil > state.t) continue;
-          e._magHitUntil = state.t + 20;
+          if (!_phantomDmg) e._magHitUntil = state.t + 20;   // 환영 틱은 실 틱의 쿨 창을 소모하지 않는다
           damageEnemy(e, dmg);
           const [ex, ey] = enemyXY(e);
           spawnParticles(ex, ey, e._pol > 0 ? '#3b7fe0' : '#e04b4b', 6);
@@ -17706,7 +17712,7 @@
     // 🧲 페리아 4★ 별해금 — 강자성 파편 (극성 적에게서 쇳가루 생성, 틱 순서 무관 자체 쿨다운 → magRail 누적과 시너지)
     ferroShard: {
       name: '강자성 파편', isGachaUnique: true, isStarUnlock: true, baseCost: 280, color: '#8fa3c8',
-      desc: lv => `[4★히든] 0.4s마다 극성 적에게서 쇳가루 생성(최대 ${Math.min(40, 12 + lv * 3)}개) · 접촉 DMG ${5 + lv * 3} · 레일건 위력에 누적`,
+      desc: lv => `[4★히든] 0.4s마다 극성 적에게서 쇳가루 생성(최대 ${Math.min(40, 12 + lv * 3)}개) · 접촉 DMG ${5 + lv * 3} · 자기 레일건 위력에 누적`,
       init(ab) { state._ferroShards = []; ab.spawnCd = 0; },
       tick(ab) {
         const arr = state._ferroShards || (state._ferroShards = []);
@@ -17731,7 +17737,7 @@
             if (e._magHitUntil && e._magHitUntil > state.t) continue;
             const [ex, ey] = enemyXY(e);
             const dx = ex - s.x, dy = ey - s.y;
-            if (dx * dx + dy * dy < 16 * 16) { e._magHitUntil = state.t + 20; damageEnemy(e, dmg); }
+            if (dx * dx + dy * dy < 16 * 16) { if (!_phantomDmg) e._magHitUntil = state.t + 20; damageEnemy(e, dmg); }   // 환영 틱은 실 틱의 쿨 창을 소모하지 않는다
           }
         }
         compactInPlace(arr, s => s.life > 0);
@@ -17764,7 +17770,8 @@
           e._xyT = -1;
           if (!e._pol) continue;
           if (e._magHitUntil && e._magHitUntil > state.t) continue;
-          e._magHitUntil = state.t + 20;
+          // 환영 틱(0.25배)이 창을 소모하면 즉살이 무력화된 채 20프레임 면역이 걸린다 → 실 틱에 창을 남긴다
+          if (!_phantomDmg) e._magHitUntil = state.t + 20;
           if (!e.isBoss && e.maxHp > 0 && e.hp / e.maxHp <= thr) { damageEnemy(e, e.hp + 1); continue; }
           damageEnemy(e, dmg);
         }
@@ -17933,16 +17940,30 @@
           if (++ab.step % 6 === 0) {
             const p = ab.ph[(ab.step / 6) % 3];
             const _ox = CX, _oy = CY;
+            // 🎭 바깥 능력 루프가 걸어둔 티어/귀속 id. 재생 능력마다 다시 걸고 finally 에서 되돌린다.
+            //    (재바인딩이 없으면 재생 전부가 standingOvation 의 'triple' 배율 ×6.00 로 청구된다)
+            const _oTier = state.currentAbilityTier, _oId = state.currentAbilityId;
+            const _b0 = state.bullets.length;   // 재생 중 생성된 탄의 시작 인덱스 (탄 배열은 이 구간에서 append-only)
             _phantomDmg = true; _phantomScale = 0.25;
             try {
               CX = p.x; CY = p.y;
+              // 🎯 치환 원점 기준으로 적 좌표를 다시 계산시킨다 (재생이 환영 위치에서 나가는 것이 설계 의도)
+              for (const e of state.enemies) e._xyT = -1;
               for (const t of state.tower.abilities) {
                 const def = ABILITY_DEFS[t.id];
-                if (!def || def.isPassive || TRINA_PHANTOM_IDS.has(t.id)) continue;
+                if (!def || def.isPassive || TRINA_PHANTOM_IDS.has(t.id) || TRINA_REPLAY_SKIP.has(t.id)) continue;
+                state.currentAbilityTier = def.isTriple ? 'triple' : (def.isCombo ? 'combo' : 'basic');
+                state.currentAbilityId = t.id;
                 try { if (def.tick) def.tick(t); } catch (err) {}
               }
             } finally {
               CX = _ox; CY = _oy;
+              // 치환 좌표로 오염된 메모를 진짜 원점 기준으로 되돌린다
+              // (render() 가 같은 state.t 로 뒤이어 돌기 때문에 여기서 안 지우면 122px 어긋난 채 굳는다)
+              for (const e of state.enemies) e._xyT = -1;
+              // 🔫 탄은 tick 이 아니라 이후 탄 루프에서 데미지를 넣는다 → 그때 게이트를 다시 걸도록 태깅
+              for (let i = _b0; i < state.bullets.length; i++) state.bullets[i]._ph = 0.25;
+              state.currentAbilityTier = _oTier; state.currentAbilityId = _oId;
               _phantomDmg = false; _phantomScale = 1;
             }
           }
@@ -18073,6 +18094,11 @@
           }
         }
         const dmg = 24 + ab.level * 11;
+        // 📷 자립 잔상 — overexposed 가 자기 조합(+turret)으로 소진되면 잔상 생산이 영구히 멈춰서
+        //    developingTray 의 "잔상 1개당" 보너스가 사구간이 된다. 칸이 발화하면 인화된 적 위치를 남긴다.
+        //    (칸당 피해량은 그대로 — 잔상은 현상액 보너스 집계용이다)
+        const gh = state._irisGhosts || (state._irisGhosts = []);
+        const ghCap = Math.min(40, 12 + ab.level * 3);
         for (const c of ab.cells) {
           if (c.fl > 0) c.fl--;
           if (c.cd > 0) { c.cd--; continue; }
@@ -18093,7 +18119,10 @@
             const e = enemies[i];
             if (e.hp <= 0) continue;
             const [ex, ey] = enemyXY(e);
-            if (Math.abs(ex - c.x) < 52 && Math.abs(ey - c.y) < 52) damageEnemy(e, dmg);
+            if (Math.abs(ex - c.x) < 52 && Math.abs(ey - c.y) < 52) {
+              damageEnemy(e, dmg);
+              if (gh.length < ghCap) gh.push({ x: ex, y: ey, life: 240 });
+            }
           }
           c.cd = Math.max(40, 90 - ab.level * 2); c.fl = 10;
         }
@@ -26089,7 +26118,10 @@
           const savedId   = state.currentAbilityId;
           if (b.tier && b.tier !== 'basic') state.currentAbilityTier = b.tier;
           if (b.sourceId) state.currentAbilityId = b.sourceId;  // 📊 통계 귀속
-          damageEnemy(e, b.dmg);
+          // 🎭 환영 재생 중 생성된 탄 — tick 의 finally 는 이미 플래그를 껐으므로 충돌 시점에 게이트를 다시 건다.
+          //    (안 걸면 0.25배 미적용 + 즉살/계보/성각/영구강화 판정까지 그대로 굴러간다)
+          if (b._ph) { _phantomDmg = true; _phantomScale = b._ph; }
+          try { damageEnemy(e, b.dmg); } finally { _phantomDmg = false; _phantomScale = 1; }
           spawnParticles(ex, ey, b.color || '#ffd479', 2);
           // 폭발탄: 추가 광역 데미지
           if (b.explodeRadius) {
@@ -26097,7 +26129,8 @@
               if (e2 === e || e2.hp <= 0) continue;
               const [ex2, ey2] = enemyXY(e2);
               if ((b.x-ex2)*(b.x-ex2) + (b.y-ey2)*(b.y-ey2) < b.explodeRadius * b.explodeRadius) {
-                damageEnemy(e2, b.dmg);
+                if (b._ph) { _phantomDmg = true; _phantomScale = b._ph; }
+                try { damageEnemy(e2, b.dmg); } finally { _phantomDmg = false; _phantomScale = 1; }
                 spawnParticles(ex2, ey2, b.color || '#ff8866', 2);
               }
             }
