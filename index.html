@@ -17777,6 +17777,191 @@
         ctx.restore(); ctx.globalAlpha = 1;
       },
     },
+    // 🎭 트리나(SR) — 환영 타워 킷 (CMY 삼중인쇄 어긋남)
+    //   ⚠️ 환영 피해 총 기여는 +90% 하드캡. 환영은 즉사·각인·별보너스·영구강화를 굴리지 않는다.
+    //   상시 전체 키트 재현은 CX/CY 가 213곳 하드코딩이라 불가 — T4 에서만 처리한다.
+    phantomStage: {
+      name: '환영 무대', baseCost: 65, color: '#f0ece4', isGachaUnique: true,
+      desc: lv => `환영 1기 · 0.4s 뒤 내 공격 재생(피해 40%) · 환영은 즉사·각인 미발동 · DMG ${30 + lv * 14}`,
+      init(ab) { ab.cooldown = 0; ab.ph = []; ab.q = []; },
+      tick(ab) {
+        const n = 1 + permaCount('phantomStage');
+        if (ab.ph.length !== n) {
+          ab.ph = [];
+          for (let i = 0; i < n; i++) ab.ph.push({ a: (Math.PI * 2 / n) * i, c: ['#00c8d7', '#e0489f', '#e8d24a'][i % 3] });
+        }
+        const R = ARENA_R * 0.55;
+        for (const p of ab.ph) { p.x = CX + Math.cos(p.a) * R; p.y = CY + Math.sin(p.a) * R; }
+        // 예약된 환영 타격 처리 (0.4s = 24프레임 지연)
+        for (const j of ab.q) j.d--;
+        for (const j of ab.q) {
+          if (j.d > 0) continue;
+          j.done = true;
+          _phantomDmg = true; _phantomScale = 0.40;
+          try { for (const e of state.enemies) { if (e.hp > 0 && !e._trinaHit) damageEnemy(e, j.dmg); } }
+          finally { _phantomDmg = false; _phantomScale = 1; }
+        }
+        compactInPlace(ab.q, j => !j.done);
+        if (--ab.cooldown > 0) return;
+        ab.cooldown = Math.max(34, 70 - ab.level * 2);
+        const dmg = 30 + ab.level * 14;
+        const pool = state.enemies.filter(e => e.hp > 0);
+        if (!pool.length) { ab.cooldown = 20; return; }
+        // 실체 타격 — 게이트 없이 정상 판정
+        const tgt = pool[Math.floor(Math.random() * pool.length)];
+        damageEnemy(tgt, dmg);
+        ab.q.push({ d: 24, dmg, done: false });
+      },
+      draw(ab) {
+        ctx.save();
+        for (const p of ab.ph) {
+          ctx.globalAlpha = 0.4; ctx.strokeStyle = p.c; ctx.lineWidth = 2;
+          ctx.beginPath(); ctx.arc(p.x, p.y, 13, 0, Math.PI * 2); ctx.stroke();
+          ctx.globalAlpha = 0.18; ctx.fillStyle = p.c;
+          ctx.beginPath(); ctx.arc(p.x, p.y, 11, 0, Math.PI * 2); ctx.fill();
+        }
+        ctx.restore(); ctx.globalAlpha = 1;
+      },
+    },
+    // 🎭 기본조합 (환영무대+clone) — 색수차 분열
+    chromaticSplit: {
+      name: '색수차 분열', baseCost: 150, color: '#e0489f', isCombo: true,
+      desc: lv => `환영 3기 120° · 피해 40/28/18%(합산 상한 +90%) · 환영은 판정 미발동 · DMG ${38 + lv * 16}`,
+      init(ab) { ab.cooldown = 0; ab.ph = []; },
+      tick(ab) {
+        const SC = [0.40, 0.28, 0.18];
+        const CL = ['#00c8d7', '#e0489f', '#e8d24a'];
+        if (ab.ph.length !== 3) { ab.ph = []; for (let i = 0; i < 3; i++) ab.ph.push({ a: (Math.PI * 2 / 3) * i, c: CL[i], s: SC[i] }); }
+        const R = ARENA_R * 0.6;
+        for (const p of ab.ph) { p.a += 0.004; p.x = CX + Math.cos(p.a) * R; p.y = CY + Math.sin(p.a) * R; }
+        if (--ab.cooldown > 0) return;
+        ab.cooldown = Math.max(40, 84 - ab.level * 3);
+        const pool = state.enemies.filter(e => e.hp > 0);
+        if (!pool.length) { ab.cooldown = 20; return; }
+        const dmg = 38 + ab.level * 16;
+        damageEnemy(pool[Math.floor(Math.random() * pool.length)], dmg);
+        // 환영 3기 — 합산 0.86 로 +90% 캡 아래
+        let acc = 0;
+        for (const p of ab.ph) {
+          const s = Math.min(p.s, Math.max(0, 0.90 - acc));
+          if (s <= 0) break;
+          acc += s;
+          const t = pool[Math.floor(Math.random() * pool.length)];
+          _phantomDmg = true; _phantomScale = s;
+          try { damageEnemy(t, dmg); } finally { _phantomDmg = false; _phantomScale = 1; }
+        }
+      },
+      draw(ab) {
+        ctx.save();
+        for (const p of ab.ph) {
+          ctx.globalAlpha = 0.45; ctx.strokeStyle = p.c; ctx.lineWidth = 2;
+          ctx.beginPath(); ctx.arc(p.x, p.y, 14, 0, Math.PI * 2); ctx.stroke();
+          ctx.globalAlpha = 0.12; ctx.fillStyle = p.c;
+          ctx.beginPath(); ctx.arc(p.x, p.y, 12, 0, Math.PI * 2); ctx.fill();
+        }
+        ctx.restore(); ctx.globalAlpha = 1;
+      },
+    },
+    // 🎭 4돌파 (색수차+orbital) — 앙코르
+    encore: {
+      name: '앙코르', baseCost: 240, color: '#c86ab0', isCombo: true, isTriple: true,
+      desc: lv => `환영 3기가 적 밀집 방향으로 재배치 · 퇴장 시 마지막 공격 1회 추가 · 합산 상한 +90% · 판정 미발동 · DMG ${46 + lv * 18}`,
+      init(ab) { ab.cooldown = 0; ab.ph = []; ab.last = 0; },
+      tick(ab) {
+        const SC = [0.40, 0.28, 0.18], CL = ['#00c8d7', '#e0489f', '#e8d24a'];
+        if (ab.ph.length !== 3) { ab.ph = []; for (let i = 0; i < 3; i++) ab.ph.push({ a: (Math.PI * 2 / 3) * i, c: CL[i], s: SC[i] }); }
+        // 적 밀집 각도로 재배치
+        let sx = 0, sy = 0, cnt = 0;
+        for (const e of state.enemies) { if (e.hp <= 0) continue; const [ex, ey] = enemyXY(e); sx += ex - CX; sy += ey - CY; cnt++; }
+        const base = cnt ? Math.atan2(sy, sx) : 0;
+        const R = ARENA_R * 0.6;
+        for (let i = 0; i < 3; i++) {
+          const p = ab.ph[i], want = base + (i - 1) * 0.8;
+          p.a += Math.atan2(Math.sin(want - p.a), Math.cos(want - p.a)) * 0.05;
+          p.x = CX + Math.cos(p.a) * R; p.y = CY + Math.sin(p.a) * R;
+        }
+        if (--ab.cooldown > 0) return;
+        ab.cooldown = Math.max(46, 92 - ab.level * 3);
+        const pool = state.enemies.filter(e => e.hp > 0);
+        if (!pool.length) { ab.cooldown = 20; return; }
+        const dmg = 46 + ab.level * 18;
+        damageEnemy(pool[Math.floor(Math.random() * pool.length)], dmg);
+        // 환영 + 앙코르 1회 — 전부 합쳐 +90% 캡 안에서 배분
+        let acc = 0;
+        const order = [ab.ph[0].s, ab.ph[1].s, ab.ph[2].s, 0.18];
+        for (const raw of order) {
+          const s = Math.min(raw, Math.max(0, 0.90 - acc));
+          if (s <= 0) break;
+          acc += s;
+          const t = pool[Math.floor(Math.random() * pool.length)];
+          _phantomDmg = true; _phantomScale = s;
+          try { damageEnemy(t, dmg); } finally { _phantomDmg = false; _phantomScale = 1; }
+        }
+        ab.last = 14;
+      },
+      draw(ab) {
+        if (ab.last > 0) ab.last--;
+        ctx.save();
+        for (const p of ab.ph) {
+          const boost = ab.last > 0 ? 0.3 : 0;
+          ctx.globalAlpha = 0.45 + boost; ctx.strokeStyle = p.c; ctx.lineWidth = 2;
+          ctx.beginPath(); ctx.arc(p.x, p.y, 15, 0, Math.PI * 2); ctx.stroke();
+          ctx.globalAlpha = 0.12; ctx.fillStyle = p.c;
+          ctx.beginPath(); ctx.arc(p.x, p.y, 13, 0, Math.PI * 2); ctx.fill();
+        }
+        ctx.restore(); ctx.globalAlpha = 1;
+      },
+    },
+    // 🎭 8돌파 (앙코르+turret) — 기립박수 (전체 키트 재생, CX/CY 임시 치환)
+    standingOvation: {
+      name: '기립박수', baseCost: 350, color: '#f0ece4', isCombo: true, isTriple: true, isEighth: true,
+      desc: lv => `[8돌파] 5s간 환영 3기가 내 능력 전체를 재생(각 25%) · 환영은 판정 미발동 · DMG ${60 + lv * 22}`,
+      init(ab) { ab.cooldown = 200; ab.on = 0; ab.step = 0; ab.ph = []; },
+      tick(ab) {
+        const CL = ['#00c8d7', '#e0489f', '#e8d24a'];
+        if (ab.ph.length !== 3) { ab.ph = []; for (let i = 0; i < 3; i++) ab.ph.push({ a: (Math.PI * 2 / 3) * i, c: CL[i] }); }
+        const R = ARENA_R * (ab.on > 0 ? 0.42 : 0.6);
+        for (const p of ab.ph) { p.a += 0.01; p.x = CX + Math.cos(p.a) * R; p.y = CY + Math.sin(p.a) * R; }
+        if (ab.on > 0) {
+          ab.on--;
+          // 6프레임마다 한 기씩 — 프레임 부하 분산
+          if (++ab.step % 6 === 0) {
+            const p = ab.ph[(ab.step / 6) % 3];
+            const _ox = CX, _oy = CY;
+            _phantomDmg = true; _phantomScale = 0.25;
+            try {
+              CX = p.x; CY = p.y;
+              for (const t of state.tower.abilities) {
+                const def = ABILITY_DEFS[t.id];
+                if (!def || def.isPassive || t.id === 'standingOvation') continue;
+                try { if (def.tick) def.tick(t); } catch (err) {}
+              }
+            } finally {
+              CX = _ox; CY = _oy;
+              _phantomDmg = false; _phantomScale = 1;
+            }
+          }
+          return;
+        }
+        if (--ab.cooldown > 0) return;
+        ab.cooldown = Math.max(300, 480 - ab.level * 8);
+        ab.on = 300; ab.step = 0;
+        const dmg = 60 + ab.level * 22;
+        for (const e of state.enemies) { if (e.hp > 0) damageEnemy(e, dmg); }
+        if (typeof shake === 'function') shake(14, 20);
+      },
+      draw(ab) {
+        ctx.save();
+        const act = ab.on > 0;
+        for (const p of ab.ph) {
+          ctx.globalAlpha = act ? 0.7 : 0.4; ctx.strokeStyle = p.c; ctx.lineWidth = act ? 3 : 2;
+          ctx.beginPath(); ctx.arc(p.x, p.y, act ? 18 : 15, 0, Math.PI * 2); ctx.stroke();
+          ctx.globalAlpha = act ? 0.2 : 0.1; ctx.fillStyle = p.c;
+          ctx.beginPath(); ctx.arc(p.x, p.y, act ? 16 : 13, 0, Math.PI * 2); ctx.fill();
+        }
+        ctx.restore(); ctx.globalAlpha = 1;
+      },
+    },
   };
   // ⭐ 별 해금 능력 매핑 — 캐릭터 4★ / 8★ 도달 시 해금
   const CHAR_STAR_UNLOCKS = {
