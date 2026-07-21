@@ -18187,14 +18187,20 @@
     phantomStage: {
       name: '환영 무대', baseCost: 65, color: '#f0ece4', isGachaUnique: true,
       desc: lv => `환영 1기(영구강화당 +1) · 0.4s 뒤 환영 수만큼 재생 타격(최대 3회) · 기당 피해 40/40/30%(합산 상한 +90%) · 환영은 즉사·각인 미발동 · DMG ${30 + lv * 14}`,
+      // 📊 v677 — ⚠️ phantomTotalCap(0.90) 은 킷 헤더에 명시된 설계 규약 "환영 피해 총 기여 +90% 하드캡" 이다.
+      //   ⚠️ 킷 규약 — 옵션이 이 값을 올려선 안 됨. (올리면 환영 기수만큼 피해가 선형 폭주한다)
+      //   _phantomDmg 게이트(try/finally)는 즉사·각인·별보너스·영구강화를 전부 건너뛰게 하는 안전장치라 손대지 않는다.
+      //   "재생 대상이 실체와 별개의 무작위 적" 이라는 규칙은 값이 아니라 대상 선택 로직 → 주역조명 옵션은 로직 변경형.
+      stats: { phantomScale: 0.40, phantomTotalCap: 0.90, maxReps: 3, replayDelay: 24, replayStagger: 6, orbitRadiusFactor: 0.55, idleCooldown: 20 },
       init(ab) { ab.cooldown = 0; ab.ph = []; ab.q = []; },
       tick(ab) {
+        const S = _S(ab);
         const n = 1 + permaCount('phantomStage');
         if (ab.ph.length !== n) {
           ab.ph = [];
           for (let i = 0; i < n; i++) ab.ph.push({ a: (Math.PI * 2 / n) * i, c: ['#00c8d7', '#e0489f', '#e8d24a'][i % 3] });
         }
-        const R = ARENA_R * 0.55;
+        const R = ARENA_R * S.orbitRadiusFactor;
         for (const p of ab.ph) { p.x = CX + Math.cos(p.a) * R; p.y = CY + Math.sin(p.a) * R; }
         // 예약된 환영 타격 처리 (0.4s = 24프레임 지연)
         for (const j of ab.q) j.d--;
@@ -18204,7 +18210,7 @@
           const pool = state.enemies.filter(e => e.hp > 0);
           if (!pool.length) continue;
           const tgt = pool[Math.floor(Math.random() * pool.length)];
-          _phantomDmg = true; _phantomScale = j.scale || 0.40;   // 예약 시 클램프된 배율 (1기 .40 / 2기 .40 / 3기 .30)
+          _phantomDmg = true; _phantomScale = j.scale || S.phantomScale;   // 예약 시 클램프된 배율 (1기 .40 / 2기 .40 / 3기 .30)
           try { damageEnemy(tgt, j.dmg); } finally { _phantomDmg = false; _phantomScale = 1; }
         }
         compactInPlace(ab.q, j => !j.done);
@@ -18212,7 +18218,7 @@
         ab.cooldown = Math.max(34, 70 - ab.level * 2);
         const dmg = 30 + ab.level * 14;
         const pool = state.enemies.filter(e => e.hp > 0);
-        if (!pool.length) { ab.cooldown = 20; return; }
+        if (!pool.length) { ab.cooldown = S.idleCooldown; return; }
         // 실체 타격 — 게이트 없이 정상 판정
         const tgt = pool[Math.floor(Math.random() * pool.length)];
         damageEnemy(tgt, dmg);
@@ -18221,9 +18227,9 @@
         //    d 를 6프레임씩 어긋내 여러 환영이 차례로 때리는 것처럼 보이게 한다.
         //    ⚠️ 배율은 킷 규약(18084)의 "환영 총 기여 +90% 하드캡" 에 맞춰 건수로 나눈다.
         //    1기 0.40×1=+40% / 2기 0.40×2=+80% / 3기 0.30×3=+90% — 캡을 절대 넘지 않는다.
-        const reps = Math.min(3, n);
-        const scale = Math.min(0.40, 0.90 / reps);
-        for (let i = 0; i < reps; i++) ab.q.push({ d: 24 + i * 6, dmg, scale, done: false });
+        const reps = Math.min(S.maxReps, n);
+        const scale = Math.min(S.phantomScale, S.phantomTotalCap / reps);
+        for (let i = 0; i < reps; i++) ab.q.push({ d: S.replayDelay + i * S.replayStagger, dmg, scale, done: false });
       },
       draw(ab) {
         ctx.save();
@@ -18394,23 +18400,30 @@
     longExposure: {
       name: '장노출', baseCost: 65, color: '#c0392b', isGachaUnique: true,
       desc: lv => `발사 안 하고 노출 충전 · 프레임 내 적 ${Math.max(2, 6 - Math.floor(lv / 3) - permaCount('longExposure'))}체 또는 최대 노출 시 섬광 · 피해는 노출시간으로만 산정 · DMG ${18 + lv * 9}`,
-      init(ab) { ab.exp = 0; ab.flash = 0; ab.maxExp = 150; },
+      // 📊 v677 — maxExp 150 이 "충전 상한" 과 "피해 계수 분모" 를 겸하고 있어 둘로 쪼갰다.
+      //   chargeCap = 충전 상한(과노출 옵션이 올릴 값) / expDenom = 피해 계수 분모(기준선, 고정).
+      //   지금은 둘 다 150 이라 동작이 완전히 동일하다. ab.maxExp 는 draw 의 조리개 게이지가 쓰므로
+      //   init 에서 chargeCap 으로 채워 그대로 남겨 둔다(연출은 상한 기준으로 닫히는 게 맞다).
+      //   need(임계 인원)는 레벨/퍽식이라 제외. "발동 시 전량 소진(exp = 0)" 은 규칙이라 로직 변경형.
+      stats: { chargeCap: 150, expDenom: 150, frameHalf: 150, minExposure: 30 },
+      init(ab) { ab.exp = 0; ab.flash = 0; ab.maxExp = _S(ab).chargeCap; },
       tick(ab) {
+        const S = _S(ab);
         if (ab.flash > 0) ab.flash--;
-        ab.exp = Math.min(ab.maxExp, ab.exp + 1);
+        ab.exp = Math.min(S.chargeCap, ab.exp + 1);
         // ⭐ 별 퍽 — 임계 인원이 낮아질수록 자주 터진다
         const need = Math.max(2, 6 - Math.floor(ab.level / 3) - permaCount('longExposure'));
         const inFrame = [];
         for (const e of state.enemies) {
           if (e.hp <= 0) continue;
           const [x, y] = enemyXY(e);
-          if (Math.abs(x - CX) < 150 && Math.abs(y - CY) < 150) inFrame.push(e);
+          if (Math.abs(x - CX) < S.frameHalf && Math.abs(y - CY) < S.frameHalf) inFrame.push(e);
         }
-        const full = ab.exp >= ab.maxExp;
+        const full = ab.exp >= S.chargeCap;
         if (!full && inFrame.length < need) return;
-        if (ab.exp < 30) return;
+        if (ab.exp < S.minExposure) return;
         // 개체당 피해 = 노출시간만. 적 수는 대상 수에만 영향.
-        const dmg = (18 + ab.level * 9) * (ab.exp / ab.maxExp);
+        const dmg = (18 + ab.level * 9) * (ab.exp / S.expDenom);
         for (const e of inFrame) damageEnemy(e, dmg);
         ab.flash = 12; ab.exp = 0;
       },
@@ -19010,22 +19023,27 @@
     understudyCall: {
       name: '대역 소집', isGachaUnique: true, isStarUnlock: true, baseCost: 280, color: '#e0489f',
       desc: lv => `[4★히든-SR] 환영 ${2 + Math.floor(lv / 3)}기 추가 · 피해 30% · 환영은 판정 미발동 · DMG ${28 + lv * 13}`,
+      // 📊 v677 — _phantomDmg 게이트(try/finally)는 손대지 않는다.
+      //   "환영 위치가 대상 선택에 전혀 관여하지 않는다(순수 무작위)" 는 값이 아니라 표적 규칙
+      //   → 무대장악 옵션은 로직 변경형. 환영 기수(2+lv/3)는 레벨식이라 제외.
+      stats: { phantomScale: 0.30, orbitRadiusFactor: 0.5, orbitSpeed: 0.006, ringOffset: 0.4, idleCooldown: 20 },
       init(ab) { ab.cooldown = 0; ab.ph = []; },
       tick(ab) {
+        const S = _S(ab);
         const n = 2 + Math.floor(ab.level / 3);
         const CL = ['#00c8d7', '#e0489f', '#e8d24a'];
         if (ab.ph.length !== n) {
           ab.ph = [];
-          for (let i = 0; i < n; i++) ab.ph.push({ a: (Math.PI * 2 / n) * i + 0.4, c: CL[i % 3] });
+          for (let i = 0; i < n; i++) ab.ph.push({ a: (Math.PI * 2 / n) * i + S.ringOffset, c: CL[i % 3] });
         }
-        const R = ARENA_R * 0.5;
-        for (const p of ab.ph) { p.a += 0.006; p.x = CX + Math.cos(p.a) * R; p.y = CY + Math.sin(p.a) * R; }
+        const R = ARENA_R * S.orbitRadiusFactor;
+        for (const p of ab.ph) { p.a += S.orbitSpeed; p.x = CX + Math.cos(p.a) * R; p.y = CY + Math.sin(p.a) * R; }
         if (--ab.cooldown > 0) return;
         ab.cooldown = Math.max(50, 96 - ab.level * 3);
         const pool = state.enemies.filter(e => e.hp > 0);
-        if (!pool.length) { ab.cooldown = 20; return; }
+        if (!pool.length) { ab.cooldown = S.idleCooldown; return; }
         const dmg = 28 + ab.level * 13;
-        _phantomDmg = true; _phantomScale = 0.30;
+        _phantomDmg = true; _phantomScale = S.phantomScale;
         try {
           for (let i = 0; i < ab.ph.length; i++) {
             const t = pool[Math.floor(Math.random() * pool.length)];
