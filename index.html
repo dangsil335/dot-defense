@@ -19142,6 +19142,193 @@
         ctx.restore(); ctx.globalAlpha = 1;
       },
     },
+    // 🔮 엘레미아 4★/8★ 별해금 — 원소 순환 / 정령왕 강림
+    //    엘레미아 킷 축 = 원소 전환(바람/불/물얼음). 색: 바람 #7fe0ff / 불 #ff8a3c / 얼음 #3fe0d8
+    elementCycle: {
+      name: '원소 순환', isGachaUnique: true, isStarUnlock: true, baseCost: 280, color: '#4fd6c2',
+      desc: lv => `[4★히든] 2.5s마다 바람⇄불⇄얼음 순환 · 원소별 자율 공격 DMG ${12 + lv * 7}`,
+      init(ab) { ab.elem = 0; ab.swapT = 0; ab.cd = 0; ab.fx = []; ab.cols = ['#7fe0ff', '#ff8a3c', '#3fe0d8']; },
+      tick(ab) {
+        const COLS = ab.cols;
+        // 150프레임(2.5s) 고정 주기 원소 전환
+        if (++ab.swapT >= 150) { ab.swapT = 0; ab.elem = (ab.elem + 1) % 3; }
+        for (const f of ab.fx) f.life--;
+        compactInPlace(ab.fx, _alivePredLife);
+        if (--ab.cd > 0) return;
+        ab.cd = Math.max(24, 40 - ab.level * 2);
+        const dmg = 12 + ab.level * 7, R = 220;
+        // 사거리 내 적만 후보 — 2차 효과도 이 풀 안에서만 고르므로 실제 도달거리 = R
+        const pool = [];
+        for (const e of state.enemies) {
+          if (e.hp <= 0) continue;
+          const [ex, ey] = enemyXY(e);
+          const q = (ex - CX) * (ex - CX) + (ey - CY) * (ey - CY);
+          if (q <= R * R) pool.push({ e, x: ex, y: ey, q });
+        }
+        if (!pool.length) { ab.cd = 12; return; }
+        pool.sort((a, b) => a.q - b.q);
+        if (ab.elem === 0) {
+          // 바람 — 최근접 1체 + 그 주변 소수에게 연쇄
+          const t0 = pool[0];
+          damageEnemy(t0.e, dmg);
+          const pts = [[t0.x, t0.y]];
+          let extra = 0;
+          for (let i = 1; i < pool.length && extra < 3; i++) {
+            const p = pool[i];
+            if ((p.x - t0.x) * (p.x - t0.x) + (p.y - t0.y) * (p.y - t0.y) > 55 * 55) continue;
+            damageEnemy(p.e, dmg);
+            pts.push([p.x, p.y]);
+            extra++;
+          }
+          spawnParticles(t0.x, t0.y, COLS[0], 5);
+          ab.fx.push({ k: 0, pts, life: 12, mx: 12 });
+        } else if (ab.elem === 1) {
+          // 불 — 무작위 적 위치에 소형 폭발
+          const t = pool[Math.floor(Math.random() * pool.length)];
+          const ER = 44;
+          for (const p of pool) {
+            if ((p.x - t.x) * (p.x - t.x) + (p.y - t.y) * (p.y - t.y) > ER * ER) continue;
+            damageEnemy(p.e, dmg);
+          }
+          spawnParticles(t.x, t.y, COLS[1], 8);
+          ab.fx.push({ k: 1, x: t.x, y: t.y, r: ER, life: 14, mx: 14 });
+        } else {
+          // 얼음 — 최근접 소수에게 피해 + 슬로우 (보스 포함, 정지 없음)
+          const n = Math.min(pool.length, 3);
+          for (let i = 0; i < n; i++) {
+            const p = pool[i];
+            damageEnemy(p.e, dmg);
+            p.e.slowFrames = Math.max(p.e.slowFrames || 0, 40);
+            spawnParticles(p.x, p.y, COLS[2], 4);
+            ab.fx.push({ k: 2, x: p.x, y: p.y, life: 16, mx: 16 });
+          }
+        }
+      },
+      draw(ab) {
+        const COLS = ab.cols || ['#7fe0ff', '#ff8a3c', '#3fe0d8'];
+        const col = COLS[ab.elem] || COLS[0];
+        ctx.save(); ctx.globalCompositeOperation = 'lighter';
+        // 타워 주변 원소 코어 + 순환 게이지
+        const bob = 0.85 + 0.15 * Math.sin(state.t * 0.12);
+        ctx.globalAlpha = 0.55; ctx.fillStyle = col;
+        ctx.beginPath(); ctx.arc(CX, CY - 30, 5 * bob, 0, Math.PI * 2); ctx.fill();
+        ctx.globalAlpha = 0.4; ctx.strokeStyle = col; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.arc(CX, CY - 30, 10, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * (ab.swapT / 150)); ctx.stroke();
+        for (const f of ab.fx) {
+          const a = Math.max(0, f.life / (f.mx || 16));
+          if (f.k === 0) {
+            // 바람 — 날카로운 연쇄 선
+            ctx.globalAlpha = a * 0.9; ctx.strokeStyle = COLS[0]; ctx.lineWidth = 2; ctx.lineCap = 'round';
+            const src = f.pts[0];
+            ctx.beginPath();
+            for (let i = 1; i < f.pts.length; i++) { ctx.moveTo(src[0], src[1]); ctx.lineTo(f.pts[i][0], f.pts[i][1]); }
+            ctx.stroke();
+            ctx.globalAlpha = a * 0.5;
+            for (const p of f.pts) { ctx.beginPath(); ctx.arc(p[0], p[1], 9 * (1 - a) + 3, 0, Math.PI * 2); ctx.stroke(); }
+          } else if (f.k === 1) {
+            // 불 — 확장 폭발
+            const t = 1 - a;
+            const g = ctx.createRadialGradient(f.x, f.y, 0, f.x, f.y, f.r);
+            g.addColorStop(0, `rgba(255,220,150,${a * 0.7})`); g.addColorStop(0.5, `rgba(255,138,60,${a * 0.45})`); g.addColorStop(1, 'rgba(255,138,60,0)');
+            ctx.globalAlpha = 1; ctx.fillStyle = g;
+            ctx.beginPath(); ctx.arc(f.x, f.y, f.r * (0.5 + t * 0.5), 0, Math.PI * 2); ctx.fill();
+            ctx.globalAlpha = a * 0.8; ctx.strokeStyle = COLS[1]; ctx.lineWidth = 2;
+            ctx.beginPath(); ctx.arc(f.x, f.y, f.r * t, 0, Math.PI * 2); ctx.stroke();
+          } else {
+            // 얼음 — 결정 파편
+            ctx.globalAlpha = a * 0.85; ctx.strokeStyle = COLS[2]; ctx.lineWidth = 1.8;
+            ctx.beginPath();
+            for (let k = 0; k < 3; k++) {
+              const ang = k * (Math.PI / 3) + f.x * 0.01, L = 9 + (1 - a) * 5;
+              ctx.moveTo(f.x - Math.cos(ang) * L, f.y - Math.sin(ang) * L);
+              ctx.lineTo(f.x + Math.cos(ang) * L, f.y + Math.sin(ang) * L);
+            }
+            ctx.stroke();
+          }
+        }
+        ctx.restore(); ctx.globalAlpha = 1;
+      },
+    },
+    elementalMonarch: {
+      name: '정령왕 강림', isGachaUnique: true, isStarUnlock: true, baseCost: 480, color: '#7ef0d0',
+      desc: lv => `[8★히든] 정령 3체 상시 공전 · 각 DMG ${20 + lv * 11} · 6s마다 합류 폭발 DMG ${50 + lv * 24}`,
+      // 정령은 항상 3체 고정 — init 에서 한 번만 만들고 레벨업 시 재생성하지 않는다
+      init(ab) {
+        ab.cols = ['#7fe0ff', '#ff8a3c', '#3fe0d8'];
+        ab.sp = [];
+        for (let i = 0; i < 3; i++) ab.sp.push({ a: (Math.PI * 2 / 3) * i, cd: i * 12, x: CX, y: CY, c: ab.cols[i], k: i });
+        ab.mergeCd = 200; ab.fx = 0; ab.conv = 0;
+      },
+      tick(ab) {
+        const ORB = 70, hitR = 62, dmgS = 20 + ab.level * 11;
+        const spCd = Math.max(36, 60 - ab.level * 2);
+        if (ab.fx > 0) ab.fx--;
+        // 폭발 직전 24프레임 동안 중앙으로 합류
+        ab.conv = ab.mergeCd <= 24 ? 1 - ab.mergeCd / 24 : 0;
+        const rr = ORB * (1 - ab.conv);
+        for (const s of ab.sp) {
+          s.a += 0.03;
+          s.x = CX + Math.cos(s.a) * rr; s.y = CY + Math.sin(s.a) * rr;
+          if (--s.cd > 0) continue;
+          let hit = false;
+          for (const e of state.enemies) {
+            if (e.hp <= 0) continue;
+            const [ex, ey] = enemyXY(e);
+            if ((ex - s.x) * (ex - s.x) + (ey - s.y) * (ey - s.y) > hitR * hitR) continue;
+            damageEnemy(e, dmgS);
+            if (s.k === 2) e.slowFrames = Math.max(e.slowFrames || 0, 30);   // 얼음 정령만 슬로우
+            spawnParticles(ex, ey, s.c, 3);
+            hit = true;
+          }
+          s.cd = hit ? spCd : 14;
+        }
+        if (--ab.mergeCd > 0) return;
+        ab.mergeCd = Math.max(240, 360 - ab.level * 10);
+        ab.fx = 26;
+        const bd = 50 + ab.level * 24, BR = 160;
+        for (const e of state.enemies) {
+          if (e.hp <= 0) continue;
+          const [ex, ey] = enemyXY(e);
+          if ((ex - CX) * (ex - CX) + (ey - CY) * (ey - CY) > BR * BR) continue;
+          damageEnemy(e, bd);
+          e.slowFrames = Math.max(e.slowFrames || 0, 36);
+          spawnParticles(ex, ey, '#7ef0d0', 5);
+        }
+        if (typeof shake === 'function') shake(10, 16);
+      },
+      draw(ab) {
+        const COLS = ab.cols || ['#7fe0ff', '#ff8a3c', '#3fe0d8'];
+        ctx.save(); ctx.globalCompositeOperation = 'lighter';
+        // 공전 궤도
+        ctx.globalAlpha = 0.10; ctx.strokeStyle = '#7ef0d0'; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.arc(CX, CY, 70, 0, Math.PI * 2); ctx.stroke();
+        // 합류 폭발
+        if (ab.fx > 0) {
+          const p = 1 - ab.fx / 26;
+          const g = ctx.createRadialGradient(CX, CY, 0, CX, CY, 160);
+          g.addColorStop(0, `rgba(220,255,245,${(1 - p) * 0.5})`); g.addColorStop(0.6, `rgba(126,240,208,${(1 - p) * 0.25})`); g.addColorStop(1, 'rgba(126,240,208,0)');
+          ctx.globalAlpha = 1; ctx.fillStyle = g;
+          ctx.beginPath(); ctx.arc(CX, CY, 160, 0, Math.PI * 2); ctx.fill();
+          for (let i = 0; i < 3; i++) {
+            ctx.globalAlpha = (1 - p) * 0.5; ctx.strokeStyle = COLS[i]; ctx.lineWidth = 3 - i * 0.6;
+            ctx.beginPath(); ctx.arc(CX, CY, p * 160 + i * 7, 0, Math.PI * 2); ctx.stroke();
+          }
+        }
+        // 정령 3체 — 원소별 색
+        for (const s of ab.sp) {
+          const pulse = 0.85 + 0.15 * Math.sin(state.t * 0.14 + s.k * 2);
+          const g = ctx.createRadialGradient(s.x, s.y, 0, s.x, s.y, 15 * pulse);
+          g.addColorStop(0, 'rgba(255,255,255,0.95)'); g.addColorStop(0.4, s.c); g.addColorStop(1, 'rgba(0,0,0,0)');
+          ctx.globalAlpha = 0.85; ctx.fillStyle = g;
+          ctx.beginPath(); ctx.arc(s.x, s.y, 15 * pulse, 0, Math.PI * 2); ctx.fill();
+          ctx.globalAlpha = 0.12; ctx.strokeStyle = s.c; ctx.lineWidth = 1.2;
+          ctx.beginPath(); ctx.arc(s.x, s.y, 62, 0, Math.PI * 2); ctx.stroke();
+          ctx.globalAlpha = 0.95; ctx.fillStyle = '#ffffff';
+          ctx.beginPath(); ctx.arc(s.x, s.y, 2.6, 0, Math.PI * 2); ctx.fill();
+        }
+        ctx.restore(); ctx.globalAlpha = 1;
+      },
+    },
   };
   // ⭐ 별 해금 능력 매핑 — 캐릭터 4★ / 8★ 도달 시 해금
   const CHAR_STAR_UNLOCKS = {
