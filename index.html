@@ -16422,13 +16422,16 @@
     interceptorDrone: {
       name: '전술 요격 드론', baseCost: 65, color: '#FFB703', isGachaUnique: true,
       desc: lv => `${1 + Math.floor((lv + 1) / 2)}기 요격 드론 · 유도 미사일 · DMG ${4 + lv * 3}`,
+      // 📊 v677 — 표적 선정(드론별 최근접·중복 배제 없음)은 로직이라 stats 대상이 아니다.
+      stats: { orbitRadius: 62, orbitSpeed: 0.02, bulletSpeed: 5, bulletAccel: 0.35, bulletMaxSpeed: 12, bulletLife: 110 },
       init(ab) { ab.angle = 0; ab.drones = []; },
       tick(ab) {
+        const S = _S(ab);
         const want = 1 + Math.floor((ab.level + 1) / 2) + permaCount('interceptorDrone');
         while (ab.drones.length < want) ab.drones.push({ cd: 0, x: CX, y: CY });
         while (ab.drones.length > want) ab.drones.pop();
-        ab.angle += 0.02;
-        const radius = 62, dmg = 4 + ab.level * 3;
+        ab.angle += S.orbitSpeed;
+        const radius = S.orbitRadius, dmg = 4 + ab.level * 3;
         for (let i = 0; i < ab.drones.length; i++) {
           const d = ab.drones[i]; const a = ab.angle + (Math.PI * 2 / ab.drones.length) * i;
           d.x = CX + Math.cos(a) * radius; d.y = CY + Math.sin(a) * radius;
@@ -16437,7 +16440,7 @@
           for (const e of state.enemies) { if (e.hp <= 0) continue; const [ex, ey] = enemyXY(e); const d2 = (ex - d.x) * (ex - d.x) + (ey - d.y) * (ey - d.y); if (d2 < best) { best = d2; target = e; } }
           if (target) {
             const [tx, ty] = enemyXY(target); const ang = Math.atan2(ty - d.y, tx - d.x);
-            state.bullets.push({ x: d.x, y: d.y, vx: Math.cos(ang) * 5, vy: Math.sin(ang) * 5, accel: 0.35, maxSpd: 12, dmg, life: 110, color: '#FFB703', target: target, leader: null, offsetAngle: 0, sourceId: state.currentAbilityId || null });
+            state.bullets.push({ x: d.x, y: d.y, vx: Math.cos(ang) * S.bulletSpeed, vy: Math.sin(ang) * S.bulletSpeed, accel: S.bulletAccel, maxSpd: S.bulletMaxSpeed, dmg, life: S.bulletLife, color: '#FFB703', target: target, leader: null, offsetAngle: 0, sourceId: state.currentAbilityId || null });
             d.cd = Math.max(14, 34 - ab.level * 2);
           }
         }
@@ -16546,15 +16549,18 @@
     acidFlask: {
       name: '부식성 플라스크', baseCost: 65, color: '#a0e050', isGachaUnique: true,
       desc: lv => `밀집 지점 산성 웅덩이 장판 · 초당 DMG ${(3 + lv * 2) * 5} · 둔화`,
+      // 📊 v677 — "동시 존재 상한 없음" / 겹친 웅덩이 독립 판정은 구조(로직)라 stats 대상이 아니다.
+      stats: { poolLife: 150, damageTickInterval: 12, slowFrames: 20, idleCooldown: 30 },
       init(ab) { ab.cooldown = 50; ab.pools = []; },
       tick(ab) {
-        for (const p of ab.pools) { p.life--; if (state.t % 12 === 0) { for (const e of state.enemies) { if (e.hp <= 0) continue; const [ex, ey] = enemyXY(e); if ((ex - p.x) * (ex - p.x) + (ey - p.y) * (ey - p.y) < p.r * p.r) { damageEnemy(e, p.dmg); e.slowFrames = Math.max(e.slowFrames || 0, 20); } } } }
+        const S = _S(ab);
+        for (const p of ab.pools) { p.life--; if (state.t % S.damageTickInterval === 0) { for (const e of state.enemies) { if (e.hp <= 0) continue; const [ex, ey] = enemyXY(e); if ((ex - p.x) * (ex - p.x) + (ey - p.y) * (ey - p.y) < p.r * p.r) { damageEnemy(e, p.dmg); e.slowFrames = Math.max(e.slowFrames || 0, S.slowFrames); } } } }
         compactInPlace(ab.pools, p => p.life > 0);
         if (--ab.cooldown > 0) return;
         const pool = state.enemies.filter(e => e.hp > 0);
-        if (!pool.length) { ab.cooldown = 30; return; }
+        if (!pool.length) { ab.cooldown = S.idleCooldown; return; }
         let sx = 0, sy = 0; for (const e of pool) { const [ex, ey] = enemyXY(e); sx += ex; sy += ey; }
-        ab.pools.push({ x: sx / pool.length, y: sy / pool.length, r: (50 + ab.level * 2) * permaAoeMul('acidFlask'), dmg: 3 + ab.level * 2, life: 150, max: 150 });
+        ab.pools.push({ x: sx / pool.length, y: sy / pool.length, r: (50 + ab.level * 2) * permaAoeMul('acidFlask'), dmg: 3 + ab.level * 2, life: S.poolLife, max: S.poolLife });
         ab.cooldown = Math.max(40, Math.floor((84 - ab.level * 3) * permaCdMul('acidFlask')));
       },
       draw(ab) {
@@ -18523,16 +18529,19 @@
     droneSwarm: {
       name: '드론 군집', isGachaUnique: true, isStarUnlock: true, baseCost: 280, color: '#FFB703',
       desc: lv => `[4★히든-SR] ${3 + Math.floor(lv / 2)}기 자율 드론 상시 순찰 · 자동 요격 DMG ${12 + lv * 6}`,
+      // 📊 v677 — draw 의 링 표시([84,100,116])는 연출이라 그대로 둔다(rule: draw 연출 상수 비이동).
+      stats: { ringBaseRadius: 84, ringGap: 16, ringCount: 3, orbitSpeed: 0.022, spawnStagger: 6, bulletSpeed: 8, bulletLife: 55, idleCooldown: 18 },
       init(ab) { ab.drones = []; },
       tick(ab) {
+        const S = _S(ab);
         const n = 3 + Math.floor(ab.level / 2);
         if (ab.drones.length !== n) {
           ab.drones = [];
-          for (let i = 0; i < n; i++) ab.drones.push({ a: (Math.PI * 2 / n) * i, r: 84 + (i % 3) * 16, cd: i * 6 });
+          for (let i = 0; i < n; i++) ab.drones.push({ a: (Math.PI * 2 / n) * i, r: S.ringBaseRadius + (i % S.ringCount) * S.ringGap, cd: i * S.spawnStagger });
         }
         const dmg = 12 + ab.level * 6;
         for (const d of ab.drones) {
-          d.a += 0.022;
+          d.a += S.orbitSpeed;
           d.x = CX + Math.cos(d.a) * d.r; d.y = CY + Math.sin(d.a) * d.r;
           if (--d.cd > 0) continue;
           let best = null, bd = 1e9;
@@ -18542,10 +18551,10 @@
             const q = (ex - d.x) * (ex - d.x) + (ey - d.y) * (ey - d.y);
             if (q < bd) { bd = q; best = e; }
           }
-          if (!best) { d.cd = 18; continue; }
+          if (!best) { d.cd = S.idleCooldown; continue; }
           const [tx, ty] = enemyXY(best);
           const ang = Math.atan2(ty - d.y, tx - d.x);
-          state.bullets.push({ x: d.x, y: d.y, vx: Math.cos(ang) * 8, vy: Math.sin(ang) * 8, dmg, life: 55, color: '#FFB703', target: best, leader: null, offsetAngle: 0, sourceId: state.currentAbilityId || null });
+          state.bullets.push({ x: d.x, y: d.y, vx: Math.cos(ang) * S.bulletSpeed, vy: Math.sin(ang) * S.bulletSpeed, dmg, life: S.bulletLife, color: '#FFB703', target: best, leader: null, offsetAngle: 0, sourceId: state.currentAbilityId || null });
           d.cd = Math.max(18, 40 - ab.level);
         }
       },
@@ -18610,27 +18619,30 @@
     acidRain: {
       name: '산성비', isGachaUnique: true, isStarUnlock: true, baseCost: 280, color: '#a0e050',
       desc: lv => `[4★히든-SR] 4s마다 산성비 ${8 + lv}방울 낙하 · 착탄 산성 장판 · 초당 DMG ${(4 + lv * 2) * 5}`,
+      // 📊 v677 — "웅덩이는 소멸까지 아무 일 없음"(자식 웅덩이 없음)은 구조라 stats 대상이 아니다.
+      stats: { poolLife: 200, damageTickInterval: 12, slowFrames: 24, fallFrames: 20, dropStagger: 2, dropScatter: 90, idleScatter: 320 },
       init(ab) { ab.cooldown = 90; ab.drops = []; ab.pools = []; },
       tick(ab) {
+        const S = _S(ab);
         const tick5 = 4 + ab.level * 2;
         for (const p of ab.pools) {
           p.life--;
-          if (state.t % 12 !== 0) continue;
+          if (state.t % S.damageTickInterval !== 0) continue;
           for (const e of state.enemies) {
             if (e.hp <= 0) continue;
             const [ex, ey] = enemyXY(e);
             if ((ex - p.x) * (ex - p.x) + (ey - p.y) * (ey - p.y) < p.r * p.r) {
               damageEnemy(e, tick5);
-              e.slowFrames = Math.max(e.slowFrames || 0, 24);
+              e.slowFrames = Math.max(e.slowFrames || 0, S.slowFrames);
             }
           }
         }
         compactInPlace(ab.pools, _alivePredLife);
         for (const d of ab.drops) {
           d.t++;
-          if (d.t < 20) continue;
+          if (d.t < S.fallFrames) continue;
           d.done = true;
-          ab.pools.push({ x: d.x, y: d.y, r: 46 + ab.level * 3, life: 200 });
+          ab.pools.push({ x: d.x, y: d.y, r: 46 + ab.level * 3, life: S.poolLife });
           spawnParticles(d.x, d.y, '#a0e050', 5);
         }
         compactInPlace(ab.drops, _predNotDone);
@@ -18640,9 +18652,9 @@
         const n = 8 + ab.level;
         for (let i = 0; i < n; i++) {
           let dx, dy;
-          if (pool.length) { const t = pool[Math.floor(Math.random() * pool.length)]; const [tx, ty] = enemyXY(t); dx = tx + (Math.random() - 0.5) * 90; dy = ty + (Math.random() - 0.5) * 90; }
-          else { dx = CX + (Math.random() - 0.5) * 320; dy = CY + (Math.random() - 0.5) * 320; }
-          ab.drops.push({ x: dx, y: dy, t: -i * 2, done: false });
+          if (pool.length) { const t = pool[Math.floor(Math.random() * pool.length)]; const [tx, ty] = enemyXY(t); dx = tx + (Math.random() - 0.5) * S.dropScatter; dy = ty + (Math.random() - 0.5) * S.dropScatter; }
+          else { dx = CX + (Math.random() - 0.5) * S.idleScatter; dy = CY + (Math.random() - 0.5) * S.idleScatter; }
+          ab.drops.push({ x: dx, y: dy, t: -i * S.dropStagger, done: false });
         }
       },
       draw(ab) {
