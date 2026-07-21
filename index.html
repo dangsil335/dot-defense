@@ -22643,45 +22643,16 @@
     if (def.isStarUnlock) return 3.0;
     // 가챠 고유 능력 (등급별 차등)
     if (def.isGachaUnique) {
-      // 등급별 — 능력 자체에 rarity 없으므로 캐릭터에서 역추적 또는 색상 기반 추정
-      // 단순화: 능력 ID 가 SR/SSR 캐릭터의 starting/조합/트리플인지 체크
-      // SSR 능력 풀
-      const ssrAbilities = new Set([
-        'starSong', 'timeButterfly',                        // SSR start
-        'cosmicChorus', 'timePrison',                       // SSR combo
-        'celestialSymphony', 'eternalMoment',               // SSR triple
-        'celestialEcho', 'sirensSong',                      // aria 4/8★
-        'temporalLoop', 'paradoxFreeze',                    // misaki 4/8★
-        'prismBolt', 'spectrumBeam', 'chromaBurst', 'prismCataclysm', 'refractionField', 'whiteEclipse',   // 🆕 blanche
-        'huntingClaw', 'savageRend', 'beastCyclone', 'primalRampage', 'beastForm', 'apexPredator',          // 🆕 kaira
-        'polarField', 'reversePolarity', 'magRail', 'magnetStorm', 'ferroShard', 'monopole',                // 🆕 feria
-      ]);
-      const srAbilities = new Set([
-        'sakuraSlash', 'moonShot',                          // SR start
-        'sakuraStorm', 'moonFrostArrow',                    // SR combo
-        'sakuraInferno', 'moonBombardment',                 // SR triple
-        'petalStorm', 'cherrySingularity',                  // sakura 4/8★
-        'lunarRain', 'eclipsePiercer',                      // luna 4/8★
-        'interceptorDrone', 'laserPod', 'homingArtillery', 'orbitalFortress',    // 🆕 amy
-        'acidFlask', 'toxicCloud', 'chemBarrage', 'grandDissolution',            // 🆕 chloe
-        'marionette', 'threadDance', 'puppetLegion', 'curtainCall',              // 🆕 lara
-        'petrifyGaze', 'petraShatter', 'medusaGaze', 'eternalPetrify',           // 🆕 galatea
-        'phantomStage', 'chromaticSplit', 'encore', 'standingOvation',           // 🆕 trina
-        'longExposure', 'overexposed', 'contactSheet', 'developingTray',         // 🆕 iris
-      ]);
-      if (ssrAbilities.has(id)) {
-        if (def.isTriple) return 5.0;
-        if (def.isCombo) return 5.0;
-        return 4.0;
-      }
-      if (srAbilities.has(id)) {
-        if (def.isTriple) return 3.5;
-        if (def.isCombo) return 3.5;
-        return 2.5;
-      }
-      // R 가챠
-      if (def.isTriple) return 2.0;
-      if (def.isCombo) return 2.0;
+      // 🚫 v673 — 하드코딩 Set 폐지. 캐릭터가 늘 때마다 누락이 쌓여
+      //    (엘레미아·스미카 SSR 능력, 마린·솔라·그래비타스·카르디스타·레비나 SR 능력이
+      //     전부 빠져 R 요율로 저가 청구되던 버그) → 실제 데이터에서 등급 도출.
+      //    abilityGachaTier(id) = startAbilities→캐릭터→GACHA_POOL 등급. 신규 캐릭 자동 반영.
+      //    (isStarUnlock 능력은 위에서 3.0 으로 이미 반환되므로 여기 안 옴.)
+      const tier = abilityGachaTier(id);   // 'SSR' | 'SR' | 'R' | null
+      if (tier === 'SSR') { if (def.isTriple || def.isCombo) return 5.0; return 4.0; }
+      if (tier === 'SR')  { if (def.isTriple || def.isCombo) return 3.5; return 2.5; }
+      // R 가챠 / 미분류
+      if (def.isTriple || def.isCombo) return 2.0;
       return 1.5;
     }
     // 기본 능력
@@ -32490,6 +32461,30 @@
         lunarApocalypse:  '달이 가려지면… 하늘이 무너질 시간이야.',
         stellarOpera:     '막이 오른다 — 내 최고의 오페라, 들려줄게!',
         eternalPrison:    '이 찰나에서… 영원히 나올 수 없어.',
+    // 🛰 에이미 (활기찬 편대장)
+    laserPod:         '레이저 포드 전개! 조준 완료했어.',
+    homingArtillery:  '유도 포화 — 전부 잠궈놨으니 못 도망가!',
+    orbitalFortress:  '궤도 요새, 강하—! 하늘째로 내려앉힌다!',
+    // ⚗ 클로에 (장난스러운 연금술사)
+    toxicCloud:       '독안개 퍼진다 — 숨 참는 게 좋을걸?',
+    chemBarrage:      '플라스크 전부 던질게 — 잘 섞어봐!',
+    grandDissolution: '싹 녹여줄게. …흔적도 안 남게, 미안!',
+    // 🎭 라라 (인형극의 무대감독)
+    threadDance:      '실이 춤춘다 — 자, 무대 위로.',
+    puppetLegion:     '인형들, 전원 등장! 오늘은 대군단이야.',
+    curtainCall:      '막을 내릴 시간이야 — 종막의 인형극!',
+    // 🗿 갈라테아 (조각가)
+    petraShatter:     '금이 갔네. …이제, 깨질 시간이야.',
+    medusaGaze:       '내 눈을 봐 — 그대로, 돌이 되렴.',
+    eternalPetrify:   '움직이지 마. 영원히… 내 작품으로 남아.',
+    // 🌈 블랑슈 (우아한 분광의 마녀)
+    spectrumBeam:     '빛이 갈라진다 — 일곱 색의 창.',
+    chromaBurst:      '전부 흩뿌릴게 — 눈부실 거야.',
+    prismCataclysm:   '세상이 무지개로 부서진다 — 종언의 분광!',
+    // 🐾 카이라 (야수 사냥꾼)
+    savageRend:       '발톱 세워 — 갈가리 찢어줄게.',
+    beastCyclone:     '야수 선풍 — 휩쓸려서 사라져!',
+    primalRampage:    '이제 못 참아 — 태초의 광란이다!',
     // 🧲 페리아 (냉철한 사령관)
     reversePolarity:  '극을 뒤집을게. …당긴 채로, 얼려버린다.',
     magRail:          '일직선으로 당겨서, 끝까지 꿰뚫는다.',
