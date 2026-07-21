@@ -18961,6 +18961,75 @@
         ctx.restore(); ctx.globalAlpha = 1;
       },
     },
+    // 📷 아이리스 4★/8★ 별해금 — 플래시 / 암실 금고
+    flashbulb: {
+      name: '플래시', isGachaUnique: true, isStarUnlock: true, baseCost: 280, color: '#c0392b',
+      desc: lv => `[4★히든-SR] 3s마다 강렬한 섬광 · 광역 DMG ${25 + lv * 12} + 1.5s 눈부심 둔화`,
+      init(ab) { ab.cd = 90; ab.fx = 0; },
+      tick(ab) {
+        if (ab.fx > 0) ab.fx--;
+        if (--ab.cd > 0) return;
+        ab.cd = Math.max(120, 200 - ab.level * 5);
+        ab.fx = 14;
+        const dmg = 25 + ab.level * 12, R = 190 + ab.level * 6;
+        for (const e of state.enemies) {
+          if (e.hp <= 0) continue;
+          const [ex, ey] = enemyXY(e);
+          if ((ex - CX) * (ex - CX) + (ey - CY) * (ey - CY) > R * R) continue;
+          damageEnemy(e, dmg);
+          e.slowFrames = Math.max(e.slowFrames || 0, 90);
+        }
+      },
+      draw(ab) {
+        if (ab.fx <= 0) return;
+        const a = ab.fx / 14, R = 190 + ab.level * 6;
+        ctx.save(); ctx.globalCompositeOperation = 'lighter';
+        const g = ctx.createRadialGradient(CX, CY, 0, CX, CY, R);
+        g.addColorStop(0, `rgba(255,255,255,${a * 0.5})`); g.addColorStop(0.6, `rgba(240,220,215,${a * 0.16})`); g.addColorStop(1, 'rgba(192,57,43,0)');
+        ctx.fillStyle = g; ctx.beginPath(); ctx.arc(CX, CY, R, 0, Math.PI * 2); ctx.fill();
+        ctx.globalAlpha = a * 0.8; ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 2.5;
+        ctx.beginPath(); ctx.arc(CX, CY, (1 - a) * R, 0, Math.PI * 2); ctx.stroke();
+        ctx.restore(); ctx.globalAlpha = 1;
+      },
+    },
+    darkroomVault: {
+      name: '암실 금고', isGachaUnique: true, isStarUnlock: true, baseCost: 480, color: '#8a2a24',
+      desc: lv => `[8★히든-SR] 0.5s마다 잔상 저장 · 4s마다 일괄 방출 · 저장량당 DMG ${20 + lv * 10}`,
+      init(ab) { ab.cd = 150; ab.storeCd = 0; ab.vault = 0; ab.fx = 0; },
+      tick(ab) {
+        if (ab.fx > 0) ab.fx--;
+        const cap = Math.min(20, 8 + ab.level);
+        if (--ab.storeCd <= 0) {
+          ab.storeCd = 30;
+          const ghosts = (state._irisGhosts || []).length;
+          const live = state.enemies.reduce((n, e) => n + (e.hp > 0 ? 1 : 0), 0);
+          ab.vault = Math.min(cap, ab.vault + (ghosts > 0 ? 2 : (live > 0 ? 1 : 0)));
+        }
+        if (--ab.cd > 0) return;
+        ab.cd = Math.max(200, 300 - ab.level * 6);
+        if (ab.vault <= 0) { ab.cd = 60; return; }
+        ab.fx = 22;
+        const dmg = (20 + ab.level * 10) * ab.vault;
+        for (const e of state.enemies) { if (e.hp > 0) damageEnemy(e, dmg); }
+        ab.vault = 0;
+        if (typeof shake === 'function') shake(10, 16);
+      },
+      draw(ab) {
+        ctx.save();
+        const cap = Math.min(20, 8 + ab.level);
+        ctx.globalAlpha = 0.5; ctx.strokeStyle = '#8a2a24'; ctx.lineWidth = 2.4;
+        ctx.beginPath(); ctx.arc(CX, CY, 30, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * (ab.vault / cap)); ctx.stroke();
+        if (ab.fx > 0) {
+          const p = 1 - ab.fx / 22;
+          ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = (1 - p) * 0.45;
+          ctx.fillStyle = '#1a1a1a';
+          ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+          ctx.globalAlpha = (1 - p) * 0.7; ctx.strokeStyle = '#c0392b'; ctx.lineWidth = 3;
+          ctx.beginPath(); ctx.arc(CX, CY, p * 300, 0, Math.PI * 2); ctx.stroke();
+        }
+        ctx.restore(); ctx.globalAlpha = 1;
+      },
+    },
   };
   // ⭐ 별 해금 능력 매핑 — 캐릭터 4★ / 8★ 도달 시 해금
   const CHAR_STAR_UNLOCKS = {
