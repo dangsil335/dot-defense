@@ -19031,6 +19031,117 @@
         ctx.restore(); ctx.globalAlpha = 1;
       },
     },
+    // 🖌 스미카 4★/8★ 별해금 — 묵점 / 낙관
+    //    스미카 킷 축 = e._sumiMark(처형표식 최대5) + e._sumiMarkT(state.t + 240)
+    inkBlot: {
+      name: '묵점', isGachaUnique: true, isStarUnlock: true, baseCost: 280, color: '#3a3a3a',
+      desc: lv => `[4★히든] 0.8s마다 먹점 생성(최대 ${Math.min(14, 4 + lv)}) · 접촉 시 처형표식 +1 · DMG ${6 + lv * 4}`,
+      init(ab) { ab.cd = 0; ab.blots = []; },
+      tick(ab) {
+        const dmg = 6 + ab.level * 4, BR = 22;
+        // 먹점 위를 지나는 적에게 표식 각인 → 그 먹점은 소멸
+        for (const b of ab.blots) {
+          b.life--;
+          if (b.life <= 0) continue;
+          for (const e of state.enemies) {
+            if (e.hp <= 0) continue;
+            const [ex, ey] = enemyXY(e);
+            if ((ex - b.x) * (ex - b.x) + (ey - b.y) * (ey - b.y) > BR * BR) continue;
+            e._sumiMark = Math.min(5, (e._sumiMark || 0) + 1);
+            e._sumiMarkT = state.t + 240;
+            damageEnemy(e, dmg);
+            spawnParticles(ex, ey, '#2a2a2a', 4);
+            b.life = 0;   // 접촉한 먹점은 소멸
+            break;
+          }
+        }
+        compactInPlace(ab.blots, _alivePredLife);
+        if (--ab.cd > 0) return;
+        ab.cd = Math.max(30, 48 - ab.level * 2);
+        const cap = Math.min(14, 4 + ab.level);
+        if (ab.blots.length >= cap) return;   // 상한 도달 → 생성하지 않음
+        const a = Math.random() * Math.PI * 2;
+        const r = Math.sqrt(Math.random()) * ARENA_R * 0.9;
+        ab.blots.push({ x: CX + Math.cos(a) * r, y: CY + Math.sin(a) * r, life: 360, seed: Math.random() * 6.283 });
+      },
+      draw(ab) {
+        ctx.save();
+        for (const b of ab.blots) {
+          const a = Math.min(1, b.life / 40) * Math.min(1, (360 - b.life) / 8);
+          // 번진 먹 — 진한 코어 + 옅은 외곽
+          ctx.globalAlpha = a * 0.30; ctx.fillStyle = '#2a2a2a';
+          ctx.beginPath(); ctx.arc(b.x, b.y, 22, 0, Math.PI * 2); ctx.fill();
+          ctx.globalAlpha = a * 0.85; ctx.fillStyle = '#141414';
+          ctx.beginPath(); ctx.arc(b.x, b.y, 11, 0, Math.PI * 2); ctx.fill();
+          // 튄 먹방울
+          ctx.globalAlpha = a * 0.6;
+          for (let k = 0; k < 4; k++) {
+            const sa = b.seed + k * 1.9, sr = 13 + (k % 3) * 5;
+            ctx.beginPath(); ctx.arc(b.x + Math.cos(sa) * sr, b.y + Math.sin(sa) * sr, 2.4 - k * 0.35, 0, Math.PI * 2); ctx.fill();
+          }
+          // 처형표식 암시 — 붉은 테
+          ctx.globalAlpha = a * 0.35; ctx.strokeStyle = '#d83a3a'; ctx.lineWidth = 1.2;
+          ctx.beginPath(); ctx.arc(b.x, b.y, 22, 0, Math.PI * 2); ctx.stroke();
+        }
+        ctx.restore(); ctx.globalAlpha = 1;
+      },
+    },
+    finalSeal: {
+      name: '낙관', isGachaUnique: true, isStarUnlock: true, baseCost: 480, color: '#8a1c1c',
+      desc: lv => `[8★히든] 3s마다 표식 보유 적 전체 인장 · 표식당 DMG ${10 + lv * 6} · 5중첩 시 현재HP ${4 + lv}% 추가(보스 감쇠) · 표식 소모`,
+      init(ab) { ab.cd = 90; ab.seals = []; },
+      tick(ab) {
+        for (const s of ab.seals) s.life--;
+        compactInPlace(ab.seals, _alivePredLife);
+        if (--ab.cd > 0) return;
+        ab.cd = Math.max(120, 180 - ab.level * 5);
+        const per = 10 + ab.level * 6;
+        const pct = (4 + ab.level) / 100;
+        const bossPct = pct * 0.4;   // 보스 감쇠 — omniSolvent 와 동일 패턴
+        let sealed = 0;
+        for (const e of state.enemies) {
+          if (e.hp <= 0) continue;
+          const marks = e._sumiMark || 0;
+          if (marks <= 0 || !(e._sumiMarkT > state.t)) continue;
+          const [ex, ey] = enemyXY(e);
+          let dmg = per * marks;
+          if (marks >= 5) dmg += Math.max(1, Math.ceil(e.hp * (e.isBoss ? bossPct : pct)));
+          damageEnemy(e, dmg);
+          e._sumiMark = 0;   // 표식 소모
+          spawnParticles(ex, ey, marks >= 5 ? '#d83a3a' : '#8a1c1c', marks >= 5 ? 10 : 5);
+          ab.seals.push({ x: ex, y: ey, life: 24, full: marks >= 5 });
+          sealed++;
+        }
+        if (!sealed) { ab.cd = 30; return; }
+        if (typeof shake === 'function') shake(6, 8);
+      },
+      draw(ab) {
+        ctx.save();
+        for (const s of ab.seals) {
+          const a = s.life / 24, p = 1 - a;
+          // 붉은 낙관 도장 — 사각 인장이 찍히듯 축소되며 내려앉음
+          const sz = 15 * (1 + (1 - p) * 0.9);
+          ctx.globalAlpha = a * (s.full ? 0.95 : 0.7);
+          ctx.strokeStyle = s.full ? '#ff4a4a' : '#8a1c1c'; ctx.lineWidth = s.full ? 2.6 : 1.8;
+          ctx.strokeRect(s.x - sz, s.y - sz, sz * 2, sz * 2);
+          ctx.globalAlpha = a * 0.22; ctx.fillStyle = '#8a1c1c';
+          ctx.fillRect(s.x - sz, s.y - sz, sz * 2, sz * 2);
+          // 인장 안 한 획
+          ctx.globalAlpha = a * 0.9; ctx.strokeStyle = '#ffd0d0'; ctx.lineWidth = 1.6; ctx.lineCap = 'round';
+          ctx.beginPath();
+          ctx.moveTo(s.x - sz * 0.5, s.y - sz * 0.45); ctx.lineTo(s.x + sz * 0.5, s.y - sz * 0.45);
+          ctx.moveTo(s.x, s.y - sz * 0.45); ctx.lineTo(s.x, s.y + sz * 0.5);
+          ctx.stroke();
+          if (s.full) {
+            ctx.save(); ctx.globalCompositeOperation = 'lighter';
+            ctx.globalAlpha = a * 0.55; ctx.strokeStyle = '#ff6a6a'; ctx.lineWidth = 2;
+            ctx.beginPath(); ctx.arc(s.x, s.y, p * 42 + 8, 0, Math.PI * 2); ctx.stroke();
+            ctx.restore();
+          }
+        }
+        ctx.restore(); ctx.globalAlpha = 1;
+      },
+    },
   };
   // ⭐ 별 해금 능력 매핑 — 캐릭터 4★ / 8★ 도달 시 해금
   const CHAR_STAR_UNLOCKS = {
