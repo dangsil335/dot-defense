@@ -18576,6 +18576,103 @@
         ctx.restore(); ctx.globalAlpha = 1;
       },
     },
+    // ⚗ 클로에 4★/8★ 별해금 — 산성비 / 만상 용해
+    acidRain: {
+      name: '산성비', isGachaUnique: true, isStarUnlock: true, baseCost: 280, color: '#a0e050',
+      desc: lv => `[4★히든-SR] 4s마다 산성비 ${8 + lv}방울 낙하 · 착탄 산성 장판 · 초당 DMG ${(4 + lv * 2) * 5}`,
+      init(ab) { ab.cooldown = 90; ab.drops = []; ab.pools = []; },
+      tick(ab) {
+        const tick5 = 4 + ab.level * 2;
+        for (const p of ab.pools) {
+          p.life--;
+          if (state.t % 12 !== 0) continue;
+          for (const e of state.enemies) {
+            if (e.hp <= 0) continue;
+            const [ex, ey] = enemyXY(e);
+            if ((ex - p.x) * (ex - p.x) + (ey - p.y) * (ey - p.y) < p.r * p.r) {
+              damageEnemy(e, tick5);
+              e.slowFrames = Math.max(e.slowFrames || 0, 24);
+            }
+          }
+        }
+        compactInPlace(ab.pools, _alivePredLife);
+        for (const d of ab.drops) {
+          d.t++;
+          if (d.t < 20) continue;
+          d.done = true;
+          ab.pools.push({ x: d.x, y: d.y, r: 46 + ab.level * 3, life: 200 });
+          spawnParticles(d.x, d.y, '#a0e050', 5);
+        }
+        compactInPlace(ab.drops, _predNotDone);
+        if (--ab.cooldown > 0) return;
+        ab.cooldown = Math.max(160, 250 - ab.level * 5);
+        const pool = state.enemies.filter(e => e.hp > 0);
+        const n = 8 + ab.level;
+        for (let i = 0; i < n; i++) {
+          let dx, dy;
+          if (pool.length) { const t = pool[Math.floor(Math.random() * pool.length)]; const [tx, ty] = enemyXY(t); dx = tx + (Math.random() - 0.5) * 90; dy = ty + (Math.random() - 0.5) * 90; }
+          else { dx = CX + (Math.random() - 0.5) * 320; dy = CY + (Math.random() - 0.5) * 320; }
+          ab.drops.push({ x: dx, y: dy, t: -i * 2, done: false });
+        }
+      },
+      draw(ab) {
+        ctx.save();
+        for (const p of ab.pools) {
+          const a = Math.min(1, p.life / 40) * 0.30;
+          const g = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.r);
+          g.addColorStop(0, `rgba(160,224,80,${a})`); g.addColorStop(1, 'rgba(160,224,80,0)');
+          ctx.fillStyle = g; ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2); ctx.fill();
+          ctx.globalAlpha = a * 1.4; ctx.strokeStyle = '#b8f060'; ctx.lineWidth = 1.2;
+          ctx.beginPath(); ctx.arc(p.x, p.y, p.r * 0.92, 0, Math.PI * 2); ctx.stroke();
+        }
+        ctx.globalCompositeOperation = 'lighter';
+        for (const d of ab.drops) {
+          if (d.t < 0) continue;
+          const p = d.t / 20, my = d.y - (1 - p) * 190;
+          ctx.globalAlpha = 0.8; ctx.strokeStyle = '#c0ff60'; ctx.lineWidth = 2.4; ctx.lineCap = 'round';
+          ctx.beginPath(); ctx.moveTo(d.x, my - 14); ctx.lineTo(d.x, my); ctx.stroke();
+          ctx.globalAlpha = 0.25 + p * 0.3; ctx.strokeStyle = '#a0e050'; ctx.lineWidth = 1.3;
+          ctx.beginPath(); ctx.arc(d.x, d.y, 8 + p * 10, 0, Math.PI * 2); ctx.stroke();
+        }
+        ctx.restore(); ctx.globalAlpha = 1;
+      },
+    },
+    omniSolvent: {
+      name: '만상 용해', isGachaUnique: true, isStarUnlock: true, baseCost: 480, color: '#c0ff40',
+      desc: lv => `[8★히든-SR] 상시 부식장 둔화 · 1.5s마다 전체 ${(2 + lv * 0.4).toFixed(1)}% maxHP 용해`,
+      init(ab) { ab.dotT = 0; ab.pulse = 0; },
+      tick(ab) {
+        ab.pulse += 0.04;
+        for (const e of state.enemies) {
+          if (e.hp <= 0) continue;
+          e.slowFrames = Math.max(e.slowFrames || 0, 10);
+        }
+        if (++ab.dotT < 90) return;
+        ab.dotT = 0;
+        const pct = 0.02 + ab.level * 0.004;
+        const bossPct = pct * 0.4;
+        for (const e of state.enemies) {
+          if (e.hp <= 0 || e.maxHp <= 0) continue;
+          const p = e.isBoss ? bossPct : pct;
+          damageEnemy(e, Math.max(1, Math.ceil(e.maxHp * p)));
+        }
+      },
+      draw(ab) {
+        ctx.save();
+        const amb = 0.05 + 0.02 * Math.sin(ab.pulse);
+        const R = Math.min(W, H) * 0.5;
+        const g = ctx.createRadialGradient(CX, CY, 0, CX, CY, R);
+        g.addColorStop(0, `rgba(192,255,64,${amb})`); g.addColorStop(0.65, `rgba(160,224,80,${amb * 0.5})`); g.addColorStop(1, 'rgba(160,224,80,0)');
+        ctx.fillStyle = g; ctx.beginPath(); ctx.arc(CX, CY, R, 0, Math.PI * 2); ctx.fill();
+        ctx.globalCompositeOperation = 'lighter';
+        for (let i = 0; i < 3; i++) {
+          const r = 70 + i * 60 + Math.sin(ab.pulse + i) * 10;
+          ctx.globalAlpha = 0.14 - i * 0.035; ctx.strokeStyle = '#c0ff40'; ctx.lineWidth = 2;
+          ctx.beginPath(); ctx.arc(CX, CY, r, 0, Math.PI * 2); ctx.stroke();
+        }
+        ctx.restore(); ctx.globalAlpha = 1;
+      },
+    },
   };
   // ⭐ 별 해금 능력 매핑 — 캐릭터 4★ / 8★ 도달 시 해금
   const CHAR_STAR_UNLOCKS = {
