@@ -19338,6 +19338,8 @@
     blanche:{ 4: ['refractionField'],8: ['whiteEclipse'] },
     kaira:  { 4: ['beastForm'],       8: ['apexPredator'] },
     feria:  { 4: ['ferroShard'],      8: ['monopole'] },
+    sumika: { 4: ['inkBlot'],         8: ['finalSeal'] },
+    elementia: { 4: ['elementCycle'], 8: ['elementalMonarch'] },
     // SR (SSR 보다 약하지만 쓸만함)
     sakura: { 4: ['petalStorm'],     8: ['cherrySingularity'] },
     luna:   { 4: ['lunarRain'],      8: ['eclipsePiercer'] },
@@ -20284,6 +20286,11 @@
     finalBow:       ['광역', '폭발'],
     flashbulb:      ['광역', '슬로우'],
     darkroomVault:  ['광역', '폭발'],
+    // 🆕 SSR 스미카·엘레미아 별해금
+    inkBlot:          ['영역', '자율'],
+    finalSeal:        ['광역', '폭발'],
+    elementCycle:     ['자율', '연쇄', '슬로우'],
+    elementalMonarch: ['회전', '자율', '폭발'],
   };
   function getAbilityTags(id) { return ABILITY_TAGS[id] || []; }
   function tagChipHtml(tag) {
@@ -20369,6 +20376,9 @@
     'stoneGarden', 'gorgonRealm',         // 갈라테아
     'understudyCall', 'finalBow',         // 트리나
     'flashbulb', 'darkroomVault',         // 아이리스
+    // 🆕 SSR 스미카·엘레미아 별해금 (4★/8★) — SSR 20명 전원 별돌파 완비
+    'inkBlot', 'finalSeal',               // 스미카
+    'elementCycle', 'elementalMonarch',   // 엘레미아
   ];
   // (구 숫자 매핑 ABILITY_ICON_NUMBER/getIconNumber 제거 — 파일명이 id가 되어 불필요. ABILITY_ICON_ORDER는 프리로드 목록으로 유지)
   function getIconPath(id) {
@@ -29568,6 +29578,11 @@
     'omniSolvent', 'gorgonRealm',                                          // 클로에·갈라테아 (전체 상시)
     'grandGuignol', 'finalBow', 'darkroomVault',                           // 라라·트리나·아이리스 (전체)
     'droneSwarm', 'understudyCall',                                        // 에이미·트리나 (전역 타겟 — 반경 제한 없음)
+    // 🆕 SSR 스미카·엘레미아 별해금 — 도달거리 실측 후 240px 초과분만 등재
+    //   inkBlot   : 먹점 생성 반경 ARENA_R*0.9(=261) + 접촉 반경 22 → 실효 283px > 240 ⇒ 등재
+    //   finalSeal : 표식 보유 적 전체 대상, 반경 개념 없음 ⇒ 등재
+    //   elementCycle(R=220 하드캡) / elementalMonarch(공전70+타격62=132, 합류폭발160)는 240 이하 ⇒ 미등재
+    'inkBlot', 'finalSeal',                                                // 스미카 (필드 전역 먹점 / 전역 표식 인장)
   ]);
   // 🎯 능력별 표적 사거리 — TD 모드 사거리 캡 + 시각 표시용
   // def.range(lv) 가 정의돼있으면 사용, 아니면 능력 타입/티어별 기본값
@@ -36216,7 +36231,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 675;
+  const APP_VERSION = 676;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
