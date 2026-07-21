@@ -18501,6 +18501,8 @@
     // SR (SSR 보다 약하지만 쓸만함)
     sakura: { 4: ['petalStorm'],     8: ['cherrySingularity'] },
     luna:   { 4: ['lunarRain'],      8: ['eclipsePiercer'] },
+    cardista: { 4: ['wildDeal'],     8: ['jackpotRoyale'] },
+    levina:   { 4: ['thunderfall'],  8: ['stormApex'] },
     // 🆕 ex-R 승격 SR도 별돌파 부여 — SR 급 통일
     marine:   { 4: ['tidalMaelstrom'], 8: ['abyssalWrath'] },
     solar:    { 4: ['solarFlare'],     8: ['solarEclipse'] },
@@ -19358,6 +19360,10 @@
     petalStorm:        ['회전', '광역'],
     cherrySingularity: ['광역', '슬로우'],
     lunarRain:         ['낙하', '광역'],
+    wildDeal:        ['다중공격', '광역'],
+    jackpotRoyale:   ['광역', '폭발'],
+    thunderfall:     ['낙하', '광역', '정지'],
+    stormApex:       ['연쇄', '광역', '정지'],
     // 🛰 에이미 — 전술 드론
     interceptorDrone: ['자율', '유도'],
     laserPod:         ['자율', '관통', '빔'],
@@ -19465,6 +19471,8 @@
     'cherrySingularity',   // 116 — sakura 8★ — 벚꽃 특이점
     'lunarRain',           // 117 — luna 4★ — 월광비
     'eclipsePiercer',      // 118 — luna 8★ — 월식 관통
+    'wildDeal', 'jackpotRoyale',      // cardista 4★/8★
+    'thunderfall', 'stormApex',       // levina 4★/8★
     // 🆕 신규 4캐릭 시그니처/조합/8돌파 + 기존 7캐릭 8돌파 — 파일명은 <id>.png (프리로드용)
     'spritling', 'windWolfSpirit', 'phoenixSpirit', 'leviathanSpirit',
     'inkSlash', 'silentExecution', 'sumiReaper', 'inkReaper',
@@ -20628,6 +20636,8 @@
     // SR 캐릭터 칭호
     sakuraMaster:    { name: '벚꽃의 검객',     icon: '🌸', achId: 'char8_sakura',  style: 'glow',   color: '#ff88bb' },
     lunaMaster:      { name: '달빛의 사수',     icon: '🌙', achId: 'char8_luna',    style: 'glow',   color: '#aaccff' },
+    cardistaMaster:  { name: '운명의 딜러',     icon: '🎴', achId: 'char8_cardista', style: 'glow',   color: '#e0b13a' },
+    levinaMaster:    { name: '뇌전의 여왕',     icon: '⚡', achId: 'char8_levina',   style: 'glow',   color: '#7cc8ff' },
     // SSR 캐릭터 칭호
     ariaMaster:      { name: '천공의 노래꾼',   icon: '🌟', achId: 'char8_aria',    style: 'rainbow' },
     misakiMaster:    { name: '시공의 여행자',   icon: '🦋', achId: 'char8_misaki',  style: 'rainbow' },
@@ -20694,7 +20704,7 @@
     asc1Title:'sparkle', asc5Title:'star', asc10Title:'starburst', asc15Title:'crown',
     trans1Title:'galaxy', trans3Title:'galaxy', trans5Title:'starburst', trans10Title:'crown', trans15Title:'starburst',
     starGazer:'star', marineMaster:'wave', solarMaster:'sun', gravitasMaster:'vortex', amyMaster:'missile', chloeMaster:'flask', laraMaster:'masks', galateaMaster:'gem', trinaMaster:'masks', irisMaster:'bullseye',
-    sakuraMaster:'blossom', lunaMaster:'moon', ariaMaster:'star', misakiMaster:'butterfly', elementiaMaster:'sparkle', sumikaMaster:'skull', blancheMaster:'starburst', kairaMaster:'dragon', feriaMaster:'vortex',
+    sakuraMaster:'blossom', lunaMaster:'moon', ariaMaster:'star', misakiMaster:'butterfly', elementiaMaster:'sparkle', sumikaMaster:'skull', blancheMaster:'starburst', kairaMaster:'dragon', feriaMaster:'vortex', cardistaMaster:'cards', levinaMaster:'bolt',
     // 🔱 트리플 컬렉션
     tcUltra:'barrage', tcFrost:'bolt', tcElem:'sparkle', tcFusion:'cannon', tcGalaxy:'galaxy', tcTitan:'missile',
     tcPlasma:'bolt', tcVoidNova:'starburst', tcSiege:'beam', tcDeepSea:'wave', tcStellar:'sun', tcVoidStop:'vortex',
@@ -20704,7 +20714,7 @@
   const PLATE_TITLES = new Set([
     'conqueror', 'asc10Title', 'asc15Title',
     'trans1Title', 'trans3Title', 'trans5Title', 'trans10Title', 'trans15Title',
-    'sakuraMaster', 'lunaMaster', 'ariaMaster', 'misakiMaster', 'elementiaMaster', 'sumikaMaster', 'blancheMaster', 'kairaMaster', 'feriaMaster',
+    'sakuraMaster', 'lunaMaster', 'ariaMaster', 'misakiMaster', 'elementiaMaster', 'sumikaMaster', 'blancheMaster', 'kairaMaster', 'feriaMaster', 'cardistaMaster', 'levinaMaster',
     'tripleSageTitle',   // 그랜드 — 한 게임 트리플 5개
   ]);
   function titleEmblemHtml(key, emojiFallback) {
@@ -24056,6 +24066,10 @@
       check: () => ((META.charStars || {}).sakura   || 0) >= 8 },
     { id: 'char8_luna',     name: '🌙 달빛의 사수',    desc: '🌙 루나 8★ 달성',     reward: 800,
       check: () => ((META.charStars || {}).luna     || 0) >= 8 },
+    { id: 'char8_cardista', name: '🎴 운명의 딜러',    desc: '🎴 카르디스타 8★ 달성', reward: 800,
+      check: () => ((META.charStars || {}).cardista || 0) >= 8 },
+    { id: 'char8_levina',   name: '⚡ 뇌전의 여왕',    desc: '⚡ 레비나 8★ 달성',   reward: 800,
+      check: () => ((META.charStars || {}).levina   || 0) >= 8 },
     // SSR 캐릭터 8★
     { id: 'char8_aria',     name: '🌟 천공의 노래꾼',  desc: '🌟 아리아 8★ 달성',   reward: 1500,
       check: () => ((META.charStars || {}).aria     || 0) >= 8 },
@@ -28669,6 +28683,7 @@
     'celestialEcho', 'sirensSong', 'temporalLoop', 'paradoxFreeze',
     // ⭐ SR 별 해금 히든 능력 (전 맵 효과)
     'petalStorm', 'cherrySingularity', 'lunarRain', 'eclipsePiercer',
+    'wildDeal', 'jackpotRoyale', 'thunderfall', 'stormApex',    // 카르디스타·레비나 별해금 (전 맵)
     // 🆕 신규 캐릭 전 맵/장거리 능력
     'homingArtillery', 'orbitalFortress', 'laserPod',                      // 에이미 (장거리 미사일/레이저)
     'chemBarrage', 'grandDissolution',                                     // 클로에 (투하/전체 부식)
@@ -35327,7 +35342,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 673;
+  const APP_VERSION = 674;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
@@ -35455,7 +35470,7 @@
     // 🌌 초월 — 승천 15 이후 단계적
     trans:    ['trans1', 'trans3', 'trans5', 'trans10', 'trans15'],
     // ⭐ 캐릭터 돌파 — 별 등급
-    chars:    ['firstStar', 'char8_marine', 'char8_solar', 'char8_gravitas', 'char8_sakura', 'char8_luna', 'char8_aria', 'char8_misaki', 'char8_elementia', 'char8_sumika', 'char8_amy', 'char8_chloe', 'char8_lara', 'char8_galatea', 'char8_trina', 'char8_iris', 'char8_blanche', 'char8_kaira', 'char8_feria'],
+    chars:    ['firstStar', 'char8_marine', 'char8_solar', 'char8_gravitas', 'char8_sakura', 'char8_luna', 'char8_aria', 'char8_misaki', 'char8_elementia', 'char8_sumika', 'char8_amy', 'char8_chloe', 'char8_lara', 'char8_galatea', 'char8_trina', 'char8_iris', 'char8_blanche', 'char8_kaira', 'char8_feria', 'char8_cardista', 'char8_levina'],
     special:  ['codexHalf', 'codexFull', 'allChars', 'speedrun', 'lowSlot',
                'lucky5', 'goldHold3k', 'gold5kRun',
                'relicFirst', 'relic3', 'relic5', 'relicRare', 'relicEpic', 'relicLeg', 'relicAllRar'],
