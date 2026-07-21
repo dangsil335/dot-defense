@@ -14046,8 +14046,11 @@
     torpedo: {
       name: '부유어뢰', baseCost: 65, color: '#5599cc', isGachaUnique: true,
       desc: lv => `${2+lv}발 유도 어뢰 · DMG ${9+lv*4} · 광역 ${28+lv*5}`,
+      // 📊 v677 — 폭발 후 소멸(t.life=0)은 "1발 1폭발" 규칙(로직)이라 stats 로 옮기지 않는다.
+      stats: { turnRate: 0.10, launchSpeed: 2.2, baseSpeed: 2.5, accel: 0.22, maxSpeed: 8, torpedoLife: 180, hitPad: 5, despawnMargin: 30 },
       init(ab) { ab.cooldown = 80; ab.torpedoes = []; ab.explosions = []; },
       tick(ab) {
+        const S = _S(ab);
         const dmg = 9 + ab.level * 4;   // 🆕 SR 승격 — 데미지 상향
         const exR = 28 + ab.level * 5;
         for (const e of ab.explosions) e.life--;
@@ -14071,16 +14074,16 @@
             let diff = wantAng - curAng;
             while (diff > Math.PI) diff -= Math.PI * 2;
             while (diff < -Math.PI) diff += Math.PI * 2;
-            const c = Math.max(-0.10, Math.min(0.10, diff));
+            const c = Math.max(-S.turnRate, Math.min(S.turnRate, diff));
             const a = curAng + c;
-            t.spd = Math.min(8, (t.spd || 2.5) + 0.22);   // 🚀 어뢰 가속 (수중 추진)
+            t.spd = Math.min(S.maxSpeed, (t.spd || S.baseSpeed) + S.accel);   // 🚀 어뢰 가속 (수중 추진)
             t.vx = Math.cos(a) * t.spd; t.vy = Math.sin(a) * t.spd;
           }
           t.x += t.vx; t.y += t.vy;
           for (const e of state.enemies) {
             if (e.hp <= 0) continue;
             const [ex, ey] = enemyXY(e);
-            if ((t.x-ex)*(t.x-ex) + (t.y-ey)*(t.y-ey) < (e.size+5)*(e.size+5)) {
+            if ((t.x-ex)*(t.x-ex) + (t.y-ey)*(t.y-ey) < (e.size+S.hitPad)*(e.size+S.hitPad)) {
               for (const e2 of state.enemies) {
                 if (e2.hp <= 0) continue;
                 const [ex2, ey2] = enemyXY(e2);
@@ -14094,7 +14097,7 @@
               break;
             }
           }
-          if ((t.x-CX)*(t.x-CX) + (t.y-CY)*(t.y-CY) > (ARENA_R+30)*(ARENA_R+30)) t.life = 0;
+          if ((t.x-CX)*(t.x-CX) + (t.y-CY)*(t.y-CY) > (ARENA_R+S.despawnMargin)*(ARENA_R+S.despawnMargin)) t.life = 0;
         }
         compactInPlace(ab.torpedoes, _alivePredLife);
         if (--ab.cooldown > 0) return;
@@ -14103,8 +14106,8 @@
           const ang = Math.random() * Math.PI * 2;
           ab.torpedoes.push({
             x: CX, y: CY,
-            vx: Math.cos(ang) * 2.2, vy: Math.sin(ang) * 2.2,
-            life: 180, target: null,
+            vx: Math.cos(ang) * S.launchSpeed, vy: Math.sin(ang) * S.launchSpeed,
+            life: S.torpedoLife, target: null,
           });
         }
         ab.cooldown = Math.max(60, 110 - ab.level * 4);
@@ -14172,8 +14175,11 @@
     pullField: {
       name: '인력장', baseCost: 70, color: '#a070d0', isGachaUnique: true,
       desc: lv => `정지 인력장 · DMG ${3+lv*2}/주기 · 적 끌어모음`,
-      init(ab) { ab.x = CX; ab.y = CY; ab.tickT = 16; ab.life = 0; },
+      // 📊 v677 — 재배치 주기(200 + lv*25)는 레벨식이라 옮기지 않는다. "고정 설치 후 만료 시 재배치"라는 구조도 로직.
+      stats: { pullStrength: 1.8, minPullDist: 5, damageRadiusFactor: 0.6, damageTickInterval: 16 },
+      init(ab) { ab.x = CX; ab.y = CY; ab.tickT = _S(ab).damageTickInterval; ab.life = 0; },
       tick(ab) {
+        const S = _S(ab);
         ab.life--;
         if (ab.life <= 0) {
           // 적 평균 위치로 재배치
@@ -14193,8 +14199,8 @@
           const [ex, ey] = enemyXY(e);
           const dx = ab.x - ex, dy = ab.y - ey;
           const dist = Math.hypot(dx, dy);
-          if (dist < pullR && dist > 5) {
-            const ps = (1 - dist / pullR) * 1.8;
+          if (dist < pullR && dist > S.minPullDist) {
+            const ps = (1 - dist / pullR) * S.pullStrength;
             const newEx = ex + (dx/dist) * ps;
             const newEy = ey + (dy/dist) * ps;
             e.angle = Math.atan2(newEy - CY, newEx - CX);
@@ -14203,11 +14209,11 @@
           }
         }
         if (ab.tickT <= 0) {
-          ab.tickT = 16;
+          ab.tickT = S.damageTickInterval;
           for (const e of state.enemies) {
             if (e.hp <= 0) continue;
             const [ex, ey] = enemyXY(e);
-            if ((ab.x-ex)*(ab.x-ex) + (ab.y-ey)*(ab.y-ey) < pullR*pullR * 0.6) {
+            if ((ab.x-ex)*(ab.x-ex) + (ab.y-ey)*(ab.y-ey) < pullR*pullR * S.damageRadiusFactor) {
               damageEnemy(e, dmg);
               spawnParticles(ex, ey, '#a070d0', 1);
             }
@@ -17234,12 +17240,15 @@
     tidalMaelstrom: {
       name: '한류 소용돌이', isGachaUnique: true, isStarUnlock: true, baseCost: 280, color: '#5599cc',
       desc: lv => `[4★히든-SR] 4s마다 소용돌이 — 끌어당김 + 냉기 광역 DMG ${28 + lv * 14} · 슬로우`,
+      // 📊 v677 — "순간 견인 1회"라는 지속 구조 자체는 로직이라 stats 로 옮기지 않는다(강도만 데이터화).
+      stats: { pullStrength: 4, minPullDist: 6, minRadius: 40, slowFrames: 90, castCooldown: 240, idleCooldown: 30 },
       init(ab) { ab.cooldown = 100; ab.fx = 0; ab.x = CX; ab.y = CY; },
       tick(ab) {
+        const S = _S(ab);
         if (ab.fx > 0) ab.fx--;
         if (--ab.cooldown > 0) return;
         const pool = state.enemies.filter(e => e.hp > 0);
-        if (!pool.length) { ab.cooldown = 30; return; }
+        if (!pool.length) { ab.cooldown = S.idleCooldown; return; }
         let sx = 0, sy = 0; for (const e of pool) { const [ex, ey] = enemyXY(e); sx += ex; sy += ey; }
         ab.x = sx / pool.length; ab.y = sy / pool.length;
         const R = 150 + ab.level * 8, dmg = 28 + ab.level * 14;
@@ -17247,11 +17256,11 @@
           const [ex, ey] = enemyXY(e);
           const dx = ab.x - ex, dy = ab.y - ey, dist = Math.hypot(dx, dy);
           if (dist < R) {
-            if (dist > 6) { const ps = (1 - dist / R) * 4, nx = ex + dx / dist * ps, ny = ey + dy / dist * ps; e.angle = Math.atan2(ny - CY, nx - CX); e.radius = Math.max(40, Math.hypot(nx - CX, ny - CY)); e.targetRadius = e.radius; e._xyT = -1; }
-            damageEnemy(e, dmg); e.slowFrames = Math.max(e.slowFrames || 0, 90); spawnParticles(ex, ey, '#5599cc', 2);
+            if (dist > S.minPullDist) { const ps = (1 - dist / R) * S.pullStrength, nx = ex + dx / dist * ps, ny = ey + dy / dist * ps; e.angle = Math.atan2(ny - CY, nx - CX); e.radius = Math.max(S.minRadius, Math.hypot(nx - CX, ny - CY)); e.targetRadius = e.radius; e._xyT = -1; }
+            damageEnemy(e, dmg); e.slowFrames = Math.max(e.slowFrames || 0, S.slowFrames); spawnParticles(ex, ey, '#5599cc', 2);
           }
         }
-        ab.fx = 30; ab.cooldown = 240;
+        ab.fx = 30; ab.cooldown = S.castCooldown;
       },
       draw(ab) {
         if (ab.fx <= 0) return;
@@ -17296,12 +17305,15 @@
     solarFlare: {
       name: '태양 홍염', isGachaUnique: true, isStarUnlock: true, baseCost: 280, color: '#ffaa44',
       desc: lv => `[4★히든-SR] 4s마다 ${3 + Math.floor(lv / 2)}갈래 홍염 채찍 · DMG ${30 + lv * 15}`,
+      // 📊 v677 — 최근접 우선 정렬 / Math.min(n, pool.length)(잉여 채찍 소멸)은 로직이라 stats 대상이 아니다.
+      stats: { castCooldown: 240, idleCooldown: 30 },
       init(ab) { ab.cooldown = 100; ab.fx = 0; ab.hits = []; },
       tick(ab) {
+        const S = _S(ab);
         if (ab.fx > 0) ab.fx--;
         if (--ab.cooldown > 0) return;
         const pool = state.enemies.filter(e => e.hp > 0);
-        if (!pool.length) { ab.cooldown = 30; return; }
+        if (!pool.length) { ab.cooldown = S.idleCooldown; return; }
         const n = 3 + Math.floor(ab.level / 2), dmg = 30 + ab.level * 15;
         pool.sort((p, q) => { const a = enemyXY(p), b = enemyXY(q); return ((a[0] - CX) * (a[0] - CX) + (a[1] - CY) * (a[1] - CY)) - ((b[0] - CX) * (b[0] - CX) + (b[1] - CY) * (b[1] - CY)); });
         ab.hits = [];
@@ -17317,7 +17329,7 @@
         ctx.restore(); ctx.globalAlpha = 1;
       },
     },
-    // ☀️ solar 8★ — 개기일식
+    // ☀️ solar 8★ — 개기일식 (sunspot 은 stats 없음: 반경/쿨/DMG 가 전부 레벨식이고 중심 고정은 판정 로직이라 데이터화할 상수가 없다)
     solarEclipse: {
       name: '개기일식', isGachaUnique: true, isStarUnlock: true, baseCost: 480, color: '#ffcc44',
       desc: lv => `[8★히든-SR] 상시 화상 오오라 + 3s마다 태양기둥 → 최강 적 ${6 + lv}% maxHP`,
@@ -17350,12 +17362,15 @@
     gravityCrush: {
       name: '중력 붕괴', isGachaUnique: true, isStarUnlock: true, baseCost: 280, color: '#a070d0',
       desc: lv => `[4★히든-SR] 4s마다 중력정 압착 — 끌어모음 + 광역 DMG ${34 + lv * 16} · 슬로우`,
+      // 📊 v677 — "1회 압착"이라는 발동 구조는 로직이라 stats 대상이 아니다(강도·지속만 데이터화).
+      stats: { pullStrength: 5, minPullDist: 6, minRadius: 40, slowFrames: 75, castCooldown: 240, idleCooldown: 30 },
       init(ab) { ab.cooldown = 110; ab.fx = 0; ab.x = CX; ab.y = CY; },
       tick(ab) {
+        const S = _S(ab);
         if (ab.fx > 0) ab.fx--;
         if (--ab.cooldown > 0) return;
         const pool = state.enemies.filter(e => e.hp > 0);
-        if (!pool.length) { ab.cooldown = 30; return; }
+        if (!pool.length) { ab.cooldown = S.idleCooldown; return; }
         let sx = 0, sy = 0; for (const e of pool) { const [ex, ey] = enemyXY(e); sx += ex; sy += ey; }
         ab.x = sx / pool.length; ab.y = sy / pool.length;
         const R = 160 + ab.level * 8, dmg = 34 + ab.level * 16;
@@ -17363,11 +17378,11 @@
           const [ex, ey] = enemyXY(e);
           const dx = ab.x - ex, dy = ab.y - ey, dist = Math.hypot(dx, dy);
           if (dist < R) {
-            if (dist > 6) { const ps = (1 - dist / R) * 5, nx = ex + dx / dist * ps, ny = ey + dy / dist * ps; e.angle = Math.atan2(ny - CY, nx - CX); e.radius = Math.max(40, Math.hypot(nx - CX, ny - CY)); e.targetRadius = e.radius; e._xyT = -1; }
-            damageEnemy(e, dmg); e.slowFrames = Math.max(e.slowFrames || 0, 75); spawnParticles(ex, ey, '#a070d0', 2);
+            if (dist > S.minPullDist) { const ps = (1 - dist / R) * S.pullStrength, nx = ex + dx / dist * ps, ny = ey + dy / dist * ps; e.angle = Math.atan2(ny - CY, nx - CX); e.radius = Math.max(S.minRadius, Math.hypot(nx - CX, ny - CY)); e.targetRadius = e.radius; e._xyT = -1; }
+            damageEnemy(e, dmg); e.slowFrames = Math.max(e.slowFrames || 0, S.slowFrames); spawnParticles(ex, ey, '#a070d0', 2);
           }
         }
-        ab.fx = 22; ab.cooldown = 240;
+        ab.fx = 22; ab.cooldown = S.castCooldown;
       },
       draw(ab) {
         if (ab.fx <= 0) return;
