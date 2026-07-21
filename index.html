@@ -18489,6 +18489,93 @@
         ctx.restore(); ctx.globalAlpha = 1;
       },
     },
+    // 🛰 에이미 4★/8★ 별해금 — 드론 군집 / 제공권
+    droneSwarm: {
+      name: '드론 군집', isGachaUnique: true, isStarUnlock: true, baseCost: 280, color: '#FFB703',
+      desc: lv => `[4★히든-SR] ${3 + Math.floor(lv / 2)}기 자율 드론 상시 순찰 · 자동 요격 DMG ${12 + lv * 6}`,
+      init(ab) { ab.drones = []; },
+      tick(ab) {
+        const n = 3 + Math.floor(ab.level / 2) + permaCount('droneSwarm');
+        if (ab.drones.length !== n) {
+          ab.drones = [];
+          for (let i = 0; i < n; i++) ab.drones.push({ a: (Math.PI * 2 / n) * i, r: 84 + (i % 3) * 16, cd: i * 6 });
+        }
+        const dmg = 12 + ab.level * 6;
+        for (const d of ab.drones) {
+          d.a += 0.022;
+          d.x = CX + Math.cos(d.a) * d.r; d.y = CY + Math.sin(d.a) * d.r;
+          if (--d.cd > 0) continue;
+          let best = null, bd = 1e9;
+          for (const e of state.enemies) {
+            if (e.hp <= 0) continue;
+            const [ex, ey] = enemyXY(e);
+            const q = (ex - d.x) * (ex - d.x) + (ey - d.y) * (ey - d.y);
+            if (q < bd) { bd = q; best = e; }
+          }
+          if (!best) { d.cd = 18; continue; }
+          const [tx, ty] = enemyXY(best);
+          const ang = Math.atan2(ty - d.y, tx - d.x);
+          state.bullets.push({ x: d.x, y: d.y, vx: Math.cos(ang) * 8, vy: Math.sin(ang) * 8, dmg, life: 55, color: '#FFB703', target: best, leader: null, offsetAngle: 0, sourceId: state.currentAbilityId || null });
+          d.cd = Math.max(18, 40 - ab.level);
+        }
+      },
+      draw(ab) {
+        ctx.save(); ctx.globalCompositeOperation = 'lighter';
+        ctx.globalAlpha = 0.12; ctx.strokeStyle = '#FFB703'; ctx.lineWidth = 1;
+        for (const r of [84, 100, 116]) { ctx.beginPath(); ctx.arc(CX, CY, r, 0, Math.PI * 2); ctx.stroke(); }
+        for (const d of ab.drones) {
+          ctx.save(); ctx.translate(d.x, d.y); ctx.rotate(d.a + Math.PI / 2);
+          ctx.globalAlpha = 0.9; ctx.fillStyle = '#ffd24a';
+          ctx.beginPath(); ctx.moveTo(0, -5); ctx.lineTo(4, 4); ctx.lineTo(-4, 4); ctx.closePath(); ctx.fill();
+          ctx.globalAlpha = 0.5; ctx.fillStyle = '#fff2c0';
+          ctx.beginPath(); ctx.arc(0, 0, 1.8, 0, Math.PI * 2); ctx.fill();
+          ctx.restore();
+        }
+        ctx.restore(); ctx.globalAlpha = 1;
+      },
+    },
+    skyDominion: {
+      name: '제공권', isGachaUnique: true, isStarUnlock: true, baseCost: 480, color: '#ffcf40',
+      desc: lv => `[8★히든-SR] 3s마다 전 맵 ${6 + lv}지점 정밀폭격 · 광역 DMG ${35 + lv * 18}`,
+      init(ab) { ab.cooldown = 100; ab.marks = []; },
+      tick(ab) {
+        const dmg = 35 + ab.level * 18, exR = 62 + ab.level * 4;
+        for (const m of ab.marks) {
+          m.t++;
+          if (m.t < 22) continue;
+          m.done = true;
+          for (const e of state.enemies) {
+            if (e.hp <= 0) continue;
+            const [ex, ey] = enemyXY(e);
+            if ((ex - m.x) * (ex - m.x) + (ey - m.y) * (ey - m.y) < exR * exR) { damageEnemy(e, dmg); spawnParticles(ex, ey, '#ffcf40', 4); }
+          }
+        }
+        compactInPlace(ab.marks, _predNotDone);
+        if (--ab.cooldown > 0) return;
+        ab.cooldown = Math.max(150, 240 - ab.level * 6);
+        const pool = state.enemies.filter(e => e.hp > 0);
+        const n = 6 + ab.level;
+        for (let i = 0; i < n; i++) {
+          let mx, my;
+          if (pool.length) { const t = pool[Math.floor(Math.random() * pool.length)]; const [tx, ty] = enemyXY(t); mx = tx + (Math.random() - 0.5) * 60; my = ty + (Math.random() - 0.5) * 60; }
+          else { mx = CX + (Math.random() - 0.5) * 300; my = CY + (Math.random() - 0.5) * 300; }
+          ab.marks.push({ x: mx, y: my, t: -i * 3, done: false });
+        }
+      },
+      draw(ab) {
+        ctx.save(); ctx.globalCompositeOperation = 'lighter';
+        for (const m of ab.marks) {
+          if (m.t < 0) continue;
+          const p = m.t / 22;
+          ctx.globalAlpha = 0.25 + p * 0.5; ctx.strokeStyle = '#ffcf40'; ctx.lineWidth = 1.6;
+          ctx.beginPath(); ctx.arc(m.x, m.y, 30 * (1 - p) + 8, 0, Math.PI * 2); ctx.stroke();
+          ctx.beginPath(); ctx.moveTo(m.x - 10, m.y); ctx.lineTo(m.x + 10, m.y);
+          ctx.moveTo(m.x, m.y - 10); ctx.lineTo(m.x, m.y + 10); ctx.stroke();
+          if (p > 0.92) { ctx.globalAlpha = 0.7; ctx.fillStyle = '#fff0b0'; ctx.beginPath(); ctx.arc(m.x, m.y, 22, 0, Math.PI * 2); ctx.fill(); }
+        }
+        ctx.restore(); ctx.globalAlpha = 1;
+      },
+    },
   };
   // ⭐ 별 해금 능력 매핑 — 캐릭터 4★ / 8★ 도달 시 해금
   const CHAR_STAR_UNLOCKS = {
