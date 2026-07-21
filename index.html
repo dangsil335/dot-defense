@@ -18789,6 +18789,101 @@
         ctx.restore(); ctx.globalAlpha = 1;
       },
     },
+    // 🗿 갈라테아 4★/8★ 별해금 — 석상 정원 / 고르곤의 영역
+    stoneGarden: {
+      name: '석상 정원', isGachaUnique: true, isStarUnlock: true, baseCost: 280, color: '#c8b890',
+      desc: lv => `[4★히든-SR] 석상 ${3 + Math.floor(lv / 3)}기 배치 · 주변 적 석화 + 파쇄 DMG ${16 + lv * 8}`,
+      init(ab) { ab.statues = []; ab.cd = 0; },
+      tick(ab) {
+        const n = 3 + Math.floor(ab.level / 3);
+        if (ab.statues.length !== n) {
+          ab.statues = [];
+          for (let i = 0; i < n; i++) {
+            const a = (Math.PI * 2 / n) * i;
+            ab.statues.push({ x: CX + Math.cos(a) * 120, y: CY + Math.sin(a) * 120, fx: 0 });
+          }
+        }
+        for (const s of ab.statues) if (s.fx > 0) s.fx--;
+        if (--ab.cd > 0) return;
+        ab.cd = Math.max(70, 130 - ab.level * 3);
+        const dmg = 16 + ab.level * 8, R = 74 + ab.level * 3;
+        for (const s of ab.statues) {
+          let hit = false;
+          for (const e of state.enemies) {
+            if (e.hp <= 0) continue;
+            const [ex, ey] = enemyXY(e);
+            if ((ex - s.x) * (ex - s.x) + (ey - s.y) * (ey - s.y) > R * R) continue;
+            hit = true;
+            damageEnemy(e, dmg);
+            if (e.isBoss) e.slowFrames = Math.max(e.slowFrames || 0, 70);
+            else e.timeStopped = state.t + 48;
+            spawnParticles(ex, ey, '#d8c8a0', 3);
+          }
+          if (hit) s.fx = 18;
+        }
+      },
+      draw(ab) {
+        ctx.save();
+        for (const s of ab.statues) {
+          const R = 74 + ab.level * 3;
+          if (s.fx > 0) {
+            const p = s.fx / 18;
+            ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = p * 0.35;
+            ctx.strokeStyle = '#e8dcc0'; ctx.lineWidth = 2;
+            ctx.beginPath(); ctx.arc(s.x, s.y, R * (1 - p) + 10, 0, Math.PI * 2); ctx.stroke();
+            ctx.globalCompositeOperation = 'source-over';
+          }
+          ctx.globalAlpha = 0.12; ctx.strokeStyle = '#c8b890'; ctx.lineWidth = 1;
+          ctx.beginPath(); ctx.arc(s.x, s.y, R, 0, Math.PI * 2); ctx.stroke();
+          ctx.globalAlpha = 0.9; ctx.fillStyle = '#b8a880'; ctx.strokeStyle = '#e0d4b0'; ctx.lineWidth = 1.4;
+          ctx.beginPath(); ctx.moveTo(s.x, s.y - 15); ctx.lineTo(s.x + 8, s.y - 2); ctx.lineTo(s.x + 6, s.y + 13);
+          ctx.lineTo(s.x - 6, s.y + 13); ctx.lineTo(s.x - 8, s.y - 2); ctx.closePath();
+          ctx.fill(); ctx.stroke();
+        }
+        ctx.restore(); ctx.globalAlpha = 1;
+      },
+    },
+    gorgonRealm: {
+      name: '고르곤의 영역', isGachaUnique: true, isStarUnlock: true, baseCost: 480, color: '#c8b060',
+      desc: lv => `[8★히든-SR] 상시 석화 영역 · 3s마다 전체 석화 + 붕괴 DMG ${30 + lv * 15}`,
+      init(ab) { ab.cd = 120; ab.wave = 0; ab.pulse = 0; },
+      tick(ab) {
+        ab.pulse += 0.03;
+        if (ab.wave > 0) ab.wave--;
+        for (const e of state.enemies) {
+          if (e.hp <= 0) continue;
+          e.slowFrames = Math.max(e.slowFrames || 0, 14);
+        }
+        if (--ab.cd > 0) return;
+        ab.cd = Math.max(150, 220 - ab.level * 5);
+        ab.wave = 30;
+        const dmg = 30 + ab.level * 15;
+        for (const e of state.enemies) {
+          if (e.hp <= 0) continue;
+          damageEnemy(e, dmg);
+          if (e.isBoss) e.slowFrames = Math.max(e.slowFrames || 0, 90);
+          else e.timeStopped = state.t + 60;
+          const [ex, ey] = enemyXY(e);
+          spawnParticles(ex, ey, '#c8b060', 3);
+        }
+        if (typeof shake === 'function') shake(12, 18);
+      },
+      draw(ab) {
+        ctx.save();
+        const amb = 0.045 + 0.02 * Math.sin(ab.pulse);
+        const R = Math.min(W, H) * 0.52;
+        const g = ctx.createRadialGradient(CX, CY, 0, CX, CY, R);
+        g.addColorStop(0, `rgba(200,176,96,${amb})`); g.addColorStop(0.7, `rgba(160,140,90,${amb * 0.5})`); g.addColorStop(1, 'rgba(160,140,90,0)');
+        ctx.fillStyle = g; ctx.beginPath(); ctx.arc(CX, CY, R, 0, Math.PI * 2); ctx.fill();
+        if (ab.wave > 0) {
+          const p = 1 - ab.wave / 30;
+          ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = (1 - p) * 0.55;
+          ctx.strokeStyle = '#e8d8a0'; ctx.lineWidth = 4 * (1 - p) + 1;
+          ctx.beginPath(); ctx.arc(CX, CY, p * R, 0, Math.PI * 2); ctx.stroke();
+        }
+        ctx.restore(); ctx.globalAlpha = 1;
+      },
+    },
   };
   // ⭐ 별 해금 능력 매핑 — 캐릭터 4★ / 8★ 도달 시 해금
   const CHAR_STAR_UNLOCKS = {
