@@ -18816,7 +18816,7 @@
             hit = true;
             damageEnemy(e, dmg);
             if (e.isBoss) e.slowFrames = Math.max(e.slowFrames || 0, 70);
-            else e.timeStopped = state.t + 48;
+            else { e.timeStopped = Math.max(e.timeStopped || 0, state.t + 48); e.slowFrames = Math.max(e.slowFrames || 0, 78); }
             spawnParticles(ex, ey, '#d8c8a0', 3);
           }
           if (hit) s.fx = 18;
@@ -18862,7 +18862,7 @@
           if (e.hp <= 0) continue;
           damageEnemy(e, dmg);
           if (e.isBoss) e.slowFrames = Math.max(e.slowFrames || 0, 90);
-          else e.timeStopped = state.t + 60;
+          else { e.timeStopped = Math.max(e.timeStopped || 0, state.t + 60); e.slowFrames = Math.max(e.slowFrames || 0, 90); }
           const [ex, ey] = enemyXY(e);
           spawnParticles(ex, ey, '#c8b060', 3);
         }
