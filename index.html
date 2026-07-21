@@ -18536,7 +18536,7 @@
     },
     skyDominion: {
       name: '제공권', isGachaUnique: true, isStarUnlock: true, baseCost: 480, color: '#ffcf40',
-      desc: lv => `[8★히든-SR] 3s마다 전 맵 ${6 + lv}지점 정밀폭격 · 광역 DMG ${35 + lv * 18}`,
+      desc: lv => `[8★히든-SR] 4s마다 전 맵 ${6 + lv}지점 정밀폭격 · 광역 DMG ${35 + lv * 18}`,
       init(ab) { ab.cooldown = 100; ab.marks = []; },
       tick(ab) {
         const dmg = 35 + ab.level * 18, exR = 62 + ab.level * 4;
@@ -18925,7 +18925,7 @@
     },
     finalBow: {
       name: '마지막 인사', isGachaUnique: true, isStarUnlock: true, baseCost: 480, color: '#f0ece4',
-      desc: lv => `[8★히든-SR] 5s마다 전 환영 일제 퇴장 폭발 · 환영은 판정 미발동 · 광역 DMG ${55 + lv * 25}`,
+      desc: lv => `[8★히든-SR] 5s마다 전 환영 일제 퇴장 폭발 · 피해 30% · 환영은 판정 미발동 · 광역 DMG ${55 + lv * 25}`,
       init(ab) { ab.cooldown = 170; ab.fx = 0; ab.ph = []; ab.cols = ['#00c8d7', '#e0489f', '#e8d24a']; },
       tick(ab) {
         const CL = ab.cols;
@@ -18994,7 +18994,7 @@
     },
     darkroomVault: {
       name: '암실 금고', isGachaUnique: true, isStarUnlock: true, baseCost: 480, color: '#8a2a24',
-      desc: lv => `[8★히든-SR] 0.5s마다 잔상 저장 · 4s마다 일괄 방출 · 저장량당 DMG ${20 + lv * 10}`,
+      desc: lv => `[8★히든-SR] 0.5s마다 잔상 저장 · 5s마다 일괄 방출 · 저장량당 DMG ${20 + lv * 10}`,
       init(ab) { ab.cd = 150; ab.storeCd = 0; ab.vault = 0; ab.fx = 0; },
       tick(ab) {
         if (ab.fx > 0) ab.fx--;
@@ -19021,9 +19021,10 @@
         ctx.beginPath(); ctx.arc(CX, CY, 30, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * (ab.vault / cap)); ctx.stroke();
         if (ab.fx > 0) {
           const p = 1 - ab.fx / 22;
-          ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = (1 - p) * 0.45;
+          ctx.globalAlpha = (1 - p) * 0.45;
           ctx.fillStyle = '#1a1a1a';
           ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+          ctx.globalCompositeOperation = 'lighter';
           ctx.globalAlpha = (1 - p) * 0.7; ctx.strokeStyle = '#c0392b'; ctx.lineWidth = 3;
           ctx.beginPath(); ctx.arc(CX, CY, p * 300, 0, Math.PI * 2); ctx.stroke();
         }
@@ -29268,6 +29269,7 @@
     'skyDominion', 'acidRain',                                             // 에이미·클로에 (전 맵 낙하)
     'omniSolvent', 'gorgonRealm',                                          // 클로에·갈라테아 (전체 상시)
     'grandGuignol', 'finalBow', 'darkroomVault',                           // 라라·트리나·아이리스 (전체)
+    'droneSwarm', 'understudyCall',                                        // 에이미·트리나 (전역 타겟 — 반경 제한 없음)
   ]);
   // 🎯 능력별 표적 사거리 — TD 모드 사거리 캡 + 시각 표시용
   // def.range(lv) 가 정의돼있으면 사용, 아니면 능력 타입/티어별 기본값
