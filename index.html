@@ -20796,7 +20796,10 @@
     // 고등급 = 플레이트 배너 / 그 외 = 엠블럼 + 텍스트
     if (PLATE_TITLES.has(tid)) {
       const pr = t.style === 'rainbow' ? ' tp-rainbow' : '';
-      const variant = (tid === 'sakuraMaster' || tid === 'lunaMaster' || tid === 'ariaMaster' || tid === 'misakiMaster' || tid === 'elementiaMaster' || tid === 'sumikaMaster' || tid === 'blancheMaster' || tid === 'kairaMaster' || tid === 'feriaMaster') ? 'tp-char'
+      // 🚫 v674 — 하드코딩 이름 나열 폐지. 캐릭터 칭호는 전부 '<id>Master' 형태이고
+      //    이 블록은 이미 PLATE_TITLES.has(tid) 안이므로, Master 로 끝나면 캐릭터 명판이다.
+      //    (신규 SR-B/SSR 추가 시 PLATE_TITLES 에만 넣으면 자동 적용 — tp-char 누락 재발 방지.)
+      const variant = tid.endsWith('Master') ? 'tp-char'
                     : (tid === 'tripleSageTitle') ? 'tp-grand'
                     : /^trans\d/.test(tid) ? 'tp-trans'   // 🌌 초월 = 프리미엄 우주 플레이트
                     : 'tp-rank';                           // 완전정복/승천 = 각진 계급장
