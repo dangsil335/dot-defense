@@ -7704,8 +7704,10 @@
     inkSlash: {
       name: '먹빛 도', isGachaUnique: true, single: true, baseCost: 130, color: '#3a3a3a',
       desc: lv => `가장 가까운 단일 적 먹빛 베기 · 크리 25%(×2.2) · 처형표식(최대5, 표식당 +DMG) · DMG ${7+lv*4}`,
-      // 표식 상수(최대5중첩 / 240프레임)는 sumiReaper·finalSeal 과 공유되므로 여기서 옮기지 않는다.
-      stats: { critChance: 0.25, critMul: 2.2 },
+      // 📊 v677 — 표식 상수(최대5중첩 / 240프레임)는 스미카 킷 6종이 공유한다.
+      //   여기(inkSlash.stats)를 단일 출처로 삼고, 읽기는 전부 _sumiMarkCap() / _sumiMarkDur() 헬퍼를 거친다.
+      //   ⚠️ 다른 스미카 능력의 stats 에 markCap/markDur 를 복제하지 말 것 — 찍는 쪽과 정산하는 쪽이 어긋난다.
+      stats: { critChance: 0.25, critMul: 2.2, markCap: 5, markDur: 240 },
       init(ab) { ab.cooldown = 24; ab.slashes = []; ab.motes = []; },
       tick(ab) {
         const S = _S(ab);
@@ -7723,8 +7725,8 @@
         let dmg = (7 + ab.level * 4) * (crit ? S.critMul : 1) + marks * (3 + ab.level * 2);
         damageEnemy(target, dmg);
         // 처형 표식 1중첩 (최대 5)
-        target._sumiMark = Math.min(5, marks + 1);
-        target._sumiMarkT = state.t + 240;
+        target._sumiMark = Math.min(_sumiMarkCap(), marks + 1);
+        target._sumiMarkT = state.t + _sumiMarkDur();
         spawnParticles(tx, ty, crit ? '#d83a3a' : '#cfcfcf', crit ? 7 : 4);
         // 먹선 베기 궤적 (적 위에 한 획)
         ab.slashes.push({ x: tx, y: ty, ang: ang + Math.PI / 2, len: 26 + (crit ? 12 : 0), life: 12, crit });
@@ -7790,8 +7792,8 @@
             const marks = _sumiMarks(e);   // 만료(4s) 표식은 0중첩 취급
             const total = dmg + marks * (3 + ab.level * 2);
             damageEnemy(e, total);
-            e._sumiMark = Math.min(5, marks + 1);
-            e._sumiMarkT = state.t + 240;
+            e._sumiMark = Math.min(_sumiMarkCap(), marks + 1);
+            e._sumiMarkT = state.t + _sumiMarkDur();
             // HP 20% 이하 비-보스 즉결처형
             if (!e.isBoss && e.maxHp > 0 && e.hp > 0 && e.hp / e.maxHp <= execThr) {
               damageEnemy(e, e.hp + 1);
@@ -7856,7 +7858,7 @@
           if (e.hp <= 0) continue;
           const marks = _sumiMarks(e);   // 만료(4s) 표식은 0중첩 취급
           // 표식 만개(5) 적 — 먹폭발 일괄
-          if (marks >= 5) {
+          if (marks >= _sumiMarkCap()) {
             const [ex, ey] = enemyXY(e);
             const burst = dmg + marks * blastDmg;
             damageEnemy(e, burst);
@@ -7938,9 +7940,9 @@
             const [px, py] = enemyXY(e);
             if (distPointSegmentSq(px, py, CX, CY, tipX, tipY) < 196) {  // 두꺼운 낫 호 (14px)
               e._inkSwept = ab.scytheId;
-              const marks = Math.min(5, _sumiMarks(e) + 2); // 묵흔 닿으면 표식 +2 누적 (만료분은 이어받지 않음)
+              const marks = Math.min(_sumiMarkCap(), _sumiMarks(e) + 2); // 묵흔 닿으면 표식 +2 누적 (만료분은 이어받지 않음)
               e._sumiMark = marks;
-              e._sumiMarkT = state.t + 240;
+              e._sumiMarkT = state.t + _sumiMarkDur();
               const total = dmg + marks * (4 + ab.level * 2);
               damageEnemy(e, total);
               spawnParticles(px, py, '#cccccc', 5);
@@ -7956,8 +7958,8 @@
                   if (e2 === e || e2.hp <= 0) continue;
                   const [ex2, ey2] = enemyXY(e2);
                   if ((px - ex2) * (px - ex2) + (py - ey2) * (py - ey2) < transR * transR) {
-                    e2._sumiMark = Math.min(5, _sumiMarks(e2) + 1);
-                    e2._sumiMarkT = state.t + 240;
+                    e2._sumiMark = Math.min(_sumiMarkCap(), _sumiMarks(e2) + 1);
+                    e2._sumiMarkT = state.t + _sumiMarkDur();
                     e2.slowFrames = Math.max(e2.slowFrames || 0, 90);
                     damageEnemy(e2, dmg * 0.4);
                     spawnParticles(ex2, ey2, '#d83a3a', 4);
@@ -8033,8 +8035,13 @@
       name: '꼬마 정령', isGachaUnique: true, baseCost: 130, color: '#4fd6c2',
       desc: lv => `빛 정령 ${1+Math.floor((lv+1)/2)}마리 추격 · 접촉 폭발 · DMG ${5+lv*3}`,
       // 🔮 꼬마 빛 정령이 가장 가까운 적을 자동 추격하다 접촉 시 소형 원소 폭발 (drone/clone 소환 패턴)
+      // 📊 v677 — 마릿수(1+(lv+1)/2)·이동속도(2.4+lv*0.12)·폭발반경(30+lv*3)은 레벨식이라 제외.
+      //   "접촉 = 자폭 소멸(s.life = 0)" 은 값이 아니라 소멸 규칙이라 정령계약 옵션은 로직 변경형.
+      //   blasts(life 12)는 draw 전용이라 제외.
+      stats: { spiritLife: 360, spawnCooldown: 36, idleSpawnCooldown: 24, spawnRadius: 40, contactPad: 6, blastFactor: 0.5, idleOrbitRadius: 60, idleOrbitSpeed: 0.03, idleLerp: 0.05 },
       init(ab) { ab.spirits = []; ab.spawnCD = 30; ab.blasts = []; },
       tick(ab) {
+        const S = _S(ab);
         const dmg = 5 + ab.level * 3;
         const want = 1 + Math.floor((ab.level + 1) / 2);   // lv1:1, lv2~3:2, lv4~5:3 …
         const speed = 2.4 + ab.level * 0.12;
@@ -8057,30 +8064,30 @@
             const [tx, ty] = enemyXY(s.target);
             const dx = tx - s.x, dy = ty - s.y, dist = Math.hypot(dx, dy) || 1;
             s.x += (dx / dist) * speed; s.y += (dy / dist) * speed;
-            if (dist < (s.target.size || 8) + 6) {
+            if (dist < (s.target.size || 8) + S.contactPad) {
               damageEnemy(s.target, dmg);
               for (const e2 of state.enemies) {
                 if (e2.hp <= 0 || e2 === s.target) continue;
                 const [ex2, ey2] = enemyXY(e2);
-                if ((tx - ex2) * (tx - ex2) + (ty - ey2) * (ty - ey2) < blastR * blastR) damageEnemy(e2, dmg * 0.5);
+                if ((tx - ex2) * (tx - ex2) + (ty - ey2) * (ty - ey2) < blastR * blastR) damageEnemy(e2, dmg * S.blastFactor);
               }
               spawnParticles(tx, ty, '#4fd6c2', 8);
               ab.blasts.push({ x: tx, y: ty, r: blastR, life: 12 });
               s.life = 0;
             }
           } else {
-            const a = state.t * 0.03 + s.orbit;
-            s.x += ((CX + Math.cos(a) * 60) - s.x) * 0.05;
-            s.y += ((CY + Math.sin(a) * 60) - s.y) * 0.05;
+            const a = state.t * S.idleOrbitSpeed + s.orbit;
+            s.x += ((CX + Math.cos(a) * S.idleOrbitRadius) - s.x) * S.idleLerp;
+            s.y += ((CY + Math.sin(a) * S.idleOrbitRadius) - s.y) * S.idleLerp;
           }
         }
         compactInPlace(ab.spirits, x => x.life > 0);
         if (--ab.spawnCD > 0) return;
         if (ab.spirits.length < want) {
           const a = Math.random() * Math.PI * 2;
-          ab.spirits.push({ x: CX + Math.cos(a) * 40, y: CY + Math.sin(a) * 40, target: null, life: 360, bob: Math.random() * 6, orbit: a });
-          ab.spawnCD = 36;
-        } else ab.spawnCD = 24;
+          ab.spirits.push({ x: CX + Math.cos(a) * S.spawnRadius, y: CY + Math.sin(a) * S.spawnRadius, target: null, life: S.spiritLife, bob: Math.random() * 6, orbit: a });
+          ab.spawnCD = S.spawnCooldown;
+        } else ab.spawnCD = S.idleSpawnCooldown;
       },
       draw(ab) {
         ctx.save(); ctx.globalCompositeOperation = 'lighter';
@@ -19153,9 +19160,14 @@
     inkBlot: {
       name: '묵점', isGachaUnique: true, isStarUnlock: true, baseCost: 280, color: '#3a3a3a',
       desc: lv => `[4★히든] 0.8s마다 먹점 생성(최대 ${Math.min(14, 4 + lv)}) · 접촉 시 처형표식 +1 · DMG ${6 + lv * 4}`,
+      // 📊 v677 — 표식 상한/지속은 inkSlash.stats 단일 출처 + _sumiMarkCap()/_sumiMarkDur() 헬퍼를 쓴다(복제 금지).
+      //   "완전 무작위 배치"와 "1회 각인 후 소멸(b.life = 0)"은 값이 아니라 규칙이라 묵진 옵션은 로직 변경형.
+      //   개수 상한 min(14, 4+lv) 는 레벨식이라 제외. draw 의 반경 22 / 수명 360 은 연출 복제라 그대로 둔다.
+      stats: { blotRadius: 22, blotLife: 360, spawnAreaFactor: 0.9 },
       init(ab) { ab.cd = 0; ab.blots = []; },
       tick(ab) {
-        const dmg = 6 + ab.level * 4, BR = 22;
+        const S = _S(ab);
+        const dmg = 6 + ab.level * 4, BR = S.blotRadius;
         // 먹점 위를 지나는 적에게 표식 각인 → 그 먹점은 소멸
         for (const b of ab.blots) {
           b.life--;
@@ -19164,8 +19176,8 @@
             if (e.hp <= 0) continue;
             const [ex, ey] = enemyXY(e);
             if ((ex - b.x) * (ex - b.x) + (ey - b.y) * (ey - b.y) > BR * BR) continue;
-            e._sumiMark = Math.min(5, _sumiMarks(e) + 1);
-            e._sumiMarkT = state.t + 240;
+            e._sumiMark = Math.min(_sumiMarkCap(), _sumiMarks(e) + 1);
+            e._sumiMarkT = state.t + _sumiMarkDur();
             damageEnemy(e, dmg);
             spawnParticles(ex, ey, '#2a2a2a', 4);
             b.life = 0;   // 접촉한 먹점은 소멸
@@ -19178,8 +19190,8 @@
         const cap = Math.min(14, 4 + ab.level);
         if (ab.blots.length >= cap) return;   // 상한 도달 → 생성하지 않음
         const a = Math.random() * Math.PI * 2;
-        const r = Math.sqrt(Math.random()) * ARENA_R * 0.9;
-        ab.blots.push({ x: CX + Math.cos(a) * r, y: CY + Math.sin(a) * r, life: 360, seed: Math.random() * 6.283 });
+        const r = Math.sqrt(Math.random()) * ARENA_R * S.spawnAreaFactor;
+        ab.blots.push({ x: CX + Math.cos(a) * r, y: CY + Math.sin(a) * r, life: S.blotLife, seed: Math.random() * 6.283 });
       },
       draw(ab) {
         ctx.save();
@@ -19222,7 +19234,7 @@
           if (marks <= 0) continue;
           const [ex, ey] = enemyXY(e);
           let dmg = per * marks;
-          if (marks >= 5) dmg += Math.max(1, Math.ceil(e.hp * (e.isBoss ? bossPct : pct)));
+          if (marks >= _sumiMarkCap()) dmg += Math.max(1, Math.ceil(e.hp * (e.isBoss ? bossPct : pct)));
           damageEnemy(e, dmg);
           e._sumiMark = 0;   // 표식 소모
           spawnParticles(ex, ey, marks >= 5 ? '#d83a3a' : '#8a1c1c', marks >= 5 ? 10 : 5);
@@ -19264,16 +19276,21 @@
     elementCycle: {
       name: '원소 순환', isGachaUnique: true, isStarUnlock: true, baseCost: 280, color: '#4fd6c2',
       desc: lv => `[4★히든] 2.5s마다 바람⇄불⇄얼음 순환 · 원소별 자율 공격 DMG ${12 + lv * 7}`,
+      // 📊 v677 — draw 의 순환 게이지가 swapT/150 로 독립 하드코딩되어 있다(규칙 5 로 미이동).
+      //   swapInterval 을 바꾸는 옵션이 붙으면 게이지도 함께 고쳐야 한다.
+      //   "바람·불은 부가효과가 없다"는 부재라 삼원각인 옵션은 로직 변경형.
+      stats: { swapInterval: 150, range: 220, windChainRadius: 55, windExtraMax: 3, fireRadius: 44, iceTargets: 3, iceSlowFrames: 40, idleCooldown: 12 },
       init(ab) { ab.elem = 0; ab.swapT = 0; ab.cd = 0; ab.fx = []; ab.cols = ['#7fe0ff', '#ff8a3c', '#3fe0d8']; },
       tick(ab) {
+        const S = _S(ab);
         const COLS = ab.cols;
         // 150프레임(2.5s) 고정 주기 원소 전환
-        if (++ab.swapT >= 150) { ab.swapT = 0; ab.elem = (ab.elem + 1) % 3; }
+        if (++ab.swapT >= S.swapInterval) { ab.swapT = 0; ab.elem = (ab.elem + 1) % 3; }
         for (const f of ab.fx) f.life--;
         compactInPlace(ab.fx, _alivePredLife);
         if (--ab.cd > 0) return;
         ab.cd = Math.max(24, 40 - ab.level * 2);
-        const dmg = 12 + ab.level * 7, R = 220;
+        const dmg = 12 + ab.level * 7, R = S.range;
         // 사거리 내 적만 후보 — 2차 효과도 이 풀 안에서만 고르므로 실제 도달거리 = R
         const pool = [];
         for (const e of state.enemies) {
@@ -19282,7 +19299,7 @@
           const q = (ex - CX) * (ex - CX) + (ey - CY) * (ey - CY);
           if (q <= R * R) pool.push({ e, x: ex, y: ey, q });
         }
-        if (!pool.length) { ab.cd = 12; return; }
+        if (!pool.length) { ab.cd = S.idleCooldown; return; }
         pool.sort((a, b) => a.q - b.q);
         if (ab.elem === 0) {
           // 바람 — 최근접 1체 + 그 주변 소수에게 연쇄
@@ -19290,9 +19307,9 @@
           damageEnemy(t0.e, dmg);
           const pts = [[t0.x, t0.y]];
           let extra = 0;
-          for (let i = 1; i < pool.length && extra < 3; i++) {
+          for (let i = 1; i < pool.length && extra < S.windExtraMax; i++) {
             const p = pool[i];
-            if ((p.x - t0.x) * (p.x - t0.x) + (p.y - t0.y) * (p.y - t0.y) > 55 * 55) continue;
+            if ((p.x - t0.x) * (p.x - t0.x) + (p.y - t0.y) * (p.y - t0.y) > S.windChainRadius * S.windChainRadius) continue;
             damageEnemy(p.e, dmg);
             pts.push([p.x, p.y]);
             extra++;
@@ -19302,7 +19319,7 @@
         } else if (ab.elem === 1) {
           // 불 — 무작위 적 위치에 소형 폭발
           const t = pool[Math.floor(Math.random() * pool.length)];
-          const ER = 44;
+          const ER = S.fireRadius;
           for (const p of pool) {
             if ((p.x - t.x) * (p.x - t.x) + (p.y - t.y) * (p.y - t.y) > ER * ER) continue;
             damageEnemy(p.e, dmg);
@@ -19311,11 +19328,11 @@
           ab.fx.push({ k: 1, x: t.x, y: t.y, r: ER, life: 14, mx: 14 });
         } else {
           // 얼음 — 최근접 소수에게 피해 + 슬로우 (보스 포함, 정지 없음)
-          const n = Math.min(pool.length, 3);
+          const n = Math.min(pool.length, S.iceTargets);
           for (let i = 0; i < n; i++) {
             const p = pool[i];
             damageEnemy(p.e, dmg);
-            p.e.slowFrames = Math.max(p.e.slowFrames || 0, 40);
+            p.e.slowFrames = Math.max(p.e.slowFrames || 0, S.iceSlowFrames);
             spawnParticles(p.x, p.y, COLS[2], 4);
             ab.fx.push({ k: 2, x: p.x, y: p.y, life: 16, mx: 16 });
           }
@@ -25618,6 +25635,23 @@
   //   e._sumiMark 를 직접 읽으면 만료가 무시되어 표식이 사실상 영구가 된다 (v676 까지의 버그).
   //   찍는 쪽도 이 헬퍼 위에 +1 해야 만료된 표식에서 중첩이 이어지지 않는다.
   function _sumiMarks(e) { return (e._sumiMarkT > state.t) ? (e._sumiMark || 0) : 0; }
+  // 📊 v677 — 표식 상한(5) / 지속(240) 은 스미카 킷 6종이 공유한다:
+  //   inkSlash · silentExecution · sumiReaper · inkReaper · inkBlot · finalSeal.
+  //   능력별 stats 로 흩어 놓으면 "찍는 쪽 상한" 과 "정산하는 쪽 상한" 이 어긋나므로
+  //   inkSlash.stats 한 곳에서만 관리하고 6종 전부 아래 헬퍼를 거치게 한다.
+  //   고유 옵션은 state.abilityStatOverrides.inkSlash.markCap / .markDur 로 개입한다.
+  function _sumiMarkCap() {
+    const ov = state.abilityStatOverrides && state.abilityStatOverrides.inkSlash;
+    if (ov && ov.markCap) return ov.markCap;
+    const d = ABILITY_DEFS.inkSlash;
+    return (d && d.stats && d.stats.markCap) || 5;
+  }
+  function _sumiMarkDur() {
+    const ov = state.abilityStatOverrides && state.abilityStatOverrides.inkSlash;
+    if (ov && ov.markDur) return ov.markDur;
+    const d = ABILITY_DEFS.inkSlash;
+    return (d && d.stats && d.stats.markDur) || 240;
+  }
   // 📊 v677 — 능력 인스턴스별 stats. init 호출 경로가 8곳으로 흩어져 있어 지연 생성한다 —
   //   어느 경로로 만들어진 ab 든 첫 호출 시점에 생성되므로 주입 누락이 원천적으로 없다.
   //   stats 가 없는 능력에도 안전하다(빈 객체 반환). 레벨 스케일링은 기존대로 ab.level 로 계산하고,
