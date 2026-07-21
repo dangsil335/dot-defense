@@ -7315,14 +7315,18 @@
       desc: lv => `전방 부채꼴 ${3+Math.floor(lv/2)}장 · 적/청/금 랜덤 · DMG ${7+lv*4}`,
       // 🎴 전방 부채꼴로 카드를 흩뿌린다. 카드는 각자 자체 투사체로 날아가
       //    적과 충돌(enemyXY) 시 색별 효과 — 적=화상 도트 / 청=둔화 / 금=치명(2배)+골드.
+      // 📊 v677 — 슈트 추첨(Math.random()*3)과 SUITS 배열은 값이 아니라 구조라 로직 변경형(딜러의 손).
+      //   금카드 골드(2+lv)·장수(3+lv/2)는 레벨식이라 제외. spin 0.42 는 draw 회전용이라 제외.
+      stats: { burnFactor: 0.45, burnLife: 56, burnTickInterval: 11, slowFrames: 48, goldCritMul: 2, hitPad: 9, cardSpeed: 6.4, cardLife: 70, spawnOffset: 18, despawnMargin: 30, maxSpread: Math.PI * 0.62, spreadStep: 0.18, spreadBase: 0.3, idleCooldown: 10 },
       init(ab) { ab.cooldown = 30; ab.cards = []; ab.burns = []; ab.sparks = []; },
       tick(ab) {
+        const S = _S(ab);
         const dmg = 7 + ab.level * 4;
         const SUITS = ['#e8473a', '#4aa8ff', '#ffcf3a']; // 적 / 청 / 금
         // 🔥 화상 도트 갱신 (0.18s 간격 5틱)
         for (const bn of ab.burns) {
           bn.life--;
-          if (bn.e && bn.e.hp > 0 && (bn.life % 11 === 0)) {
+          if (bn.e && bn.e.hp > 0 && (bn.life % S.burnTickInterval === 0)) {
             const [ex, ey] = enemyXY(bn.e);
             damageEnemy(bn.e, bn.dmg);
             spawnParticles(ex, ey, '#e8473a', 2);
@@ -7338,16 +7342,16 @@
           for (const e of state.enemies) {
             if (e.hp <= 0) continue;
             const [ex, ey] = enemyXY(e);
-            const r = e.size + 9;
+            const r = e.size + S.hitPad;
             if ((c.x - ex) * (c.x - ex) + (c.y - ey) * (c.y - ey) < r * r) {
               if (c.suit === 0) {          // 적 — 화상 도트
                 damageEnemy(e, dmg);
-                ab.burns.push({ e, dmg: Math.round(dmg * 0.45), life: 56 });
+                ab.burns.push({ e, dmg: Math.round(dmg * S.burnFactor), life: S.burnLife });
               } else if (c.suit === 1) {   // 청 — 0.8s 둔화
                 damageEnemy(e, dmg);
-                e.slowFrames = Math.max(e.slowFrames || 0, 48);
+                e.slowFrames = Math.max(e.slowFrames || 0, S.slowFrames);
               } else {                     // 금 — 치명 2배 + 골드
-                damageEnemy(e, dmg * 2);
+                damageEnemy(e, dmg * S.goldCritMul);
                 if (typeof state.gold === 'number') state.gold += 2 + ab.level;
               }
               const col = SUITS[c.suit];
@@ -7357,21 +7361,21 @@
               break;
             }
           }
-          if ((c.x - CX) * (c.x - CX) + (c.y - CY) * (c.y - CY) > (ARENA_R + 30) * (ARENA_R + 30)) c.life = 0;
+          if ((c.x - CX) * (c.x - CX) + (c.y - CY) * (c.y - CY) > (ARENA_R + S.despawnMargin) * (ARENA_R + S.despawnMargin)) c.life = 0;
         }
         compactInPlace(ab.cards, _alivePredLife);
         if (--ab.cooldown > 0) return;
         const target = findNearestEnemy(ARENA_R + 50);
-        if (!target) { ab.cooldown = 10; return; }
+        if (!target) { ab.cooldown = S.idleCooldown; return; }
         const [tx, ty] = enemyXY(target);
         const base = Math.atan2(ty - CY, tx - CX);
         const n = 3 + Math.floor(ab.level / 2);
-        const spread = Math.min(Math.PI * 0.62, 0.18 * (n - 1) + 0.3);
+        const spread = Math.min(S.maxSpread, S.spreadStep * (n - 1) + S.spreadBase);
         for (let i = 0; i < n; i++) {
           const off = n === 1 ? 0 : (-spread / 2 + spread * (i / (n - 1)));
           const a = base + off;
           const suit = (Math.random() * 3) | 0;
-          ab.cards.push({ x: CX + Math.cos(a) * 18, y: CY + Math.sin(a) * 18, vx: Math.cos(a) * 6.4, vy: Math.sin(a) * 6.4, rot: a + Math.PI / 2, spin: 0.42, life: 70, suit, dead: false });
+          ab.cards.push({ x: CX + Math.cos(a) * S.spawnOffset, y: CY + Math.sin(a) * S.spawnOffset, vx: Math.cos(a) * S.cardSpeed, vy: Math.sin(a) * S.cardSpeed, rot: a + Math.PI / 2, spin: 0.42, life: S.cardLife, suit, dead: false });
         }
         ab.cooldown = Math.max(26, 46 - ab.level * 2);
       },
@@ -17571,8 +17575,12 @@
     wildDeal: {
       name: '와일드딜', isGachaUnique: true, isStarUnlock: true, baseCost: 280, color: '#e0b13a',
       desc: lv => `[4★히든-SR] 5s마다 화면 전체에 회전 카드 난사 · DMG ${30+lv*15}`,
+      // 📊 v677 — petalStorm 과 동일 구조. col(슈트색)은 효과 분기가 없는 장식이라 값이 아닌 구조 문제
+      //   → "진짜 패" 옵션은 로직 변경형. 발사각의 state.t*0.02 드리프트와 spin 은 연출이라 제외.
+      stats: { cardCount: 12, cardLife: 90, cardSpeed: 4.5, hitPad: 10 },
       init(ab) { ab.cooldown = 90; ab.fxLife = 0; ab.cards = []; },
       tick(ab) {
+        const S = _S(ab);
         if (ab.fxLife > 0) ab.fxLife--;
         const dmg = 30 + ab.level * 15;
         // 날아가는 카드 이동 + 접촉 데미지 (개체별 hit Set)
@@ -17581,7 +17589,7 @@
           for (const e of state.enemies) {
             if (e.hp <= 0 || c.hit.has(e)) continue;
             const [ex, ey] = enemyXY(e);
-            if ((c.x-ex)*(c.x-ex) + (c.y-ey)*(c.y-ey) < (e.size+10)*(e.size+10)) {
+            if ((c.x-ex)*(c.x-ex) + (c.y-ey)*(c.y-ey) < (e.size+S.hitPad)*(e.size+S.hitPad)) {
               damageEnemy(e, dmg);
               c.hit.add(e);
               spawnParticles(ex, ey, c.col, 3);
@@ -17592,13 +17600,13 @@
         if (--ab.cooldown > 0) return;
         // 12장 카드가 중앙에서 방사형으로 발사 — 각자 랜덤 슈트색(적/청/금)
         const SUITS = ['#d94b4b', '#4b7bd9', '#e0b13a'];
-        const count = 12;
+        const count = S.cardCount;
         for (let i = 0; i < count; i++) {
           const ang = (i / count) * Math.PI * 2 + state.t * 0.02;
           ab.cards.push({
             x: W/2, y: H/2,
-            vx: Math.cos(ang) * 4.5, vy: Math.sin(ang) * 4.5,
-            rot: ang + Math.PI/2, life: 90, hit: new Set(),
+            vx: Math.cos(ang) * S.cardSpeed, vy: Math.sin(ang) * S.cardSpeed,
+            rot: ang + Math.PI/2, life: S.cardLife, hit: new Set(),
             spin: 0.24 + Math.random() * 0.16, col: SUITS[(Math.random()*3)|0],
           });
         }
@@ -17711,16 +17719,20 @@
     thunderfall: {
       name: '뇌우낙하', isGachaUnique: true, isStarUnlock: true, baseCost: 280, color: '#7cc8ff',
       desc: lv => `[4★히든-SR] 4s마다 ${5+Math.floor(lv/2)}개 낙뢰 낙하 · DMG ${25+lv*12} · 감전`,
+      // 📊 v677 — lunarRain(루나)과 로직이 같지만 stats 는 각자 소유한다(공유 아님). 키 이름만 맞춰 둔다.
+      //   "착탄점끼리 아무 관계가 없다"는 독립성은 값이 아니라 구조라 연뢰 옵션은 로직 변경형.
+      stats: { fallFrames: 25, slowFrames: 60, craterLife: 16, dropStagger: 4, dropScatter: 80 },
       init(ab) { ab.cooldown = 90; ab.shells = []; ab.craters = []; },
       tick(ab) {
+        const S = _S(ab);
         for (const c of ab.craters) c.life--;
         compactInPlace(ab.craters, _alivePredLife);
         const dmg = 25 + ab.level * 12;
         const exR = 55 + ab.level * 5;
-        const slowDur = 60;
+        const slowDur = S.slowFrames;
         for (const s of ab.shells) {
           s.t++;
-          if (s.t >= 25) {
+          if (s.t >= S.fallFrames) {
             for (const e of state.enemies) {
               if (e.hp <= 0) continue;
               const [ex, ey] = enemyXY(e);
@@ -17730,7 +17742,7 @@
                 spawnParticles(ex, ey, '#7cc8ff', 4);
               }
             }
-            ab.craters.push({x: s.x, y: s.y, r: exR, life: 16});
+            ab.craters.push({x: s.x, y: s.y, r: exR, life: S.craterLife});
             s.done = true;
           }
         }
@@ -17744,13 +17756,13 @@
           if (pool.length > 0) {
             const t = pool[Math.floor(Math.random() * pool.length)];
             const [tx, ty] = enemyXY(t);
-            sx = tx + (Math.random() - 0.5) * 80;
-            sy = ty + (Math.random() - 0.5) * 80;
+            sx = tx + (Math.random() - 0.5) * S.dropScatter;
+            sy = ty + (Math.random() - 0.5) * S.dropScatter;
           } else {
             sx = Math.random() * W;
             sy = Math.random() * H;
           }
-          ab.shells.push({x: sx, y: sy, t: -i * 4, seed: Math.random() * 6.28});
+          ab.shells.push({x: sx, y: sy, t: -i * S.dropStagger, seed: Math.random() * 6.28});
         }
         ab.cooldown = Math.max(150, 240 - ab.level * 5);
       },
