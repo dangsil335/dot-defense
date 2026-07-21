@@ -17379,7 +17379,7 @@
         pool.sort((p, q) => { const a = enemyXY(p), b = enemyXY(q); return ((a[0] - CX) * (a[0] - CX) + (a[1] - CY) * (a[1] - CY)) - ((b[0] - CX) * (b[0] - CX) + (b[1] - CY) * (b[1] - CY)); });
         ab.hits = [];
         for (let i = 0; i < Math.min(n, pool.length); i++) { const e = pool[i]; const [ex, ey] = enemyXY(e); damageEnemy(e, dmg); spawnParticles(ex, ey, '#ffaa44', 4); ab.hits.push([ex, ey]); }
-        ab.fx = 16; ab.cooldown = 240;
+        ab.fx = 16; ab.cooldown = S.castCooldown;
       },
       draw(ab) {
         if (ab.fx <= 0 || !ab.hits.length) return;
