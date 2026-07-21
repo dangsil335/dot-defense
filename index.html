@@ -16911,18 +16911,21 @@
     prismBolt: {
       name: '프리즘 볼트', baseCost: 65, color: '#c8b0ff', isGachaUnique: true,
       desc: lv => `${1 + Math.floor(lv / 3)}발 굴절 볼트 · 발사 즉시 표적 지점 ${2 + Math.floor(lv / 2)}갈래 분광 · DMG ${5 + lv * 3}`,
+      // 📊 v677 — s.hit = true (파편 1회 명중 후 소멸 = 굴절 없음)는 소멸 규칙(로직)이라 stats 대상이 아니다.
+      stats: { shardHitRadius: 16, shardSpeed: 4, shardLife: 22, shardDamageFactor: 0.6, boltSpawnOffset: 20, boltSpeed: 7, boltLife: 90, idleCooldown: 20 },
       init(ab) { ab.cooldown = 0; ab.shards = []; },
       tick(ab) {
-        for (const s of ab.shards) { s.x += s.vx; s.y += s.vy; s.life--; if (s.hit) continue; for (const e of state.enemies) { if (e.hp <= 0) continue; const [ex, ey] = enemyXY(e); if ((ex - s.x) * (ex - s.x) + (ey - s.y) * (ey - s.y) < 16 * 16) { damageEnemy(e, s.dmg); s.hit = true; break; } } }
+        const S = _S(ab);
+        for (const s of ab.shards) { s.x += s.vx; s.y += s.vy; s.life--; if (s.hit) continue; for (const e of state.enemies) { if (e.hp <= 0) continue; const [ex, ey] = enemyXY(e); if ((ex - s.x) * (ex - s.x) + (ey - s.y) * (ey - s.y) < S.shardHitRadius * S.shardHitRadius) { damageEnemy(e, s.dmg); s.hit = true; break; } } }
         compactInPlace(ab.shards, s => s.life > 0 && !s.hit);
         if (--ab.cooldown > 0) return;
         const pool = state.enemies.filter(e => e.hp > 0);
-        if (!pool.length) { ab.cooldown = 20; return; }
+        if (!pool.length) { ab.cooldown = S.idleCooldown; return; }
         const nBolt = 1 + Math.floor(ab.level / 3) + permaCount('prismBolt'), dmg = 5 + ab.level * 3, nShard = 2 + Math.floor(ab.level / 2);
         for (let b = 0; b < nBolt; b++) {
           const tgt = pool[Math.floor(Math.random() * pool.length)]; const [tx, ty] = enemyXY(tgt); const ang = Math.atan2(ty - CY, tx - CX);
-          state.bullets.push({ x: CX + Math.cos(ang) * 20, y: CY + Math.sin(ang) * 20, vx: Math.cos(ang) * 7, vy: Math.sin(ang) * 7, dmg, life: 90, color: '#d8c0ff', target: tgt, leader: null, offsetAngle: 0, sourceId: state.currentAbilityId || null });
-          for (let s = 0; s < nShard; s++) { const sa = (Math.PI * 2 / nShard) * s + Math.random(); ab.shards.push({ x: tx, y: ty, vx: Math.cos(sa) * 4, vy: Math.sin(sa) * 4, dmg: Math.ceil(dmg * 0.6), life: 22, hue: (s * 60) % 360 }); }
+          state.bullets.push({ x: CX + Math.cos(ang) * S.boltSpawnOffset, y: CY + Math.sin(ang) * S.boltSpawnOffset, vx: Math.cos(ang) * S.boltSpeed, vy: Math.sin(ang) * S.boltSpeed, dmg, life: S.boltLife, color: '#d8c0ff', target: tgt, leader: null, offsetAngle: 0, sourceId: state.currentAbilityId || null });
+          for (let s = 0; s < nShard; s++) { const sa = (Math.PI * 2 / nShard) * s + Math.random(); ab.shards.push({ x: tx, y: ty, vx: Math.cos(sa) * S.shardSpeed, vy: Math.sin(sa) * S.shardSpeed, dmg: Math.ceil(dmg * S.shardDamageFactor), life: S.shardLife, hue: (s * 60) % 360 }); }
         }
         ab.cooldown = Math.max(18, 40 - ab.level * 2);
       },
@@ -17020,16 +17023,19 @@
     refractionField: {
       name: '굴절의 장', isGachaUnique: true, isStarUnlock: true, baseCost: 280, color: '#a0f0ff',
       desc: lv => `[4★히든] 굴절장 상시 · 1s마다 ${2 + Math.floor(lv / 2)}적 분광 광선 DMG ${18 + lv * 9}`,
+      // 📊 v677 — 핵심 상수 빈약. 종점 단일 대상 피해(광선 관통 없음)와 복원추출 표적 선정은 둘 다 로직이라 stats 대상이 아니다.
+      stats: { castCooldown: 60, idleCooldown: 20 },
       init(ab) { ab.cooldown = 30; ab.zaps = []; },
       tick(ab) {
+        const S = _S(ab);
         for (const z of ab.zaps) z.life--;
         compactInPlace(ab.zaps, z => z.life > 0);
         if (--ab.cooldown > 0) return;
         const pool = state.enemies.filter(e => e.hp > 0);
-        if (!pool.length) { ab.cooldown = 20; return; }
+        if (!pool.length) { ab.cooldown = S.idleCooldown; return; }
         const n = 2 + Math.floor(ab.level / 2), dmg = 18 + ab.level * 9;
         for (let i = 0; i < Math.min(n, pool.length); i++) { const tgt = pool[Math.floor(Math.random() * pool.length)]; const [tx, ty] = enemyXY(tgt); damageEnemy(tgt, dmg); ab.zaps.push({ x: tx, y: ty, hue: (i * 80) % 360, life: 10 }); spawnParticles(tx, ty, '#a0f0ff', 2); }
-        ab.cooldown = 60;
+        ab.cooldown = S.castCooldown;
       },
       draw(ab) {
         ctx.save(); ctx.globalCompositeOperation = 'lighter';
@@ -17081,18 +17087,21 @@
     huntingClaw: {
       name: '사냥꾼의 발톱', baseCost: 65, color: '#ff9050', isGachaUnique: true,
       desc: lv => `${2 + Math.floor(lv / 2)}갈래 발톱 참격파 발사 · 관통 · DMG ${6 + lv * 3}`,
+      // 📊 v677 — hit Set 기반 무제한 관통(수명 만료로만 소멸)은 소멸 규칙(로직)이라 stats 대상이 아니다.
+      stats: { hitRadius: 22, waveSpeed: 9, waveLife: 46, angleSpread: 0.25, spawnOffset: 18, idleCooldown: 20 },
       init(ab) { ab.cooldown = 0; ab.waves = []; },
       tick(ab) {
+        const S = _S(ab);
         for (const w of ab.waves) {
           w.x += w.vx; w.y += w.vy; w.life--;
-          for (const e of state.enemies) { if (e.hp <= 0 || w.hit.has(e)) continue; const [ex, ey] = enemyXY(e); if ((ex - w.x) * (ex - w.x) + (ey - w.y) * (ey - w.y) < 22 * 22) { damageEnemy(e, w.dmg); w.hit.add(e); } }
+          for (const e of state.enemies) { if (e.hp <= 0 || w.hit.has(e)) continue; const [ex, ey] = enemyXY(e); if ((ex - w.x) * (ex - w.x) + (ey - w.y) * (ey - w.y) < S.hitRadius * S.hitRadius) { damageEnemy(e, w.dmg); w.hit.add(e); } }
         }
         compactInPlace(ab.waves, w => w.life > 0);
         if (--ab.cooldown > 0) return;
         const pool = state.enemies.filter(e => e.hp > 0);
-        if (!pool.length) { ab.cooldown = 20; return; }
-        const n = 2 + Math.floor(ab.level / 2) + permaCount('huntingClaw'), dmg = 6 + ab.level * 3, spd = 9;
-        for (let i = 0; i < n; i++) { const tgt = pool[Math.floor(Math.random() * pool.length)]; const [tx, ty] = enemyXY(tgt); const ang = Math.atan2(ty - CY, tx - CX) + (Math.random() - 0.5) * 0.25; ab.waves.push({ x: CX + Math.cos(ang) * 18, y: CY + Math.sin(ang) * 18, vx: Math.cos(ang) * spd, vy: Math.sin(ang) * spd, ang, dmg, life: 46, hit: new Set() }); }
+        if (!pool.length) { ab.cooldown = S.idleCooldown; return; }
+        const n = 2 + Math.floor(ab.level / 2) + permaCount('huntingClaw'), dmg = 6 + ab.level * 3, spd = S.waveSpeed;
+        for (let i = 0; i < n; i++) { const tgt = pool[Math.floor(Math.random() * pool.length)]; const [tx, ty] = enemyXY(tgt); const ang = Math.atan2(ty - CY, tx - CX) + (Math.random() - 0.5) * S.angleSpread; ab.waves.push({ x: CX + Math.cos(ang) * S.spawnOffset, y: CY + Math.sin(ang) * S.spawnOffset, vx: Math.cos(ang) * spd, vy: Math.sin(ang) * spd, ang, dmg, life: S.waveLife, hit: new Set() }); }
         ab.cooldown = Math.max(20, 44 - ab.level * 2);
       },
       draw(ab) {
@@ -17189,17 +17198,20 @@
     beastForm: {
       name: '야수 변신', isGachaUnique: true, isStarUnlock: true, baseCost: 280, color: '#ff6a30',
       desc: lv => `[4★히든] 3s마다 야수⇄인간 변신 · 야수=근접 선풍 DMG ${16 + lv * 8} / 인간=원거리 발톱 연사`,
+      // 📊 v677 — switchFx(=22)는 draw 전용 연출값이고, "전환 순간에 판정이 없다"는 사실 자체는 로직이라 stats 대상이 아니다.
+      stats: { switchInterval: 180, beastTickInterval: 8, beastSlowFrames: 10, bulletSpawnOffset: 20, bulletSpeed: 9, bulletLife: 60, idleCooldown: 15 },
       init(ab) { ab.phase = 0; ab.timer = 0; ab.spinAng = 0; ab.cd = 0; ab.switchFx = 0; },
       tick(ab) {
+        const S = _S(ab);
         if (ab.switchFx > 0) ab.switchFx--;
         ab.timer++;
-        if (ab.timer >= 180) { ab.timer = 0; ab.phase = ab.phase ? 0 : 1; ab.switchFx = 22; spawnParticles(CX, CY, ab.phase ? '#ff6a30' : '#ffd0a0', 16); }
+        if (ab.timer >= S.switchInterval) { ab.timer = 0; ab.phase = ab.phase ? 0 : 1; ab.switchFx = 22; spawnParticles(CX, CY, ab.phase ? '#ff6a30' : '#ffd0a0', 16); }
         if (ab.phase === 1) {
           ab.spinAng += 0.2;
           const R = 70 + ab.level * 3, dmg = 16 + ab.level * 8;
-          if (state.t % 8 === 0) { for (const e of state.enemies) { if (e.hp <= 0) continue; const [ex, ey] = enemyXY(e); if ((ex - CX) * (ex - CX) + (ey - CY) * (ey - CY) < R * R) { damageEnemy(e, dmg); e.slowFrames = Math.max(e.slowFrames || 0, 10); } } }
+          if (state.t % S.beastTickInterval === 0) { for (const e of state.enemies) { if (e.hp <= 0) continue; const [ex, ey] = enemyXY(e); if ((ex - CX) * (ex - CX) + (ey - CY) * (ey - CY) < R * R) { damageEnemy(e, dmg); e.slowFrames = Math.max(e.slowFrames || 0, S.beastSlowFrames); } } }
         } else {
-          if (--ab.cd <= 0) { const pool = state.enemies.filter(e => e.hp > 0); if (pool.length) { const n = 2 + Math.floor(ab.level / 3), dmg = 12 + ab.level * 6; for (let i = 0; i < n; i++) { const tgt = pool[Math.floor(Math.random() * pool.length)]; const [tx, ty] = enemyXY(tgt); const ang = Math.atan2(ty - CY, tx - CX); state.bullets.push({ x: CX + Math.cos(ang) * 20, y: CY + Math.sin(ang) * 20, vx: Math.cos(ang) * 9, vy: Math.sin(ang) * 9, dmg, life: 60, color: '#ff9050', target: null, leader: null, offsetAngle: 0, sourceId: state.currentAbilityId || null }); } ab.cd = Math.max(12, 26 - ab.level); } else ab.cd = 15; }
+          if (--ab.cd <= 0) { const pool = state.enemies.filter(e => e.hp > 0); if (pool.length) { const n = 2 + Math.floor(ab.level / 3), dmg = 12 + ab.level * 6; for (let i = 0; i < n; i++) { const tgt = pool[Math.floor(Math.random() * pool.length)]; const [tx, ty] = enemyXY(tgt); const ang = Math.atan2(ty - CY, tx - CX); state.bullets.push({ x: CX + Math.cos(ang) * S.bulletSpawnOffset, y: CY + Math.sin(ang) * S.bulletSpawnOffset, vx: Math.cos(ang) * S.bulletSpeed, vy: Math.sin(ang) * S.bulletSpeed, dmg, life: S.bulletLife, color: '#ff9050', target: null, leader: null, offsetAngle: 0, sourceId: state.currentAbilityId || null }); } ab.cd = Math.max(12, 26 - ab.level); } else ab.cd = S.idleCooldown; }
         }
       },
       draw(ab) {
