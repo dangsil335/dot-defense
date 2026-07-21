@@ -17494,6 +17494,301 @@
         }
       },
     },
+    // 🎴 cardista 4★/8★ 별해금
+    wildDeal: {
+      name: '와일드딜', isGachaUnique: true, isStarUnlock: true, baseCost: 280, color: '#e0b13a',
+      desc: lv => `[4★히든-SR] 5s마다 화면 전체에 회전 카드 난사 · DMG ${30+lv*15}`,
+      init(ab) { ab.cooldown = 90; ab.fxLife = 0; ab.cards = []; },
+      tick(ab) {
+        if (ab.fxLife > 0) ab.fxLife--;
+        const dmg = 30 + ab.level * 15;
+        // 날아가는 카드 이동 + 접촉 데미지 (개체별 hit Set)
+        for (const c of ab.cards) {
+          c.x += c.vx; c.y += c.vy; c.rot += c.spin; c.life--;
+          for (const e of state.enemies) {
+            if (e.hp <= 0 || c.hit.has(e)) continue;
+            const [ex, ey] = enemyXY(e);
+            if ((c.x-ex)*(c.x-ex) + (c.y-ey)*(c.y-ey) < (e.size+10)*(e.size+10)) {
+              damageEnemy(e, dmg);
+              c.hit.add(e);
+              spawnParticles(ex, ey, c.col, 3);
+            }
+          }
+        }
+        compactInPlace(ab.cards, _alivePredLife);
+        if (--ab.cooldown > 0) return;
+        // 12장 카드가 중앙에서 방사형으로 발사 — 각자 랜덤 슈트색(적/청/금)
+        const SUITS = ['#d94b4b', '#4b7bd9', '#e0b13a'];
+        const count = 12;
+        for (let i = 0; i < count; i++) {
+          const ang = (i / count) * Math.PI * 2 + state.t * 0.02;
+          ab.cards.push({
+            x: W/2, y: H/2,
+            vx: Math.cos(ang) * 4.5, vy: Math.sin(ang) * 4.5,
+            rot: ang + Math.PI/2, life: 90, hit: new Set(),
+            spin: 0.24 + Math.random() * 0.16, col: SUITS[(Math.random()*3)|0],
+          });
+        }
+        ab.fxLife = 20;
+        ab.cooldown = Math.max(180, 300 - ab.level * 8);
+      },
+      draw(ab) {
+        // 🎴 회전하는 카드 — 각 발사체가 둥근 직사각 카드 + 슈트 핍
+        for (const c of ab.cards) {
+          const fade = Math.min(1, c.life / 30);
+          // 슈트색 트레일
+          ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = fade * 0.4;
+          ctx.strokeStyle = c.col; ctx.lineWidth = 2.5; ctx.lineCap = 'round';
+          ctx.beginPath(); ctx.moveTo(c.x - c.vx * 1.6, c.y - c.vy * 1.6); ctx.lineTo(c.x, c.y); ctx.stroke();
+          ctx.restore();
+          // 카드 본체
+          ctx.save(); ctx.translate(c.x, c.y); ctx.rotate(c.rot); ctx.globalAlpha = fade;
+          ctx.fillStyle = '#f7f1e0'; ctx.strokeStyle = c.col; ctx.lineWidth = 1.4;
+          rr(-5, -7.5, 10, 15, 2.2); ctx.fill(); ctx.stroke();
+          // 슈트 핍 (다이아 모양)
+          ctx.fillStyle = c.col;
+          ctx.beginPath(); ctx.moveTo(0, -3.4); ctx.lineTo(2.4, 0); ctx.lineTo(0, 3.4); ctx.lineTo(-2.4, 0); ctx.closePath(); ctx.fill();
+          ctx.restore();
+        }
+        // 발사 순간 — 중앙에서 퍼지는 금빛 블룸
+        if (ab.fxLife > 0) {
+          const a = ab.fxLife / 20, br = (1 - a) * Math.min(W, H) * 0.4 + 40;
+          ctx.save();
+          const g = ctx.createRadialGradient(W/2, H/2, 0, W/2, H/2, br);
+          g.addColorStop(0, `rgba(224,177,58,${a*0.22})`); g.addColorStop(0.7, `rgba(217,75,75,${a*0.08})`); g.addColorStop(1, 'rgba(224,177,58,0)');
+          ctx.fillStyle = g; ctx.beginPath(); ctx.arc(W/2, H/2, br, 0, Math.PI*2); ctx.fill();
+          ctx.restore();
+        }
+        ctx.globalAlpha = 1;
+      },
+    },
+
+    // 🎰 카르디스타 8★ — 잭팟 로얄 (Jackpot Royale) — 주기 화면 전체 대폭발
+    jackpotRoyale: {
+      name: '잭팟로얄', isGachaUnique: true, isStarUnlock: true, baseCost: 480, color: '#f0a020',
+      desc: lv => `[8★히든-SR] 3s마다 잭팟 대폭발 · 전체 DMG ${50+lv*22}`,
+      init(ab) { ab.cooldown = 60; ab.fxLife = 0; ab.reelSpin = 0; ab.coins = []; ab.rings = []; },
+      tick(ab) {
+        ab.reelSpin += 0.35;
+        if (ab.fxLife > 0) ab.fxLife--;
+        // 코인 파편 낙하
+        for (const co of ab.coins) { co.x += co.vx; co.y += co.vy; co.vy += 0.18; co.rot += co.spin; co.life--; }
+        compactInPlace(ab.coins, _alivePredLife);
+        for (const r of ab.rings) r.life--;
+        compactInPlace(ab.rings, _alivePredLife);
+        if (--ab.cooldown > 0) return;
+        // 🎰 잭팟! — 화면 전체 적에게 플랫 데미지 (적 수 비례 금지)
+        const dmg = 50 + ab.level * 22;
+        for (const e of state.enemies) {
+          if (e.hp <= 0) continue;
+          const [ex, ey] = enemyXY(e);
+          damageEnemy(e, dmg);
+          spawnParticles(ex, ey, '#ffcf3a', 5);
+        }
+        // 금빛 충격파 + 코인 분수
+        ab.rings.push({ life: 22 });
+        for (let i = 0; i < 18; i++) {
+          const a = Math.random() * Math.PI * 2, sp = 2.5 + Math.random() * 4;
+          ab.coins.push({ x: W/2, y: H/2, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - 3, rot: Math.random()*6.28, spin: (Math.random()-0.5)*0.4, life: 40 });
+        }
+        ab.fxLife = 26;
+        ab.cooldown = 180;
+      },
+      draw(ab) {
+        const cx = W/2, cy = H/2;
+        // 금빛 충격파 링
+        ctx.save(); ctx.globalCompositeOperation = 'lighter';
+        for (const r of ab.rings) {
+          const a = r.life / 22, rr2 = (1 - a) * Math.max(W, H) * 0.65 + 30;
+          ctx.globalAlpha = a * 0.5; ctx.strokeStyle = '#ffcf3a'; ctx.lineWidth = 7;
+          ctx.beginPath(); ctx.arc(cx, cy, rr2, 0, Math.PI*2); ctx.stroke();
+          ctx.globalAlpha = a; ctx.strokeStyle = '#fff6d8'; ctx.lineWidth = 2.5;
+          ctx.beginPath(); ctx.arc(cx, cy, rr2, 0, Math.PI*2); ctx.stroke();
+        }
+        // 코인 파편 (회전 = 동전 플립)
+        for (const co of ab.coins) {
+          const a = Math.min(1, co.life / 20);
+          ctx.globalAlpha = a; ctx.save(); ctx.translate(co.x, co.y); ctx.rotate(co.rot); ctx.scale(1, Math.cos(co.rot)*0.6 + 0.4);
+          ctx.fillStyle = '#ffcf3a'; ctx.beginPath(); ctx.arc(0, 0, 3.4, 0, Math.PI*2); ctx.fill();
+          ctx.restore();
+        }
+        ctx.restore(); ctx.globalAlpha = 1;
+        // 🎰 슬롯 릴 777 — 잭팟 순간에만 반짝
+        if (ab.fxLife > 0) {
+          const a = ab.fxLife / 26;
+          ctx.save(); ctx.globalAlpha = Math.min(1, a * 1.6);
+          const bw = 26, bh = 34, gap = 6, total = bw*3 + gap*2, x0 = cx - total/2, y0 = cy - bh/2 - 46;
+          const settle = Math.min(1, (1 - a) * 2);
+          for (let r = 0; r < 3; r++) {
+            const rx = x0 + r * (bw + gap);
+            ctx.fillStyle = 'rgba(20,16,8,0.85)'; ctx.strokeStyle = '#f0a020'; ctx.lineWidth = 2;
+            rr(rx, y0, bw, bh, 4); ctx.fill(); ctx.stroke();
+            const off = (1 - settle) * Math.sin(ab.reelSpin + r * 1.3) * 9;
+            ctx.save(); rr(rx, y0, bw, bh, 4); ctx.clip();
+            ctx.fillStyle = '#ffcf3a'; ctx.font = 'bold 22px monospace'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            ctx.fillText('7', rx + bw/2, y0 + bh/2 + off);
+            ctx.restore();
+          }
+          ctx.restore(); ctx.globalAlpha = 1;
+        }
+      },
+    },
+
+    // ⚡ levina 4★/8★ 별해금
+    thunderfall: {
+      name: '뇌우낙하', isGachaUnique: true, isStarUnlock: true, baseCost: 280, color: '#7cc8ff',
+      desc: lv => `[4★히든-SR] 4s마다 ${5+Math.floor(lv/2)}개 낙뢰 낙하 · DMG ${25+lv*12} · 감전`,
+      init(ab) { ab.cooldown = 90; ab.shells = []; ab.craters = []; },
+      tick(ab) {
+        for (const c of ab.craters) c.life--;
+        compactInPlace(ab.craters, _alivePredLife);
+        const dmg = 25 + ab.level * 12;
+        const exR = 55 + ab.level * 5;
+        const slowDur = 60;
+        for (const s of ab.shells) {
+          s.t++;
+          if (s.t >= 25) {
+            for (const e of state.enemies) {
+              if (e.hp <= 0) continue;
+              const [ex, ey] = enemyXY(e);
+              if ((s.x-ex)*(s.x-ex) + (s.y-ey)*(s.y-ey) < exR*exR) {
+                damageEnemy(e, dmg);
+                e.slowFrames = Math.max(e.slowFrames || 0, slowDur);   // 감전(슬로우)
+                spawnParticles(ex, ey, '#7cc8ff', 4);
+              }
+            }
+            ab.craters.push({x: s.x, y: s.y, r: exR, life: 16});
+            s.done = true;
+          }
+        }
+        compactInPlace(ab.shells, _predNotDone);
+        if (--ab.cooldown > 0) return;
+        const strikes = 5 + Math.floor(ab.level / 2);
+        // 살아있는 적 위치 우선 낙하, 적 없으면 무작위
+        const pool = state.enemies.filter(e => e.hp > 0);
+        for (let i = 0; i < strikes; i++) {
+          let sx, sy;
+          if (pool.length > 0) {
+            const t = pool[Math.floor(Math.random() * pool.length)];
+            const [tx, ty] = enemyXY(t);
+            sx = tx + (Math.random() - 0.5) * 80;
+            sy = ty + (Math.random() - 0.5) * 80;
+          } else {
+            sx = Math.random() * W;
+            sy = Math.random() * H;
+          }
+          ab.shells.push({x: sx, y: sy, t: -i * 4, seed: Math.random() * 6.28});
+        }
+        ab.cooldown = Math.max(150, 240 - ab.level * 5);
+      },
+      draw(ab) {
+        // ⚡ 낙하 중인 번개 — 지그재그 수직 폴리라인
+        for (const s of ab.shells) {
+          if (s.t < 0) continue;
+          const progress = s.t / 25;
+          // 착탄 예고 링
+          ctx.save();
+          ctx.globalAlpha = 0.2 + progress * 0.35; ctx.strokeStyle = '#7cc8ff'; ctx.lineWidth = 1.5;
+          ctx.beginPath(); ctx.arc(s.x, s.y, 8 + progress*9, 0, Math.PI*2); ctx.stroke();
+          ctx.restore();
+          // 번개 줄기 (하늘 → 착탄점, 지그재그)
+          const topY = s.y - 210, tipY = s.y - (1 - progress) * 210;
+          ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+          const bolt = (w, col, al) => {
+            ctx.globalAlpha = al; ctx.strokeStyle = col; ctx.lineWidth = w;
+            ctx.beginPath();
+            const segs = 7;
+            for (let k = 0; k <= segs; k++) {
+              const yy = topY + (tipY - topY) * (k / segs);
+              const jitter = k === segs ? 0 : Math.sin(k * 1.7 + s.seed + state.t * 0.4) * (10 - progress * 4);
+              const xx = s.x + jitter;
+              if (k === 0) ctx.moveTo(xx, yy); else ctx.lineTo(xx, yy);
+            }
+            ctx.stroke();
+          };
+          bolt(7, '#7cc8ff', 0.4);   // 글로우
+          bolt(2, '#eaf7ff', 0.9);   // 코어
+          // 낙하 선단 글로우
+          ctx.globalAlpha = 0.8; ctx.drawImage(getGlowSprite('#7cc8ff'), s.x-9, tipY-9, 18, 18);
+          ctx.restore();
+        }
+        // 착탄 전기 링 (크레이터)
+        ctx.save(); ctx.globalCompositeOperation = 'lighter';
+        for (const c of ab.craters) {
+          const t = 1 - c.life / 16, a = Math.max(0, c.life / 16);
+          ctx.globalAlpha = a * 0.85; ctx.strokeStyle = '#bce4ff'; ctx.lineWidth = 2;
+          ctx.beginPath(); ctx.arc(c.x, c.y, c.r * t, 0, Math.PI*2); ctx.stroke();
+          ctx.globalAlpha = a * 0.45;
+          const g = ctx.createRadialGradient(c.x, c.y, 0, c.x, c.y, c.r*t);
+          g.addColorStop(0, 'rgba(190,228,255,0.55)'); g.addColorStop(1, 'rgba(190,228,255,0)');
+          ctx.fillStyle = g; ctx.beginPath(); ctx.arc(c.x, c.y, c.r*t, 0, Math.PI*2); ctx.fill();
+        }
+        ctx.restore();
+        ctx.globalAlpha = 1;
+      },
+    },
+
+    // ⚡ 레비나 8★ — 폭풍 정점 (Storm Apex) — 초대형 연쇄 낙뢰
+    stormApex: {
+      name: '폭풍정점', isGachaUnique: true, isStarUnlock: true, baseCost: 480, color: '#4488ff',
+      desc: lv => `[8★히든-SR] 6s마다 초대형 연쇄 낙뢰 · DMG ${80+lv*40} · ${10+lv}회 연쇄`,
+      init(ab) { ab.cooldown = 100; ab.fx = 0; ab.fxPoints = []; },
+      tick(ab) {
+        if (ab.fx > 0) ab.fx--;
+        if (--ab.cooldown > 0) return;
+        const first = findNearestEnemy(ARENA_R + 50);
+        if (!first) { ab.cooldown = 12; return; }
+        const dmg = 80 + ab.level * 40;
+        const chains = 10 + ab.level;
+        const slowDur = 90;
+        const hit = new Set();
+        let current = first;
+        const points = [];
+        for (let i = 0; i < chains; i++) {
+          if (!current) break;
+          const [cx, cy] = enemyXY(current);
+          points.push([cx, cy]);
+          damageEnemy(current, dmg);
+          current.slowFrames = Math.max(current.slowFrames || 0, slowDur);
+          spawnParticles(cx, cy, '#4488ff', 5);
+          hit.add(current);
+          // 다음 연쇄 대상 — 인근 미타격 적
+          let next = null, best = 220 * 220;
+          for (const e of state.enemies) {
+            if (hit.has(e) || e.hp <= 0) continue;
+            const [ex2, ey2] = enemyXY(e);
+            const d2 = (ex2 - cx) * (ex2 - cx) + (ey2 - cy) * (ey2 - cy);
+            if (d2 < best) { best = d2; next = e; }
+          }
+          current = next;
+        }
+        ab.fxPoints = points;
+        ab.fx = 12;
+        ab.cooldown = Math.max(240, 360 - ab.level * 8);
+      },
+      draw(ab) {
+        if (ab.fx <= 0 || ab.fxPoints.length < 2) return;
+        const a = ab.fx / 12;
+        const path = () => {
+          ctx.beginPath(); ctx.moveTo(ab.fxPoints[0][0], ab.fxPoints[0][1]);
+          for (let i = 1; i < ab.fxPoints.length; i++) {
+            const p1 = ab.fxPoints[i - 1], p2 = ab.fxPoints[i];
+            const mx = (p1[0] + p2[0]) / 2 + (Math.random() - 0.5) * 18, my = (p1[1] + p2[1]) / 2 + (Math.random() - 0.5) * 18;
+            ctx.lineTo(mx, my); ctx.lineTo(p2[0], p2[1]);
+          }
+        };
+        ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+        ctx.globalAlpha = a * 0.35; ctx.strokeStyle = '#4488ff'; ctx.lineWidth = 11; path(); ctx.stroke();   // 외곽 글로우
+        ctx.globalAlpha = a * 0.6;  ctx.strokeStyle = '#7cc8ff'; ctx.lineWidth = 5;  path(); ctx.stroke();   // 중간
+        ctx.globalAlpha = a;        ctx.strokeStyle = '#eaf7ff'; ctx.lineWidth = 2;  path(); ctx.stroke();   // 코어
+        // 노드 방전 점
+        for (const p of ab.fxPoints) {
+          ctx.globalAlpha = a; ctx.fillStyle = '#eaf7ff';
+          ctx.beginPath(); ctx.arc(p[0], p[1], 3.2 * a + 1, 0, Math.PI * 2); ctx.fill();
+        }
+        ctx.restore(); ctx.globalAlpha = 1;
+      },
+    },
     // 🧲 페리아(SSR) — 자력 킷 (쌍극자장 · 곡선 역선 · 견인/반발) + 별해금 2종
     //   밸런스: 극성 부여를 최대 20체로 캡 → 쌍 충돌 스캔이 20×20/2=200회로 상한이 걸린다.
     //   개체당 20프레임 충돌 쿨로 N² 데미지를 N 으로 내린다.
