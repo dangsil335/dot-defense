@@ -17843,24 +17843,28 @@
     polarField: {
       name: '극성장', baseCost: 65, color: '#3b7fe0', isGachaUnique: true,
       desc: lv => `적 ${Math.min(20, 4 + lv * 2)}체에 N/S 극성 부여 · 역선 견인 · 같은 극 충돌 파편 DMG ${8 + lv * 4}(개체당 0.33s 쿨)`,
+      // 📊 v677 — ⚠ _magHitUntil 의 20프레임 면역창은 ferroShard 와 공유하는 값이라 어느 한쪽 stats 로도 옮기지 않는다.
+      //   같은 극만 충돌한다는 분기(a._pol !== b._pol)는 로직이라 stats 대상이 아니다.
+      stats: { polarityCap: 20, chargeInterval: 34, driftOutward: 0.55, driftInward: 0.35, minRadius: 34, collisionRadius: 26, maxCollisionEvents: 12 },
       init(ab) { ab.cooldown = 0; ab.rot = 0; ab.nx = CX; ab.ny = CY; ab.sx = CX; ab.sy = CY; },
       tick(ab) {
+        const S = _S(ab);
         ab.rot += 0.012;
         const pd = 44 + ab.level * 2;
         ab.nx = CX + Math.cos(ab.rot) * pd; ab.ny = CY + Math.sin(ab.rot) * pd;
         ab.sx = CX - Math.cos(ab.rot) * pd; ab.sy = CY - Math.sin(ab.rot) * pd;
         // 극성 부여 (상한 20체)
         if (--ab.cooldown <= 0) {
-          const cap = Math.min(20, 4 + ab.level * 2 + permaCount('polarField'));
+          const cap = Math.min(S.polarityCap, 4 + ab.level * 2 + permaCount('polarField'));
           _feriaCharge(cap);
-          ab.cooldown = 34;
+          ab.cooldown = S.chargeInterval;
         }
         // 견인 — 극성별로 반경을 밀거나 당긴다
         const charged = [];
         for (const e of state.enemies) {
           if (e.hp <= 0 || !e._pol) continue;
           if (e._polUntil <= state.t) { e._pol = 0; continue; }
-          e.radius = Math.max(34, e.radius + (e._pol > 0 ? 0.55 : -0.35));
+          e.radius = Math.max(S.minRadius, e.radius + (e._pol > 0 ? S.driftOutward : -S.driftInward));
           if (e.targetRadius !== undefined) e.targetRadius = e.radius;
           e._xyT = -1;
           charged.push(e);
@@ -17868,14 +17872,14 @@
         // 같은 극 충돌 — charged 가 20체 이하라 스캔 상한이 잡혀 있다
         const dmg = 8 + ab.level * 4;
         let events = 0;
-        for (let i = 0; i < charged.length && events < 12; i++) {
+        for (let i = 0; i < charged.length && events < S.maxCollisionEvents; i++) {
           const a = charged[i]; const [ax, ay] = enemyXY(a);
-          for (let j = i + 1; j < charged.length && events < 12; j++) {
+          for (let j = i + 1; j < charged.length && events < S.maxCollisionEvents; j++) {
             const b = charged[j];
             if (a._pol !== b._pol) continue;
             const [bx, by] = enemyXY(b);
             const dx = ax - bx, dy = ay - by;
-            if (dx * dx + dy * dy > 26 * 26) continue;
+            if (dx * dx + dy * dy > S.collisionRadius * S.collisionRadius) continue;
             for (const t of [a, b]) {
               if (t._magHitUntil && t._magHitUntil > state.t) continue;
               if (!_phantomDmg) t._magHitUntil = state.t + 20;   // 환영 틱은 실 틱의 쿨 창을 소모하지 않는다
@@ -18054,31 +18058,36 @@
     ferroShard: {
       name: '강자성 파편', isGachaUnique: true, isStarUnlock: true, baseCost: 280, color: '#8fa3c8',
       desc: lv => `[4★히든] 0.4s마다 극성 적에게서 쇳가루 생성(최대 ${Math.min(40, 12 + lv * 3)}개) · 접촉 DMG ${5 + lv * 3} · 자기 레일건 위력에 누적`,
+      // 📊 v677 — ⚠ 옮기지 않은 공유 상수 2개:
+      //   ① _magHitUntil 20프레임 면역창 — polarField 충돌 피해와 공유(한쪽만 바꾸면 불일치).
+      //   ② 개수 상한 40 — magRail 의 위력 누적 상한(Math.min(40, _ferroShards.length))과 공유.
+      stats: { spawnInterval: 24, shardLife: 420, driftSpeed: 0.25, hitRadius: 16 },
       init(ab) { state._ferroShards = []; ab.spawnCd = 0; },
       tick(ab) {
+        const S = _S(ab);
         const arr = state._ferroShards || (state._ferroShards = []);
         const cap = Math.min(40, 12 + ab.level * 3);
         // 쇳가루 생성 — 틱 순서에 의존하지 않도록 자체 쿨다운으로 극성 적에게서 떨어져 나온다
         if (--ab.spawnCd <= 0) {
-          ab.spawnCd = 24;
+          ab.spawnCd = S.spawnInterval;
           for (const e of state.enemies) {
             if (e.hp <= 0 || !e._pol) continue;
             if (arr.length >= cap) break;
             const [ex, ey] = enemyXY(e);
-            arr.push({ x: ex, y: ey, a: Math.random() * Math.PI * 2, life: 420 });
+            arr.push({ x: ex, y: ey, a: Math.random() * Math.PI * 2, life: S.shardLife });
           }
         }
         const dmg = 5 + ab.level * 3;
         for (const s of arr) {
           s.life--; s.a += 0.04;
           const ang = Math.atan2(CY - s.y, CX - s.x);
-          s.x += Math.cos(ang) * 0.25; s.y += Math.sin(ang) * 0.25;
+          s.x += Math.cos(ang) * S.driftSpeed; s.y += Math.sin(ang) * S.driftSpeed;
           for (const e of state.enemies) {
             if (e.hp <= 0) continue;
             if (e._magHitUntil && e._magHitUntil > state.t) continue;
             const [ex, ey] = enemyXY(e);
             const dx = ex - s.x, dy = ey - s.y;
-            if (dx * dx + dy * dy < 16 * 16) { if (!_phantomDmg) e._magHitUntil = state.t + 20; damageEnemy(e, dmg); }   // 환영 틱은 실 틱의 쿨 창을 소모하지 않는다
+            if (dx * dx + dy * dy < S.hitRadius * S.hitRadius) { if (!_phantomDmg) e._magHitUntil = state.t + 20; damageEnemy(e, dmg); }   // 환영 틱은 실 틱의 쿨 창을 소모하지 않는다
           }
         }
         compactInPlace(arr, s => s.life > 0);
