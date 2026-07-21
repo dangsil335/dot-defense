@@ -21057,6 +21057,10 @@
     // 🌀 v614 — 주간 모디파이어 적용 (게임 규칙만, 랭킹 태그 없음)
     try { const _wm = getActiveWeeklyModifier(); if (_wm && _wm.apply) _wm.apply(state.metaMods); state.weeklyModifierId = _wm.id; } catch (e) {}
     try { applyGearEffects(state.metaMods); } catch (e) {}   // 🔩 장비 효과 주입 (metaMods에 합산)
+    // 📊 v677 — 능력 stats 오버라이드 테이블 (능력id → {statName: value}).
+    //   고유장비 옵션이 나중 단계에서 이 객체를 채우면 _S(ab) 가 능력 정의의 stats 위에 병합한다.
+    //   이번 단계에서는 초기화만 하고 아무도 채우지 않는다 (런마다 새로 만들어져야 함).
+    state.abilityStatOverrides = {};
     // 🏰 디펜스 모드 (TD): 본진 HP + 타워 entity 배열
     if (state.mode === 'defense') {
       state.towerMaxHP = 40 + (mods.towerHPBonus || 0);   // 기본 40 (강화소 설명과 일치)
@@ -25505,6 +25509,19 @@
   //   e._sumiMark 를 직접 읽으면 만료가 무시되어 표식이 사실상 영구가 된다 (v676 까지의 버그).
   //   찍는 쪽도 이 헬퍼 위에 +1 해야 만료된 표식에서 중첩이 이어지지 않는다.
   function _sumiMarks(e) { return (e._sumiMarkT > state.t) ? (e._sumiMark || 0) : 0; }
+  // 📊 v677 — 능력 인스턴스별 stats. init 호출 경로가 8곳으로 흩어져 있어 지연 생성한다 —
+  //   어느 경로로 만들어진 ab 든 첫 호출 시점에 생성되므로 주입 누락이 원천적으로 없다.
+  //   stats 가 없는 능력에도 안전하다(빈 객체 반환). 레벨 스케일링은 기존대로 ab.level 로 계산하고,
+  //   stats 는 레벨 무관 상수만 담는다. 고유장비 옵션은 state.abilityStatOverrides 를 채워 개입한다.
+  function _S(ab) {
+    if (!ab._stats) {
+      const def  = ABILITY_DEFS[ab.id];
+      const base = (def && def.stats) || {};
+      const ov   = state.abilityStatOverrides && state.abilityStatOverrides[ab.id];
+      ab._stats = ov ? Object.assign({}, base, ov) : Object.assign({}, base);
+    }
+    return ab._stats;
+  }
   function damageEnemy(e, dmg) {
     if (e.hp <= 0) return;
     // 👁 공허의 눈 — 점멸 무적 중 피해 무효
