@@ -7101,8 +7101,11 @@
     stormBrand: {
       name: '연쇄 낙뢰', isGachaUnique: true, baseCost: 120, color: '#7cc8ff',
       desc: lv => `${2+lv}회 연쇄 + 감전 · DMG ${6+lv*3}`,
+      // chainRadius 는 제곱하지 않은 원본 반경. 사용처에서 제곱한다.
+      stats: { chainRadius: 150 },
       init(ab) { ab.cooldown = 40; ab.fx = 0; ab.fxPoints = []; },
       tick(ab) {
+        const S = _S(ab);
         if (ab.fx > 0) ab.fx--;
         if (--ab.cooldown > 0) return;
         const first = findNearestEnemy(ARENA_R + 50);
@@ -7122,7 +7125,7 @@
           current.slowFrames = Math.max(current.slowFrames || 0, stunDur);
           spawnParticles(cx, cy, '#7cc8ff', 3);
           hit.add(current);
-          let next = null, best = 150 * 150;
+          let next = null, best = S.chainRadius * S.chainRadius;
           for (const e of state.enemies) {
             if (hit.has(e) || e.hp <= 0) continue;
             const [ex2, ey2] = enemyXY(e);
@@ -7697,8 +7700,11 @@
     inkSlash: {
       name: '먹빛 도', isGachaUnique: true, single: true, baseCost: 130, color: '#3a3a3a',
       desc: lv => `가장 가까운 단일 적 먹빛 베기 · 크리 25%(×2.2) · 처형표식(최대5, 표식당 +DMG) · DMG ${7+lv*4}`,
+      // 표식 상수(최대5중첩 / 240프레임)는 sumiReaper·finalSeal 과 공유되므로 여기서 옮기지 않는다.
+      stats: { critChance: 0.25, critMul: 2.2 },
       init(ab) { ab.cooldown = 24; ab.slashes = []; ab.motes = []; },
       tick(ab) {
+        const S = _S(ab);
         for (const s of ab.slashes) s.life--;
         for (const m of ab.motes) { m.x += m.vx; m.y += m.vy; m.vx *= 0.92; m.vy *= 0.92; m.life--; }
         compactInPlace(ab.slashes, _alivePredLife);
@@ -7708,9 +7714,9 @@
         if (!target) return;
         const [tx, ty] = enemyXY(target);
         const ang = Math.atan2(ty - CY, tx - CX);
-        const crit = Math.random() < 0.25;
+        const crit = Math.random() < S.critChance;
         const marks = _sumiMarks(target);   // 만료(4s) 표식은 0중첩 취급
-        let dmg = (7 + ab.level * 4) * (crit ? 2.2 : 1) + marks * (3 + ab.level * 2);
+        let dmg = (7 + ab.level * 4) * (crit ? S.critMul : 1) + marks * (3 + ab.level * 2);
         damageEnemy(target, dmg);
         // 처형 표식 1중첩 (최대 5)
         target._sumiMark = Math.min(5, marks + 1);
@@ -16187,8 +16193,10 @@
     petalStorm: {
       name: '꽃잎폭풍', isGachaUnique: true, isStarUnlock: true, baseCost: 280, color: '#ff88bb',
       desc: lv => `[4★히든-SR] 5s마다 화면 전체에 회전 꽃잎 · DMG ${30+lv*15}`,
+      stats: { petalCount: 12, petalLife: 90, petalSpeed: 4.5 },
       init(ab) { ab.cooldown = 90; ab.fxLife = 0; ab.petals = []; },
       tick(ab) {
+        const S = _S(ab);
         if (ab.fxLife > 0) ab.fxLife--;
         // 꽃잎 움직임
         for (const p of ab.petals) {
@@ -16207,13 +16215,13 @@
         compactInPlace(ab.petals, _alivePredLife);
         if (--ab.cooldown > 0) return;
         // 12개 꽃잎이 중앙에서 방사형으로 발사
-        const count = 12;
+        const count = S.petalCount;
         for (let i = 0; i < count; i++) {
           const ang = (i / count) * Math.PI * 2 + state.t * 0.02;
           ab.petals.push({
             x: W/2, y: H/2,
-            vx: Math.cos(ang) * 4.5, vy: Math.sin(ang) * 4.5,
-            rot: 0, life: 90, hit: new Set(), spin: 0.08 + Math.random() * 0.1, seed: Math.random() * 6.28,
+            vx: Math.cos(ang) * S.petalSpeed, vy: Math.sin(ang) * S.petalSpeed,
+            rot: 0, life: S.petalLife, hit: new Set(), spin: 0.08 + Math.random() * 0.1, seed: Math.random() * 6.28,
           });
         }
         ab.fxLife = 20;
@@ -18972,8 +18980,10 @@
     flashbulb: {
       name: '플래시', isGachaUnique: true, isStarUnlock: true, baseCost: 280, color: '#c0392b',
       desc: lv => `[4★히든-SR] 3s마다 강렬한 섬광 · 광역 DMG ${25 + lv * 12} + 1.5s 눈부심 둔화`,
+      stats: { slowDur: 90 },
       init(ab) { ab.cd = 90; ab.fx = 0; },
       tick(ab) {
+        const S = _S(ab);
         if (ab.fx > 0) ab.fx--;
         if (--ab.cd > 0) return;
         ab.cd = Math.max(120, 200 - ab.level * 5);
@@ -18984,7 +18994,7 @@
           const [ex, ey] = enemyXY(e);
           if ((ex - CX) * (ex - CX) + (ey - CY) * (ey - CY) > R * R) continue;
           damageEnemy(e, dmg);
-          e.slowFrames = Math.max(e.slowFrames || 0, 90);
+          e.slowFrames = Math.max(e.slowFrames || 0, S.slowDur);
         }
       },
       draw(ab) {
