@@ -7709,7 +7709,7 @@
         const [tx, ty] = enemyXY(target);
         const ang = Math.atan2(ty - CY, tx - CX);
         const crit = Math.random() < 0.25;
-        const marks = target._sumiMark || 0;
+        const marks = _sumiMarks(target);   // 만료(4s) 표식은 0중첩 취급
         let dmg = (7 + ab.level * 4) * (crit ? 2.2 : 1) + marks * (3 + ab.level * 2);
         damageEnemy(target, dmg);
         // 처형 표식 1중첩 (최대 5)
@@ -7777,7 +7777,7 @@
           if (e.hp <= 0) continue;
           const [px, py] = enemyXY(e);
           if (distPointSegmentSq(px, py, CX, CY, ex, ey) < 64) {
-            const marks = e._sumiMark || 0;
+            const marks = _sumiMarks(e);   // 만료(4s) 표식은 0중첩 취급
             const total = dmg + marks * (3 + ab.level * 2);
             damageEnemy(e, total);
             e._sumiMark = Math.min(5, marks + 1);
@@ -7844,7 +7844,7 @@
         const blastR = 56 + ab.level * 4;
         for (const e of state.enemies) {
           if (e.hp <= 0) continue;
-          const marks = e._sumiMark || 0;
+          const marks = _sumiMarks(e);   // 만료(4s) 표식은 0중첩 취급
           // 표식 만개(5) 적 — 먹폭발 일괄
           if (marks >= 5) {
             const [ex, ey] = enemyXY(e);
@@ -7928,7 +7928,7 @@
             const [px, py] = enemyXY(e);
             if (distPointSegmentSq(px, py, CX, CY, tipX, tipY) < 196) {  // 두꺼운 낫 호 (14px)
               e._inkSwept = ab.scytheId;
-              const marks = Math.min(5, (e._sumiMark || 0) + 2); // 묵흔 닿으면 표식 +2 누적
+              const marks = Math.min(5, _sumiMarks(e) + 2); // 묵흔 닿으면 표식 +2 누적 (만료분은 이어받지 않음)
               e._sumiMark = marks;
               e._sumiMarkT = state.t + 240;
               const total = dmg + marks * (4 + ab.level * 2);
@@ -7946,7 +7946,7 @@
                   if (e2 === e || e2.hp <= 0) continue;
                   const [ex2, ey2] = enemyXY(e2);
                   if ((px - ex2) * (px - ex2) + (py - ey2) * (py - ey2) < transR * transR) {
-                    e2._sumiMark = Math.min(5, (e2._sumiMark || 0) + 1);
+                    e2._sumiMark = Math.min(5, _sumiMarks(e2) + 1);
                     e2._sumiMarkT = state.t + 240;
                     e2.slowFrames = Math.max(e2.slowFrames || 0, 90);
                     damageEnemy(e2, dmg * 0.4);
@@ -19036,7 +19036,8 @@
       },
     },
     // 🖌 스미카 4★/8★ 별해금 — 묵점 / 낙관
-    //    스미카 킷 축 = e._sumiMark(처형표식 최대5) + e._sumiMarkT(state.t + 240)
+    //    스미카 킷 축 = e._sumiMark(처형표식 최대5) + e._sumiMarkT(state.t + 240 = 4초 만료)
+    //    ⚠️ 표식 값을 읽을 땐 반드시 _sumiMarks(e) 헬퍼를 쓸 것 (직접 읽으면 만료가 무시된다)
     inkBlot: {
       name: '묵점', isGachaUnique: true, isStarUnlock: true, baseCost: 280, color: '#3a3a3a',
       desc: lv => `[4★히든] 0.8s마다 먹점 생성(최대 ${Math.min(14, 4 + lv)}) · 접촉 시 처형표식 +1 · DMG ${6 + lv * 4}`,
@@ -19051,7 +19052,7 @@
             if (e.hp <= 0) continue;
             const [ex, ey] = enemyXY(e);
             if ((ex - b.x) * (ex - b.x) + (ey - b.y) * (ey - b.y) > BR * BR) continue;
-            e._sumiMark = Math.min(5, (e._sumiMark || 0) + 1);
+            e._sumiMark = Math.min(5, _sumiMarks(e) + 1);
             e._sumiMarkT = state.t + 240;
             damageEnemy(e, dmg);
             spawnParticles(ex, ey, '#2a2a2a', 4);
@@ -19105,8 +19106,8 @@
         let sealed = 0;
         for (const e of state.enemies) {
           if (e.hp <= 0) continue;
-          const marks = e._sumiMark || 0;
-          if (marks <= 0 || !(e._sumiMarkT > state.t)) continue;
+          const marks = _sumiMarks(e);   // 만료(4s) 검사는 헬퍼가 담당 — 동작 동일
+          if (marks <= 0) continue;
           const [ex, ey] = enemyXY(e);
           let dmg = per * marks;
           if (marks >= 5) dmg += Math.max(1, Math.ceil(e.hp * (e.isBoss ? bossPct : pct)));
@@ -25495,6 +25496,12 @@
   //   트리나 능력이 발사 직전에 켜고 finally 로 반드시 되돌린다.
   let _phantomDmg = false;
   let _phantomScale = 1;
+  // 🖌 v677 — 스미카 처형표식 읽기 헬퍼.
+  //   표식은 _sumiMarkT(찍은 시점 + 240프레임 = 4초) 에 만료된다. 만료 뒤에는 0중첩으로 취급.
+  //   ⚠️ 표식 "값을 읽는" 모든 지점은 반드시 이 헬퍼를 거칠 것.
+  //   e._sumiMark 를 직접 읽으면 만료가 무시되어 표식이 사실상 영구가 된다 (v676 까지의 버그).
+  //   찍는 쪽도 이 헬퍼 위에 +1 해야 만료된 표식에서 중첩이 이어지지 않는다.
+  function _sumiMarks(e) { return (e._sumiMarkT > state.t) ? (e._sumiMark || 0) : 0; }
   function damageEnemy(e, dmg) {
     if (e.hp <= 0) return;
     // 👁 공허의 눈 — 점멸 무적 중 피해 무효
