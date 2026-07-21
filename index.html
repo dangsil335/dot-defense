@@ -16883,7 +16883,7 @@
     // 🔮 블랑슈(SSR) — 프리즘/분광 킷 (관통·분열·무지개 광역) + 별해금 2종
     prismBolt: {
       name: '프리즘 볼트', baseCost: 65, color: '#c8b0ff', isGachaUnique: true,
-      desc: lv => `${1 + Math.floor(lv / 3)}발 굴절 볼트 · 착탄 ${2 + Math.floor(lv / 2)}갈래 분광 · DMG ${5 + lv * 3}`,
+      desc: lv => `${1 + Math.floor(lv / 3)}발 굴절 볼트 · 발사 즉시 표적 지점 ${2 + Math.floor(lv / 2)}갈래 분광 · DMG ${5 + lv * 3}`,
       init(ab) { ab.cooldown = 0; ab.shards = []; },
       tick(ab) {
         for (const s of ab.shards) { s.x += s.vx; s.y += s.vy; s.life--; if (s.hit) continue; for (const e of state.enemies) { if (e.hp <= 0) continue; const [ex, ey] = enemyXY(e); if ((ex - s.x) * (ex - s.x) + (ey - s.y) * (ey - s.y) < 16 * 16) { damageEnemy(e, s.dmg); s.hit = true; break; } } }
