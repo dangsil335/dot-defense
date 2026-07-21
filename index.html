@@ -19255,8 +19255,8 @@
           if (marks >= _sumiMarkCap()) dmg += Math.max(1, Math.ceil(e.hp * (e.isBoss ? bossPct : pct)));
           damageEnemy(e, dmg);
           e._sumiMark = 0;   // 표식 소모
-          spawnParticles(ex, ey, marks >= 5 ? '#d83a3a' : '#8a1c1c', marks >= 5 ? 10 : 5);
-          ab.seals.push({ x: ex, y: ey, life: 24, full: marks >= 5 });
+          spawnParticles(ex, ey, marks >= _sumiMarkCap() ? '#d83a3a' : '#8a1c1c', marks >= _sumiMarkCap() ? 10 : 5);
+          ab.seals.push({ x: ex, y: ey, life: 24, full: marks >= _sumiMarkCap() });
           sealed++;
         }
         if (!sealed) { ab.cd = 30; return; }
