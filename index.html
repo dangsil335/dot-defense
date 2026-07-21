@@ -18085,7 +18085,7 @@
     //   상시 전체 키트 재현은 CX/CY 가 213곳 하드코딩이라 불가 — T4 에서만 처리한다.
     phantomStage: {
       name: '환영 무대', baseCost: 65, color: '#f0ece4', isGachaUnique: true,
-      desc: lv => `환영 1기 · 0.4s 뒤 내 공격 재생(피해 40%) · 환영은 즉사·각인 미발동 · DMG ${30 + lv * 14}`,
+      desc: lv => `환영 1기(영구강화당 +1) · 0.4s 뒤 환영 수만큼 재생 타격(최대 3회) · 피해 40% · 환영은 즉사·각인 미발동 · DMG ${30 + lv * 14}`,
       init(ab) { ab.cooldown = 0; ab.ph = []; ab.q = []; },
       tick(ab) {
         const n = 1 + permaCount('phantomStage');
@@ -18115,7 +18115,11 @@
         // 실체 타격 — 게이트 없이 정상 판정
         const tgt = pool[Math.floor(Math.random() * pool.length)];
         damageEnemy(tgt, dmg);
-        ab.q.push({ d: 24, dmg, done: false });
+        // 👻 v677 — 재생 타격은 환영 기수(n)만큼 예약. 상한 3 필수:
+        //    permaCount 로 환영이 무한정 늘 수 있어 상한 없이 풀면 피해가 선형 폭주한다.
+        //    d 를 6프레임씩 어긋내 여러 환영이 차례로 때리는 것처럼 보이게 한다.
+        const reps = Math.min(3, n);
+        for (let i = 0; i < reps; i++) ab.q.push({ d: 24 + i * 6, dmg, done: false });
       },
       draw(ab) {
         ctx.save();
@@ -36231,7 +36235,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 676;
+  const APP_VERSION = 677;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
