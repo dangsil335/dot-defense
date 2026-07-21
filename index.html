@@ -14646,8 +14646,12 @@
     sakuraSlash: {
       name: '벚꽃검', baseCost: 80, color: '#ff88bb', isGachaUnique: true,
       desc: lv => `[SR] 회전 부채꼴 베기 · DMG ${14+lv*8} · 범위 ${160+lv*18}`,
+      // 📊 v677 — 꽃잎 수명/속도/회전은 순수 VFX(판정 없음)라 옮기지 않는다.
+      //   draw 의 halfArc = Math.PI/3 은 연출 복제라 규칙 5 로 그대로 둔다(옵션이 halfArc 를 바꾸면 워시만 어긋난다).
+      stats: { halfArc: Math.PI / 3, swingDelta: Math.PI * 0.42, petalCount: 8 },
       init(ab) { ab.cooldown = 40; ab.fx = 0; ab.ang = 0; ab.petals = []; },
       tick(ab) {
+        const S = _S(ab);
         if (ab.fx > 0) ab.fx--;
         for (const p of ab.petals) { p.vx *= 0.95; p.vy *= 0.95; p.vy += 0.03; p.vx += Math.sin(p.life * 0.2 + (p.seed || 0)) * 0.12; p.x += p.vx; p.y += p.vy; p.life--; p.rot += p.spin; }
         compactInPlace(ab.petals, _alivePredLife);
@@ -14656,8 +14660,8 @@
         // ⭐ 별 퍼크: ★4 범위 +15%, ★7 범위 +추가 25%
         const range = (160 + ab.level * 18) * permaRangeMul('sakuraSlash');
         // ★2: 회전 속도 +10% (휘두름 각도 ↑)
-        const swingDelta = Math.PI * 0.42 * (permaCdMul('sakuraSlash') === 1 ? 1 : 1/permaCdMul('sakuraSlash'));
-        const halfArc = Math.PI / 3 * permaAoeMul('sakuraSlash');   // ★7: 부채꼴 각도 +25%
+        const swingDelta = S.swingDelta * (permaCdMul('sakuraSlash') === 1 ? 1 : 1/permaCdMul('sakuraSlash'));
+        const halfArc = S.halfArc * permaAoeMul('sakuraSlash');   // ★7: 부채꼴 각도 +25%
         const swingAng = ab.ang = (ab.ang + swingDelta) % (Math.PI * 2);
         for (const e of state.enemies) {
           if (e.hp <= 0) continue;
@@ -14675,7 +14679,7 @@
           }
         }
         // 꽃잎 분사 — ★3/★6: 꽃잎 개수 추가
-        const petalCount = 8 + permaCount('sakuraSlash');
+        const petalCount = S.petalCount + permaCount('sakuraSlash');
         for (let i = 0; i < petalCount; i++) {
           const a = swingAng - halfArc + (halfArc * 2) * (i / Math.max(1, petalCount - 1));
           const sp = 2.8 + Math.random() * 1.4;
@@ -14719,8 +14723,11 @@
     moonShot: {
       name: '월광탄', baseCost: 80, color: '#aaccff', isGachaUnique: true,
       desc: lv => `[SR] 관통 유도탄 · DMG ${14+lv*8} · ${4+lv}회 관통 + 광역`,
+      // 📊 v677 — pierceMax(4+lv) 는 레벨식이라 제외. 관통 소진 시 즉시 소멸은 로직이라 stats 불가.
+      stats: { turnRate: 0.14, bulletSpeed: 5, bulletLife: 180, maxBullets: 5, refireDelay: 8, hitPad: 6, splashFactor: 0.6, despawnMargin: 30 },
       init(ab) { ab.cooldown = 48; ab.bullets = []; ab.bursts = []; },
       tick(ab) {
+        const S = _S(ab);
         for (const b of ab.bursts) b.life--;
         compactInPlace(ab.bursts, _alivePredLife);
         const dmg = 14 + ab.level * 8;
@@ -14756,9 +14763,9 @@
               if (!isFinite(diff)) diff = 0;
               // while 루프 → 클램프로 변경 (안전성 보장)
               diff = ((diff + Math.PI) % (Math.PI * 2) + Math.PI * 2) % (Math.PI * 2) - Math.PI;
-              const c = Math.max(-0.14, Math.min(0.14, diff));
+              const c = Math.max(-S.turnRate, Math.min(S.turnRate, diff));
               const a = curAng + c;
-              b.vx = Math.cos(a) * 5; b.vy = Math.sin(a) * 5;
+              b.vx = Math.cos(a) * S.bulletSpeed; b.vy = Math.sin(a) * S.bulletSpeed;
             }
           }
           b.x += b.vx; b.y += b.vy;
@@ -14768,7 +14775,7 @@
             if (hit) break;
             if (e.hp <= 0 || b.hit.has(e)) continue;
             const [ex, ey] = enemyXY(e);
-            const hitR = e.size + 6;
+            const hitR = e.size + S.hitPad;
             if ((b.x-ex)*(b.x-ex) + (b.y-ey)*(b.y-ey) < hitR*hitR) {
               damageEnemy(e, dmg);
               // 광역 폭발 — 주변 적도 60% 데미지 (탄환 직격점 기준)
@@ -14776,7 +14783,7 @@
                 if (e2.hp <= 0 || e2 === e) continue;
                 const [ex2, ey2] = enemyXY(e2);
                 if ((b.x-ex2)*(b.x-ex2) + (b.y-ey2)*(b.y-ey2) < burstR2) {
-                  damageEnemy(e2, dmg * 0.6);
+                  damageEnemy(e2, dmg * S.splashFactor);
                   spawnParticles(ex2, ey2, '#aaccff', 2);
                 }
               }
@@ -14790,11 +14797,11 @@
             }
           }
           // 아레나 이탈
-          if ((b.x-CX)*(b.x-CX) + (b.y-CY)*(b.y-CY) > (ARENA_R+30)*(ARENA_R+30)) b.life = 0;
+          if ((b.x-CX)*(b.x-CX) + (b.y-CY)*(b.y-CY) > (ARENA_R+S.despawnMargin)*(ARENA_R+S.despawnMargin)) b.life = 0;
         }
         compactInPlace(ab.bullets, _alivePredLife);
         if (--ab.cooldown > 0) return;
-        if (ab.bullets.length >= 5) { ab.cooldown = 8; return; }
+        if (ab.bullets.length >= S.maxBullets) { ab.cooldown = S.refireDelay; return; }
         // 🎯 첫 발사: 가장 가까운 적 방향으로 (랜덤 X) — 프리징 방지 + 적중률↑
         let fireAng;
         const initTarget = findNearestEnemy(ARENA_R + 50);
@@ -14806,8 +14813,8 @@
         }
         ab.bullets.push({
           x: CX, y: CY,
-          vx: Math.cos(fireAng) * 5, vy: Math.sin(fireAng) * 5,
-          life: 180, target: initTarget || null, hit: new Set(), pierces: 0,
+          vx: Math.cos(fireAng) * S.bulletSpeed, vy: Math.sin(fireAng) * S.bulletSpeed,
+          life: S.bulletLife, target: initTarget || null, hit: new Set(), pierces: 0,
           sourceId: state.currentAbilityId || null,
         });
         // ★2: 쿨다운 -10%
@@ -16338,16 +16345,20 @@
     lunarRain: {
       name: '월광비', isGachaUnique: true, isStarUnlock: true, baseCost: 280, color: '#aaccff',
       desc: lv => `[4★히든-SR] 4s마다 ${5+Math.floor(lv/2)}개 월광탄 낙하 · DMG ${25+lv*12} · 광역`,
+      // 📊 v677 — thunderfall(레비나)과 로직이 같지만 stats 는 각자 소유한다(공유 아님). 키 이름만 맞춰 둔다.
+      //   크레이터는 현재 VFX 전용이지만 "월식" 옵션이 지속장으로 승격시킬 값이라 craterLife 를 데이터로 뺀다.
+      stats: { fallFrames: 25, slowFrames: 60, craterLife: 16, dropStagger: 4, dropScatter: 80 },
       init(ab) { ab.cooldown = 90; ab.shells = []; ab.craters = []; },
       tick(ab) {
+        const S = _S(ab);
         for (const c of ab.craters) c.life--;
         compactInPlace(ab.craters, _alivePredLife);
         const dmg = 25 + ab.level * 12;
         const exR = 55 + ab.level * 5;
-        const slowDur = 60;
+        const slowDur = S.slowFrames;
         for (const s of ab.shells) {
           s.t++;
-          if (s.t >= 25) {
+          if (s.t >= S.fallFrames) {
             for (const e of state.enemies) {
               if (e.hp <= 0) continue;
               const [ex, ey] = enemyXY(e);
@@ -16357,7 +16368,7 @@
                 spawnParticles(ex, ey, '#aaccff', 4);
               }
             }
-            ab.craters.push({x: s.x, y: s.y, r: exR, life: 16});
+            ab.craters.push({x: s.x, y: s.y, r: exR, life: S.craterLife});
             s.done = true;
           }
         }
@@ -16371,13 +16382,13 @@
           if (pool.length > 0) {
             const t = pool[Math.floor(Math.random() * pool.length)];
             const [tx, ty] = enemyXY(t);
-            sx = tx + (Math.random() - 0.5) * 80;
-            sy = ty + (Math.random() - 0.5) * 80;
+            sx = tx + (Math.random() - 0.5) * S.dropScatter;
+            sy = ty + (Math.random() - 0.5) * S.dropScatter;
           } else {
             sx = Math.random() * W;
             sy = Math.random() * H;
           }
-          ab.shells.push({x: sx, y: sy, t: -i * 4});
+          ab.shells.push({x: sx, y: sy, t: -i * S.dropStagger});
         }
         ab.cooldown = Math.max(150, 240 - ab.level * 5);
       },
