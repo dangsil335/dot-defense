@@ -18673,6 +18673,122 @@
         ctx.restore(); ctx.globalAlpha = 1;
       },
     },
+    // 🎭 라라 4★/8★ 별해금 — 실 그물 / 그랑 기뇰
+    stringWeb: {
+      name: '실 그물', isGachaUnique: true, isStarUnlock: true, baseCost: 280, color: '#d070c0',
+      desc: lv => `[4★히든-SR] 실 그물 ${4 + Math.floor(lv / 2)}가닥 · 닿은 적 슬로우 + 지속 DMG ${10 + lv * 5}`,
+      init(ab) { ab.nodes = []; ab.rot = 0; },
+      tick(ab) {
+        const n = 4 + Math.floor(ab.level / 2);
+        if (ab.nodes.length !== n) {
+          ab.nodes = [];
+          for (let i = 0; i < n; i++) ab.nodes.push({ a: (Math.PI * 2 / n) * i, r: 130 + (i % 2) * 44 });
+        }
+        ab.rot += 0.006;
+        for (const nd of ab.nodes) { nd.x = CX + Math.cos(nd.a + ab.rot) * nd.r; nd.y = CY + Math.sin(nd.a + ab.rot) * nd.r; }
+        if (state.t % 10 !== 0) return;
+        const dmg = 10 + ab.level * 5;
+        for (const e of state.enemies) {
+          if (e.hp <= 0) continue;
+          const [ex, ey] = enemyXY(e);
+          for (let i = 0; i < ab.nodes.length; i++) {
+            const a = ab.nodes[i], b = ab.nodes[(i + 1) % ab.nodes.length];
+            const vx = b.x - a.x, vy = b.y - a.y;
+            const L2 = vx * vx + vy * vy || 1;
+            let t = ((ex - a.x) * vx + (ey - a.y) * vy) / L2;
+            t = t < 0 ? 0 : (t > 1 ? 1 : t);
+            const px = a.x + vx * t, py = a.y + vy * t;
+            if ((ex - px) * (ex - px) + (ey - py) * (ey - py) < 14 * 14) {
+              damageEnemy(e, dmg);
+              e.slowFrames = Math.max(e.slowFrames || 0, 40);
+              spawnParticles(ex, ey, '#e070d0', 2);
+              break;
+            }
+          }
+        }
+      },
+      draw(ab) {
+        if (ab.nodes.length < 2) return;
+        ctx.save(); ctx.globalCompositeOperation = 'lighter';
+        ctx.globalAlpha = 0.42; ctx.strokeStyle = '#e070d0'; ctx.lineWidth = 1.6;
+        ctx.beginPath();
+        for (let i = 0; i < ab.nodes.length; i++) {
+          const a = ab.nodes[i], b = ab.nodes[(i + 1) % ab.nodes.length];
+          ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y);
+        }
+        ctx.stroke();
+        ctx.globalAlpha = 0.16; ctx.lineWidth = 1;
+        ctx.beginPath();
+        for (const nd of ab.nodes) { ctx.moveTo(CX, CY); ctx.lineTo(nd.x, nd.y); }
+        ctx.stroke();
+        ctx.globalAlpha = 0.8; ctx.fillStyle = '#f0a0e0';
+        for (const nd of ab.nodes) { ctx.beginPath(); ctx.arc(nd.x, nd.y, 3, 0, Math.PI * 2); ctx.fill(); }
+        ctx.restore(); ctx.globalAlpha = 1;
+      },
+    },
+    grandGuignol: {
+      name: '그랑 기뇰', isGachaUnique: true, isStarUnlock: true, baseCost: 480, color: '#e64fd0',
+      desc: lv => `[8★히든-SR] 거대 인형 자율 추격 · 근접 DMG ${40 + lv * 20} + 3s마다 실폭발`,
+      init(ab) { ab.x = CX; ab.y = CY - 70; ab.cd = 0; ab.burst = 0; ab.ang = 0; },
+      tick(ab) {
+        let best = null, bd = 1e9;
+        for (const e of state.enemies) {
+          if (e.hp <= 0) continue;
+          const [ex, ey] = enemyXY(e);
+          const q = (ex - ab.x) * (ex - ab.x) + (ey - ab.y) * (ey - ab.y);
+          if (q < bd) { bd = q; best = e; }
+        }
+        if (best) {
+          const [tx, ty] = enemyXY(best);
+          const d = Math.hypot(tx - ab.x, ty - ab.y) || 1;
+          ab.x += (tx - ab.x) / d * 2.2; ab.y += (ty - ab.y) / d * 2.2;
+          ab.ang = Math.atan2(ty - ab.y, tx - ab.x);
+        }
+        if (ab.burst > 0) ab.burst--;
+        const dmg = 40 + ab.level * 20;
+        if (--ab.cd <= 0) {
+          ab.cd = 30;
+          for (const e of state.enemies) {
+            if (e.hp <= 0) continue;
+            const [ex, ey] = enemyXY(e);
+            if ((ex - ab.x) * (ex - ab.x) + (ey - ab.y) * (ey - ab.y) < 46 * 46) { damageEnemy(e, dmg); spawnParticles(ex, ey, '#e64fd0', 4); }
+          }
+        }
+        if (state.t % 180 !== 0) return;
+        ab.burst = 24;
+        const bd2 = Math.floor(dmg * 0.8);
+        for (const e of state.enemies) {
+          if (e.hp <= 0) continue;
+          const [ex, ey] = enemyXY(e);
+          if ((ex - ab.x) * (ex - ab.x) + (ey - ab.y) * (ey - ab.y) < 150 * 150) { damageEnemy(e, bd2); e.slowFrames = Math.max(e.slowFrames || 0, 50); }
+        }
+      },
+      draw(ab) {
+        ctx.save();
+        if (ab.burst > 0) {
+          const p = 1 - ab.burst / 24;
+          ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = (1 - p) * 0.6;
+          ctx.strokeStyle = '#e64fd0'; ctx.lineWidth = 3;
+          ctx.beginPath(); ctx.arc(ab.x, ab.y, p * 150, 0, Math.PI * 2); ctx.stroke();
+          ctx.lineWidth = 1.2; ctx.globalAlpha = (1 - p) * 0.4;
+          ctx.beginPath();
+          for (let i = 0; i < 10; i++) { const a = (Math.PI * 2 / 10) * i; ctx.moveTo(ab.x, ab.y); ctx.lineTo(ab.x + Math.cos(a) * p * 150, ab.y + Math.sin(a) * p * 150); }
+          ctx.stroke();
+        }
+        ctx.globalCompositeOperation = 'source-over';
+        ctx.globalAlpha = 0.30; ctx.strokeStyle = '#f0a0e0'; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(CX, CY); ctx.lineTo(ab.x, ab.y); ctx.stroke();
+        ctx.save(); ctx.translate(ab.x, ab.y); ctx.rotate(ab.ang + Math.PI / 2);
+        ctx.globalAlpha = 0.95; ctx.fillStyle = '#3a2038'; ctx.strokeStyle = '#e64fd0'; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.moveTo(0, -22); ctx.lineTo(15, 10); ctx.lineTo(0, 20); ctx.lineTo(-15, 10); ctx.closePath();
+        ctx.fill(); ctx.stroke();
+        ctx.fillStyle = '#ffd0f0';
+        ctx.beginPath(); ctx.arc(-5, -8, 2.4, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(5, -8, 2.4, 0, Math.PI * 2); ctx.fill();
+        ctx.restore();
+        ctx.restore(); ctx.globalAlpha = 1;
+      },
+    },
   };
   // ⭐ 별 해금 능력 매핑 — 캐릭터 4★ / 8★ 도달 시 해금
   const CHAR_STAR_UNLOCKS = {
