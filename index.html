@@ -19048,6 +19048,13 @@
     marine:   { 4: ['tidalMaelstrom'], 8: ['abyssalWrath'] },
     solar:    { 4: ['solarFlare'],     8: ['solarEclipse'] },
     gravitas: { 4: ['gravityCrush'],   8: ['eventHorizon'] },
+    // 🆕 신규 SR 6명도 별돌파 부여 — 20명 전원 메인(t1)+서브(4★) 구조 통일
+    amy:      { 4: ['droneSwarm'],      8: ['skyDominion'] },
+    chloe:    { 4: ['acidRain'],        8: ['omniSolvent'] },
+    lara:     { 4: ['stringWeb'],       8: ['grandGuignol'] },
+    galatea:  { 4: ['stoneGarden'],     8: ['gorgonRealm'] },
+    trina:    { 4: ['understudyCall'],  8: ['finalBow'] },
+    iris:     { 4: ['flashbulb'],       8: ['darkroomVault'] },
   };
   // 별 등급으로 해금된 능력 목록
   function getStarUnlockedAbilities() {
@@ -19965,6 +19972,19 @@
     overexposed:     ['영역'],
     contactSheet:    ['영역', '광역'],
     developingTray:  ['광역', '슬로우'],
+    // 🆕 신규 SR 6명 별해금
+    droneSwarm:     ['자율', '다중공격', '유도'],
+    skyDominion:    ['낙하', '광역', '폭발'],
+    acidRain:       ['낙하', '영역', '슬로우'],
+    omniSolvent:    ['영역', '광역', '슬로우'],
+    stringWeb:      ['영역', '슬로우'],
+    grandGuignol:   ['자율', '광역', '슬로우'],
+    stoneGarden:    ['영역', '정지', '광역'],
+    gorgonRealm:    ['광역', '정지', '영역'],
+    understudyCall: ['다중공격', '단일'],
+    finalBow:       ['광역', '폭발'],
+    flashbulb:      ['광역', '슬로우'],
+    darkroomVault:  ['광역', '폭발'],
   };
   function getAbilityTags(id) { return ABILITY_TAGS[id] || []; }
   function tagChipHtml(tag) {
@@ -20043,6 +20063,13 @@
     'phantomStage', 'chromaticSplit', 'encore', 'standingOvation',
     // 🆕 아이리스(SR) 사진 킷
     'longExposure', 'overexposed', 'contactSheet', 'developingTray',
+    // 🆕 신규 SR 6명 별해금 (4★/8★)
+    'droneSwarm', 'skyDominion',          // 에이미
+    'acidRain', 'omniSolvent',            // 클로에
+    'stringWeb', 'grandGuignol',          // 라라
+    'stoneGarden', 'gorgonRealm',         // 갈라테아
+    'understudyCall', 'finalBow',         // 트리나
+    'flashbulb', 'darkroomVault',         // 아이리스
   ];
   // (구 숫자 매핑 ABILITY_ICON_NUMBER/getIconNumber 제거 — 파일명이 id가 되어 불필요. ABILITY_ICON_ORDER는 프리로드 목록으로 유지)
   function getIconPath(id) {
@@ -29238,6 +29265,9 @@
     'magRail', 'magnetStorm', 'monopole',                                  // 페리아 (관통/전체 붕괴/흡입장)
     'standingOvation',                                                     // 트리나 (전체 키트 재생)
     'developingTray',                                                      // 아이리스 (전체 인화)
+    'skyDominion', 'acidRain',                                             // 에이미·클로에 (전 맵 낙하)
+    'omniSolvent', 'gorgonRealm',                                          // 클로에·갈라테아 (전체 상시)
+    'grandGuignol', 'finalBow', 'darkroomVault',                           // 라라·트리나·아이리스 (전체)
   ]);
   // 🎯 능력별 표적 사거리 — TD 모드 사거리 캡 + 시각 표시용
   // def.range(lv) 가 정의돼있으면 사용, 아니면 능력 타입/티어별 기본값
@@ -35886,7 +35916,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 674;
+  const APP_VERSION = 675;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
