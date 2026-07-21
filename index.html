@@ -11,8 +11,6 @@
 <link rel="apple-touch-icon" href="./icons/icon-192.png" />
 <link rel="icon" href="./icons/icon-192.png" />
 <!-- 🚀 가챠 배너 이미지 사전 로드 — 페이지 로드 즉시 다운로드 시작 -->
-<link rel="preload" as="image" href="./icons/gacha-aria.png" fetchpriority="low" />
-<link rel="preload" as="image" href="./icons/gacha-misaki.png" fetchpriority="low" />
 <!-- 둥글둥글한 한글 폰트 (Jua = 주아체, Black Han Sans = 굵은 제목용) -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -20396,7 +20394,7 @@
     // 고등급 = 플레이트 배너 / 그 외 = 엠블럼 + 텍스트
     if (PLATE_TITLES.has(tid)) {
       const pr = t.style === 'rainbow' ? ' tp-rainbow' : '';
-      const variant = (tid === 'sakuraMaster' || tid === 'lunaMaster' || tid === 'ariaMaster' || tid === 'misakiMaster' || tid === 'elementiaMaster' || tid === 'sumikaMaster') ? 'tp-char'
+      const variant = (tid === 'sakuraMaster' || tid === 'lunaMaster' || tid === 'ariaMaster' || tid === 'misakiMaster' || tid === 'elementiaMaster' || tid === 'sumikaMaster' || tid === 'blancheMaster' || tid === 'kairaMaster' || tid === 'feriaMaster') ? 'tp-char'
                     : (tid === 'tripleSageTitle') ? 'tp-grand'
                     : /^trans\d/.test(tid) ? 'tp-trans'   // 🌌 초월 = 프리미엄 우주 플레이트
                     : 'tp-rank';                           // 완전정복/승천 = 각진 계급장
@@ -28105,39 +28103,6 @@
       if (def.draw) def.draw(ab);
     }
   }
-  // 🏰 TD 능력별 타워 이모지 — 직관적 시각 표현
-  // SR/SSR(isGachaUnique)은 별도 표시 (왕관 마크 + 무지개 테)
-  const TD_TOWER_GLYPH = {
-    // 기본 타워
-    multi:        '🎯',
-    nova:         '💫',
-    sword:        '⚔',
-    frost:        '❄',
-    starfall:     '☄',
-    fireball:     '🔥',
-    laser:        '🔆',
-    chain:        '⚡',
-    sniper:       '🎯',
-    rocket:       '🚀',
-    arrow:        '➤',
-    boomerang:    '↺',
-    shotgun:      '💢',
-    poison:       '☠',
-    bomb:         '💣',
-    blackhole:    '🌀',
-    lightning:    '⚡',
-    railgun:      '🔫',
-    drone:        '✈',
-    spear:        '🔱',
-    // 가챠 SR/SSR
-    floatorpedo:  '🌊',
-    sunspot:      '🌞',
-    gravity:      '🪐',
-    cherrysword:  '🌸',
-    moonshot:     '🌙',
-    starsong:     '✨',
-    timebutterfly:'🦋',
-  };
 
   // 🏰 TD 배치 타워 본체 그리기 — 능력별 고유 외형
   // 시각 규칙:
@@ -32428,6 +32393,18 @@
         lunarApocalypse:  '달이 가려지면… 하늘이 무너질 시간이야.',
         stellarOpera:     '막이 오른다 — 내 최고의 오페라, 들려줄게!',
         eternalPrison:    '이 찰나에서… 영원히 나올 수 없어.',
+    // 🧲 페리아 (냉철한 사령관)
+    reversePolarity:  '극을 뒤집을게. …당긴 채로, 얼려버린다.',
+    magRail:          '일직선으로 당겨서, 끝까지 꿰뚫는다.',
+    magnetStorm:      '전부 끌려온다. …이게, 자기 폭풍이야.',
+    // 🎭 트리나 (능청스러운 대역)
+    chromaticSplit:   '혼자면 심심하잖아? 자, 몇이 진짜게.',
+    encore:           '앙코르, 좋아. 몇 번이고 다시 나올게.',
+    standingOvation:  '자, 전원 등장 — 커튼콜이야!',
+    // 📷 아이리스 (고요히 기다리는 사진가)
+    overexposed:      '셔터를 더 오래 열어둘게. …가만히 있어.',
+    contactSheet:     '한 장 한 장, 놓치지 않을게.',
+    developingTray:   '시간도 멈췄어. …이제 전부, 인화할게.',
   };
   // 🆕 조합 컷인 — 좌측에 본인 캐릭터 잠깐 등장 + 대사 (논블로킹: 정지 X, 패널 X, 자동 소멸)
   function showCharComboCutin(charId, comboId) {
