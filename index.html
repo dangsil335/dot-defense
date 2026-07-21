@@ -16663,10 +16663,13 @@
     marionette: {
       name: '실 인형', baseCost: 65, color: '#d070c0', isGachaUnique: true,
       desc: lv => `${1 + Math.floor((lv + 2) / 3)}기 자율 인형 · 실 공격 DMG ${5 + lv * 3}`,
+      // 📊 v677 — draw 의 '실'이 판정을 갖지 않는다는 사실(판정의 부재)은 로직이라 stats 대상이 아니다.
+      stats: { spawnScatter: 80, roamRadius: 170, engageRange: 90, moveSpeed: 1.4, fireRange: 270, bulletSpeed: 6, bulletLife: 60, returnRadius: 60, returnSpeed: 1.2 },
       init(ab) { ab.puppets = []; },
       tick(ab) {
+        const S = _S(ab);
         const want = 1 + Math.floor((ab.level + 2) / 3) + permaCount('marionette');
-        while (ab.puppets.length < want) ab.puppets.push({ x: CX + (Math.random() - 0.5) * 80, y: CY + (Math.random() - 0.5) * 80, cd: 0 });
+        while (ab.puppets.length < want) ab.puppets.push({ x: CX + (Math.random() - 0.5) * S.spawnScatter, y: CY + (Math.random() - 0.5) * S.spawnScatter, cd: 0 });
         while (ab.puppets.length > want) ab.puppets.pop();
         const dmg = 5 + ab.level * 3;
         for (const p of ab.puppets) {
@@ -16675,9 +16678,9 @@
           if (target) {
             const [tx, ty] = enemyXY(target); const dx = tx - p.x, dy = ty - p.y, dist = Math.hypot(dx, dy) || 1;
             const rt = Math.hypot(p.x - CX, p.y - CY);
-            if (rt < 170 || dist > 90) { p.x += dx / dist * 1.4; p.y += dy / dist * 1.4; }
-            if (--p.cd <= 0 && dist < 270) { const ang = Math.atan2(dy, dx); state.bullets.push({ x: p.x, y: p.y, vx: Math.cos(ang) * 6, vy: Math.sin(ang) * 6, dmg, life: 60, color: '#e090e0', target: target, leader: null, offsetAngle: 0, sourceId: state.currentAbilityId || null }); p.cd = Math.max(16, 34 - ab.level * 2); }
-          } else { const dx = CX - p.x, dy = CY - p.y, d = Math.hypot(dx, dy) || 1; if (d > 60) { p.x += dx / d * 1.2; p.y += dy / d * 1.2; } }
+            if (rt < S.roamRadius || dist > S.engageRange) { p.x += dx / dist * S.moveSpeed; p.y += dy / dist * S.moveSpeed; }
+            if (--p.cd <= 0 && dist < S.fireRange) { const ang = Math.atan2(dy, dx); state.bullets.push({ x: p.x, y: p.y, vx: Math.cos(ang) * S.bulletSpeed, vy: Math.sin(ang) * S.bulletSpeed, dmg, life: S.bulletLife, color: '#e090e0', target: target, leader: null, offsetAngle: 0, sourceId: state.currentAbilityId || null }); p.cd = Math.max(16, 34 - ab.level * 2); }
+          } else { const dx = CX - p.x, dy = CY - p.y, d = Math.hypot(dx, dy) || 1; if (d > S.returnRadius) { p.x += dx / d * S.returnSpeed; p.y += dy / d * S.returnSpeed; } }
         }
       },
       draw(ab) {
@@ -16788,19 +16791,23 @@
     petrifyGaze: {
       name: '석화의 응시', baseCost: 65, color: '#c8b890', isGachaUnique: true,
       desc: lv => `1.5s마다 근접 ${1 + Math.floor(lv / 2)}체 석화(정지) · 조각 DMG ${6 + lv * 3}`,
+      // 📊 v677 — 석화 지속 dur 은 60 + lv*6 (레벨식)이라 옮기지 않는다. dur 에 곱/더해지는 레벨 무관분만 데이터화.
+      //   최근접 정렬 / 보스 정지금지 분기 / marks 만료 트리거 부재는 전부 로직이라 stats 대상이 아니다.
+      stats: { bossSlowMul: 1.5, slowTail: 30, idleCooldown: 30 },
       init(ab) { ab.cooldown = 70; ab.marks = []; },
       tick(ab) {
+        const S = _S(ab);
         for (const m of ab.marks) m.life--;
         compactInPlace(ab.marks, m => m.life > 0);
         if (--ab.cooldown > 0) return;
         const pool = state.enemies.filter(e => e.hp > 0);
-        if (!pool.length) { ab.cooldown = 30; return; }
+        if (!pool.length) { ab.cooldown = S.idleCooldown; return; }
         pool.sort((p, q) => (p.radius || 999) - (q.radius || 999));
         const n = 1 + Math.floor(ab.level / 2) + permaCount('petrifyGaze'), dur = 60 + ab.level * 6, dmg = 6 + ab.level * 3;
         for (let i = 0; i < Math.min(n, pool.length); i++) {
           const e = pool[i]; const [ex, ey] = enemyXY(e);
-          if (e.isBoss) { e.slowFrames = Math.max(e.slowFrames || 0, Math.floor(dur * 1.5)); }
-          else { e.timeStopped = Math.max(e.timeStopped || 0, state.t + dur); e.slowFrames = Math.max(e.slowFrames || 0, dur + 30); }
+          if (e.isBoss) { e.slowFrames = Math.max(e.slowFrames || 0, Math.floor(dur * S.bossSlowMul)); }
+          else { e.timeStopped = Math.max(e.timeStopped || 0, state.t + dur); e.slowFrames = Math.max(e.slowFrames || 0, dur + S.slowTail); }
           damageEnemy(e, dmg); ab.marks.push({ e, life: dur }); spawnParticles(ex, ey, '#c8b890', 3);
         }
         ab.cooldown = Math.max(50, 100 - ab.level * 3);
@@ -18719,16 +18726,19 @@
     stringWeb: {
       name: '실 그물', isGachaUnique: true, isStarUnlock: true, baseCost: 280, color: '#d070c0',
       desc: lv => `[4★히든-SR] 실 그물 ${4 + Math.floor(lv / 2)}가닥 · 닿은 적 슬로우 + 지속 DMG ${10 + lv * 5}`,
+      // 📊 v677 — break(개체당 틱당 1히트)는 로직이라 stats 대상이 아니다.
+      stats: { ringBaseRadius: 130, ringGap: 44, ringCount: 2, rotateSpeed: 0.006, damageTickInterval: 10, strandWidth: 14, slowFrames: 40 },
       init(ab) { ab.nodes = []; ab.rot = 0; },
       tick(ab) {
+        const S = _S(ab);
         const n = 4 + Math.floor(ab.level / 2);
         if (ab.nodes.length !== n) {
           ab.nodes = [];
-          for (let i = 0; i < n; i++) ab.nodes.push({ a: (Math.PI * 2 / n) * i, r: 130 + (i % 2) * 44 });
+          for (let i = 0; i < n; i++) ab.nodes.push({ a: (Math.PI * 2 / n) * i, r: S.ringBaseRadius + (i % S.ringCount) * S.ringGap });
         }
-        ab.rot += 0.006;
+        ab.rot += S.rotateSpeed;
         for (const nd of ab.nodes) { nd.x = CX + Math.cos(nd.a + ab.rot) * nd.r; nd.y = CY + Math.sin(nd.a + ab.rot) * nd.r; }
-        if (state.t % 10 !== 0) return;
+        if (state.t % S.damageTickInterval !== 0) return;
         const dmg = 10 + ab.level * 5;
         for (const e of state.enemies) {
           if (e.hp <= 0) continue;
@@ -18740,9 +18750,9 @@
             let t = ((ex - a.x) * vx + (ey - a.y) * vy) / L2;
             t = t < 0 ? 0 : (t > 1 ? 1 : t);
             const px = a.x + vx * t, py = a.y + vy * t;
-            if ((ex - px) * (ex - px) + (ey - py) * (ey - py) < 14 * 14) {
+            if ((ex - px) * (ex - px) + (ey - py) * (ey - py) < S.strandWidth * S.strandWidth) {
               damageEnemy(e, dmg);
-              e.slowFrames = Math.max(e.slowFrames || 0, 40);
+              e.slowFrames = Math.max(e.slowFrames || 0, S.slowFrames);
               spawnParticles(ex, ey, '#e070d0', 2);
               break;
             }
@@ -18835,14 +18845,18 @@
     stoneGarden: {
       name: '석상 정원', isGachaUnique: true, isStarUnlock: true, baseCost: 280, color: '#c8b890',
       desc: lv => `[4★히든-SR] 석상 ${3 + Math.floor(lv / 3)}기 배치 · 주변 적 석화 + 파쇄 DMG ${16 + lv * 8}`,
+      // 📊 v677 — 석화 지속 48 은 레벨 무관 상수라 옮긴다(petrifyGaze 의 dur 과 달리 레벨식이 아님).
+      //   "등간격 고정 배치" 라는 배치 규칙 자체는 로직이라 stats 대상이 아니다(반경만 데이터화).
+      stats: { placementRadius: 120, petrifyFrames: 48, slowFrames: 78, bossSlowFrames: 70 },
       init(ab) { ab.statues = []; ab.cd = 0; },
       tick(ab) {
+        const S = _S(ab);
         const n = 3 + Math.floor(ab.level / 3);
         if (ab.statues.length !== n) {
           ab.statues = [];
           for (let i = 0; i < n; i++) {
             const a = (Math.PI * 2 / n) * i;
-            ab.statues.push({ x: CX + Math.cos(a) * 120, y: CY + Math.sin(a) * 120, fx: 0 });
+            ab.statues.push({ x: CX + Math.cos(a) * S.placementRadius, y: CY + Math.sin(a) * S.placementRadius, fx: 0 });
           }
         }
         for (const s of ab.statues) if (s.fx > 0) s.fx--;
@@ -18857,8 +18871,8 @@
             if ((ex - s.x) * (ex - s.x) + (ey - s.y) * (ey - s.y) > R * R) continue;
             hit = true;
             damageEnemy(e, dmg);
-            if (e.isBoss) e.slowFrames = Math.max(e.slowFrames || 0, 70);
-            else { e.timeStopped = Math.max(e.timeStopped || 0, state.t + 48); e.slowFrames = Math.max(e.slowFrames || 0, 78); }
+            if (e.isBoss) e.slowFrames = Math.max(e.slowFrames || 0, S.bossSlowFrames);
+            else { e.timeStopped = Math.max(e.timeStopped || 0, state.t + S.petrifyFrames); e.slowFrames = Math.max(e.slowFrames || 0, S.slowFrames); }
             spawnParticles(ex, ey, '#d8c8a0', 3);
           }
           if (hit) s.fx = 18;
