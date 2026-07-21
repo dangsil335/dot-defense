@@ -18495,7 +18495,7 @@
       desc: lv => `[4★히든-SR] ${3 + Math.floor(lv / 2)}기 자율 드론 상시 순찰 · 자동 요격 DMG ${12 + lv * 6}`,
       init(ab) { ab.drones = []; },
       tick(ab) {
-        const n = 3 + Math.floor(ab.level / 2) + permaCount('droneSwarm');
+        const n = 3 + Math.floor(ab.level / 2);
         if (ab.drones.length !== n) {
           ab.drones = [];
           for (let i = 0; i < n; i++) ab.drones.push({ a: (Math.PI * 2 / n) * i, r: 84 + (i % 3) * 16, cd: i * 6 });
