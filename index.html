@@ -6750,6 +6750,73 @@
   }
   // ✨ 고유장비 판정 — slot/rarity 중 하나만 찍혀 있어도 고유로 본다(세이브 오염 대비 넓게 판정).
   function _gearIsUnique(it) { return !!(it && (it.slot === 'signature' || it.rarity === 'unique')); }
+  // 🤝 기기간 장비 병합 — 예전엔 inv 를 "id 를 키로 union" 했는데 nextId 가 기기별로 독립 증가한다.
+  //    두 기기에서 각각 얻은 서로 다른 장비가 같은 id 를 받으면 한쪽이 통째로 사라졌다
+  //    (실측: A `1:marine` + B `1:kaira` → `["1:marine"]`. 고유장비 이전부터 있던 데이터 손실 버그).
+  //    · 출생 지문(_gearFp) = 생성 후 절대 안 바뀌는 필드만: slot|set|rarity|charId.
+  //      강화(level)·재설정(lines)·잠금(locked)·v 는 전부 변하므로 지문에 넣으면 안 된다.
+  //    · 내용 지문(_gearCfp) = 지문 + 현재 상태 전부. "직전 병합에서 새 id 로 편입된 바로 그 장비"를
+  //      알아보는 데만 쓴다(같은 병합을 반복해도 인벤이 증식하지 않게).
+  function _gearFp(it) { return (it.slot || '') + '|' + (it.set || '') + '|' + (it.rarity || '') + '|' + (it.charId || ''); }
+  function _gearCfp(it) { return _gearFp(it) + '|' + (it.level || 0) + '|' + (it.locked ? 1 : 0) + '|' + ((it.lines || []).map(l => (l.key || '') + '~' + (l.uniq || '') + '~' + (l.aff || '') + '~' + (l.tier || 0) + '~' + (l.val || 0)).join(',')); }
+  // 🤝 inv 병합 본체 — { inv, nextId, removed } 반환.
+  //    · 고유장비(signature)는 id 가 아니라 charId 로 매칭한다 — 같은 캐릭터 것이면 같은 장비다.
+  //      승자 기준은 level 우선, 동률이면 v. (v 는 잠금 토글로 비용 0에 올라가므로 투자량 지표가 아니다.)
+  //    · 일반 코어는 id 가 충돌해도 출생 지문이 같을 때만 "같은 코어의 다른 리비전"으로 보고 높은 v 를 택하고,
+  //      지문이 다르면 서로 다른 장비이므로 양쪽 다 살린다(한쪽에 새 id 발급). 잃는 것보다 중복이 낫다.
+  //    · 새 id 는 양쪽 nextId·사용중 id·🪦묘비를 전부 피한다 — 묘비 id 를 재발급하면 다음 로드에 그대로 지워진다.
+  //    ⚠️ id 를 유지하는 쪽(keep)은 호출부가 equipped 를 채택하는 쪽(localNewer)과 반드시 같아야 한다.
+  //       그래야 keep 측 equipped 의 id 가 전부 같은 아이템을 그대로 가리켜 장착 상태가 안 깨진다.
+  function _gearMergeInv(localG, serverG, localNewer) {
+    const lg = (localG && Array.isArray(localG.inv)) ? localG.inv : [];
+    const sg = (serverG && Array.isArray(serverG.inv)) ? serverG.inv : [];
+    const removedArr = [...new Set([...((localG && localG.removed) || []), ...((serverG && serverG.removed) || [])])];
+    const removedSet = new Set(removedArr);
+    const alive = x => x && x.id != null && !removedSet.has(x.id);   // 🪦 분해/합성한 코어 부활 방지 — 병합 전에 양쪽에서 먼저 걷어낸다
+    const keep  = (localNewer ? lg : sg).filter(alive);
+    const other = (localNewer ? sg : lg).filter(alive);
+    const out = [], usedIds = new Set(), byId = new Map(), sigAt = new Map(), cfp = new Set();
+    for (const it of keep) {
+      if (usedIds.has(it.id)) continue;   // 한 기기 안에서 id 가 겹치는 오염 세이브 방어
+      const i = out.push(it) - 1; usedIds.add(it.id); byId.set(it.id, it); cfp.add(_gearCfp(it));
+      if (_gearIsUnique(it) && it.charId) sigAt.set(it.charId, i);
+    }
+    const pending = [];   // id 가 이미 쓰이고 있어 새 id 를 받아야 하는 항목
+    for (const it of other) {
+      if (_gearIsUnique(it) && it.charId) {
+        const j = sigAt.get(it.charId);
+        if (j != null) {   // j < 0 = 이미 pending 에 같은 charId 가 있음(중복 방지)
+          if (j >= 0) {
+            const cur = out[j];
+            if ((it.level || 0) > (cur.level || 0) || ((it.level || 0) === (cur.level || 0) && (it.v || 1) > (cur.v || 1))) {
+              out[j] = Object.assign({}, it, { id: cur.id });   // ✨ 승자가 keep 측 id 를 승계 → equipped.signature 가 안 깨진다
+            }
+          }
+          continue;
+        }
+      }
+      const ex = byId.get(it.id);
+      if (ex) {
+        if (!_gearIsUnique(it) && !_gearIsUnique(ex) && _gearFp(ex) === _gearFp(it)) {
+          if ((it.v || 1) > (ex.v || 1)) { out[out.indexOf(ex)] = it; byId.set(it.id, it); cfp.add(_gearCfp(it)); }   // 기존 규약 유지: 높은 v(리롤/강화) 우선
+          continue;
+        }
+        if (cfp.has(_gearCfp(it))) continue;   // 직전 병합에서 이미 새 id 로 편입된 바로 그 장비 → 반복 병합 증식 차단
+        pending.push(it);
+        if (_gearIsUnique(it) && it.charId) sigAt.set(it.charId, -1);
+        continue;
+      }
+      const i = out.push(it) - 1; usedIds.add(it.id); byId.set(it.id, it); cfp.add(_gearCfp(it));
+      if (_gearIsUnique(it) && it.charId) sigAt.set(it.charId, i);
+    }
+    let next = Math.max((localG && localG.nextId) || 1, (serverG && serverG.nextId) || 1, 1);
+    for (const x of out) if ((x.id || 0) + 1 > next) next = (x.id || 0) + 1;   // 양쪽 nextId 와 실제 id 최대치보다 크게
+    for (const it of pending) {
+      while (usedIds.has(next) || removedSet.has(next)) next++;   // 🪦 묘비 id 재발급 금지
+      out.push(Object.assign({}, it, { id: next })); usedIds.add(next); next++;
+    }
+    return { inv: out, nextId: next, removed: removedArr.slice(-1000) };
+  }
   // ✨ 슬롯 ↔ 아이템 적합성 (양방향 배타) — 장착의 유일한 관문.
   //    · signature 슬롯 = 고유장비 전용 → 일반 코어는 5번째 슬롯에 절대 못 들어간다.
   //    · 기존 4슬롯      = 일반 코어 전용 → 고유장비는 절대 못 들어간다.
@@ -22447,23 +22514,14 @@
       merged.gearGoldSpent = Math.max(META.gearGoldSpent || 0, server.gearGoldSpent || 0);
       merged.gearGold = Math.max(0, merged.gearGoldEarned - merged.gearGoldSpent);
 
-      // ━━━ 🔩 장비(gear) — inv는 id+버전(v) 유니온(파밍 append-only), 장착은 최근우선(metaUpdatedAt) ━━━
+      // ━━━ 🔩 장비(gear) — 고유장비는 charId, 일반 코어는 id+출생지문으로 매칭(_gearMergeInv).
+      //     id 가 충돌해도 서로 다른 장비면 양쪽 다 보존(한쪽에 새 id 발급). 장착은 최근우선(metaUpdatedAt) ━━━
       {
-        const lg = (META.gear && Array.isArray(META.gear.inv)) ? META.gear.inv : [];
-        const sg = (server.gear && Array.isArray(server.gear.inv)) ? server.gear.inv : [];
-        const byId = new Map();
-        for (const it of sg) if (it && it.id != null) byId.set(it.id, it);
-        for (const it of lg) if (it && it.id != null) {
-          const ex = byId.get(it.id);
-          if (!ex || (it.v || 1) >= (ex.v || 1)) byId.set(it.id, it);   // 높은 v(리롤) 우선
-        }
-        const removedArr = [...new Set([...((META.gear && META.gear.removed) || []), ...((server.gear && server.gear.removed) || [])])];
-        const removedSet = new Set(removedArr);
-        const inv = [...byId.values()].filter(x => !removedSet.has(x.id));   // 🪦 삭제 묘비 반영 — 분해/합성한 코어 부활 방지
         const localNewer = (META.metaUpdatedAt || 0) >= (server.metaUpdatedAt || 0);
+        const gm = _gearMergeInv(META.gear, server.gear, localNewer);   // 🪦 묘비 반영·새 id 발급까지 전부 안에서 처리
+        // ⚠️ equipped 는 반드시 _gearMergeInv 가 id 를 유지한 쪽(= localNewer 쪽)에서 가져올 것 — 어긋나면 장착이 깨진다
         const equipped = localNewer ? ((META.gear && META.gear.equipped) || {}) : ((server.gear && server.gear.equipped) || {});
-        const nextId = Math.max((META.gear && META.gear.nextId) || 1, (server.gear && server.gear.nextId) || 1, inv.reduce((m,x)=>Math.max(m,(x.id||0)+1),1));
-        merged.gear = { equipped, inv, nextId, removed: removedArr.slice(-1000) };
+        merged.gear = { equipped, inv: gm.inv, nextId: gm.nextId, removed: gm.removed };
       }
 
       // 📋 v615 — 일일 임무: 기본 규칙({...server,...META})이면 로컬이 무조건 이김 → 기기 전환마다
