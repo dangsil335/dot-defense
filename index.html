@@ -34528,6 +34528,16 @@
                             lines:['아이리스: 움직이지 말라니까. 셔터 열어둘게.', '페리아: 멈춘 건 …자석에서 못 벗어나.'] },
     beam_feria:           { sr:'iris',     ssr:'feria',     axis:'pierce',name:'관통 인화',
                             lines:['아이리스: 한 줄로 세워줘. 그럼 한 컷에 담겨.', '페리아: 정렬 완료. …꿰뚫는다.'] },
+    // ── 💤 소미아 (꿈·수면) ── 브릿지: luna (전용 신규 SR 없이 합류 — 미사키와 루나를 공유. SR_TO_SSR 주석 참조)
+    //    루나가 속한 R타워 5종 중 축이 겹치지 않는 4종만 채택 → blast·pierce·ice·echo 4축 전부 커버(shock은 루나 경로에 없음).
+    starfall_somnia:      { sr:'luna',     ssr:'somnia',    axis:'blast', name:'별 헤는 자장가',
+                            lines:['루나: 별 하나에 하나씩 — 세어줄게.', '소미아: 좋아요. 다 세기 전에… 전부 잠들 거예요.'] },
+    beam_somnia:          { sr:'luna',     ssr:'somnia',    axis:'pierce',name:'월광 각성',
+                            lines:['루나: 달빛 한 줄기, 곧게 세워둘게.', '소미아: 그 빛으로 깨울게요 — 아주 아프게.'] },
+    frost_somnia:         { sr:'luna',     ssr:'somnia',    axis:'ice',   name:'동면의 서리',
+                            lines:['루나: 숨결까지 얼려둘게. 뒤척이지도 못하게.', '소미아: 언 채로 잠들면… 다시는 못 깨요.'] },
+    orbital_somnia:       { sr:'luna',     ssr:'somnia',    axis:'echo',  name:'꿈나라 궤도',
+                            lines:['루나: 네 꿈 둘레를 돌게 해줄게 — 끝없이.', '소미아: 그럼 여긴, 나가는 길이 없는 꿈이네요.'] },
   };
   // 🧬 ③ 계보 공명 — 각성한 것 추적(기기-로컬, META 분리) + 진화트리 도감(떡밥 + 점진공개)
   function _getResonanceSeen() { try { return JSON.parse(localStorage.getItem('_dd_resonance') || '{}') || {}; } catch (e) { return {}; } }
