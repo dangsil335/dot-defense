@@ -6532,6 +6532,15 @@
     paradox:      2.5,    // paradoxFreeze(미사키 8★) 기본 배율 — 기존 수치 그대로
     paradoxPerLv: 0.1,    //  +레벨당. max 합성이라 2.5 > 1.30 > 1.15 로 항상 이 값이 이긴다(수치 불변).
   };
+  // ❄️ 슬로우 강도 — metaMods.slowMul 의 유일한 소비처다(적 이동 처리 1곳).
+  //   ⚠️ 지속시간이 아니라 "감속률" 에 적용한다. slowFrames 를 세팅하는 지점이 78곳이라
+  //      지속에 걸면 누락이 반드시 생기지만, 감속률은 소비 지점이 아래 1곳뿐이라 누락이 원천적으로 없다.
+  //   ⚠️ slowMul 1.0 이면 1 - (1 - 0.35) * 1 === 0.35 로 기존 동작과 완전히 동일하다(부동소수 포함 검증).
+  //      1.12 → 0.272 · 1.35 → 0.1225 · 1.80(미사키) → 하한 0.10.
+  //   ⚠️ 하한이 없으면 slowMul 이 큰 캐릭터에서 감속률이 100% 를 넘어 "슬로우가 곧 완전정지"가 된다.
+  //      정지는 상위 티어(CC_VULN.stop)여야 하므로 슬로우가 그 자리를 침범하면 안 된다.
+  const SLOW_BASE  = 0.35;   // 기존 이동속도 배율 (= 65% 감속)
+  const SLOW_FLOOR = 0.10;   // 이동속도 하한 — 완전정지 방지
   const MAX_SLOTS = 6;          // 액티브/패시브 각각 6칸씩
   function maxActiveSlots() {
     const metaBonus = (META.upgrades && META.upgrades.extraSlot) || 0;
@@ -28098,10 +28107,13 @@
     // 적 이동 + 특수 행동 처리
     const isDefenseMode = state.mode === 'defense';
     const defenseSlowMul = isDefenseMode ? (1 - (state.metaMods.defenseSlowBonus || 0)) : 1;
+    // ❄️ metaMods.slowMul 소비 — 감속률(1-SLOW_BASE)에 곱하고 하한으로 클램프한다.
+    //    루프 밖에서 프레임당 1회만 계산한다(적마다 같은 값). slowMul 1.0 → 정확히 0.35 = 기존 동작.
+    const ccSlowFactor = Math.max(SLOW_FLOOR, 1 - (1 - SLOW_BASE) * ((state.metaMods && state.metaMods.slowMul) || 1));
     for (const e of state.enemies) {
       // 🛑 완전 정지 (timeStopped) — 8개 능력의 "정지" 효과 실제 적용
       const fullyStopped = e.timeStopped && e.timeStopped > state.t;
-      const slowMul = fullyStopped ? 0 : (e.slowFrames > 0 ? 0.35 : 1);
+      const slowMul = fullyStopped ? 0 : (e.slowFrames > 0 ? ccSlowFactor : 1);
       if (e.slowFrames > 0) e.slowFrames--;
       if (isDefenseMode) {
         // 🏰 디펜스 모드 (TD): 경로 따라 셀→셀 이동 (다중경로 지원)
