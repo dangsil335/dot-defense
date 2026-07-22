@@ -22455,6 +22455,7 @@
     blancheMaster:   { name: '분광의 마녀',   icon: '🌈', achId: 'char8_blanche',   style: 'rainbow' },
     kairaMaster:     { name: '야수왕',       icon: '🐾', achId: 'char8_kaira',     style: 'rainbow' },
     feriaMaster:     { name: '자력의 지배자',   icon: '🧲', achId: 'char8_feria',     style: 'rainbow' },
+    somniaMaster:    { name: '꿈의 인도자',     icon: '💤', achId: 'char8_somnia',    style: 'rainbow' },
     // 🔱 트리플 컬렉션 — 해당 트리플을 한 게임에서 형성하면 해금
     tcUltra:    { name: '탄막의 폭군',    icon: '🔫', achId: 'tc_ultraGatling',    style: 'glow', color: '#cfe0ff' },
     tcFrost:    { name: '동결뇌제',      icon: '❄️', achId: 'tc_absoluteThunder',  style: 'glow', color: '#bcd8ff' },
@@ -22513,7 +22514,7 @@
     asc1Title:'sparkle', asc5Title:'star', asc10Title:'starburst', asc15Title:'crown',
     trans1Title:'galaxy', trans3Title:'galaxy', trans5Title:'starburst', trans10Title:'crown', trans15Title:'starburst',
     starGazer:'star', marineMaster:'wave', solarMaster:'sun', gravitasMaster:'vortex', amyMaster:'missile', chloeMaster:'flask', laraMaster:'masks', galateaMaster:'gem', trinaMaster:'masks', irisMaster:'bullseye',
-    sakuraMaster:'blossom', lunaMaster:'moon', ariaMaster:'star', misakiMaster:'butterfly', elementiaMaster:'sparkle', sumikaMaster:'skull', blancheMaster:'starburst', kairaMaster:'dragon', feriaMaster:'vortex', cardistaMaster:'cards', levinaMaster:'bolt',
+    sakuraMaster:'blossom', lunaMaster:'moon', ariaMaster:'star', misakiMaster:'butterfly', elementiaMaster:'sparkle', sumikaMaster:'skull', blancheMaster:'starburst', kairaMaster:'dragon', feriaMaster:'vortex', somniaMaster:'moon', cardistaMaster:'cards', levinaMaster:'bolt',
     // 🔱 트리플 컬렉션
     tcUltra:'barrage', tcFrost:'bolt', tcElem:'sparkle', tcFusion:'cannon', tcGalaxy:'galaxy', tcTitan:'missile',
     tcPlasma:'bolt', tcVoidNova:'starburst', tcSiege:'beam', tcDeepSea:'wave', tcStellar:'sun', tcVoidStop:'vortex',
@@ -22523,7 +22524,7 @@
   const PLATE_TITLES = new Set([
     'conqueror', 'asc10Title', 'asc15Title',
     'trans1Title', 'trans3Title', 'trans5Title', 'trans10Title', 'trans15Title',
-    'sakuraMaster', 'lunaMaster', 'ariaMaster', 'misakiMaster', 'elementiaMaster', 'sumikaMaster', 'blancheMaster', 'kairaMaster', 'feriaMaster', 'cardistaMaster', 'levinaMaster',
+    'sakuraMaster', 'lunaMaster', 'ariaMaster', 'misakiMaster', 'elementiaMaster', 'sumikaMaster', 'blancheMaster', 'kairaMaster', 'feriaMaster', 'somniaMaster', 'cardistaMaster', 'levinaMaster',
     'tripleSageTitle',   // 그랜드 — 한 게임 트리플 5개
   ]);
   function titleEmblemHtml(key, emojiFallback) {
@@ -25905,6 +25906,8 @@
       check: () => ((META.charStars || {}).kaira || 0) >= 8 },
     { id: 'char8_feria',    name: '🧲 자력의 지배자',  desc: '🧲 페리아 8★ 달성',   reward: 1500,
       check: () => ((META.charStars || {}).feria || 0) >= 8 },
+    { id: 'char8_somnia',   name: '💤 꿈의 인도자',    desc: '💤 소미아 8★ 달성',   reward: 1500,
+      check: () => ((META.charStars || {}).somnia || 0) >= 8 },
     // SR 캐릭터 8★
     { id: 'char8_sakura',   name: '🌸 벚꽃의 검객',    desc: '🌸 사쿠라 8★ 달성',   reward: 800,
       check: () => ((META.charStars || {}).sakura   || 0) >= 8 },
@@ -33829,6 +33832,7 @@
     blanche:   '빛은 꺾일 뿐, 결코 꺾이지 않아.',
     kaira:     '숨어도 소용없어. …냄새로 다 찾아낼 거야.',
     feria:     '전부 끌어당겨. …도망칠 방향이 없게.',
+    somnia:    '자, 눈 감아요. …일어나면 다 끝나 있을 거예요.',
     sakura:    '벚꽃과 함께… 이 검을 받으렴.',
     luna:      '달빛이 너를 비춘다… 조용히, 받으렴.',
     cardista:  '운 좋은 패네 — 이 힘, 한번 베팅해봐!',
@@ -34140,6 +34144,7 @@
     blanche:  '일곱 빛깔, 전부 보여줄게. 눈부실 거야.',
     kaira:    '사냥 시간이야. …도망칠 수 있으면 도망쳐봐.',
     feria:    '쇳조각 좀 뿌려놨어. 밟으면 아플 거야.',
+    somnia:   '으음… 벌써 왔어요? 그럼 저쪽부터 재울게요.',
     sakura:   '한 송이, 베어줄게. 준비됐어?',
     luna:     '달빛 아래선… 아무도 못 도망가.',
     aria:     '이 무대의 주인공은 너야. 노래, 맞춰줄게!',
@@ -34798,6 +34803,10 @@
     reversePolarity:  '극을 뒤집을게. …당긴 채로, 얼려버린다.',
     magRail:          '일직선으로 당겨서, 끝까지 꿰뚫는다.',
     magnetStorm:      '전부 끌려온다. …이게, 자기 폭풍이야.',
+    // 💤 소미아 (졸린 잠꾸러기)
+    pillowThrow:      '푹 자고 있었죠? 미안해요 — 기상 시간이에요!',
+    dreamland:        '여기서부턴 꿈나라예요. 발 들이면 못 나와요.',
+    daydream:         '다 같이 자고… 자, 다 같이 일어나요!',
     // 🎭 트리나 (능청스러운 대역)
     chromaticSplit:   '혼자면 심심하잖아? 자, 몇이 진짜게.',
     encore:           '앙코르, 좋아. 몇 번이고 다시 나올게.',
@@ -35721,7 +35730,7 @@
 
   // 🛰️ v461 — 메인 메뉴 로테이션 간판 캐릭터 백드롭 (메뉴 진입마다 순환)
   // ⚠️ refreshMenuButtons가 아니라 showScreen('menu') 진입에서만 호출 — refreshMenuButtons는 서버 pull 후에도 재호출돼 중복 회전/캐시-onload 버그 유발.
-  const MENU_HERO_IDS = ['aria','misaki','elementia','sumika','blanche','kaira','feria','solar','marine','gravitas','luna','sakura','cardista','levina','amy','chloe','lara','galatea','trina','iris'];
+  const MENU_HERO_IDS = ['aria','misaki','elementia','sumika','blanche','kaira','feria','somnia','solar','marine','gravitas','luna','sakura','cardista','levina','amy','chloe','lara','galatea','trina','iris'];
   let _menuHeroIdx = -1;
   function refreshMenuHero() {
     const el = document.getElementById('menu-hero-bg');
@@ -37472,7 +37481,7 @@
     // 🌌 초월 — 승천 15 이후 단계적
     trans:    ['trans1', 'trans3', 'trans5', 'trans10', 'trans15'],
     // ⭐ 캐릭터 돌파 — 별 등급
-    chars:    ['firstStar', 'char8_marine', 'char8_solar', 'char8_gravitas', 'char8_sakura', 'char8_luna', 'char8_aria', 'char8_misaki', 'char8_elementia', 'char8_sumika', 'char8_amy', 'char8_chloe', 'char8_lara', 'char8_galatea', 'char8_trina', 'char8_iris', 'char8_blanche', 'char8_kaira', 'char8_feria', 'char8_cardista', 'char8_levina'],
+    chars:    ['firstStar', 'char8_marine', 'char8_solar', 'char8_gravitas', 'char8_sakura', 'char8_luna', 'char8_aria', 'char8_misaki', 'char8_elementia', 'char8_sumika', 'char8_amy', 'char8_chloe', 'char8_lara', 'char8_galatea', 'char8_trina', 'char8_iris', 'char8_blanche', 'char8_kaira', 'char8_feria', 'char8_somnia', 'char8_cardista', 'char8_levina'],
     special:  ['codexHalf', 'codexFull', 'allChars', 'speedrun', 'lowSlot',
                'lucky5', 'goldHold3k', 'gold5kRun',
                'relicFirst', 'relic3', 'relic5', 'relicRare', 'relicEpic', 'relicLeg', 'relicAllRar'],
