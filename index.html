@@ -6864,7 +6864,10 @@
       if ((slot === 'signature') !== _gearIsUnique(item)) continue;
       const lvlMul = 1 + (item.level || 0) * 0.1;   // 레벨당 +10% (P3에서 골드로 레벨업)
       for (const ln of item.lines) {
-        if (ln.uniq) { mm['uniq_' + ln.uniq] = true; if (ln.uniq === 'overcore') add['dmgBoost'] = (add['dmgBoost'] || 0) + 0.25; continue; }   // 💠 레전드 고유
+        // 💠 레전드 고유 — overcore 는 "데미지 +25% 영구"가 전부고 그 효과는 바로 아래 dmgBoost 가산으로 끝난다.
+        //    mm.uniq_overcore 를 읽는 코드가 게임 전체에 없어(uniq_reload/uniq_barrage 와 달리) 플래그를 세우지 않는다.
+        //    ⚠️ 나중에 overcore 에 메커니즘을 붙이려면 여기서 플래그를 다시 세워야 한다.
+        if (ln.uniq) { if (ln.uniq === 'overcore') add['dmgBoost'] = (add['dmgBoost'] || 0) + 0.25; else mm['uniq_' + ln.uniq] = true; continue; }
         if (ln.aff && item.slot === 'signature') continue;   // ✨ 고유장비엔 set 이 없다 → 동조 라인 자체가 존재할 수 없음. 오염분이면 GEAR_SETS 판정을 태우지 않고 라인을 버린다
         let v = ln.val * (ln.flat ? 1 : lvlMul);
         if (ln.aff) { const chs = (GEAR_SETS[ln.aff] || {}).affinity || []; v *= (chs.indexOf(curChar) >= 0 ? 1 : 0.5); }   // 소프트: 미매칭 ½
