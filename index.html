@@ -5046,6 +5046,9 @@
   .cm-b-d { flex:1 1 auto; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .cm-b-s { flex:0 0 auto; font-size:10px; font-weight:700; padding:1px 7px; border-radius:8px; background:#232c3c; color:#7a8496; }
   .cm-set-b.on .cm-b-s { background:rgba(255,255,255,0.10); color:var(--sc); }
+  /* 📊 세트 수치가 GEAR_CAP 에 묻혔음을 알리는 배지 — "활성"만 보고 오해하지 않도록 */
+  .cm-b-cap { display:inline-block; margin-left:4px; padding:0 4px; border-radius:6px; font-size:9px; font-weight:800; background:rgba(255,91,110,0.18); color:#ff8b98; }
+  .cm-b-cap.part { background:rgba(255,212,121,0.18); color:#ffd479; }
   .cm-set-b.soon { opacity:0.62; }
   .gcm-sig { font-size:9px; font-weight:800; color:#0a0d14; background:#ffd479; border-radius:5px; padding:1px 5px; margin-left:4px; vertical-align:middle; }
   .gcm-line.sig { background:rgba(255,212,121,0.06); border-radius:6px; }
@@ -6846,7 +6849,9 @@
     return out;
   }
   // 장착 코어의 라인을 metaMods에 합산 (주간모디파이어 apply와 동일 패턴). add=합산, mul=(1+합)배.
-  function applyGearEffects(mm) {
+  // ⚠️ _outRaw 는 UI 전용 순수 출력 인자다(캡에 묻힌 세트 보너스 표시). 넘기지 않으면 동작이 예전과 완전히 동일하다 —
+  //    게임 본체 호출부는 인자 1개로 부르므로 절대 이 분기를 타지 않는다. 여기서 로직을 분기시키지 말 것.
+  function applyGearEffects(mm, _outRaw) {
     const g = META.gear; if (!g || !g.equipped) return;
     const add = {}, mul = {};
     const curChar = selectedCharacter || 'standard';   // 🎯 동조 라인 소프트 판정용
@@ -6874,8 +6879,19 @@
       if (sc[sk] >= 2 && def.b2) { const b = def.b2; if (b.op === 'add') add[b.key] = (add[b.key] || 0) + b.val; else mul[b.key] = (mul[b.key] || 0) + b.val; }
       if (sc[sk] >= 4 && def.b4) { if (def.b4.bigKey) mul[def.b4.bigKey] = (mul[def.b4.bigKey] || 0) + def.b4.bigVal; if (def.b4.mech) mm['set4_' + def.b4.mech] = true; }
     }
+    if (_outRaw) { _outRaw.add = add; _outRaw.mul = mul; }   // 📊 캡 적용 "직전"의 누적치 — 세트 보너스가 캡에 묻혔는지 UI 가 판단하는 근거
     for (const k in add) { let d = add[k]; if (GEAR_CAP[k]!=null) d = Math.min(d, GEAR_CAP[k]); mm[k] = (mm[k] || 0) + d; }
     for (const k in mul) { let d = mul[k]; if (GEAR_CAP[k]!=null) d = Math.min(d, GEAR_CAP[k]); mm[k] = (mm[k] || 1) * (1 + d); }
+  }
+  // 📊 세트 보너스가 GEAR_CAP 에 얼마나 먹혔는지 — 반환 1 = 온전히 적용 / 0 = 완전히 묻힘(실질 +0) / 사이 = 일부만.
+  //    세트 2·4피스 수치는 라인 롤과 같은 캡 예산을 공유하므로, 라인만으로 캡을 채웠으면 "보장된" 보너스가 0이 된다.
+  //    ⚠️ 표시 전용이다. 캡 구조(applyGearEffects)는 그대로 두고 여기서 사후 계산만 한다.
+  function _gearCapEff(raw, op, key, val) {
+    const cap = GEAR_CAP[key];
+    if (cap == null || !(val > 0) || !raw) return 1;
+    const tot = ((op === 'add' ? raw.add : raw.mul) || {})[key] || 0;
+    if (tot <= cap) return 1;                                                   // 캡에 안 닿음 → 온전
+    return Math.max(0, (cap - Math.min(Math.max(0, tot - val), cap)) / val);    // 캡 잔여분 ÷ 보너스
   }
   // 🔩 게임 종료 시 코어 드랍 (하드코어: 25% · 등급은 도달 라운드+승천 가중 · 인벤 상한 60)
   function rollGearDrop() {
@@ -37207,13 +37223,28 @@
     const sc = _gearSetCounts();
     const shown = GEAR_SET_KEYS.filter(sk => (sc[sk] || 0) > 0);
     if (!shown.length) return `<div class="cm-sets-hint">코어를 같은 세트로 맞춰 장착하면 세트 효과가 발동합니다</div>`;
+    // 📊 캡 소진 표시 — 세트 수치는 라인 롤과 같은 GEAR_CAP 예산을 공유해서 "활성"인데도 실질 0일 수 있다.
+    //    실제 장착 상태를 applyGearEffects 실코드로 한 번 굴려 캡 적용 직전 누적치를 받아온다(같은 계산의 단일 출처).
+    let _raw = null;
+    try { const _mm = {}; applyGearEffects(_mm, _mm._raw = {}); _raw = _mm._raw; } catch (e) { _raw = null; }
+    const _capTag = (op, key, val) => {
+      const r = _gearCapEff(_raw, op, key, val);
+      if (r >= 0.999) return '';
+      return r <= 0.001 ? `<span class="cm-b-cap">캡 도달</span>` : `<span class="cm-b-cap part">캡 일부</span>`;
+    };
+    const _capTip = (r) => r >= 0.999 ? '' : (r <= 0.001
+      ? ' title="장비 기여분이 이미 상한(GEAR_CAP)에 닿아 이 수치 보너스는 실질 +0 입니다"'
+      : ' title="장비 기여분이 상한(GEAR_CAP)에 걸려 이 수치 보너스가 일부만 적용됩니다"');
     return `<div class="cm-sets-in">` + shown.map(sk => {
       const def = GEAR_SETS[sk], cnt = sc[sk] || 0, a2 = cnt >= 2;
       const pips = GEAR_BASE_SLOTS.map((_, i) => `<span class="cm-pip${i < cnt ? ' on' : ''}"></span>`).join('');   // ⚠️ 세트는 4피스 — 핍도 4개 고정
+      const e2 = a2 ? _gearCapEff(_raw, def.b2.op, def.b2.key, def.b2.val) : 1;
+      // 4피스는 수치(bigKey)만 캡에 걸린다 — 메커니즘(보스딜/빙결/골드폭발)은 플래그라 캡과 무관하다
+      const e4 = (cnt >= 4 && def.b4.bigKey) ? _gearCapEff(_raw, def.b4.bigOp || 'mul', def.b4.bigKey, def.b4.bigVal) : 1;
       return `<div class="cm-set${a2 ? ' live' : ''}" style="--sc:${def.color}">
         <div class="cm-set-h"><span class="cm-set-i">${def.icon}</span><b class="cm-set-n">${def.name}</b><span class="cm-set-c">${cnt}/4</span><span class="cm-pips">${pips}</span></div>
-        <div class="cm-set-b${a2 ? ' on' : ''}"><span class="cm-b-t">2</span><span class="cm-b-d">${def.b2.label}</span><span class="cm-b-s">${a2 ? '활성' : (2 - cnt) + '개 더'}</span></div>
-        <div class="cm-set-b${cnt >= 4 ? ' on' : ' soon'}"><span class="cm-b-t">4</span><span class="cm-b-d">${def.b4.label}</span><span class="cm-b-s">${cnt >= 4 ? '활성' : (4 - cnt) + '개 더'}</span></div>
+        <div class="cm-set-b${a2 ? ' on' : ''}"${a2 ? _capTip(e2) : ''}><span class="cm-b-t">2</span><span class="cm-b-d">${def.b2.label}</span><span class="cm-b-s">${a2 ? '활성' + _capTag(def.b2.op, def.b2.key, def.b2.val) : (2 - cnt) + '개 더'}</span></div>
+        <div class="cm-set-b${cnt >= 4 ? ' on' : ' soon'}"${cnt >= 4 ? _capTip(e4) : ''}><span class="cm-b-t">4</span><span class="cm-b-d">${def.b4.label}</span><span class="cm-b-s">${cnt >= 4 ? '활성' + (def.b4.bigKey ? _capTag(def.b4.bigOp || 'mul', def.b4.bigKey, def.b4.bigVal) : '') : (4 - cnt) + '개 더'}</span></div>
       </div>`;
     }).join('') + `</div>`;
   }
