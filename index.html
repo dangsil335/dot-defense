@@ -6586,6 +6586,9 @@
                  {key:'luckyChanceBonus',op:'add', label:'행운',          base:0.01},
                  {key:'roundTimeBonus',  op:'add', label:'라운드 시간',   base:1, flat:true} ],
   };
+  // ✨ 고유장비(signature)용 통합 풀 — 4슬롯 옵션 전부(12개). 슬롯마다 정확히 3개씩이므로
+  //    "랜덤 슬롯 → 그 슬롯 풀에서 1개"와 확률분포가 완전히 동일하며, 코드 경로가 하나로 끝난다.
+  const GEAR_OPTIONS_ALL = GEAR_BASE_SLOTS.reduce((a, s) => a.concat(GEAR_OPTIONS[s]), []);
   // 라인 티어 롤 (하드코어 = 바닥 두꺼움). tier mult 로 값 스케일.
   // 티어 가중 — 고티어 극악 (T4 1.5% / T5 0.5%). 대신 고티어 배수는 큼(극악 롤의 보상).
   const GEAR_LINE_TIERS = [
@@ -6595,7 +6598,7 @@
   const GEAR_CAP = { dmgBoost:2, comboPowerBonus:2, bossDmgMul:2, goldMul:2, scoreMul:2, slowMul:1.5, luckyChanceBonus:0.4, roundTimeBonus:15 };
   function _gearWpick(arr, wkey) { let t=0; for(const a of arr) t+=a[wkey]; let r=Math.random()*t; for(const a of arr){ r-=a[wkey]; if(r<=0) return a; } return arr[arr.length-1]; }
   function _gearRollLine(slot, forceKey) {
-    const pool = GEAR_OPTIONS[slot];
+    const pool = GEAR_OPTIONS[slot] || GEAR_OPTIONS_ALL;   // ✨ 전용 풀이 없는 슬롯(signature) = 통합 풀. 기존 4슬롯은 항상 자기 풀.
     const opt = (forceKey && pool.find(o => o.key === forceKey)) || pool[Math.floor(Math.random()*pool.length)];
     const t = _gearWpick(GEAR_LINE_TIERS, 'w');
     const raw = opt.base * t.mult * (0.85 + Math.random()*0.3);   // 값 범위 ±15%
@@ -6665,6 +6668,18 @@
       else lines.push(_gearRollLine(slot));
     }
     return { id: g.nextId++, slot, set, rarity, level:0, lines, v:1 };
+  }
+  // ✨ 고유장비 생성 — 캐릭터 전용, 기존 4슬롯과 별개인 5번째 슬롯(signature) 아이템.
+  //    · set 필드 없음 (어떤 세트에도 속하지 않음 → _gearSetCounts 에 영향 0)
+  //    · stars 필드 없음 (돌파는 META.charStars[charId] 에서 읽는다 — 단계 2)
+  //    · 라인 3개 전부 통합 일반 옵션 풀에서 롤. 세트/기종이 없으므로 인덱스 0 아키타입 시그니처 고정 없음,
+  //      동조(_gearRollAffinity)·레전드 고유(_gearRollUnique) 라인도 붙지 않는다.
+  function createUniqueGear(charId) {
+    const g = _ensureGear();
+    const n = GEAR_RARITY_LINES['unique'] || 3;
+    const lines = [];
+    for (let i = 0; i < n; i++) lines.push(_gearRollLine('signature'));   // → GEAR_OPTIONS_ALL 통합 풀
+    return { id: g.nextId++, slot:'signature', charId, rarity:'unique', level:0, lines, v:1 };
   }
   // 장착 코어의 세트별 착용 수 → { set: count }
   function _gearSetCounts() {
