@@ -20215,6 +20215,7 @@
     blanche:{ 4: ['refractionField'],8: ['whiteEclipse'] },
     kaira:  { 4: ['beastForm'],       8: ['apexPredator'] },
     feria:  { 4: ['ferroShard'],      8: ['monopole'] },
+    somnia: { 4: ['countingSheep'],   8: ['somnambulism'] },
     sumika: { 4: ['inkBlot'],         8: ['finalSeal'] },
     elementia: { 4: ['elementCycle'], 8: ['elementalMonarch'] },
     // SR (SSR 보다 약하지만 쓸만함)
@@ -21168,6 +21169,15 @@
     finalSeal:        ['광역', '폭발'],
     elementCycle:     ['자율', '연쇄', '슬로우'],
     elementalMonarch: ['회전', '자율', '폭발'],
+    // 💤 소미아 — 졸음/수면 (수면 = timeStopped 이므로 '정지', 보스는 헬퍼가 slowFrames 로 대체 → '정지' 툴팁이 그대로 설명한다)
+    //   ⚠️ '슬로우' 를 함께 달지 않는다 — CC 취약은 max 합성이라 정지(1.30)가 항상 이기고, 정지+슬로우 동시 태깅 선례가 없다.
+    //   ⚠️ pillowThrow 는 "깨우는" 쪽이 본체라 '정지' 를 달지 않았다(졸음 +1 은 부수 효과).
+    lullaby:       ['단일', '정지'],
+    pillowThrow:   ['광역', '폭발'],
+    dreamland:     ['영역', '정지', '광역'],
+    daydream:      ['광역', '정지', '폭발'],
+    countingSheep: ['자율', '다중공격', '정지'],
+    somnambulism:  ['다중공격', '정지'],
   };
   function getAbilityTags(id) { return ABILITY_TAGS[id] || []; }
   // ❄️ CC 취약 툴팁 — 태그 칩 한 곳에 심어 '슬로우'/'정지' 태그를 가진 능력 전부를 일괄 커버한다.
@@ -21263,6 +21273,8 @@
     // 🆕 SSR 스미카·엘레미아 별해금 (4★/8★) — SSR 20명 전원 별돌파 완비
     'inkBlot', 'finalSeal',               // 스미카
     'elementCycle', 'elementalMonarch',   // 엘레미아
+    // 🆕 소미아(SSR) 꿈/수면 킷 + 별해금 2종
+    'lullaby', 'pillowThrow', 'dreamland', 'daydream', 'countingSheep', 'somnambulism',
   ];
   // (구 숫자 매핑 ABILITY_ICON_NUMBER/getIconNumber 제거 — 파일명이 id가 되어 불필요. ABILITY_ICON_ORDER는 프리로드 목록으로 유지)
   function getIconPath(id) {
@@ -21488,6 +21500,13 @@
     { parts: ['longExposure', 'mine'],         combo: 'overexposed' },
     { parts: ['overexposed', 'turret'],        combo: 'contactSheet', tier: 3 },
     { parts: ['contactSheet', 'timeStop'],     combo: 'developingTray', tier: 4 },
+    // 💤 소미아(꿈/수면) 조합 체인 — 재료는 전부 R 기본 액티브. 시그니처 lullaby 는 다른 캐릭과 동일하게 t2 에서 소진된다.
+    //   mortar(포격, 광역+폭발) = 던져서 착탄 반경으로 터지는 pillowThrow 와 태그가 그대로 겹친다.
+    //   mine(지뢰, 영역+폭발) = "아레나에 설치되는 지대" 라는 구조가 dreamland 의 졸음 지대와 같다.
+    //   nova(노바, 광역) = daydream 의 일괄 각성 = 전 맵 광역 폭발.
+    { parts: ['lullaby', 'mortar'],            combo: 'pillowThrow' },
+    { parts: ['pillowThrow', 'mine'],          combo: 'dreamland', tier: 3 },
+    { parts: ['dreamland', 'nova'],            combo: 'daydream', tier: 4 },
     { parts: ['sunspot',   'railgun'],   combo: 'solarStorm' },
     { parts: ['pullField', 'iceLance'], combo: 'voidIceVortex' },
     // ===== 🎰 가챠 R 트리플 (히든) =====
@@ -24306,7 +24325,7 @@
   const GACHA_POOL = {
     R:   [],   // 🆕 R 등급 폐지 — 마린/솔라/그래비타스는 SR로 승격
     SR:  ['sakura', 'luna', 'marine', 'solar', 'gravitas', 'cardista', 'levina', 'amy', 'chloe', 'lara', 'galatea', 'trina', 'iris'],
-    SSR: ['aria', 'misaki', 'elementia', 'sumika', 'blanche', 'kaira', 'feria'],
+    SSR: ['aria', 'misaki', 'elementia', 'sumika', 'blanche', 'kaira', 'feria', 'somnia'],
   };
   const GACHA_RATES = { SR: 0.05, SSR: 0.01 };   // (구) 단일 배너 호환용 — 나머지(0.94)는 스타더스트
   const GACHA_REFUND = { R: 150, SR: 400, SSR: 800 };  // 중복 시 스타더스트 환불
@@ -30635,6 +30654,16 @@
     //   finalSeal : 표식 보유 적 전체 대상, 반경 개념 없음 ⇒ 등재
     //   elementCycle(R=220 하드캡) / elementalMonarch(공전70+타격62=132, 합류폭발160)는 240 이하 ⇒ 미등재
     'inkBlot', 'finalSeal',                                                // 스미카 (필드 전역 먹점 / 전역 표식 인장)
+    // 🆕 소미아 — 도달거리 실측 후 "자기 티어 기본 캡(기본240 / 조합280 / 트리플320) 초과 or 반경 개념 없음" 만 등재
+    //   dreamland     : 지대를 아레나의 무작위 생존 적 위에 놓는다(거리 필터 자체가 없음) ⇒ 반경 개념 없음 ⇒ 등재
+    //   daydream      : 전 맵 수면 → 전 맵 각성. 거리 개념 없음 ⇒ 등재
+    //   countingSheep : 양이 ARENA_R(290)까지 배회 + 접촉 20 = 실효 310px > 240 ⇒ 등재 (inkBlot 283px 선례와 동형)
+    //   somnambulism  : 자립 졸음 펄스 pulseRange 320 > 240 + 몽유 충돌은 맵 전역 판정 ⇒ 등재
+    //   lullaby(340) / pillowThrow(360) 는 미등재 —
+    //     340 = ARENA_R+50 은 t1 시그니처의 하우스 표준 사거리이고 inkSlash·moonShot·cardThrow·stormBrand
+    //     4종이 같은 340 으로 전부 미등재다. 여기만 등재하면 소미아 t1 만 캡이 풀리는 이상치가 된다.
+    //     pillowThrow 도 착탄 반경(72+lv×2)이 뚜렷한 투척물이라 조합 캡 280 이 의미상 맞다(feria reversePolarity 선례).
+    'dreamland', 'daydream', 'countingSheep', 'somnambulism',              // 소미아 (지대 무작위 배치 / 전 맵 / 아레나 배회 / 전역 몽유)
   ]);
   // 🎯 능력별 표적 사거리 — TD 모드 사거리 캡 + 시각 표시용
   // def.range(lv) 가 정의돼있으면 사용, 아니면 능력 타입/티어별 기본값
@@ -34192,6 +34221,7 @@
     elementia: ['spritling', 'windWolfSpirit', 'phoenixSpirit', 'leviathanSpirit'],
     trina:    ['phantomStage', 'chromaticSplit', 'encore', 'standingOvation'],
     iris:     ['longExposure', 'overexposed', 'contactSheet', 'developingTray'],
+    somnia:   ['lullaby', 'pillowThrow', 'dreamland', 'daydream'],
   };
   // ===== 🌳 진화 트리 데이터 (운빨 진화 로그라이크) =====
   // R 타워 13종 — 일러 없음, 기존 액티브 재활용+개명. 업적으로 해금. sr = R15 진화 2택.
