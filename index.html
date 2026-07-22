@@ -19701,6 +19701,324 @@
         ctx.restore(); ctx.globalAlpha = 1;
       },
     },
+    // 💤 소미아(SSR) — 꿈/수면 킷. 축 = e._drowse(졸음 최대5) · e._drowseT(4s 만료) · e._sleepT(수면)
+    //    ⚠️ 졸음을 쌓고/읽고/깨우는 모든 지점은 _addDrowse / _drowse / _isAsleep / _wakeDrowse 헬퍼를 거칠 것.
+    //       졸음 상수는 lullaby.stats 단일 출처 — 다른 5종 stats 에 복제 금지(재우는 쪽과 깨우는 쪽이 어긋난다).
+    //    ⚠️ 킷 규약 — 보스에게 완전정지(timeStopped) 금지(강슬로우로 대체) · 즉사/처형 없음(스미카 담당) · 진영 전환 없음.
+    lullaby: {
+      name: '자장가', isGachaUnique: true, single: true, baseCost: 130, color: '#8fd8ff',
+      desc: lv => `0.4s마다 가장 가까운 적 1체 자장가 · 졸음 +1(최대 5중첩, 4s 만료) · 5중첩 시 수면 1.5s(보스는 정지 대신 강슬로우 2.2s) · 졸음 1스택당 +DMG ${4 + lv * 2} · DMG ${10 + lv * 4}`,
+      // 📊 v679 — 앞 5개(drowseCap/drowseDur/sleepDur/bossSlowDur/wakeBonus)는 소미아 킷 6종의 단일 출처다.
+      //   읽기는 전부 _drowseStat() 헬퍼를 거치고, 고유 옵션은 state.abilityStatOverrides.lullaby.<키> 로 개입한다.
+      //   ⚠️ 다른 소미아 능력의 stats 에 복제하지 말 것.
+      stats: { drowseCap: 5, drowseDur: 240, sleepDur: 90, bossSlowDur: 135, wakeBonus: 0.5, range: 340, ringRadius: 26, ringLife: 18, dustLife: 30, idleCooldown: 12 },
+      init(ab) { ab.cooldown = 0; ab.rings = []; ab.dust = []; },
+      tick(ab) {
+        const S = _S(ab);
+        for (const r of ab.rings) r.life--;
+        for (const d of ab.dust) { d.x += d.vx; d.y += d.vy; d.vy -= 0.014; d.vx *= 0.985; d.a += d.spin; d.life--; }
+        compactInPlace(ab.rings, _alivePredLife);
+        compactInPlace(ab.dust, _alivePredLife);
+        if (--ab.cooldown > 0) return;
+        // ⭐ 별 퍽 — ★4 사거리 +15% / ★7 파문 반경 +25% / ★3·★6 동시 대상 +1~3 / ★2 쿨 -10%
+        const range = tdCappedRange(S.range * permaRangeMul('lullaby')), r2 = range * range;
+        const pool = [];
+        for (const e of state.enemies) {
+          if (e.hp <= 0) continue;
+          const [ex, ey] = enemyXY(e);
+          const d2 = (ex - CX) * (ex - CX) + (ey - CY) * (ey - CY);
+          if (d2 <= r2) pool.push({ e, d2 });
+        }
+        if (!pool.length) { ab.cooldown = S.idleCooldown; return; }
+        pool.sort((a, b) => a.d2 - b.d2);
+        const n = Math.min(1 + permaCount('lullaby'), pool.length);
+        const dmg = 10 + ab.level * 4, per = 4 + ab.level * 2;
+        const ringR = S.ringRadius * permaAoeMul('lullaby'), cap = _drowseCap();
+        for (let i = 0; i < n; i++) {
+          const e = pool[i].e;
+          const [ex, ey] = enemyXY(e);
+          damageEnemy(e, dmg + _drowse(e) * per);   // 부여 전 누적분이 가산 피해 (스택당 가산 — 적 수와 무관)
+          const now = _addDrowse(e, 1);
+          const full = now >= cap;
+          spawnParticles(ex, ey, full ? '#ffe9a8' : '#8fd8ff', full ? 6 : 3);
+          ab.rings.push({ x: ex, y: ey, r: ringR, life: S.ringLife, full });
+          const da = Math.random() * Math.PI * 2;
+          ab.dust.push({ x: ex, y: ey, vx: Math.cos(da) * 0.5, vy: -0.45 - Math.random() * 0.35, a: 0, spin: 0.05 + Math.random() * 0.05, life: S.dustLife, gold: full });
+        }
+        ab.cooldown = Math.max(16, Math.floor((26 - ab.level) * permaCdMul('lullaby')));
+      },
+      draw(ab) {
+        ctx.save();
+        // 자장가 파문 — 하늘색 얇은 링이 조용히 퍼진다 (t1: 담백하게 2겹만)
+        for (const r of ab.rings) {
+          const a = r.life / 18, p = 1 - a;
+          ctx.globalAlpha = a * (r.full ? 0.85 : 0.5);
+          ctx.strokeStyle = r.full ? '#ffe9a8' : '#8fd8ff';
+          ctx.lineWidth = (r.full ? 2.2 : 1.5) * a + 0.4;
+          ctx.beginPath(); ctx.arc(r.x, r.y, r.r * (0.3 + p * 0.95), 0, Math.PI * 2); ctx.stroke();
+        }
+        // 별가루 — 4각 반짝임 (금색 포인트는 수면 성립 시에만)
+        ctx.globalCompositeOperation = 'lighter';
+        for (const d of ab.dust) {
+          const a = Math.min(1, d.life / 30);
+          ctx.globalAlpha = a * 0.8; ctx.fillStyle = d.gold ? '#ffe9a8' : '#cfeeff';
+          ctx.save(); ctx.translate(d.x, d.y); ctx.rotate(d.a);
+          for (let k = 0; k < 2; k++) {
+            const L = k ? 2.3 : 3.6, W = k ? 0.8 : 1.1;
+            ctx.beginPath(); ctx.moveTo(0, -L); ctx.lineTo(W, 0); ctx.lineTo(0, L); ctx.lineTo(-W, 0); ctx.closePath(); ctx.fill();
+            ctx.rotate(Math.PI / 2);
+          }
+          ctx.restore();
+        }
+        ctx.restore(); ctx.globalAlpha = 1;
+      },
+    },
+    // 💤 기본조합 (자장가+bomb) — 베개 던지기
+    pillowThrow: {
+      name: '베개 던지기', baseCost: 150, color: '#8fd8ff', isCombo: true,
+      desc: lv => `1.2s마다 잠든 적 우선 베개 투척 · 착탄 반경 ${72 + lv * 2} 광역 · 잠든 적은 깨우며 졸음 1스택당 +50%(5중첩 = ×3.5) · 안 자면 졸음 +1 · DMG ${14 + lv * 6}`,
+      stats: { blastRadius: 72, blastPerLevel: 2, range: 360, speed: 8, spawnOffset: 18, blastLife: 20, idleCooldown: 20 },
+      init(ab) { ab.cooldown = 40; ab.pillows = []; ab.blasts = []; },
+      tick(ab) {
+        const S = _S(ab);
+        const R = S.blastRadius + ab.level * S.blastPerLevel, wake = _drowseWakeMul();
+        for (const p of ab.pillows) {
+          p.x += p.vx; p.y += p.vy; p.rot += p.spin; p.life--;
+          const ddx = p.tx - p.x, ddy = p.ty - p.y;
+          if (p.life > 0 && ddx * ddx + ddy * ddy > S.speed * S.speed) continue;
+          p.life = 0;
+          ab.blasts.push({ x: p.x, y: p.y, r: R, life: S.blastLife });
+          for (const e of state.enemies) {
+            if (e.hp <= 0) continue;
+            const [ex, ey] = enemyXY(e);
+            if ((ex - p.x) * (ex - p.x) + (ey - p.y) * (ey - p.y) > R * R) continue;
+            if (_isAsleep(e)) {
+              const stacks = _wakeDrowse(e);            // 누적 졸음에 비례 — 적 수와는 무관
+              damageEnemy(e, p.dmg * (1 + wake * stacks));
+              spawnParticles(ex, ey, '#ffe9a8', 7);
+            } else {
+              damageEnemy(e, p.dmg);
+              _addDrowse(e, 1);
+              spawnParticles(ex, ey, '#8fd8ff', 3);
+            }
+          }
+        }
+        compactInPlace(ab.pillows, _alivePredLife);
+        for (const b of ab.blasts) b.life--;
+        compactInPlace(ab.blasts, _alivePredLife);
+        if (--ab.cooldown > 0) return;
+        // 표적 선정 — 잠든 적이 하나라도 보이면 그쪽 중 최근접, 없으면 전체 최근접
+        const range = tdCappedRange(S.range), r2 = range * range;
+        let tgt = null, best = Infinity, sleepy = false;
+        for (const e of state.enemies) {
+          if (e.hp <= 0) continue;
+          const [ex, ey] = enemyXY(e);
+          const d2 = (ex - CX) * (ex - CX) + (ey - CY) * (ey - CY);
+          if (d2 > r2) continue;
+          const sl = _isAsleep(e);
+          if (sl && !sleepy) { sleepy = true; best = Infinity; tgt = null; }
+          if (sl !== sleepy) continue;
+          if (d2 < best) { best = d2; tgt = e; }
+        }
+        if (!tgt) { ab.cooldown = S.idleCooldown; return; }
+        const [tx, ty] = enemyXY(tgt);
+        const ang = Math.atan2(ty - CY, tx - CX), dist = Math.max(1, Math.sqrt(best));
+        ab.pillows.push({
+          x: CX + Math.cos(ang) * S.spawnOffset, y: CY + Math.sin(ang) * S.spawnOffset,
+          vx: Math.cos(ang) * S.speed, vy: Math.sin(ang) * S.speed, tx, ty,
+          dmg: 14 + ab.level * 6, rot: Math.random() * 6.283, spin: 0.1, life: Math.ceil(dist / S.speed) + 8,
+        });
+        ab.cooldown = Math.max(40, 72 - ab.level * 2);
+      },
+      draw(ab) {
+        ctx.save(); ctx.lineJoin = 'round';
+        // 날아가는 베개 — 둥근 사각형 + 옅은 잔상
+        for (const p of ab.pillows) {
+          ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.rot);
+          ctx.globalAlpha = 0.25; ctx.fillStyle = '#8fd8ff';
+          ctx.beginPath(); ctx.ellipse(0, 0, 14, 11, 0, 0, Math.PI * 2); ctx.fill();
+          ctx.globalAlpha = 0.92; ctx.fillStyle = '#e8f6ff'; ctx.strokeStyle = '#8fd8ff'; ctx.lineWidth = 1.4;
+          ctx.beginPath(); ctx.moveTo(-9, -6.5); ctx.quadraticCurveTo(0, -9.5, 9, -6.5); ctx.quadraticCurveTo(11.5, 0, 9, 6.5);
+          ctx.quadraticCurveTo(0, 9.5, -9, 6.5); ctx.quadraticCurveTo(-11.5, 0, -9, -6.5); ctx.closePath(); ctx.fill(); ctx.stroke();
+          ctx.globalAlpha = 0.5; ctx.strokeStyle = '#b8e6ff'; ctx.lineWidth = 1;
+          ctx.beginPath(); ctx.moveTo(-5.5, -4); ctx.lineTo(-5.5, 4); ctx.stroke();
+          ctx.restore();
+        }
+        // 착탄 — 하늘색 충격파 + 금색 별가루 산개
+        ctx.globalCompositeOperation = 'lighter';
+        for (const b of ab.blasts) {
+          const a = b.life / 20, p = 1 - a;
+          const g = ctx.createRadialGradient(b.x, b.y, 0, b.x, b.y, b.r);
+          g.addColorStop(0, `rgba(232,246,255,${a * 0.42})`); g.addColorStop(0.55, `rgba(143,216,255,${a * 0.2})`); g.addColorStop(1, 'rgba(143,216,255,0)');
+          ctx.globalAlpha = 1; ctx.fillStyle = g;
+          ctx.beginPath(); ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2); ctx.fill();
+          ctx.globalAlpha = a * 0.75; ctx.strokeStyle = '#cfeeff'; ctx.lineWidth = 2.4 * a + 0.6;
+          ctx.beginPath(); ctx.arc(b.x, b.y, b.r * (0.25 + p * 0.8), 0, Math.PI * 2); ctx.stroke();
+          ctx.globalAlpha = a * 0.9; ctx.fillStyle = '#ffe9a8';
+          for (let k = 0; k < 6; k++) {
+            const sa = b.x * 0.07 + k * 1.047, sd = b.r * (0.2 + p * 0.85);
+            const sx = b.x + Math.cos(sa) * sd, sy = b.y + Math.sin(sa) * sd, sz = 2.6 * a;
+            ctx.beginPath(); ctx.moveTo(sx, sy - sz); ctx.lineTo(sx + sz * 0.34, sy); ctx.lineTo(sx, sy + sz); ctx.lineTo(sx - sz * 0.34, sy); ctx.closePath(); ctx.fill();
+          }
+        }
+        ctx.restore(); ctx.globalAlpha = 1;
+      },
+    },
+    // 💤 4돌파 (베개+독구름) — 꿈나라 (졸음 지대)
+    dreamland: {
+      name: '꿈나라', baseCost: 280, color: '#7fc8f5', isCombo: true, isTriple: true,
+      desc: lv => `2s마다 졸음 지대 설치(최대 ${Math.min(3, 1 + Math.floor(lv / 3))}개·5s) · 지대 내 0.3s마다 DMG ${14 + lv * 7} · 0.75s마다 졸음 +1 · 지대 안에서 잠든 적은 계속 재수면(졸음은 더 안 쌓임)`,
+      stats: { zoneRadius: 60, zonePerLevel: 3, zoneLife: 300, zoneCap: 3, damageTickInterval: 18, drowseTickInterval: 45, idleCooldown: 20 },
+      init(ab) { ab.cooldown = 60; ab.zones = []; },
+      tick(ab) {
+        const S = _S(ab);
+        const dmg = 14 + ab.level * 7;
+        const dmgTick = state.t % S.damageTickInterval === 0, drowseTick = state.t % S.drowseTickInterval === 0;
+        for (const z of ab.zones) {
+          z.life--; z.rot += 0.006;
+          if (z.life <= 0 || (!dmgTick && !drowseTick)) continue;
+          for (const e of state.enemies) {
+            if (e.hp <= 0) continue;
+            const [ex, ey] = enemyXY(e);
+            if ((ex - z.x) * (ex - z.x) + (ey - z.y) * (ey - z.y) > z.r * z.r) continue;
+            if (dmgTick) damageEnemy(e, dmg);
+            if (!drowseTick) continue;
+            if (_isAsleep(e)) _addDrowse(e, 0);   // 재수면 — 누적 없이 수면 지속만 갱신
+            else { _addDrowse(e, 1); spawnParticles(ex, ey, '#8fd8ff', 2); }
+          }
+        }
+        compactInPlace(ab.zones, _alivePredLife);
+        if (--ab.cooldown > 0) return;
+        ab.cooldown = Math.max(60, 120 - ab.level * 3);
+        const cap = Math.min(S.zoneCap, 1 + Math.floor(ab.level / 3));
+        if (ab.zones.length >= cap) { ab.cooldown = S.idleCooldown; return; }
+        const pool = state.enemies.filter(e => e.hp > 0);
+        if (!pool.length) { ab.cooldown = S.idleCooldown; return; }
+        const [tx, ty] = enemyXY(pool[Math.floor(Math.random() * pool.length)]);
+        ab.zones.push({ x: tx, y: ty, r: S.zoneRadius + ab.level * S.zonePerLevel, life: S.zoneLife, rot: Math.random() * 6.283, seed: Math.random() * 6.283 });
+      },
+      draw(ab) {
+        ctx.save();
+        for (const z of ab.zones) {
+          const a = Math.min(1, z.life / 45) * Math.min(1, (300 - z.life) / 12);
+          // 꿈 안개 — 부드러운 하늘빛 웅덩이 (NORMAL 블렌드로 은은하게)
+          const g = ctx.createRadialGradient(z.x, z.y, 0, z.x, z.y, z.r);
+          g.addColorStop(0, `rgba(143,216,255,${a * 0.22})`); g.addColorStop(0.6, `rgba(127,200,245,${a * 0.13})`); g.addColorStop(1, 'rgba(127,200,245,0)');
+          ctx.globalAlpha = 1; ctx.fillStyle = g;
+          ctx.beginPath(); ctx.arc(z.x, z.y, z.r, 0, Math.PI * 2); ctx.fill();
+          // 경계 — 느리게 도는 파선 2겹
+          ctx.globalCompositeOperation = 'lighter';
+          for (let ring = 0; ring < 2; ring++) {
+            const rr = z.r * (ring ? 0.72 : 1), dir = ring ? -1.6 : 1;
+            ctx.globalAlpha = a * (ring ? 0.22 : 0.4); ctx.strokeStyle = '#8fd8ff'; ctx.lineWidth = ring ? 1 : 1.5;
+            for (let k = 0; k < 12; k++) {
+              const a0 = z.rot * dir + k * (Math.PI / 6);
+              ctx.beginPath(); ctx.arc(z.x, z.y, rr, a0, a0 + 0.26); ctx.stroke();
+            }
+          }
+          // 떠오르는 별가루
+          ctx.globalAlpha = a * 0.85; ctx.fillStyle = '#ffe9a8';
+          for (let k = 0; k < 5; k++) {
+            const ph = (z.seed + k * 1.27 + z.life * 0.012) % 1;
+            const sa = z.seed + k * 2.4, sd = z.r * (0.25 + (k % 3) * 0.24);
+            const sx = z.x + Math.cos(sa) * sd, sy = z.y + Math.sin(sa) * sd - ph * z.r * 0.5;
+            const sz = 2.4 * (1 - ph);
+            ctx.beginPath(); ctx.moveTo(sx, sy - sz); ctx.lineTo(sx + sz * 0.34, sy); ctx.lineTo(sx, sy + sz); ctx.lineTo(sx - sz * 0.34, sy); ctx.closePath(); ctx.fill();
+          }
+          ctx.globalCompositeOperation = 'source-over';
+        }
+        ctx.restore(); ctx.globalAlpha = 1;
+      },
+    },
+    // 💤 8돌파 (꿈나라+nova) — 백일몽 (전 맵 수면 → 일괄 각성)
+    daydream: {
+      name: '백일몽', baseCost: 350, color: '#a8e4ff', isCombo: true, isTriple: true, isEighth: true,
+      desc: lv => `[8돌파] 5s마다 전 맵 수면 → 1s 뒤 일괄 각성 · 각성 DMG ${26 + lv * 12} × (1 + 졸음×0.5) = 5중첩 시 ×3.5 · 보스는 정지 대신 강슬로우 + 각성 피해 40%로 감쇠`,
+      stats: { dreamFrames: 60, bossWakeMul: 0.4, castCooldown: 300, castFloor: 200, fxLife: 34, burstLife: 20, idleCooldown: 30 },
+      init(ab) { ab.cooldown = 150; ab.phase = 0; ab.t = 0; ab.fx = 0; ab.bursts = []; },
+      tick(ab) {
+        const S = _S(ab);
+        if (ab.fx > 0) ab.fx--;
+        for (const b of ab.bursts) b.life--;
+        compactInPlace(ab.bursts, _alivePredLife);
+        if (ab.phase === 1) {
+          if (++ab.t < S.dreamFrames) return;
+          ab.phase = 0; ab.t = 0; ab.fx = S.fxLife;
+          const wake = _drowseWakeMul(), dmg = 26 + ab.level * 12;
+          let woke = 0;
+          for (const e of state.enemies) {
+            if (e.hp <= 0 || !_isAsleep(e)) continue;
+            const [ex, ey] = enemyXY(e);
+            const stacks = _wakeDrowse(e);
+            // 보스 각성 피해 40% 감쇠 — omniSolvent / finalSeal 과 동일 패턴
+            damageEnemy(e, dmg * (1 + wake * stacks) * (e.isBoss ? S.bossWakeMul : 1));
+            ab.bursts.push({ x: ex, y: ey, life: S.burstLife, boss: !!e.isBoss });
+            spawnParticles(ex, ey, '#ffe9a8', 6);
+            woke++;
+          }
+          if (woke && typeof shake === 'function') shake(12, 18);
+          return;
+        }
+        if (--ab.cooldown > 0) return;
+        const pool = state.enemies.filter(e => e.hp > 0);
+        if (!pool.length) { ab.cooldown = S.idleCooldown; return; }
+        ab.cooldown = Math.max(S.castFloor, S.castCooldown - ab.level * 5);
+        ab.phase = 1; ab.t = 0; ab.fx = S.fxLife;
+        const cap = _drowseCap();
+        for (const e of pool) _addDrowse(e, cap);   // 전 맵 수면 (보스는 헬퍼가 강슬로우로 대체)
+      },
+      draw(ab) {
+        const S = _S(ab);
+        const dreaming = ab.phase === 1;
+        ctx.save();
+        // 몽환 커튼 — 잠든 동안 화면 전체가 얕은 하늘빛으로 가라앉는다
+        if (dreaming) {
+          const p = Math.min(1, ab.t / 14), R = (ARENA_R || 290) * 1.15;
+          const g = ctx.createRadialGradient(CX, CY, 0, CX, CY, R);
+          g.addColorStop(0, `rgba(168,228,255,${p * 0.16})`); g.addColorStop(0.65, `rgba(143,216,255,${p * 0.1})`); g.addColorStop(1, 'rgba(143,216,255,0)');
+          ctx.globalAlpha = 1; ctx.fillStyle = g;
+          ctx.beginPath(); ctx.arc(CX, CY, R, 0, Math.PI * 2); ctx.fill();
+          ctx.globalCompositeOperation = 'lighter';
+          // 천천히 흐르는 꿈결 — 동심 타원 4겹
+          for (let i = 0; i < 4; i++) {
+            const rr = R * (0.28 + i * 0.2) + Math.sin(state.t * 0.02 + i) * 5;
+            ctx.globalAlpha = p * (0.16 - i * 0.03); ctx.strokeStyle = '#a8e4ff'; ctx.lineWidth = 1.6;
+            ctx.beginPath(); ctx.ellipse(CX, CY, rr, rr * 0.86, state.t * 0.004 + i, 0, Math.PI * 2); ctx.stroke();
+          }
+          // 표류하는 별가루
+          ctx.globalAlpha = p * 0.7; ctx.fillStyle = '#ffe9a8';
+          for (let k = 0; k < 18; k++) {
+            const sa = k * 0.349 + state.t * 0.005, sd = R * (0.2 + ((k * 37) % 70) / 100);
+            const sx = CX + Math.cos(sa) * sd, sy = CY + Math.sin(sa) * sd, sz = 1.6 + (k % 3) * 0.6;
+            ctx.beginPath(); ctx.moveTo(sx, sy - sz); ctx.lineTo(sx + sz * 0.34, sy); ctx.lineTo(sx, sy + sz); ctx.lineTo(sx - sz * 0.34, sy); ctx.closePath(); ctx.fill();
+          }
+        } else if (ab.fx > 0) {
+          // 일괄 각성 — 금빛 파문이 바깥으로 터져 나간다
+          const a = ab.fx / (S.fxLife || 34), q = 1 - a, R = (ARENA_R || 290) * 1.15;
+          ctx.globalCompositeOperation = 'lighter';
+          for (let i = 0; i < 3; i++) {
+            ctx.globalAlpha = a * (0.45 - i * 0.12); ctx.strokeStyle = i ? '#8fd8ff' : '#ffe9a8'; ctx.lineWidth = (4 - i) * a + 0.6;
+            ctx.beginPath(); ctx.arc(CX, CY, q * R + i * 14, 0, Math.PI * 2); ctx.stroke();
+          }
+        }
+        // 각성 지점 — 적마다 터지는 금빛 섬광 (보스는 감쇠라 옅게)
+        ctx.globalCompositeOperation = 'lighter';
+        for (const b of ab.bursts) {
+          const a = b.life / (S.burstLife || 20), q = 1 - a, sc = b.boss ? 0.55 : 1;
+          const g = ctx.createRadialGradient(b.x, b.y, 0, b.x, b.y, 30 * sc);
+          g.addColorStop(0, `rgba(255,246,214,${a * 0.85 * sc})`); g.addColorStop(0.5, `rgba(255,233,168,${a * 0.4 * sc})`); g.addColorStop(1, 'rgba(143,216,255,0)');
+          ctx.globalAlpha = 1; ctx.fillStyle = g;
+          ctx.beginPath(); ctx.arc(b.x, b.y, 30 * sc, 0, Math.PI * 2); ctx.fill();
+          ctx.globalAlpha = a * 0.9 * sc; ctx.strokeStyle = '#fff6d6'; ctx.lineWidth = 1.6;
+          for (let k = 0; k < 4; k++) {
+            const ka = k * (Math.PI / 2) + 0.4, L = 9 + q * 20 * sc;
+            ctx.beginPath(); ctx.moveTo(b.x + Math.cos(ka) * 4, b.y + Math.sin(ka) * 4);
+            ctx.lineTo(b.x + Math.cos(ka) * L, b.y + Math.sin(ka) * L); ctx.stroke();
+          }
+        }
+        ctx.restore(); ctx.globalAlpha = 1;
+      },
+    },
   };
   // ⭐ 별 해금 능력 매핑 — 캐릭터 4★ / 8★ 도달 시 해금
   const CHAR_STAR_UNLOCKS = {
@@ -25934,6 +26252,16 @@
   }
   // 💤 지금 자고 있나? — 보스/비보스 공통으로 _sleepT 하나만 본다(위 주석의 근거 참조).
   function _isAsleep(e) { return !!(e._sleepT && e._sleepT > state.t); }
+  // 💤 각성 — 잠든 적을 깨우고 누적 졸음을 소모한다. 소모한 스택 수를 반환(0 = 자고 있지 않았음).
+  //   ⚠️ 정지 해제는 "우리가 건 정지" 일 때만 — 남의 능력(석화 등)이 더 길게 건 timeStopped 는 손대지 않는다.
+  //   (_addDrowse 는 Math.max 로 걸므로, timeStopped 가 _sleepT 를 넘으면 그건 남이 건 것이다)
+  function _wakeDrowse(e) {
+    if (!_isAsleep(e)) return 0;
+    const stacks = _drowse(e);
+    if (e.timeStopped && e.timeStopped <= e._sleepT) e.timeStopped = 0;
+    e._sleepT = 0; e._drowse = 0; e._drowseT = 0;
+    return stacks;
+  }
   // 📊 v677 — 능력 인스턴스별 stats. init 호출 경로가 8곳으로 흩어져 있어 지연 생성한다 —
   //   어느 경로로 만들어진 ab 든 첫 호출 시점에 생성되므로 주입 누락이 원천적으로 없다.
   //   stats 가 없는 능력에도 안전하다(빈 객체 반환). 레벨 스케일링은 기존대로 ab.level 로 계산하고,
