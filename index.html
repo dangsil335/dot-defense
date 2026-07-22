@@ -6731,6 +6731,29 @@
     } finally { _uqSyncing = false; }
     return n;
   }
+  // ✨ 고유장비 판정 — slot/rarity 중 하나만 찍혀 있어도 고유로 본다(세이브 오염 대비 넓게 판정).
+  function _gearIsUnique(it) { return !!(it && (it.slot === 'signature' || it.rarity === 'unique')); }
+  // ✨ 슬롯 ↔ 아이템 적합성 (양방향 배타) — 장착의 유일한 관문.
+  //    · signature 슬롯 = 고유장비 전용 → 일반 코어는 5번째 슬롯에 절대 못 들어간다.
+  //    · 기존 4슬롯      = 일반 코어 전용 → 고유장비는 절대 못 들어간다.
+  //    ⚠️ 기존 4슬롯 동작 불변: 일반 코어 + 자기 슬롯은 항상 true(예전과 동일하게 장착됨).
+  function _gearSlotFits(slot, it) {
+    if (!it || !slot) return false;
+    if (slot === 'signature') return it.slot === 'signature' && it.rarity === 'unique';
+    return !_gearIsUnique(it) && GEAR_BASE_SLOTS.indexOf(slot) >= 0;
+  }
+  // ✨ 장착/해제 토글 — 기존 한 줄 로직(g.equipped[it.slot] 토글)을 그대로 옮기고 적합성 관문만 앞에 세웠다.
+  //    ⚠️ 장착을 새 경로로 파지 말 것 — 장착은 전부 이 함수를 지나야 슬롯 배타 규칙이 한 곳에서 지켜진다.
+  //    고유장비는 캐릭터 제한이 없다(타 캐릭터 장착 = 능력 이식, 단계 5). 그래서 charId 를 여기서 보지 않는다.
+  //    반환: true = 상태 변경됨(저장·재렌더 필요) / false = 부적합으로 거부됨(상태 불변)
+  function _gearEquipToggle(it) {
+    if (!it) return false;
+    const g = _ensureGear(), slot = it.slot;
+    if (g.equipped[slot] === it.id) { g.equipped[slot] = null; return true; }   // 🔓 해제는 항상 허용(오염분 빼내기용)
+    if (!_gearSlotFits(slot, it)) return false;                                 // 🔒 부적합 장착 차단(양방향)
+    g.equipped[slot] = it.id;
+    return true;
+  }
   // 장착 코어의 세트별 착용 수 → { set: count }
   function _gearSetCounts() {
     const g = META.gear, out = {}; if (!g || !g.equipped) return out;
@@ -37064,7 +37087,7 @@
     const g = _ensureGear();
     const it = g.inv.find(x => x.id === _gearModalId); if (!it) return;
     if (act === 'equip') {
-      g.equipped[it.slot] = (g.equipped[it.slot] === it.id) ? null : it.id;
+      if (!_gearEquipToggle(it)) { toast('이 슬롯에 장착할 수 없는 코어입니다'); return; }   // ✨ 두 번째 장착 UI 도 같은 관문을 지난다(경로 분기 방지 — 이 화면은 현재 도달 불가한 구코드)
       saveMeta(); _renderGearCore(); _gearRenderDetail(); SFX.click && SFX.click();
     } else if (act === 'reroll') {
       const cost = GEAR_REROLL_COST[it.rarity] || 10;
@@ -37189,7 +37212,7 @@
   function _cmAction(act) {
     const g = _ensureGear();
     const it = g.inv.find(x => x.id === _cmSel); if (!it) return;
-    if (act === 'equip') { g.equipped[it.slot] = (g.equipped[it.slot] === it.id) ? null : it.id; saveMeta(); _renderCoreMgr(); SFX.click && SFX.click(); }
+    if (act === 'equip') { if (!_gearEquipToggle(it)) { toast('이 슬롯에 장착할 수 없는 코어입니다'); return; } saveMeta(); _renderCoreMgr(); SFX.click && SFX.click(); }   // ✨ 고유장비는 it.slot='signature' → equipped.signature 에 장착. 슬롯 배타는 _gearSlotFits 가 판정
     else if (act === 'levelup') { if ((it.level || 0) >= GEAR_LEVEL_MAX) return; const c = gearLevelCost(it); if (!spendGearGold(c)) { toast('💰 장비 강화재화가 부족합니다'); return; } it.level = (it.level || 0) + 1; it.v = (it.v || 1) + 1; saveMeta(); _renderCoreMgr(); SFX.click && SFX.click(); toast(`⬆ ${GEAR_SLOT_LABEL[it.slot]} 코어 Lv.${it.level}`); }
     else if (act === 'reroll') { const lockN = [..._gearLocks].filter(i => i < it.lines.length).length; const cost = Math.round((GEAR_REROLL_COST[it.rarity] || 10) * (1 + lockN * GEAR_LOCK_MULT)); if (!spendShards(cost)) { toast('💠 별조각이 부족합니다'); return; } const _arch = _gearArch(it.slot, it.set); _gearRerollPending = it.lines.map((l, i) => _gearLocks.has(i) ? l : ((i === 0 && _arch) ? _gearRollLine(it.slot, _arch.sig) : (l.uniq ? _gearRollUnique() : (l.aff ? _gearRollAffinity(it.set) : _gearRollLine(it.slot))))); SFX.click && SFX.click(); _renderCoreMgr(); }
     else if (act === 'applyRoll') { if (_gearRerollPending) { it.lines = _gearRerollPending; it.v = (it.v || 1) + 1; _gearRerollPending = null; saveMeta(); _renderCoreMgr(); toast('✅ 잠재능력 교체됨'); } }
