@@ -4984,6 +4984,11 @@
   .cm-slot { width:42px; height:42px; border:1.5px solid #3a4256; border-radius:11px; background:rgba(10,13,20,0.8); display:flex; align-items:center; justify-content:center; font-size:19px; cursor:pointer; transition:transform .12s; }
   .cm-slot.filled:hover { transform:scale(1.1); }
   .cm-slot.empty { opacity:0.45; border-style:dashed; }
+  /* ✨ 5번째 고유 슬롯 — 기존 4슬롯(.cm-slot) 규칙은 한 글자도 건드리지 않고, 구분선 + 고유 등급색만 덧입힌다 */
+  .cm-slots-sep { flex:0 0 auto; align-self:stretch; width:1px; margin:3px 0; background:linear-gradient(180deg,rgba(255,157,226,0),rgba(255,157,226,0.6),rgba(255,157,226,0)); }
+  .cm-slot.sig { box-shadow:0 0 10px rgba(255,157,226,0.35); }
+  .cm-slot.sig.empty { opacity:0.55; border-style:dashed; box-shadow:none; }
+  .cm-slot-sigico { font-size:18px; line-height:1; filter:drop-shadow(0 0 4px rgba(255,157,226,0.55)); }
   .cm-cols { flex:1; min-height:0; display:flex; gap:10px; }
   .cm-list { flex:0 0 118px; overflow-y:auto; display:flex; flex-direction:column; gap:6px; padding-right:2px; }
   .cm-litem { display:flex; align-items:center; gap:6px; padding:8px; border-radius:9px; background:#11151e; border:1px solid #232c3c; border-left:3px solid var(--rc,#3a4256); cursor:pointer; transition:filter .12s, border-color .12s; }
@@ -37150,6 +37155,18 @@
       </div>`;
     }).join('') + `</div>`;
   }
+  // ✨ 5번째 고유 슬롯 HTML — 기존 4슬롯 마크업은 그대로 두고 구분선 뒤에 별도 구획으로 덧붙인다.
+  //    ⚠️ 이 슬롯은 세트 카운트와 무관하다(_gearSetCounts 는 GEAR_BASE_SLOTS 4개만 순회 — N/4 표기 불변).
+  //    ⚠️ GEAR_SLOTS(5개)를 여기서 순회하지 말 것 — 그러면 기존 4슬롯 박스가 재생성되어 모양이 바뀐다.
+  function _cmSigSlotHtml(g) {
+    const id = (g.equipped && g.equipped.signature != null) ? g.equipped.signature : null;
+    const it = (id != null) ? g.inv.find(x => x.id === id) : null;
+    const col = _GEAR_RARCOL.unique;   // #ff9de2 — 고유 등급색
+    const ch = it ? CHARACTERS[it.charId] : null;
+    const tip = it ? `${ch ? ch.name + ' ' : ''}고유장비` : '고유 슬롯 — 캐릭터 고유장비 전용';
+    // 고유장비는 set 이 없어 _gearCoreImg 가 '' 를 돌려준다 → ✨ 아이콘으로 폴백(빈칸 방지)
+    return `<span class="cm-slots-sep"></span><div class="cm-slot sig ${it ? 'filled' : 'empty'}" data-id="${it ? it.id : ''}" style="border-color:${col}" title="${tip}"><span class="cm-slot-sigico">${(it && _gearCoreImg(it, 40)) || _GEAR_SLOTICO.signature}</span></div>`;
+  }
   function _renderCoreMgr() {
     const g = _ensureGear();
     const charEl = document.getElementById('cm-char');
@@ -37158,11 +37175,11 @@
     if (nameEl) { const ch = CHARACTERS[selectedCharacter] || {}; nameEl.textContent = ch.name || '기본 도트 타워'; }
     const slotsEl = document.getElementById('cm-slots');
     if (slotsEl) {
-      slotsEl.innerHTML = GEAR_BASE_SLOTS.map(slot => {   // ✨ 고유 슬롯 UI 는 단계 1 Task 4 에서 별도 구획으로 추가
+      slotsEl.innerHTML = GEAR_BASE_SLOTS.map(slot => {   // ⚠️ 기존 4슬롯 — GEAR_BASE_SLOTS 유지(모양·동작 불변)
         const id = g.equipped[slot]; const it = id != null ? g.inv.find(x => x.id === id) : null;
         const col = it ? (_GEAR_RARCOL[it.rarity] || '#9aa3b3') : '#3a4256';
         return `<div class="cm-slot ${it ? 'filled' : 'empty'}" data-id="${it ? it.id : ''}" style="border-color:${col}">${it ? _gearCoreImg(it, 40) : ''}</div>`;
-      }).join('');
+      }).join('') + _cmSigSlotHtml(g);   // ✨ 5번째 고유 슬롯을 구분선과 함께 뒤에 붙인다
       slotsEl.querySelectorAll('.cm-slot.filled').forEach(el => el.onclick = () => { _cmSel = +el.dataset.id; _gearRerollPending = null; _gearLocks.clear(); _renderCoreMgr(); });
     }
     const setsEl = document.getElementById('cm-sets');
