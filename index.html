@@ -6624,6 +6624,14 @@
     const u = GEAR_UNIQUES[k];
     return { uniq: k, icon: u.icon, label: u.label, flat: false, tier: 5, val: 0 };
   }
+  // ✨ 재설정(리롤) 1줄 생성 — 리롤은 생성과 별개 경로라 여기서도 같은 규칙을 강제한다.
+  //    고유장비(signature)는 세트·기종이 없으므로 아키타입 시그니처 고정도, 동조(_gearRollAffinity)도,
+  //    레전드 고유(_gearRollUnique)도 붙을 수 없다 → 통합 풀 일반 라인만 나온다.
+  //    ⚠️ 기존 4슬롯은 원래 식을 한 글자도 바꾸지 않고 그대로 옮겼다(0번 시그니처 고정 · 동조 유지 · 고유 유지).
+  function _gearRerollLine(it, l, i, arch) {
+    if (it.slot === 'signature') return _gearRollLine('signature');
+    return (i === 0 && arch) ? _gearRollLine(it.slot, arch.sig) : (l.uniq ? _gearRollUnique() : (l.aff ? _gearRollAffinity(it.set) : _gearRollLine(it.slot)));
+  }
   // 고유 라인 HTML (라벨 + 설명 — 수치 대신)
   function _gearUniqRow(l, lockBtn) {
     const u = GEAR_UNIQUES[l.uniq] || {};
@@ -6769,9 +6777,14 @@
     for (const slot of GEAR_SLOTS) {
       const id = g.equipped[slot]; if (id == null) continue;
       const item = g.inv.find(x => x.id === id); if (!item || !item.lines) continue;
+      // ✨ 슬롯 ↔ 아이템 배타 재확인 — 장착은 _gearEquipToggle 가 이미 막지만, 기기간 병합·구세이브로
+      //    어긋난 equipped 가 들어와도 효과에는 반영되지 않게 읽는 쪽에서 한 번 더 건다.
+      //    ⚠️ 정상 4슬롯 장착(일반 코어 + 비-signature 슬롯)은 전부 통과 → 기존 동작 완전 불변.
+      if ((slot === 'signature') !== _gearIsUnique(item)) continue;
       const lvlMul = 1 + (item.level || 0) * 0.1;   // 레벨당 +10% (P3에서 골드로 레벨업)
       for (const ln of item.lines) {
         if (ln.uniq) { mm['uniq_' + ln.uniq] = true; if (ln.uniq === 'overcore') add['dmgBoost'] = (add['dmgBoost'] || 0) + 0.25; continue; }   // 💠 레전드 고유
+        if (ln.aff && item.slot === 'signature') continue;   // ✨ 고유장비엔 set 이 없다 → 동조 라인 자체가 존재할 수 없음. 오염분이면 GEAR_SETS 판정을 태우지 않고 라인을 버린다
         let v = ln.val * (ln.flat ? 1 : lvlMul);
         if (ln.aff) { const chs = (GEAR_SETS[ln.aff] || {}).affinity || []; v *= (chs.indexOf(curChar) >= 0 ? 1 : 0.5); }   // 소프트: 미매칭 ½
         if (ln.op === 'add') add[ln.key] = (add[ln.key] || 0) + v;
@@ -37092,7 +37105,7 @@
     } else if (act === 'reroll') {
       const cost = GEAR_REROLL_COST[it.rarity] || 10;
       if (!spendShards(cost)) { toast('💠 별조각이 부족합니다'); return; }
-      { const _arch = _gearArch(it.slot, it.set); _gearRerollPending = it.lines.map((l, i) => (i === 0 && _arch) ? _gearRollLine(it.slot, _arch.sig) : (l.uniq ? _gearRollUnique() : (l.aff ? _gearRollAffinity(it.set) : _gearRollLine(it.slot)))); }   // 시그니처·동조·고유 슬롯 유지, 나머지 리롤
+      { const _arch = _gearArch(it.slot, it.set); _gearRerollPending = it.lines.map((l, i) => _gearRerollLine(it, l, i, _arch)); }   // 시그니처·동조·고유 슬롯 유지, 나머지 리롤 (고유장비는 _gearRerollLine 이 통합 풀로 분기)
       SFX.click && SFX.click(); _renderGearCore();
     } else if (act === 'applyRoll') {
       if (_gearRerollPending) { it.lines = _gearRerollPending; it.v = (it.v || 1) + 1; _gearRerollPending = null; saveMeta(); _renderGearCore(); _gearRenderDetail(); toast('✅ 잠재능력 교체됨'); }
@@ -37214,7 +37227,7 @@
     const it = g.inv.find(x => x.id === _cmSel); if (!it) return;
     if (act === 'equip') { if (!_gearEquipToggle(it)) { toast('이 슬롯에 장착할 수 없는 코어입니다'); return; } saveMeta(); _renderCoreMgr(); SFX.click && SFX.click(); }   // ✨ 고유장비는 it.slot='signature' → equipped.signature 에 장착. 슬롯 배타는 _gearSlotFits 가 판정
     else if (act === 'levelup') { if ((it.level || 0) >= GEAR_LEVEL_MAX) return; const c = gearLevelCost(it); if (!spendGearGold(c)) { toast('💰 장비 강화재화가 부족합니다'); return; } it.level = (it.level || 0) + 1; it.v = (it.v || 1) + 1; saveMeta(); _renderCoreMgr(); SFX.click && SFX.click(); toast(`⬆ ${GEAR_SLOT_LABEL[it.slot]} 코어 Lv.${it.level}`); }
-    else if (act === 'reroll') { const lockN = [..._gearLocks].filter(i => i < it.lines.length).length; const cost = Math.round((GEAR_REROLL_COST[it.rarity] || 10) * (1 + lockN * GEAR_LOCK_MULT)); if (!spendShards(cost)) { toast('💠 별조각이 부족합니다'); return; } const _arch = _gearArch(it.slot, it.set); _gearRerollPending = it.lines.map((l, i) => _gearLocks.has(i) ? l : ((i === 0 && _arch) ? _gearRollLine(it.slot, _arch.sig) : (l.uniq ? _gearRollUnique() : (l.aff ? _gearRollAffinity(it.set) : _gearRollLine(it.slot))))); SFX.click && SFX.click(); _renderCoreMgr(); }
+    else if (act === 'reroll') { const lockN = [..._gearLocks].filter(i => i < it.lines.length).length; const cost = Math.round((GEAR_REROLL_COST[it.rarity] || 10) * (1 + lockN * GEAR_LOCK_MULT)); if (!spendShards(cost)) { toast('💠 별조각이 부족합니다'); return; } const _arch = _gearArch(it.slot, it.set); _gearRerollPending = it.lines.map((l, i) => _gearLocks.has(i) ? l : _gearRerollLine(it, l, i, _arch)); SFX.click && SFX.click(); _renderCoreMgr(); }   // ✨ 고유장비는 _gearRerollLine 이 통합 풀 일반 라인으로만 굴린다(동조·고유 라인 원천 차단)
     else if (act === 'applyRoll') { if (_gearRerollPending) { it.lines = _gearRerollPending; it.v = (it.v || 1) + 1; _gearRerollPending = null; saveMeta(); _renderCoreMgr(); toast('✅ 잠재능력 교체됨'); } }
     else if (act === 'keepRoll') { _gearRerollPending = null; _renderCoreMgr(); }
     else if (act === 'dismantle') { if (it.rarity === 'unique' || it.slot === 'signature') { toast('✨ 고유장비는 분해할 수 없습니다'); return; } if (it.locked) { toast('🔒 잠금 코어 — 해제 후 분해'); return; } if (g.equipped[it.slot] === it.id) g.equipped[it.slot] = null; const refund = GEAR_DISM_REFUND[it.rarity] || 1; g.inv = g.inv.filter(x => x.id !== it.id); _gearTombstone([it.id]); grantShards(refund); _cmSel = g.inv.length ? g.inv[0].id : null; _gearRerollPending = null; _gearLocks.clear(); saveMeta(); _renderCoreMgr(); toast(`🔨 분해 → 💠${refund} 별조각`); }
