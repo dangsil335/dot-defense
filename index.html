@@ -20019,6 +20019,157 @@
         ctx.restore(); ctx.globalAlpha = 1;
       },
     },
+    // 💤 소미아 4★ 별해금 — 양 세기 (자율 배회 졸음 살포)
+    //    ⚠️ 별돌파 능력은 startAbilities 에 없어 permaCount(자기 id) 가 영구히 0 이다 → 호출하지 않는다.
+    countingSheep: {
+      name: '양 세기', isGachaUnique: true, isStarUnlock: true, baseCost: 280, color: '#cfeeff',
+      desc: lv => `[4★히든] 양 ${Math.min(6, 2 + Math.floor(lv / 2))}마리가 아레나를 배회(수명 7s) · 스친 적에 졸음 +1 · DMG ${12 + lv * 6} · 같은 적 재접촉은 0.5s 대기`,
+      // 📊 v679 — 졸음 상수는 lullaby.stats 단일 출처(여기에 복제 금지). 아래는 양 자체의 거동 상수만.
+      stats: { sheepLife: 420, sheepCap: 6, spawnInterval: 36, speed: 1.9, hitRadius: 20, hitCooldown: 30, spawnAreaFactor: 0.8, wanderJitter: 0.06 },
+      init(ab) { ab.sheep = []; ab.spawnCd = 0; },
+      tick(ab) {
+        const S = _S(ab);
+        const dmg = 12 + ab.level * 6, AR = ARENA_R;
+        for (const s of ab.sheep) {
+          s.life--; s.bob += 0.17;
+          s.x += Math.cos(s.a) * S.speed; s.y += Math.sin(s.a) * S.speed;
+          const dx = s.x - CX, dy = s.y - CY, d = Math.hypot(dx, dy) || 1;
+          // 아레나 밖으로 나가면 중심 쪽으로 되돌려 보낸다
+          if (d > AR) { s.x = CX + dx / d * AR; s.y = CY + dy / d * AR; s.a = Math.atan2(CY - s.y, CX - s.x) + (Math.random() - 0.5) * 0.8; }
+          else s.a += (Math.random() - 0.5) * S.wanderJitter;
+          if (s.life <= 0) continue;
+          for (const e of state.enemies) {
+            if (e.hp <= 0) continue;
+            if (e._sheepT && e._sheepT > state.t) continue;   // 개체당 재접촉 대기
+            const [ex, ey] = enemyXY(e);
+            if ((ex - s.x) * (ex - s.x) + (ey - s.y) * (ey - s.y) > S.hitRadius * S.hitRadius) continue;
+            e._sheepT = state.t + S.hitCooldown;
+            damageEnemy(e, dmg);
+            _addDrowse(e, 1);
+            spawnParticles(ex, ey, '#e8f6ff', 3);
+          }
+        }
+        compactInPlace(ab.sheep, _alivePredLife);
+        if (--ab.spawnCd > 0) return;
+        ab.spawnCd = S.spawnInterval;
+        const n = Math.min(S.sheepCap, 2 + Math.floor(ab.level / 2));
+        if (ab.sheep.length >= n) return;
+        const a = Math.random() * Math.PI * 2, r = Math.sqrt(Math.random()) * AR * S.spawnAreaFactor;
+        ab.sheep.push({ x: CX + Math.cos(a) * r, y: CY + Math.sin(a) * r, a: Math.random() * Math.PI * 2, life: S.sheepLife, bob: Math.random() * 6.283 });
+      },
+      draw(ab) {
+        ctx.save();
+        for (const s of ab.sheep) {
+          const a = Math.min(1, s.life / 50) * Math.min(1, (420 - s.life) / 10);
+          const hop = Math.sin(s.bob) * 2.2;
+          // 양 — 구름 같은 뭉치 3겹 (구체적 묘사 없이 부드러운 덩어리로)
+          ctx.globalAlpha = a * 0.2; ctx.fillStyle = '#8fd8ff';
+          ctx.beginPath(); ctx.ellipse(s.x, s.y + 5, 11, 3.2, 0, 0, Math.PI * 2); ctx.fill();
+          ctx.globalAlpha = a * 0.95; ctx.fillStyle = '#f2fbff';
+          for (let k = 0; k < 3; k++) {
+            const ka = s.bob * 0.25 + k * 2.094;
+            ctx.beginPath(); ctx.arc(s.x + Math.cos(ka) * 4.2, s.y + hop + Math.sin(ka) * 2.6, 5.6 - k * 0.5, 0, Math.PI * 2); ctx.fill();
+          }
+          ctx.globalAlpha = a * 0.55; ctx.strokeStyle = '#8fd8ff'; ctx.lineWidth = 1;
+          ctx.beginPath(); ctx.arc(s.x, s.y + hop, 8.4, 0, Math.PI * 2); ctx.stroke();
+          // 머리 위 별가루 하나
+          ctx.globalCompositeOperation = 'lighter';
+          ctx.globalAlpha = a * (0.5 + 0.35 * Math.sin(s.bob * 1.6)); ctx.fillStyle = '#ffe9a8';
+          const sz = 2.6, sy = s.y + hop - 12;
+          ctx.beginPath(); ctx.moveTo(s.x, sy - sz); ctx.lineTo(s.x + sz * 0.34, sy); ctx.lineTo(s.x, sy + sz); ctx.lineTo(s.x - sz * 0.34, sy); ctx.closePath(); ctx.fill();
+          ctx.globalCompositeOperation = 'source-over';
+        }
+        ctx.restore(); ctx.globalAlpha = 1;
+      },
+    },
+    // 💤 소미아 8★ 별해금 — 몽유 (잠든 적이 정지 대신 배회하다 서로 부딪힘)
+    //    ⚠️ 진영 전환 없음(아군화 아님) · 즉사 없음 · 보스는 몽유하지 않는다(정지가 안 걸리므로).
+    //    ⚠️ 남의 timeStopped 를 해제하지 않는다 — 정지된 채로 좌표를 직접 흔들어 "비틀걸음" 을 만든다.
+    somnambulism: {
+      name: '몽유', isGachaUnique: true, isStarUnlock: true, baseCost: 480, color: '#8fd8ff',
+      desc: lv => `[8★히든] 잠든 적이 정지 대신 비틀거리며 배회 · 다른 적과 부딪히면 양쪽에 DMG ${30 + lv * 14}(개체당 0.4s 대기) · 1.5s마다 가까운 ${2 + Math.floor(lv / 3)}체에 졸음 +1(자립) · 보스는 몽유하지 않음(부딪힌 피해는 받음)`,
+      // 📊 v679 — 졸음 상수는 lullaby.stats 단일 출처(여기에 복제 금지). 아래는 몽유 거동 상수만.
+      stats: { wanderSpeed: 0.9, wobble: 0.09, angleSway: 0.012, minRadius: 40, bumpRadius: 26, bumpCooldown: 24, pulseInterval: 90, pulseRange: 320, sparkLife: 14 },
+      init(ab) { ab.cd = 0; ab.sparks = []; ab.walk = []; },
+      tick(ab) {
+        const S = _S(ab);
+        const dmg = 30 + ab.level * 14;
+        for (const sp of ab.sparks) sp.life--;
+        compactInPlace(ab.sparks, _alivePredLife);
+        ab.walk.length = 0;
+        for (const e of state.enemies) {
+          if (e.hp <= 0 || e.isBoss || !_isAsleep(e)) continue;
+          // 🚶 비틀걸음 — 정지 상태를 건드리지 않고 좌표만 우리가 흔든다(선회형 견인과 동일 방식)
+          e._somWob = (e._somWob || Math.random() * 6.283) + S.wobble;
+          e.angle = (e.angle || 0) + Math.sin(e._somWob) * S.angleSway;
+          e.radius = Math.max(S.minRadius, (e.radius || 0) + Math.cos(e._somWob) * S.wanderSpeed);
+          if (e.targetRadius !== undefined) e.targetRadius = e.radius;
+          e._xyT = -1;
+          const [ex, ey] = enemyXY(e);
+          ab.walk.push({ x: ex, y: ey, w: e._somWob });
+          if (e._somBumpT && e._somBumpT > state.t) continue;
+          for (const o of state.enemies) {
+            if (o === e || o.hp <= 0) continue;
+            if (o._somBumpT && o._somBumpT > state.t) continue;
+            const [ox, oy] = enemyXY(o);
+            if ((ox - ex) * (ox - ex) + (oy - ey) * (oy - ey) > S.bumpRadius * S.bumpRadius) continue;
+            e._somBumpT = state.t + S.bumpCooldown;
+            o._somBumpT = state.t + S.bumpCooldown;
+            const mx = (ex + ox) / 2, my = (ey + oy) / 2;
+            damageEnemy(e, dmg); damageEnemy(o, dmg);   // 충돌 1회당 고정 피해 — 적 수에 비례하지 않는다
+            ab.sparks.push({ x: mx, y: my, life: S.sparkLife });
+            spawnParticles(mx, my, '#ffe9a8', 5);
+            break;
+          }
+        }
+        // 자립 졸음 — 몽유만 장착해도 스스로 몽유자를 만들 수 있게 한다(monopole 의 자립 태깅과 같은 취지)
+        if (--ab.cd > 0) return;
+        ab.cd = S.pulseInterval;
+        const range = tdCappedRange(S.pulseRange), r2 = range * range;
+        const pool = [];
+        for (const e of state.enemies) {
+          if (e.hp <= 0) continue;
+          const [ex, ey] = enemyXY(e);
+          const d2 = (ex - CX) * (ex - CX) + (ey - CY) * (ey - CY);
+          if (d2 <= r2) pool.push({ e, d2 });
+        }
+        if (!pool.length) return;
+        pool.sort((a, b) => a.d2 - b.d2);
+        const n = Math.min(2 + Math.floor(ab.level / 3), pool.length);
+        for (let i = 0; i < n; i++) _addDrowse(pool[i].e, 1);
+      },
+      draw(ab) {
+        ctx.save(); ctx.globalCompositeOperation = 'lighter';
+        // 몽유자 — 발밑에서 흔들리는 하늘빛 궤적 고리
+        for (const w of ab.walk) {
+          const sw = Math.sin(w.w), cw = Math.cos(w.w);
+          ctx.globalAlpha = 0.3; ctx.strokeStyle = '#8fd8ff'; ctx.lineWidth = 1.2;
+          ctx.beginPath(); ctx.ellipse(w.x, w.y, 13 + sw * 2.5, 7 + cw * 2, w.w * 0.3, 0, Math.PI * 2); ctx.stroke();
+          ctx.globalAlpha = 0.16; ctx.strokeStyle = '#cfeeff'; ctx.lineWidth = 1;
+          ctx.beginPath(); ctx.ellipse(w.x, w.y, 21 + cw * 3, 11 + sw * 2.5, -w.w * 0.22, 0, Math.PI * 2); ctx.stroke();
+          ctx.globalAlpha = 0.5; ctx.fillStyle = '#ffe9a8';
+          const sx = w.x + sw * 9, sy = w.y - 13 + cw * 3, sz = 1.9;
+          ctx.beginPath(); ctx.moveTo(sx, sy - sz); ctx.lineTo(sx + sz * 0.34, sy); ctx.lineTo(sx, sy + sz); ctx.lineTo(sx - sz * 0.34, sy); ctx.closePath(); ctx.fill();
+        }
+        // 충돌 — 금빛 십자 섬광 + 파문
+        for (const sp of ab.sparks) {
+          const a = sp.life / 14, q = 1 - a;
+          const g = ctx.createRadialGradient(sp.x, sp.y, 0, sp.x, sp.y, 26);
+          g.addColorStop(0, `rgba(255,246,214,${a * 0.8})`); g.addColorStop(0.5, `rgba(255,233,168,${a * 0.34})`); g.addColorStop(1, 'rgba(143,216,255,0)');
+          ctx.globalAlpha = 1; ctx.fillStyle = g;
+          ctx.beginPath(); ctx.arc(sp.x, sp.y, 26, 0, Math.PI * 2); ctx.fill();
+          ctx.globalAlpha = a * 0.9; ctx.strokeStyle = '#fff6d6'; ctx.lineWidth = 1.6;
+          for (let k = 0; k < 4; k++) {
+            const ka = k * (Math.PI / 2) + 0.785, L = 7 + q * 17;
+            ctx.beginPath(); ctx.moveTo(sp.x + Math.cos(ka) * 3, sp.y + Math.sin(ka) * 3);
+            ctx.lineTo(sp.x + Math.cos(ka) * L, sp.y + Math.sin(ka) * L); ctx.stroke();
+          }
+          ctx.globalAlpha = a * 0.45; ctx.strokeStyle = '#8fd8ff'; ctx.lineWidth = 1.4;
+          ctx.beginPath(); ctx.arc(sp.x, sp.y, 6 + q * 20, 0, Math.PI * 2); ctx.stroke();
+        }
+        ctx.restore(); ctx.globalAlpha = 1;
+      },
+    },
   };
   // ⭐ 별 해금 능력 매핑 — 캐릭터 4★ / 8★ 도달 시 해금
   const CHAR_STAR_UNLOCKS = {
