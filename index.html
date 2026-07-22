@@ -6556,7 +6556,7 @@
                   b4:{ mech:'roundFreeze', bigKey:'slowMul', bigVal:0.25, label:'라운드 시작 시 전체 2초 빙결 · 슬로우 +25%' } },
     alchemist:  { name:'연성술사', icon:'💰', color:'#ffd479', affinity:['mixer','engineer','researcher'],
                   b2:{ key:'goldMul', op:'mul', val:0.15, label:'골드 획득 +15%' },
-                  b4:{ mech:'killGoldBurst', bigKey:'goldMul', bigVal:0.30, label:'처치 시 5% 골드 폭발 · 골드 +30%' } },
+                  b4:{ mech:'killGoldBurst', bigKey:'goldMul', bigVal:0.30, label:'처치 시 5% 확률 골드 ×4 폭발(최소4) · 골드 +30%' } },
   };
   // 슬롯 × 세트 → 기종명 + 시그니처(확정) 라인 키
   const GEAR_ARCHETYPES = {
@@ -26037,7 +26037,7 @@
       const vampFlat = Math.floor(mm.vampiricFlat || 0);
       const goldDrop = Math.ceil(e.goldDrop * mm.goldMul * (1 + goldBonus) * bossGold) + vampFlat;
       state.gold += goldDrop;
-      // 🎽 연성술사 4피스 — 처치 시 5% 골드 폭발
+      // 🎽 연성술사 4피스 — 처치 시 5% "확률"로 그 킬 골드의 ×4 폭발(최소 4골드). 5%는 확률이지 크기가 아니다
       if (mm.set4_killGoldBurst && Math.random() < 0.05) {
         const burst = Math.max(4, Math.ceil(goldDrop * 4)); state.gold += burst;
         if (state.relicEffects) state.relicEffects.goldEarnedTotal = (state.relicEffects.goldEarnedTotal || 0) + burst;
