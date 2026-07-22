@@ -6911,7 +6911,11 @@
   function rollGearDrop() {
     if (Math.random() >= 0.25) return null;
     const g = _ensureGear();
-    if (g.inv.length >= 60) return null;   // 상한 초과 → 분해 유도
+    // ✨ 상한 60 은 "드롭으로 모은 일반 코어"의 예산이다 — 고유장비는 세지 않는다.
+    //    고유장비를 세면 가챠 20명 전원 해금 시 예산이 60→40 으로 줄고(실측), 게다가 고유장비는 분해가 막혀 있어
+    //    이 상한의 탈출구("분해 유도")가 그 20칸에는 아예 적용되지 않는다 — 드롭이 영구히 좁아진다.
+    //    ⚠️ 고유장비가 0개면 filter 결과 = inv.length → 예전과 완전히 동일하다.
+    if (g.inv.filter(x => !_gearIsUnique(x)).length >= 60) return null;   // 상한 초과 → 분해 유도
     const slot = GEAR_BASE_SLOTS[Math.floor(Math.random() * GEAR_BASE_SLOTS.length)];   // ⚠️ signature 는 드롭 대상 아님
     const tierScore = ((state && state.round) || 1) + ((state && state.ascension) || 0) * 10;
     const legendChance = Math.min(0.003 + tierScore * 0.0004, 0.02);   // 극악 (0.3%~2%)
@@ -36637,7 +36641,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 678;
+  const APP_VERSION = 679;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
@@ -37294,9 +37298,13 @@
     else if (act === 'lock') { it.locked = !it.locked; it.v = (it.v || 1) + 1; saveMeta(); _renderCoreMgr(); SFX.click && SFX.click(); toast(it.locked ? '🔒 잠금' : '🔓 잠금 해제'); }
   }
   // 🧹 일괄 분해 대상 — 미장착·미잠금·레어 이하
+  //    ✨ 고유장비 제외는 _gearIsUnique 로 명시한다. 예전엔 ord['unique']=undefined→9 라 "우연히" 빠졌는데,
+  //       slot='signature' 인데 rarity 가 오염된 세이브(sig+common / sig+rare)는 그 우연을 통과해 조용히 삭제됐다.
+  //       단일분해·합성은 (rarity==='unique' || slot==='signature') 로 그 오염분을 막고 있어 일괄분해만 구멍이었다.
+  //    ⚠️ 일반 코어는 _gearIsUnique 가 항상 false → 대상 목록이 예전과 완전히 동일하다(실측 확인).
   function _cmBulkTargets() {
     const g = _ensureGear(); const ord = { common:0, rare:1, epic:2, legend:3 };
-    return g.inv.filter(it => !it.locked && g.equipped[it.slot] !== it.id && (ord[it.rarity] != null ? ord[it.rarity] : 9) <= 1);
+    return g.inv.filter(it => !_gearIsUnique(it) && !it.locked && g.equipped[it.slot] !== it.id && (ord[it.rarity] != null ? ord[it.rarity] : 9) <= 1);
   }
   function _cmBulkDismantle() {
     const g = _ensureGear(); const t = _cmBulkTargets();
