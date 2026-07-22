@@ -21162,9 +21162,16 @@
     elementalMonarch: ['회전', '자율', '폭발'],
   };
   function getAbilityTags(id) { return ABILITY_TAGS[id] || []; }
+  // ❄️ CC 취약 툴팁 — 태그 칩 한 곳에 심어 '슬로우'/'정지' 태그를 가진 능력 전부를 일괄 커버한다.
+  //   ⚠️ 수치는 CC_VULN 에서 파생한다. 여기에 숫자를 복제하면 밸런싱 때 설명만 낡는다.
+  const CC_VULN_TIP = {
+    '슬로우': `슬로우 상태의 적은 받는 피해 +${Math.round((CC_VULN.slow - 1) * 100)}% (잔여 ${(CC_VULN.minFrames / 60).toFixed(1)}초 이상일 때)`,
+    '정지':   `정지 상태의 적은 받는 피해 +${Math.round((CC_VULN.stop - 1) * 100)}% · 보스는 정지가 안 걸려 슬로우 티어(+${Math.round((CC_VULN.slow - 1) * 100)}%)`,
+  };
   function tagChipHtml(tag) {
     const c = TAG_COLORS[tag] || '#888';
-    return `<span class="ability-tag" style="color:${c}; border-color:${c}">${tag}</span>`;
+    const tip = CC_VULN_TIP[tag];
+    return `<span class="ability-tag" style="color:${c}; border-color:${c}"${tip ? ` title="${tip}"` : ''}>${tag}</span>`;
   }
 
   // ===== 능력 아이콘 시스템 =====
@@ -30219,6 +30226,18 @@
           ctx.fillStyle = e.isBoss ? '#ff3355' : '#ff8a98'; rr(bx, by, hw, bh, bh/2); ctx.fill();
           if (e.isBoss) { ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = 0.45; ctx.fillStyle = '#ff7788'; rr(bx, by, hw, bh, bh/2); ctx.fill(); ctx.restore(); ctx.globalAlpha = 1; }
         }
+      }
+      // 🛑 정지(timeStopped) 표식 — 이 필드는 지금까지 그리기 코드에서 한 번도 읽히지 않았다.
+      //    정지는 CC 취약의 상위 티어(CC_VULN.stop)인데 화면에서 슬로우와 구분되지 않으면 티어 차등이 전달되지 않는다.
+      //    끊긴 링(정지 = 멎어 있음) + 무애니메이션. 보호막 펄스 링(실선·파랑·반경 +4)과 겹치지 않게
+      //    색은 TAG_COLORS['정지'](#ffe080), 반경은 +2 로 안쪽에 둔다.
+      if (e.timeStopped && e.timeStopped > state.t) {
+        ctx.save();
+        ctx.strokeStyle = 'rgba(255,224,128,0.9)';
+        ctx.lineWidth = 1.4;
+        ctx.setLineDash([3, 3]);
+        ctx.beginPath(); ctx.arc(x, y, e.size + 2, 0, Math.PI * 2); ctx.stroke();
+        ctx.restore();
       }
       // 특수 행동 픽토그램 (식별 쉽게)
       const iy = y - e.size - 12;
