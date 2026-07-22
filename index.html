@@ -37292,7 +37292,14 @@
     const cost = Math.round((GEAR_REROLL_COST[it.rarity] || 10) * (1 + lockN * GEAR_LOCK_MULT));   // 잠금 할증
     const shards = META.starShards || 0;
     const lvl = it.level || 0, atMax = lvl >= GEAR_LEVEL_MAX, lvCost = gearLevelCost(it), gg = META.gearGold || 0;
-    const levelRow = _gearRerollPending ? '' : `<div class="cm-d-lv"><span class="cm-d-lvtxt">⚡ 강화 Lv.${lvl}${atMax ? ' · MAX' : ` → ${lvl + 1} (+${(lvl + 1) * 10}%)`}</span>${atMax ? '' : `<button class="gcm-btn lv" data-act="levelup"${gg < lvCost ? ' disabled' : ''}>⬆ 레벨업 <span class="gcm-cost">💰${lvCost}</span></button>`}</div>`;
+    // ⚡ 강화 문구 — applyGearEffects 의 `v = ln.val * (ln.flat ? 1 : lvlMul)` 때문에 flat 라인(보급/라운드 시간)은
+    //    레벨을 올려도 값이 1초도 안 오른다. 고유(uniq) 라인은 수치 자체가 없어(val:0, 계산 전에 continue) 역시 무관하다.
+    //    → "+N%" 는 실제로 오르는 줄이 있을 때만 쓰고, 안 오르는 줄이 섞여 있으면 몇 줄이 제외되는지 밝힌다.
+    const _lvFix = it.lines.filter(l => l.flat || l.uniq).length;   // 레벨 영향 없는 줄
+    const _lvNext = (it.lines.length - _lvFix) === 0
+      ? ' (라인 전부 고정값 — 수치 상승 없음)'
+      : ` (+${(lvl + 1) * 10}%${_lvFix ? ` · 고정 ${_lvFix}줄 제외` : ''})`;
+    const levelRow = _gearRerollPending ? '' : `<div class="cm-d-lv"><span class="cm-d-lvtxt">⚡ 강화 Lv.${lvl}${atMax ? ' · MAX' : ` → ${lvl + 1}${_lvNext}`}</span>${atMax ? '' : `<button class="gcm-btn lv" data-act="levelup"${gg < lvCost ? ' disabled' : ''}>⬆ 레벨업 <span class="gcm-cost">💰${lvCost}</span></button>`}</div>`;
     // 현재 라인 — 프리뷰 중엔 잠금토글 없음, 평소엔 각 줄에 🔒 토글
     const curLines = _gearRerollPending
       ? it.lines.map(_gearLineRow).join('')
