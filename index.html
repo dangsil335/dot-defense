@@ -20505,10 +20505,19 @@
       apply: (st) => { applyAncientRelic(st, 'ferroCore'); },
       unlockBy: 'ancient:ferroCore',
     },
+    // 💤 Somnia 전용 — 졸음·수면·각성 능력 각성
+    somniaPillow: {
+      name: '꿈의 베개', icon: '💤', rarity: 'ancient',
+      isAncient: true, characterId: 'somnia',
+      triggerAbilities: ['lullaby', 'pillowThrow', 'dreamland', 'daydream'],
+      desc: '💤 Somnia 전용 · ★별마다 강해짐.\n[기본] 데미지 +15%·적 속도 -6% (Somnia 시너지 +35%·-12%)\n[★4 각성 1] 꿈 능력 max 도달 시 — 데미지 +50%·광역 데미지 +20%\n[★8 각성 2] 꿈 능력 2개 이상 max — 깨어난 적이 옆을 깨움(연쇄) + 데미지 +20%',
+      apply: (st) => { applyAncientRelic(st, 'somniaPillow'); },
+      unlockBy: 'ancient:somniaPillow',
+    },
   };
   // 🌌 v245 — ANCIENT 매핑 & 헬퍼
-  const ANCIENT_RELIC_IDS = ['ariaHarp', 'misakiHourglass', 'elementiaSeal', 'sumikaBrush', 'blanchePrism', 'kairaFang', 'ferroCore'];
-  const ANCIENT_RELIC_BY_CHAR = { aria: 'ariaHarp', misaki: 'misakiHourglass', elementia: 'elementiaSeal', sumika: 'sumikaBrush', blanche: 'blanchePrism', kaira: 'kairaFang', feria: 'ferroCore' };
+  const ANCIENT_RELIC_IDS = ['ariaHarp', 'misakiHourglass', 'elementiaSeal', 'sumikaBrush', 'blanchePrism', 'kairaFang', 'ferroCore', 'somniaPillow'];
+  const ANCIENT_RELIC_BY_CHAR = { aria: 'ariaHarp', misaki: 'misakiHourglass', elementia: 'elementiaSeal', sumika: 'sumikaBrush', blanche: 'blanchePrism', kaira: 'kairaFang', feria: 'ferroCore', somnia: 'somniaPillow' };
   const ANCIENT_MAX_STARS = 8;
   function getAncientRelicStars(rid) {
     return (META.ancientRelics && META.ancientRelics[rid] && META.ancientRelics[rid].stars) || 0;
@@ -20562,6 +20571,12 @@
       const baseDmg = synergy ? (1.36 + stars * 0.08) : (1.16 + stars * 0.05);
       st.metaMods.dmgMul = (st.metaMods.dmgMul || 1) * baseDmg;
       st.metaMods.slowMul = (st.metaMods.slowMul || 1) * (synergy ? 1.20 : 1.10);
+    } else if (rid === 'somniaPillow') {
+      // 💤 졸음 = 적이 느려진다. slowMul 이 아니라 enemySpeedMul 을 쓴다 —
+      //    slowMul 소비식 max(0.10, 1-0.65x) 는 x>1.3846 이 전부 하한(死값)이라 이미 6명이 포화 상태.
+      const baseDmg = synergy ? (1.35 + stars * 0.08) : (1.15 + stars * 0.05);
+      st.metaMods.dmgMul = (st.metaMods.dmgMul || 1) * baseDmg;
+      st.relicEffects.enemySpeedMul *= synergy ? 0.88 : 0.94;
     }
   }
   // 각성 효과 발동 — 능력 max 도달 시 체크
@@ -20666,6 +20681,16 @@
         state.relicEffects.chainLightning = true;
         state.metaMods.dmgMul *= 1.20;
         toast(`🧲🌟 자기 코어 · 단극 각성!`);
+      }
+    } else if (relic.id === 'somniaPillow') {
+      if (level === 1) {
+        state.metaMods.dmgMul *= 1.50;
+        state.relicEffects.aoeDmgMul *= 1.20;   // 깨울 때의 폭발은 광역/영역 — 베개던지기·꿈나라·백일몽에 실제로 곱해진다
+        toast(`💤✨ 꿈의 베개 · 선잠 각성!`);
+      } else if (level === 2) {
+        state.relicEffects.chainLightning = true;   // 하나가 깨면 옆도 깬다
+        state.metaMods.dmgMul *= 1.20;
+        toast(`💤🌟 꿈의 베개 · 숙면 각성!`);
       }
     }
     state.comboFlash = 60;
@@ -34153,6 +34178,7 @@
       blanche:   { title: '🌌 분광의 프리즘',   text: '"이 프리즘, 네 빛으로 채워봐. 일곱 색이 널 따를 거야."' },
       kaira:     { title: '🌌 야수왕의 송곳니', text: '"이 송곳니… 네 안의 야수가 반응하고 있어. 가져."' },
       feria:     { title: '🌌 자기 코어',       text: '"이 코어… 네 극에 맞춰 돌기 시작했어. 가져."' },
+      somnia:    { title: '🌌 꿈의 베개',       text: '"이거 베고 자면 좋은 꿈 꿔요. …드릴게요. 저는 아무 데서나 잘 자니까."' },
     };
     const lo = lore[charId] || { title: `🌌 ${rn}`, text: '"이 유물, 너에게 어울려."' };
     return { title: lo.title, text: lo.text, choices: [
@@ -34175,6 +34201,8 @@
                 { avail: () => _ancientAvail('kaira'), make: () => _charRelicEv('kaira') } ],
     feria:    [ { make: () => _charEv('🧲 페리아의 자장',      '"당겨서 뭉칠까, 밀어서 흩을까?"',                       'dmg',  22, 'polarField') },
                 { avail: () => _ancientAvail('feria'), make: () => _charRelicEv('feria') } ],
+    somnia:   [ { make: () => _charEv('💤 소미아의 자장가',    '"더 세게 재울까요, 아니면 깰 때 더 아프게 할까요?"',       'dmg',  22, 'lullaby') },
+                { avail: () => _ancientAvail('somnia'), make: () => _charRelicEv('somnia') } ],
     sakura:   [ { make: () => _charEv('🌸 사쿠라의 만개',     '"꽃잎처럼 흩날리는 칼날, 더 날카롭게 해줄까?"',             'dmg',  22, 'sakuraSlash') } ],
     luna:     [ { make: () => _charEv('🌙 루나의 월광',       '"달빛을 더 퍼뜨릴까, 월광탄을 더 키울까?"',                 'dmg',  18, 'moonShot') } ],
     aria:     [ { make: () => _charEv('🌟 아리아의 합창',     '"이 별의 노래, 너한테 맞춰 부를게. 어느 쪽이 좋아?"',       'dmg',  24, 'starSong') },
