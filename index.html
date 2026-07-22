@@ -6681,6 +6681,26 @@
     for (let i = 0; i < n; i++) lines.push(_gearRollLine('signature'));   // → GEAR_OPTIONS_ALL 통합 풀
     return { id: g.nextId++, slot:'signature', charId, rarity:'unique', level:0, lines, v:1 };
   }
+  // ✨ 고유장비 조회 — charId 로 인벤에서 찾는다. 불변식 "charId 당 인벤에 정확히 1개"의 유일한 판정자.
+  function _findUniqueGear(charId) {
+    const g = META.gear;
+    if (!g || !Array.isArray(g.inv)) return null;
+    return g.inv.find(it => it && it.slot === 'signature' && it.charId === charId) || null;
+  }
+  // ✨ 고유장비 지급 — 게임 전체에서 유일한 지급 경로. 이미 있으면 그걸 반환하고 아무것도 만들지 않는다.
+  //    ⚠️ createUniqueGear 를 직접 부르고 inv 에 push 하는 코드를 새로 만들지 말 것 —
+  //       지급 지점이 흩어지는 순간 "charId 당 1개" 불변식이 깨진다.
+  //    해금 즉시 지급(가챠 풀 / 별조각 영입 / 치트)과 소급 지급(_syncUniqueGear)이 전부 이 함수로 모인다.
+  function _grantUniqueGear(charId) {
+    if (!charId || typeof charId !== 'string') return null;
+    const g = _ensureGear();
+    const have = _findUniqueGear(charId);
+    if (have) return have;                  // 🔒 중복 방지 — 몇 번을 불러도 인벤엔 1개
+    if (!CHARACTERS[charId]) return null;   // 존재하지 않는 캐릭터 id 방어 (createUniqueGear 는 인자를 그대로 박는다)
+    const it = createUniqueGear(charId);
+    g.inv.push(it);
+    return it;
+  }
   // 장착 코어의 세트별 착용 수 → { set: count }
   function _gearSetCounts() {
     const g = META.gear, out = {}; if (!g || !g.equipped) return out;
@@ -23924,6 +23944,7 @@
     META.charStars = META.charStars || {};
     const isNew = !META.gachaUnlocked[charId];
     META.gachaUnlocked[charId] = (META.gachaUnlocked[charId] || 0) + 1;
+    _grantUniqueGear(charId);   // ✨ 해금 즉시 고유장비 1개 지급 (중복 획득이면 내부에서 no-op) — 아래 saveMeta() 로 함께 저장됨
     let refund = 0;
     let starUp = false;
     let shardGain = 0;
@@ -34991,6 +35012,7 @@
       let added = 0;
       for (const id of allIds) {
         if (!META.gachaUnlocked[id]) { META.gachaUnlocked[id] = 1; added++; }
+        _grantUniqueGear(id);   // ✨ 고유장비 1개 지급 (이미 있으면 no-op)
       }
       saveMeta();
       cheatFeedback(`🔓 가챠 캐릭터 ${added}명 새로 해금 (총 ${allIds.length}명)`);
@@ -35007,6 +35029,7 @@
       }
       META.gachaUnlocked = META.gachaUnlocked || {};
       META.gachaUnlocked[id] = Math.max(META.gachaUnlocked[id] || 0, 1);
+      _grantUniqueGear(id);   // ✨ 고유장비 1개 지급 (이미 있으면 no-op)
       saveMeta();
       const c = CHARACTERS[id];
       cheatFeedback(`🔓 ${c ? c.name : id} 해금됨`);
@@ -35471,6 +35494,7 @@
     META.gachaUnlocked = META.gachaUnlocked || {};
     META.charStars = META.charStars || {};
     META.gachaUnlocked[id] = (META.gachaUnlocked[id] || 0) + 1;
+    _grantUniqueGear(id);   // ✨ 별조각 영입도 해금 — 고유장비 1개 지급 (이미 있으면 no-op)
     if (owned) META.charStars[id] = stars + 1;   // 보유 → +1★ (신규는 해금만 = charStars 0 유지, 풀 중복과 동일 규약)
     saveMeta();
     try { checkUnlockAchievements(); } catch (e) {}
