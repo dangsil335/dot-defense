@@ -17,7 +17,7 @@ const DEFERRED_ASSETS = [
   './icons/gacha-elemSumi.png',
   './icons/gacha-ariaMisa.png',
   './icons/gacha-prismBeast.jpg',
-  './icons/gacha-ferroPole.jpg',
+  './icons/gacha-feriaSomnia.jpg',
 ];
 
 self.addEventListener('install', e => {
