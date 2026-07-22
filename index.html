@@ -6553,13 +6553,13 @@
   const GEAR_SETS = {
     destroyer:  { name:'파괴자',   icon:'⚔', color:'#ff5b6e', affinity:['berserker','sniper','solar'],
                   b2:{ key:'dmgBoost', op:'add', val:0.08, label:'데미지 +8%' },
-                  b4:{ mech:'bossBurst', bigKey:'bossDmgMul', bigVal:0.25, label:'보스 등장 시 즉시 체력 15% 딜 · 보스뎀 +25%' } },
+                  b4:{ mech:'bossBurst', bigKey:'bossDmgMul', bigOp:'mul', bigVal:0.25, label:'보스 등장 시 즉시 체력 15% 딜 · 보스뎀 +25%' } },
     cryomancer: { name:'빙결술사', icon:'❄', color:'#7ad7ff', affinity:['mage','marine'],
                   b2:{ key:'slowMul', op:'mul', val:0.12, label:'슬로우 +12%' },
-                  b4:{ mech:'roundFreeze', bigKey:'slowMul', bigVal:0.25, label:'라운드 시작 시 전체 2초 빙결 · 슬로우 +25%' } },
+                  b4:{ mech:'roundFreeze', bigKey:'slowMul', bigOp:'mul', bigVal:0.25, label:'라운드 시작 시 전체 2초 빙결 · 슬로우 +25%' } },
     alchemist:  { name:'연성술사', icon:'💰', color:'#ffd479', affinity:['mixer','engineer','researcher'],
                   b2:{ key:'goldMul', op:'mul', val:0.15, label:'골드 획득 +15%' },
-                  b4:{ mech:'killGoldBurst', bigKey:'goldMul', bigVal:0.30, label:'처치 시 5% 확률 골드 ×4 폭발(최소4) · 골드 +30%' } },
+                  b4:{ mech:'killGoldBurst', bigKey:'goldMul', bigOp:'mul', bigVal:0.30, label:'처치 시 5% 확률 골드 ×4 폭발(최소4) · 골드 +30%' } },
   };
   // 슬롯 × 세트 → 기종명 + 시그니처(확정) 라인 키
   const GEAR_ARCHETYPES = {
@@ -6601,6 +6601,13 @@
   // ✨ 고유장비(signature)용 통합 풀 — 4슬롯 옵션 전부(12개). 슬롯마다 정확히 3개씩이므로
   //    "랜덤 슬롯 → 그 슬롯 풀에서 1개"와 확률분포가 완전히 동일하며, 코드 경로가 하나로 끝난다.
   const GEAR_OPTIONS_ALL = GEAR_BASE_SLOTS.reduce((a, s) => a.concat(GEAR_OPTIONS[s]), []);
+  // 🔑 옵션 키의 표준 op(add/mul) — 옵션 풀에서 도출. op 가 따로 안 적힌 곳(세트 4피스 bigKey)에서 쓴다.
+  //    "add 형 키인데 mul 에 더해지는" 조용한 오적용을 구조적으로 막기 위한 단일 출처.
+  const GEAR_KEY_OP = (() => { const m = {}; for (const s of GEAR_BASE_SLOTS) for (const o of (GEAR_OPTIONS[s] || [])) m[o.key] = o.op; return m; })();
+  // 🎽 세트 4피스 수치의 op — 정의에 bigOp 가 있으면 그걸, 없으면 키에서 도출, 그래도 모르면 mul(종전 동작).
+  //    ⚠️ 예전엔 op 를 아예 보지 않고 무조건 mul 에 더했다. 현재 3세트의 bigKey 가 전부 mul 형이라 우연히 맞았을 뿐,
+  //       add 형 키를 쓰는 세트가 추가되면 조용히 틀어졌다.
+  function _gearB4Op(b4) { return (b4 && b4.bigOp) || (b4 && GEAR_KEY_OP[b4.bigKey]) || 'mul'; }
   // 라인 티어 롤 (하드코어 = 바닥 두꺼움). tier mult 로 값 스케일.
   // 티어 가중 — 고티어 극악 (T4 1.5% / T5 0.5%). 대신 고티어 배수는 큼(극악 롤의 보상).
   const GEAR_LINE_TIERS = [
@@ -6880,7 +6887,11 @@
     for (const sk in sc) {
       const def = GEAR_SETS[sk]; if (!def) continue;
       if (sc[sk] >= 2 && def.b2) { const b = def.b2; if (b.op === 'add') add[b.key] = (add[b.key] || 0) + b.val; else mul[b.key] = (mul[b.key] || 0) + b.val; }
-      if (sc[sk] >= 4 && def.b4) { if (def.b4.bigKey) mul[def.b4.bigKey] = (mul[def.b4.bigKey] || 0) + def.b4.bigVal; if (def.b4.mech) mm['set4_' + def.b4.mech] = true; }
+      if (sc[sk] >= 4 && def.b4) {
+        // 🎽 4피스 수치 — op 를 보고 add/mul 누적변수를 고른다(예전엔 무조건 mul 이었다). 현재 3세트는 전부 mul → 결과 불변.
+        if (def.b4.bigKey) { const _acc = (_gearB4Op(def.b4) === 'add') ? add : mul; _acc[def.b4.bigKey] = (_acc[def.b4.bigKey] || 0) + def.b4.bigVal; }
+        if (def.b4.mech) mm['set4_' + def.b4.mech] = true;
+      }
     }
     if (_outRaw) { _outRaw.add = add; _outRaw.mul = mul; }   // 📊 캡 적용 "직전"의 누적치 — 세트 보너스가 캡에 묻혔는지 UI 가 판단하는 근거
     for (const k in add) { let d = add[k]; if (GEAR_CAP[k]!=null) d = Math.min(d, GEAR_CAP[k]); mm[k] = (mm[k] || 0) + d; }
@@ -37162,11 +37173,11 @@
       const pips = GEAR_BASE_SLOTS.map((_, i) => `<span class="cm-pip${i < cnt ? ' on' : ''}"></span>`).join('');   // ⚠️ 세트는 4피스 — 핍도 4개 고정
       const e2 = a2 ? _gearCapEff(_raw, def.b2.op, def.b2.key, def.b2.val) : 1;
       // 4피스는 수치(bigKey)만 캡에 걸린다 — 메커니즘(보스딜/빙결/골드폭발)은 플래그라 캡과 무관하다
-      const e4 = (cnt >= 4 && def.b4.bigKey) ? _gearCapEff(_raw, def.b4.bigOp || 'mul', def.b4.bigKey, def.b4.bigVal) : 1;
+      const e4 = (cnt >= 4 && def.b4.bigKey) ? _gearCapEff(_raw, _gearB4Op(def.b4), def.b4.bigKey, def.b4.bigVal) : 1;
       return `<div class="cm-set${a2 ? ' live' : ''}" style="--sc:${def.color}">
         <div class="cm-set-h"><span class="cm-set-i">${def.icon}</span><b class="cm-set-n">${def.name}</b><span class="cm-set-c">${cnt}/4</span><span class="cm-pips">${pips}</span></div>
         <div class="cm-set-b${a2 ? ' on' : ''}"${a2 ? _capTip(e2) : ''}><span class="cm-b-t">2</span><span class="cm-b-d">${def.b2.label}</span><span class="cm-b-s">${a2 ? '활성' + _capTag(def.b2.op, def.b2.key, def.b2.val) : (2 - cnt) + '개 더'}</span></div>
-        <div class="cm-set-b${cnt >= 4 ? ' on' : ' soon'}"${cnt >= 4 ? _capTip(e4) : ''}><span class="cm-b-t">4</span><span class="cm-b-d">${def.b4.label}</span><span class="cm-b-s">${cnt >= 4 ? '활성' + (def.b4.bigKey ? _capTag(def.b4.bigOp || 'mul', def.b4.bigKey, def.b4.bigVal) : '') : (4 - cnt) + '개 더'}</span></div>
+        <div class="cm-set-b${cnt >= 4 ? ' on' : ' soon'}"${cnt >= 4 ? _capTip(e4) : ''}><span class="cm-b-t">4</span><span class="cm-b-d">${def.b4.label}</span><span class="cm-b-s">${cnt >= 4 ? '활성' + (def.b4.bigKey ? _capTag(_gearB4Op(def.b4), def.b4.bigKey, def.b4.bigVal) : '') : (4 - cnt) + '개 더'}</span></div>
       </div>`;
     }).join('') + `</div>`;
   }
