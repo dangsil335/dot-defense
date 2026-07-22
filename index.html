@@ -37101,106 +37101,25 @@
     el.onclick = function () { _evoTreeSelect(kind, id); };
     return el;
   }
-  // 🔩 전술 코어 — 일러스트 양옆 슬롯 + 인벤토리 그리드 (계정 공용, 캐릭터 상세)
-  const _GEAR_RARCOL = { common:'#9aa3b3', rare:'#7ad7ff', epic:'#c98bff', legend:'#ffd479', unique:'#ff9de2' };
+  // 🔩 전술 코어 — 표시 공용 상수(등급색 · 슬롯 아이콘 · 코어 이미지). 코어 관리 화면과 보상 화면이 함께 쓴다.
+  const _GEAR_RARCOL ={ common:'#9aa3b3', rare:'#7ad7ff', epic:'#c98bff', legend:'#ffd479', unique:'#ff9de2' };
   const _GEAR_SLOTICO = { offense:'🔥', targeting:'🎯', supply:'💰', control:'⚙️', signature:'✨' };
   // 🖼 코어 아이템 이미지 (세트×슬롯). 파일 없으면 onerror로 제거(빈칸). 빈 슬롯은 호출 안 함.
   function _gearCoreImg(it, px) { if (!it || !it.set || !it.slot) return ''; const s = px || 28; return `<img class="gear-core-img" src="./icons/gear/${it.set}-${it.slot}.png" alt="" style="width:${s}px;height:${s}px" onerror="this.remove()">`; }
-  function _gearFlankSlot(slot, g) {
-    const id = g.equipped[slot];
-    const item = (id != null) ? g.inv.find(x => x.id === id) : null;
-    const ico = _GEAR_SLOTICO[slot];
-    if (item) {
-      const col = _GEAR_RARCOL[item.rarity] || '#9aa3b3';
-      return `<div class="gear-fslot filled" data-slot="${slot}" style="border-color:${col};box-shadow:0 0 10px ${col}55" title="탭하면 해제"><span class="gear-fslot-ico">${_gearCoreImg(item, 30) || ico}</span><span class="gear-fslot-lv" style="color:${col}">${GEAR_RARITY_LABEL[item.rarity] || ''}</span></div>`;
-    }
-    return `<div class="gear-fslot empty" data-slot="${slot}"><span class="gear-fslot-ico">${ico}</span><span class="gear-fslot-lv">${GEAR_SLOT_LABEL[slot]}</span></div>`;
-  }
-  function _gearInvHtml(g) {
-    if (!g.inv.length) return `<div class="gear-inv-empty">보유한 코어가 없습니다.<br>플레이로 획득할 수 있어요 (드랍 예정).</div>`;
-    const rOrd = { epic:0, rare:1, common:2 };
-    const inv = g.inv.slice().sort((a, b) => GEAR_SLOTS.indexOf(a.slot) - GEAR_SLOTS.indexOf(b.slot) || (rOrd[a.rarity] || 9) - (rOrd[b.rarity] || 9));
-    let h = '<div class="gear-inv">';
-    for (const it of inv) {
-      const col = _GEAR_RARCOL[it.rarity] || '#9aa3b3';
-      const on = g.equipped[it.slot] === it.id;
-      const lines = it.lines.map(l => `<div class="gear-line"><span>${l.label}</span><b>${l.flat ? '+' + l.val + 's' : '+' + Math.round(l.val * 100) + '%'}</b></div>`).join('');
-      h += `<div class="gear-inv-item${on ? ' on' : ''}" data-id="${it.id}" style="border-color:${col}"><div class="gear-inv-head"><span class="gear-fslot-ico">${_gearCoreImg(it, 26) || _GEAR_SLOTICO[it.slot]}</span><span class="gear-slot-name">${GEAR_SLOT_LABEL[it.slot]}</span><span class="gear-slot-rar" style="color:${col}">${GEAR_RARITY_LABEL[it.rarity]}</span>${on ? '<span class="gear-on-badge">장착</span>' : ''}</div><div class="gear-lines">${lines}</div></div>`;
-    }
-    return h + '</div>';
-  }
-  // 슬롯 오버레이 + 인벤을 host에 채우고 클릭(장착/해제) 배선. 장착 변경 시 자기 자신 재호출(스크롤 보존).
-  function _gearRenderDetail() {
-    const flank = document.getElementById('gear-flank-host');
-    const invHost = document.getElementById('gear-inv-host');
-    const g = _ensureGear();
-    if (flank) flank.innerHTML = `<div class="gear-flank-col">${_gearFlankSlot('offense', g)}${_gearFlankSlot('supply', g)}</div><div class="gear-flank-col">${_gearFlankSlot('targeting', g)}${_gearFlankSlot('control', g)}</div>`;
-    if (invHost) invHost.innerHTML = _gearInvHtml(g);
-    if (flank) flank.querySelectorAll('.gear-fslot.filled').forEach(el => { el.onclick = () => { const id = _ensureGear().equipped[el.dataset.slot]; if (id != null) _openGearCore(id); }; });
-    if (invHost) invHost.querySelectorAll('.gear-inv-item').forEach(el => { el.onclick = () => _openGearCore(+el.dataset.id); });
-  }
-  // ===== 🔩 코어 관리 모달 (장착/해제 · 재설정(리롤·꽝) · 분해) =====
+  // ⚰️ 삭제됨(2026-07-22): 구 코어 모달 UI 전체 — _gearFlankSlot / _gearInvHtml / _gearRenderDetail /
+  //    _openGearCore / _closeGearCore / _renderGearCore / _gearCoreAction / _gearModalId.
+  //    찾던 DOM id(gear-flank-host / gear-inv-host)가 HTML 어디에도 없어 도달 불가한 죽은 코드였고,
+  //    그 dismantle 분기엔 it.locked 체크가 없어 되살아나면 잠금 코어·고유장비까지 분해되는 위험이 있었다.
+  //    장비 UI 는 전용 "코어 관리" 화면(openCoreMgr) 하나뿐이다 — 두 번째 경로를 다시 만들지 말 것.
+  // ===== 🔩 코어 관리 화면용 비용/상한 상수 =====
   const GEAR_REROLL_COST = { common:6, rare:12, epic:25, legend:50, unique:80 };   // 하드코어
   const GEAR_DISM_REFUND = { common:1, rare:3, epic:8, legend:20 };   // ✨ unique 항목 없음 — 고유장비는 분해 불가(_cmAction에서 차단)
   const GEAR_LOCK_MULT = 2;   // 잠금 1줄당 재설정 비용 ×(1+2n) — 1잠금=3배, 2잠금=5배 (매우 비쌈)
   const GEAR_LEVEL_MAX = 20;   // 코어 레벨 상한 (레벨당 +10% 라인값)
   const _GEAR_LVL_RMUL = { common:1, rare:1.5, epic:2.2, legend:3.5, unique:4.5 };   // 등급별 레벨업 비용 배수
   function gearLevelCost(it) { return Math.round(40 * ((it.level || 0) + 1) * (_GEAR_LVL_RMUL[it.rarity] || 1)); }
-  let _gearModalId = null, _gearRerollPending = null;
-  function _openGearCore(id) {
-    _gearModalId = id; _gearRerollPending = null;
-    let ov = document.getElementById('gearCoreModal');
-    if (!ov) { ov = document.createElement('div'); ov.id = 'gearCoreModal'; ov.className = 'gear-modal-ov'; ov.onclick = (e) => { if (e.target === ov) _closeGearCore(); }; document.body.appendChild(ov); }
-    ov.style.display = 'flex';
-    _renderGearCore();
-  }
-  function _closeGearCore() { const ov = document.getElementById('gearCoreModal'); if (ov) ov.style.display = 'none'; _gearModalId = null; _gearRerollPending = null; }
+  let _gearRerollPending = null;   // 재설정 미리보기 라인(코어 관리 화면 공용). ⚰️ 짝이던 _gearModalId 는 구 모달과 함께 삭제됨
   function _gearLineRow(l) { if (l.uniq) return _gearUniqRow(l, ''); return `<div class="gcm-line${l.aff ? ' aff' : ''}"><span class="gcm-tier t${l.tier}">T${l.tier}</span><span class="gcm-lbl">${l.label}${_gearAffBadge(l)}</span><b>${l.flat ? '+' + l.val + 's' : '+' + Math.round(l.val * 100) + '%'}</b></div>`; }
-  function _renderGearCore() {
-    const ov = document.getElementById('gearCoreModal'); if (!ov) return;
-    const g = _ensureGear();
-    const it = g.inv.find(x => x.id === _gearModalId);
-    if (!it) { _closeGearCore(); return; }
-    const col = _GEAR_RARCOL[it.rarity] || '#9aa3b3';
-    const equipped = g.equipped[it.slot] === it.id;
-    const cost = GEAR_REROLL_COST[it.rarity] || 10;
-    const refund = GEAR_DISM_REFUND[it.rarity] || 1;
-    const shards = META.starShards || 0;
-    let h = `<div class="gear-modal" style="border-color:${col}"><div class="gcm-head"><span class="gcm-ico">${_gearCoreImg(it, 30) || _GEAR_SLOTICO[it.slot]}</span><span class="gcm-name">${GEAR_SLOT_LABEL[it.slot]} 코어</span><span class="gcm-rar" style="color:${col}">${GEAR_RARITY_LABEL[it.rarity]}${equipped ? ' · 장착중' : ''}</span><button class="gcm-x" data-act="close">✕</button></div><div class="gcm-body"><div class="gcm-col"><div class="gcm-col-t">현재 잠재능력</div>${it.lines.map(_gearLineRow).join('')}</div>`;
-    if (_gearRerollPending) h += `<div class="gcm-arrow">→</div><div class="gcm-col new"><div class="gcm-col-t">새 잠재능력</div>${_gearRerollPending.map(_gearLineRow).join('')}</div>`;
-    h += `</div>`;
-    if (_gearRerollPending) {
-      h += `<div class="gcm-actions"><button class="gcm-btn apply" data-act="applyRoll">✅ 교체 적용</button><button class="gcm-btn" data-act="keepRoll">유지 (되돌리기)</button></div>`;
-    } else {
-      h += `<div class="gcm-shards">💠 보유 별조각 ${shards}</div><div class="gcm-actions"><button class="gcm-btn eq" data-act="equip">${equipped ? '🔓 해제' : '🔩 장착'}</button><button class="gcm-btn roll" data-act="reroll"${shards < cost ? ' disabled' : ''}>🎲 재설정 <span class="gcm-cost">💠${cost}</span></button><button class="gcm-btn dism" data-act="dismantle">🔨 분해 <span class="gcm-cost">→💠${refund}</span></button></div>`;
-    }
-    h += `</div>`;
-    ov.innerHTML = h;
-    ov.querySelectorAll('[data-act]').forEach(b => b.onclick = () => _gearCoreAction(b.dataset.act));
-  }
-  function _gearCoreAction(act) {
-    if (act === 'close') return _closeGearCore();
-    const g = _ensureGear();
-    const it = g.inv.find(x => x.id === _gearModalId); if (!it) return;
-    if (act === 'equip') {
-      if (!_gearEquipToggle(it)) { toast('이 슬롯에 장착할 수 없는 코어입니다'); return; }   // ✨ 두 번째 장착 UI 도 같은 관문을 지난다(경로 분기 방지 — 이 화면은 현재 도달 불가한 구코드)
-      saveMeta(); _renderGearCore(); _gearRenderDetail(); SFX.click && SFX.click();
-    } else if (act === 'reroll') {
-      const cost = GEAR_REROLL_COST[it.rarity] || 10;
-      if (!spendShards(cost)) { toast('💠 별조각이 부족합니다'); return; }
-      { const _arch = _gearArch(it.slot, it.set); _gearRerollPending = it.lines.map((l, i) => _gearRerollLine(it, l, i, _arch)); }   // 시그니처·동조·고유 슬롯 유지, 나머지 리롤 (고유장비는 _gearRerollLine 이 통합 풀로 분기)
-      SFX.click && SFX.click(); _renderGearCore();
-    } else if (act === 'applyRoll') {
-      if (_gearRerollPending) { it.lines = _gearRerollPending; it.v = (it.v || 1) + 1; _gearRerollPending = null; saveMeta(); _renderGearCore(); _gearRenderDetail(); toast('✅ 잠재능력 교체됨'); }
-    } else if (act === 'keepRoll') {
-      _gearRerollPending = null; _renderGearCore();
-    } else if (act === 'dismantle') {
-      if (g.equipped[it.slot] === it.id) g.equipped[it.slot] = null;
-      const refund = GEAR_DISM_REFUND[it.rarity] || 1;
-      g.inv = g.inv.filter(x => x.id !== it.id); _gearTombstone([it.id]);
-      grantShards(refund); saveMeta(); _closeGearCore(); _gearRenderDetail(); toast(`🔨 분해 → 💠${refund} 별조각`);
-    }
-  }
   // ===== 🔩 전용 "코어 관리" 화면 (좌:리스트 / 중:캐릭터 / 우:옵션) =====
   let _cmSel = null, _gearLocks = new Set();   // _gearLocks = 잠긴 라인 인덱스
   let _cmFuseMode = false, _cmFuseSel = new Set(), _cmBulkArm = false;   // 🔧 합성 모드 / 🧹 일괄분해 확인
