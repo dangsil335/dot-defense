@@ -6642,7 +6642,8 @@
     if (!Array.isArray(META.gear.removed)) META.gear.removed = [];   // 🪦 분해/합성 삭제 묘비 (기기간 부활 방지)
     // 🎽 레거시 마이그레이션 — set 없는 기존 코어에 세트 1회 스탬프
     let _mig = false;
-    for (const it of META.gear.inv) { if (it && !it.set) { it.set = _gearInferSet(it); _mig = true; } }
+    // ✨ 고유장비(signature)는 set 이 없는 게 정상 — 마이그레이션 대상에서 제외(랜덤 세트 스탬프 방지)
+    for (const it of META.gear.inv) { if (it && !it.set && it.slot !== 'signature') { it.set = _gearInferSet(it); _mig = true; } }
     if (_mig) { try { saveMeta(); } catch (e) {} }
     return META.gear;
   }
@@ -6668,7 +6669,8 @@
   // 장착 코어의 세트별 착용 수 → { set: count }
   function _gearSetCounts() {
     const g = META.gear, out = {}; if (!g || !g.equipped) return out;
-    for (const slot of GEAR_SLOTS) { const id = g.equipped[slot]; if (id == null) continue; const it = g.inv.find(x => x.id === id); if (it && it.set) out[it.set] = (out[it.set] || 0) + 1; }
+    // ⚠️ GEAR_BASE_SLOTS(4슬롯)만 — 고유장비는 세트 카운트에서 완전히 제외(4피스 성립 조건 불변)
+    for (const slot of GEAR_BASE_SLOTS) { const id = g.equipped[slot]; if (id == null) continue; const it = g.inv.find(x => x.id === id); if (it && it.set) out[it.set] = (out[it.set] || 0) + 1; }
     return out;
   }
   // 장착 코어의 라인을 metaMods에 합산 (주간모디파이어 apply와 동일 패턴). add=합산, mul=(1+합)배.
@@ -6703,7 +6705,7 @@
     if (Math.random() >= 0.25) return null;
     const g = _ensureGear();
     if (g.inv.length >= 60) return null;   // 상한 초과 → 분해 유도
-    const slot = GEAR_SLOTS[Math.floor(Math.random() * GEAR_SLOTS.length)];
+    const slot = GEAR_BASE_SLOTS[Math.floor(Math.random() * GEAR_BASE_SLOTS.length)];   // ⚠️ signature 는 드롭 대상 아님
     const tierScore = ((state && state.round) || 1) + ((state && state.ascension) || 0) * 10;
     const legendChance = Math.min(0.003 + tierScore * 0.0004, 0.02);   // 극악 (0.3%~2%)
     const epicChance   = Math.min(0.02  + tierScore * 0.001,  0.09);   // 희귀 (2%~9%)
@@ -34937,8 +34939,8 @@
     // 🔩 gear <slot> <rarity> — 테스트용 코어 부여+장착 (예: gear offense epic)
     m = cmd.match(/^gear(?:\s+(\w+))?(?:\s+(\w+))?$/);
     if (m) {
-      const slot = GEAR_SLOTS.includes(m[1]) ? m[1] : 'offense';
-      const rarity = GEAR_RARITY.includes(m[2]) ? m[2] : 'epic';
+      const slot = GEAR_BASE_SLOTS.includes(m[1]) ? m[1] : 'offense';       // ⚠️ signature 금지 — createGear 는 4슬롯 전용(옵션 풀/세트 필요)
+      const rarity = GEAR_BASE_RARITY.includes(m[2]) ? m[2] : 'epic';       // ⚠️ unique 금지 — 고유장비는 createUniqueGear 로만 생성
       const item = createGear(slot, rarity);
       const g = _ensureGear(); g.inv.push(item); g.equipped[slot] = item.id;
       saveMeta();
@@ -37031,7 +37033,7 @@
     if (!shown.length) return `<div class="cm-sets-hint">코어를 같은 세트로 맞춰 장착하면 세트 효과가 발동합니다</div>`;
     return `<div class="cm-sets-in">` + shown.map(sk => {
       const def = GEAR_SETS[sk], cnt = sc[sk] || 0, a2 = cnt >= 2;
-      const pips = GEAR_SLOTS.map((_, i) => `<span class="cm-pip${i < cnt ? ' on' : ''}"></span>`).join('');
+      const pips = GEAR_BASE_SLOTS.map((_, i) => `<span class="cm-pip${i < cnt ? ' on' : ''}"></span>`).join('');   // ⚠️ 세트는 4피스 — 핍도 4개 고정
       return `<div class="cm-set${a2 ? ' live' : ''}" style="--sc:${def.color}">
         <div class="cm-set-h"><span class="cm-set-i">${def.icon}</span><b class="cm-set-n">${def.name}</b><span class="cm-set-c">${cnt}/4</span><span class="cm-pips">${pips}</span></div>
         <div class="cm-set-b${a2 ? ' on' : ''}"><span class="cm-b-t">2</span><span class="cm-b-d">${def.b2.label}</span><span class="cm-b-s">${a2 ? '활성' : (2 - cnt) + '개 더'}</span></div>
@@ -37047,7 +37049,7 @@
     if (nameEl) { const ch = CHARACTERS[selectedCharacter] || {}; nameEl.textContent = ch.name || '기본 도트 타워'; }
     const slotsEl = document.getElementById('cm-slots');
     if (slotsEl) {
-      slotsEl.innerHTML = GEAR_SLOTS.map(slot => {
+      slotsEl.innerHTML = GEAR_BASE_SLOTS.map(slot => {   // ✨ 고유 슬롯 UI 는 단계 1 Task 4 에서 별도 구획으로 추가
         const id = g.equipped[slot]; const it = id != null ? g.inv.find(x => x.id === id) : null;
         const col = it ? (_GEAR_RARCOL[it.rarity] || '#9aa3b3') : '#3a4256';
         return `<div class="cm-slot ${it ? 'filled' : 'empty'}" data-id="${it ? it.id : ''}" style="border-color:${col}">${it ? _gearCoreImg(it, 40) : ''}</div>`;
@@ -37070,7 +37072,7 @@
           const on = g.equipped[it.slot] === it.id, sel = it.id === _cmSel, fsel = _cmFuseSel.has(it.id);
           const _sic = GEAR_SETS[it.set] ? GEAR_SETS[it.set].icon : '';
           let dim = false;
-          if (_cmFuseMode && !fsel) dim = it.locked || on || it.rarity === 'legend' || (fFirst && (fFirst.slot !== it.slot || fFirst.rarity !== it.rarity));
+          if (_cmFuseMode && !fsel) dim = it.locked || on || it.rarity === 'legend' || it.rarity === 'unique' || (fFirst && (fFirst.slot !== it.slot || fFirst.rarity !== it.rarity));
           return `<div class="cm-litem${sel && !_cmFuseMode ? ' sel' : ''}${fsel ? ' fusesel' : ''}${dim ? ' dim' : ''}" data-id="${it.id}" style="--rc:${col}"><span class="cm-li-ico">${_gearCoreImg(it, 26) || _GEAR_SLOTICO[it.slot]}</span><span class="cm-li-info"><b style="color:${col}">${GEAR_RARITY_LABEL[it.rarity]}</b> ${_sic}${_gearArchName(it)}</span>${it.locked ? '<span class="cm-li-lock">🔒</span>' : ''}${on ? '<span class="cm-li-on">E</span>' : ''}${fsel ? '<span class="cm-li-fnum">✓</span>' : ''}</div>`;
         }).join('');
         listEl.querySelectorAll('.cm-litem').forEach(el => el.onclick = () => { const id = +el.dataset.id; if (_cmFuseMode) { _cmFusePick(id); return; } _cmSel = id; _gearRerollPending = null; _gearLocks.clear(); _renderCoreMgr(); });
@@ -37119,7 +37121,7 @@
     else if (act === 'reroll') { const lockN = [..._gearLocks].filter(i => i < it.lines.length).length; const cost = Math.round((GEAR_REROLL_COST[it.rarity] || 10) * (1 + lockN * GEAR_LOCK_MULT)); if (!spendShards(cost)) { toast('💠 별조각이 부족합니다'); return; } const _arch = _gearArch(it.slot, it.set); _gearRerollPending = it.lines.map((l, i) => _gearLocks.has(i) ? l : ((i === 0 && _arch) ? _gearRollLine(it.slot, _arch.sig) : (l.uniq ? _gearRollUnique() : (l.aff ? _gearRollAffinity(it.set) : _gearRollLine(it.slot))))); SFX.click && SFX.click(); _renderCoreMgr(); }
     else if (act === 'applyRoll') { if (_gearRerollPending) { it.lines = _gearRerollPending; it.v = (it.v || 1) + 1; _gearRerollPending = null; saveMeta(); _renderCoreMgr(); toast('✅ 잠재능력 교체됨'); } }
     else if (act === 'keepRoll') { _gearRerollPending = null; _renderCoreMgr(); }
-    else if (act === 'dismantle') { if (it.locked) { toast('🔒 잠금 코어 — 해제 후 분해'); return; } if (g.equipped[it.slot] === it.id) g.equipped[it.slot] = null; const refund = GEAR_DISM_REFUND[it.rarity] || 1; g.inv = g.inv.filter(x => x.id !== it.id); _gearTombstone([it.id]); grantShards(refund); _cmSel = g.inv.length ? g.inv[0].id : null; _gearRerollPending = null; _gearLocks.clear(); saveMeta(); _renderCoreMgr(); toast(`🔨 분해 → 💠${refund} 별조각`); }
+    else if (act === 'dismantle') { if (it.rarity === 'unique' || it.slot === 'signature') { toast('✨ 고유장비는 분해할 수 없습니다'); return; } if (it.locked) { toast('🔒 잠금 코어 — 해제 후 분해'); return; } if (g.equipped[it.slot] === it.id) g.equipped[it.slot] = null; const refund = GEAR_DISM_REFUND[it.rarity] || 1; g.inv = g.inv.filter(x => x.id !== it.id); _gearTombstone([it.id]); grantShards(refund); _cmSel = g.inv.length ? g.inv[0].id : null; _gearRerollPending = null; _gearLocks.clear(); saveMeta(); _renderCoreMgr(); toast(`🔨 분해 → 💠${refund} 별조각`); }
     else if (act === 'lock') { it.locked = !it.locked; it.v = (it.v || 1) + 1; saveMeta(); _renderCoreMgr(); SFX.click && SFX.click(); toast(it.locked ? '🔒 잠금' : '🔓 잠금 해제'); }
   }
   // 🧹 일괄 분해 대상 — 미장착·미잠금·레어 이하
@@ -37141,6 +37143,7 @@
   function _cmFusePick(id) {
     const g = _ensureGear(); const it = g.inv.find(x => x.id === id); if (!it) return;
     if (_cmFuseSel.has(id)) { _cmFuseSel.delete(id); _renderCoreMgr(); return; }
+    if (it.rarity === 'unique' || it.slot === 'signature') { toast('✨ 고유장비는 합성 불가'); return; }   // ⚠️ 막지 않으면 order.indexOf('unique')=-1 → common 으로 강등 합성됨
     if (it.locked || g.equipped[it.slot] === it.id) { toast('장착/잠금 코어는 합성 불가'); return; }
     if (it.rarity === 'legend') { toast('레전드는 최상위 — 합성 불가'); return; }
     if (_cmFuseSel.size) { const f = g.inv.find(x => x.id === [..._cmFuseSel][0]); if (f && (f.slot !== it.slot || f.rarity !== it.rarity)) { toast('같은 슬롯·같은 등급만'); return; } }
@@ -37151,8 +37154,9 @@
     const g = _ensureGear(); const ids = [..._cmFuseSel];
     const items = ids.map(id => g.inv.find(x => x.id === id)).filter(Boolean);
     if (items.length !== 3) { toast('같은 슬롯·등급 3개를 선택하세요'); return; }
-    const order = ['common', 'rare', 'epic', 'legend']; const ni = order.indexOf(items[0].rarity) + 1;
-    if (ni >= order.length) { toast('레전드는 합성 불가'); return; }
+    if (items.some(x => x.rarity === 'unique' || x.slot === 'signature')) { toast('✨ 고유장비는 합성 불가'); return; }   // ⚠️ 2중 방어
+    const order = GEAR_BASE_RARITY; const ni = order.indexOf(items[0].rarity) + 1;   // ⚠️ unique 미포함 사다리 — 합성으로 고유 등급 생성 불가
+    if (ni <= 0 || ni >= order.length) { toast('레전드는 합성 불가'); return; }
     const nextRar = order[ni];
     const sets = new Set(items.map(x => x.set)); const outSet = (sets.size === 1) ? items[0].set : null;
     const ci = new Set(ids); g.inv = g.inv.filter(x => !ci.has(x.id)); _gearTombstone(ids);
