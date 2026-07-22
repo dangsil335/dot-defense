@@ -6532,6 +6532,14 @@
     paradox:      2.5,    // paradoxFreeze(미사키 8★) 기본 배율 — 기존 수치 그대로
     paradoxPerLv: 0.1,    //  +레벨당. max 합성이라 2.5 > 1.30 > 1.15 로 항상 이 값이 이긴다(수치 불변).
   };
+  // ❄️ CC 취약 타격의 데미지 숫자 색 — 이 규칙을 플레이어에게 알리는 주 채널이다.
+  //   ⚠️ 모바일 PWA 라 title 툴팁(데스크톱 hover 전용)은 대부분의 유저에게 보이지 않는다.
+  //      데미지 숫자는 유일하게 항상 보이는 수치 채널이므로 여기가 주 수단이고 툴팁은 보조다.
+  //   ⚠️ 티어(정지/슬로우)를 색으로 또 나누지 않는다 — 큰 피해 골드(#ffd479)와 '정지' 태그색(#ffe080)이
+  //      거의 같아 "큰 피해"와 "정지"가 구분되지 않고 화면만 시끄러워진다.
+  //      티어 구분은 적 위의 정지 링(drawEnemies)이 담당하고, 숫자는 "취약이 붙었다" 만 알린다.
+  //   ⚠️ TAG_COLORS['슬로우'] · paradoxFreeze 능력색과 같은 값이다(학습된 색 재사용). 바꾸려면 함께 볼 것.
+  const CC_VULN_DMG_COLOR = '#88ddff';
   // ❄️ 슬로우 강도 — metaMods.slowMul 의 유일한 소비처다(적 이동 처리 1곳).
   //   ⚠️ 지속시간이 아니라 "감속률" 에 적용한다. slowFrames 를 세팅하는 지점이 78곳이라
   //      지속에 걸면 누락이 반드시 생기지만, 감속률은 소비 지점이 아래 1곳뿐이라 누락이 원천적으로 없다.
@@ -26496,6 +26504,9 @@
     if (e.shieldPhaseUntil && e.shieldPhaseUntil > state.t) dmg *= 0.18;
     // 👻 환영 피해 — 배율만 먹고 판정류는 아래에서 전부 skip
     if (_phantomDmg) dmg *= _phantomScale;
+    // ❄️ 이번 타격에 CC 취약이 실제로 곱해졌는지 — 아래 데미지 숫자 색이 이 값을 읽는다.
+    //    ⚠️ 배율 계산과 표시가 어긋나지 않도록 별도 재판정 없이 적용된 값을 그대로 들고 온다.
+    let ccVulnApplied = 1;
     // 모든 데미지 멀티 (캐릭터 + 모든 패시브 + 메타 효과)
     if (state.metaMods) {
       const mm = state.metaMods;
@@ -26523,7 +26534,7 @@
       //       (환영은 위 _phantomScale 에서 이미 ×0.25~0.40 으로 눌려 있다)
       if (!_phantomDmg) {
         const ccVuln = _ccVulnMul(e);
-        if (ccVuln > 1) mul *= ccVuln;
+        if (ccVuln > 1) { mul *= ccVuln; ccVulnApplied = ccVuln; }
       }
       if (e.isBoss) {
         // 🛡 v257 — ironwillBonus cap (한 슬롯당 +500%)
@@ -26626,6 +26637,8 @@
     e.hitFlash = state.t + 3;   // ✨ 피격 흰 플래시 (3프레임) — 타격감
     const [ex, ey] = enemyXY(e);
     // 데미지 숫자 — 평소엔 흰색, 큰 데미지(크리티컬)만 골드로 강조
+    //   ❄️ CC 취약이 붙은 타격만 CC 색으로 — 크기(big) 판정은 건드리지 않는다.
+    //      "크고 파란 숫자 = 취약 상태의 큰 피해" 로 읽히게 두 축을 분리한다.
     const big = dmg >= 30;
     // 🛡 데미지 숫자 캡 (작은 데미지는 80개 넘으면 스킵 — 슬로우 + 광역 동시 피격 시 FPS 보호)
     if (big || state.damageNumbers.length < 80) {
@@ -26634,7 +26647,7 @@
         y: ey - e.size - 4,
         vy: -0.7,
         text: String(Math.round(dmg)),
-        color: big ? '#ffd479' : '#dde2ec',
+        color: ccVulnApplied > 1 ? CC_VULN_DMG_COLOR : (big ? '#ffd479' : '#dde2ec'),
         life: 26,
         size: big ? 13 : 10,
       });
