@@ -6525,11 +6525,17 @@
   // 각 ability instance: { id, level, cooldown, ...각 ability별 상태 }
   // def에는 init(ab), tick(ab), draw?(ab) 메서드가 있음
   // ===== 🔩 전술 코어(영구장비) — Phase 2a: 데이터 + 효과주입 =====
-  const GEAR_SLOTS = ['offense','targeting','supply','control'];
-  const GEAR_SLOT_LABEL = { offense:'화력', targeting:'조준', supply:'보급', control:'제어' };
-  const GEAR_RARITY = ['common','rare','epic','legend'];   // legend = 3라인 엔드스펙 (극악)
-  const GEAR_RARITY_LABEL = { common:'커먼', rare:'레어', epic:'에픽', legend:'레전드' };
-  const GEAR_RARITY_LINES = { common:1, rare:2, epic:2, legend:3 };
+  // ⚠️ GEAR_BASE_SLOTS = 드롭·세트·합성·일괄분해가 다루는 "기존 4슬롯". 여기에 signature 를 넣으면 안 된다.
+  const GEAR_BASE_SLOTS = ['offense','targeting','supply','control'];
+  // ✨ GEAR_SLOTS = 장착 순회용 전체 슬롯(4 + 고유). 세트 카운트는 반드시 GEAR_BASE_SLOTS 를 써야 함.
+  const GEAR_SLOTS = GEAR_BASE_SLOTS.concat(['signature']);
+  const GEAR_SLOT_LABEL = { offense:'화력', targeting:'조준', supply:'보급', control:'제어', signature:'고유' };
+  // ⚠️ GEAR_BASE_RARITY = 드롭 가중치·합성 승급 사다리가 쓰는 4등급. unique 는 절대 포함 금지.
+  const GEAR_BASE_RARITY = ['common','rare','epic','legend'];   // legend = 3라인 엔드스펙 (극악)
+  // ✨ GEAR_RARITY = 전체 등급(4 + 고유). unique = 고유장비 전용 — 드롭/합성으로는 얻을 수 없다.
+  const GEAR_RARITY = GEAR_BASE_RARITY.concat(['unique']);
+  const GEAR_RARITY_LABEL = { common:'커먼', rare:'레어', epic:'에픽', legend:'레전드', unique:'고유' };
+  const GEAR_RARITY_LINES = { common:1, rare:2, epic:2, legend:3, unique:3 };
   // ===== 🎽 세트(테마) — 코어 하나 = 세트 × 슬롯 (통합형). 세트 맞춰 착용하면 2/4피스 보너스 =====
   const GEAR_SET_KEYS = ['destroyer', 'cryomancer', 'alchemist'];
   const GEAR_SETS = {
@@ -36902,8 +36908,8 @@
     return el;
   }
   // 🔩 전술 코어 — 일러스트 양옆 슬롯 + 인벤토리 그리드 (계정 공용, 캐릭터 상세)
-  const _GEAR_RARCOL = { common:'#9aa3b3', rare:'#7ad7ff', epic:'#c98bff', legend:'#ffd479' };
-  const _GEAR_SLOTICO = { offense:'🔥', targeting:'🎯', supply:'💰', control:'⚙️' };
+  const _GEAR_RARCOL = { common:'#9aa3b3', rare:'#7ad7ff', epic:'#c98bff', legend:'#ffd479', unique:'#ff9de2' };
+  const _GEAR_SLOTICO = { offense:'🔥', targeting:'🎯', supply:'💰', control:'⚙️', signature:'✨' };
   // 🖼 코어 아이템 이미지 (세트×슬롯). 파일 없으면 onerror로 제거(빈칸). 빈 슬롯은 호출 안 함.
   function _gearCoreImg(it, px) { if (!it || !it.set || !it.slot) return ''; const s = px || 28; return `<img class="gear-core-img" src="./icons/gear/${it.set}-${it.slot}.png" alt="" style="width:${s}px;height:${s}px" onerror="this.remove()">`; }
   function _gearFlankSlot(slot, g) {
@@ -36940,11 +36946,11 @@
     if (invHost) invHost.querySelectorAll('.gear-inv-item').forEach(el => { el.onclick = () => _openGearCore(+el.dataset.id); });
   }
   // ===== 🔩 코어 관리 모달 (장착/해제 · 재설정(리롤·꽝) · 분해) =====
-  const GEAR_REROLL_COST = { common:6, rare:12, epic:25, legend:50 };   // 하드코어
-  const GEAR_DISM_REFUND = { common:1, rare:3, epic:8, legend:20 };
+  const GEAR_REROLL_COST = { common:6, rare:12, epic:25, legend:50, unique:80 };   // 하드코어
+  const GEAR_DISM_REFUND = { common:1, rare:3, epic:8, legend:20 };   // ✨ unique 항목 없음 — 고유장비는 분해 불가(_cmAction에서 차단)
   const GEAR_LOCK_MULT = 2;   // 잠금 1줄당 재설정 비용 ×(1+2n) — 1잠금=3배, 2잠금=5배 (매우 비쌈)
   const GEAR_LEVEL_MAX = 20;   // 코어 레벨 상한 (레벨당 +10% 라인값)
-  const _GEAR_LVL_RMUL = { common:1, rare:1.5, epic:2.2, legend:3.5 };   // 등급별 레벨업 비용 배수
+  const _GEAR_LVL_RMUL = { common:1, rare:1.5, epic:2.2, legend:3.5, unique:4.5 };   // 등급별 레벨업 비용 배수
   function gearLevelCost(it) { return Math.round(40 * ((it.level || 0) + 1) * (_GEAR_LVL_RMUL[it.rarity] || 1)); }
   let _gearModalId = null, _gearRerollPending = null;
   function _openGearCore(id) {
