@@ -5073,6 +5073,10 @@
   .cm-litem.fusesel { border-color:#7ad7ff !important; box-shadow:0 0 10px rgba(122,215,255,0.4); background:rgba(122,215,255,0.1); }
   .cm-litem.dim { opacity:0.32; pointer-events:none; }
   .cm-li-lock, .cm-li-fnum { font-size:11px; margin-left:4px; flex:0 0 auto; }
+  /* ✨ 고유장비 — 목록의 캐릭터 이름 / 상세의 분해 불가 안내 */
+  .cm-li-uq { color:#ff9de2; font-weight:700; }
+  .cm-d-note { font-size:10px; font-weight:700; color:#ff9de2; align-self:center; }
+  .gcm-btn.dism.uqno { border-color:#5a3a52; color:#a97e97; }
   .cm-li-fnum { color:#7ad7ff; font-weight:800; }
   .gcm-btn.lock.on { border-color:#ffd479; color:#ffe6a0; }
   /* 🎮 플레이 컨트롤 — 우측 상단 개별 원형 버튼 (배속·자동) */
@@ -37197,9 +37201,14 @@
           const col = _GEAR_RARCOL[it.rarity] || '#9aa3b3';
           const on = g.equipped[it.slot] === it.id, sel = it.id === _cmSel, fsel = _cmFuseSel.has(it.id);
           const _sic = GEAR_SETS[it.set] ? GEAR_SETS[it.set].icon : '';
+          // ✨ 고유장비는 세트·기종이 없어 이름이 전부 "고유" 로 겹친다 → 어느 캐릭터 것인지 이름으로 구분한다.
+          //    (등급색은 _GEAR_RARCOL.unique = #ff9de2 로 이미 col 에 잡혀 있다 — 좌측 바·등급 라벨에 적용됨)
+          const _nm = _gearIsUnique(it)
+            ? `<span class="cm-li-uq">${(CHARACTERS[it.charId] && CHARACTERS[it.charId].name) || _gearArchName(it)}</span>`
+            : `${_sic}${_gearArchName(it)}`;
           let dim = false;
           if (_cmFuseMode && !fsel) dim = it.locked || on || it.rarity === 'legend' || it.rarity === 'unique' || (fFirst && (fFirst.slot !== it.slot || fFirst.rarity !== it.rarity));
-          return `<div class="cm-litem${sel && !_cmFuseMode ? ' sel' : ''}${fsel ? ' fusesel' : ''}${dim ? ' dim' : ''}" data-id="${it.id}" style="--rc:${col}"><span class="cm-li-ico">${_gearCoreImg(it, 26) || _GEAR_SLOTICO[it.slot]}</span><span class="cm-li-info"><b style="color:${col}">${GEAR_RARITY_LABEL[it.rarity]}</b> ${_sic}${_gearArchName(it)}</span>${it.locked ? '<span class="cm-li-lock">🔒</span>' : ''}${on ? '<span class="cm-li-on">E</span>' : ''}${fsel ? '<span class="cm-li-fnum">✓</span>' : ''}</div>`;
+          return `<div class="cm-litem${sel && !_cmFuseMode ? ' sel' : ''}${fsel ? ' fusesel' : ''}${dim ? ' dim' : ''}" data-id="${it.id}" style="--rc:${col}"><span class="cm-li-ico">${_gearCoreImg(it, 26) || _GEAR_SLOTICO[it.slot]}</span><span class="cm-li-info"><b style="color:${col}">${GEAR_RARITY_LABEL[it.rarity]}</b> ${_nm}</span>${it.locked ? '<span class="cm-li-lock">🔒</span>' : ''}${on ? '<span class="cm-li-on">E</span>' : ''}${fsel ? '<span class="cm-li-fnum">✓</span>' : ''}</div>`;
         }).join('');
         listEl.querySelectorAll('.cm-litem').forEach(el => el.onclick = () => { const id = +el.dataset.id; if (_cmFuseMode) { _cmFusePick(id); return; } _cmSel = id; _gearRerollPending = null; _gearLocks.clear(); _renderCoreMgr(); });
       }
@@ -37217,6 +37226,8 @@
   function _cmCoreDetailHtml(it, g) {
     const col = _GEAR_RARCOL[it.rarity] || '#9aa3b3';
     const sdef = GEAR_SETS[it.set] || null;
+    const uq = _gearIsUnique(it);                              // ✨ 고유장비 — 분해·합성만 막고 강화·재설정은 그대로 허용
+    const uqch = uq ? (CHARACTERS[it.charId] || null) : null;   // 소유 캐릭터(표시용). 장착 자체엔 캐릭터 제한 없음
     const equipped = g.equipped[it.slot] === it.id;
     const refund = GEAR_DISM_REFUND[it.rarity] || 1;
     const lockN = [..._gearLocks].filter(i => i < it.lines.length).length;
@@ -37232,11 +37243,14 @@
           if (l.uniq) return _gearUniqRow(l, lockBtn);
           return `<div class="gcm-line${_gearLocks.has(i) ? ' locked' : ''}${i === 0 && sdef ? ' sig' : ''}${l.aff ? ' aff' : ''}">${lockBtn}<span class="gcm-tier t${l.tier}">T${l.tier}</span><span class="gcm-lbl">${l.label}${i === 0 && sdef ? ' <span class="gcm-sig">시그니처</span>' : ''}${_gearAffBadge(l)}</span><b>${l.flat ? '+' + l.val + 's' : '+' + Math.round(l.val * 100) + '%'}</b></div>`;
         }).join('');
-    let h = `<div class="cm-d-head" style="border-color:${col}"><span class="cm-d-ico">${_gearCoreImg(it, 34) || _GEAR_SLOTICO[it.slot]}</span><div><div class="cm-d-name">${_gearArchName(it)} 코어</div><div class="cm-d-rar" style="color:${col}">${GEAR_RARITY_LABEL[it.rarity]}${equipped ? ' · 장착중' : ''}${sdef ? ` · <span style="color:${sdef.color}">${sdef.icon}${sdef.name}</span>` : ''}${it.locked ? ' · <span style="color:#ffd479">🔒</span>' : ''}</div></div></div>${levelRow}<div class="cm-d-cols"><div class="cm-d-col"><div class="cm-d-colt">현재 잠재능력${lockN ? ` · 🔒${lockN}` : ''}</div>${curLines}</div>`;
+    let h = `<div class="cm-d-head" style="border-color:${col}"><span class="cm-d-ico">${_gearCoreImg(it, 34) || _GEAR_SLOTICO[it.slot]}</span><div><div class="cm-d-name">${_gearArchName(it)} 코어</div><div class="cm-d-rar" style="color:${col}">${GEAR_RARITY_LABEL[it.rarity]}${equipped ? ' · 장착중' : ''}${sdef ? ` · <span style="color:${sdef.color}">${sdef.icon}${sdef.name}</span>` : ''}${uq ? ` · <span style="color:${col}">✨${uqch ? uqch.name : '고유장비'}</span>` : ''}${it.locked ? ' · <span style="color:#ffd479">🔒</span>' : ''}</div></div></div>${levelRow}<div class="cm-d-cols"><div class="cm-d-col"><div class="cm-d-colt">현재 잠재능력${lockN ? ` · 🔒${lockN}` : ''}</div>${curLines}</div>`;
     if (_gearRerollPending) h += `<div class="cm-d-arrow">→</div><div class="cm-d-col new"><div class="cm-d-colt">새 잠재능력</div>${_gearRerollPending.map(_gearLineRow).join('')}</div>`;
     h += `</div>`;
     if (_gearRerollPending) h += `<div class="cm-d-acts"><button class="gcm-btn apply" data-act="applyRoll">✅ 교체 적용</button><button class="gcm-btn" data-act="keepRoll">유지 (되돌리기)</button></div>`;
-    else h += `<div class="cm-d-acts"><button class="gcm-btn eq" data-act="equip">${equipped ? '🔓 해제' : '🔩 장착'}</button><button class="gcm-btn roll" data-act="reroll"${shards < cost ? ' disabled' : ''}>🎲 재설정 <span class="gcm-cost">💠${cost}${lockN ? ' 🔒' + lockN : ''}</span></button><button class="gcm-btn lock${it.locked ? ' on' : ''}" data-act="lock" title="잠금 — 일괄분해·합성에서 보호">${it.locked ? '🔒' : '🔓'}</button><button class="gcm-btn dism" data-act="dismantle"${it.locked ? ' disabled' : ''}>🔨 분해 <span class="gcm-cost">→💠${refund}</span></button></div>`;
+    else h += `<div class="cm-d-acts"><button class="gcm-btn eq" data-act="equip">${equipped ? '🔓 해제' : '🔩 장착'}</button><button class="gcm-btn roll" data-act="reroll"${shards < cost ? ' disabled' : ''}>🎲 재설정 <span class="gcm-cost">💠${cost}${lockN ? ' 🔒' + lockN : ''}</span></button><button class="gcm-btn lock${it.locked ? ' on' : ''}" data-act="lock" title="잠금 — 일괄분해·합성에서 보호">${it.locked ? '🔒' : '🔓'}</button>${uq
+      // ✨ 고유장비 = 분해 불가(_cmAction 이 이미 차단). data-act 를 아예 안 달아 클릭 배선 자체가 없다 + 이유 표기.
+      ? `<button class="gcm-btn dism uqno" disabled title="고유장비는 분해·합성할 수 없습니다">🔨 분해</button><span class="cm-d-note">✨ 고유장비는 분해·합성 불가</span>`
+      : `<button class="gcm-btn dism" data-act="dismantle"${it.locked ? ' disabled' : ''}>🔨 분해 <span class="gcm-cost">→💠${refund}</span></button>`}</div>`;
     return h;
   }
   function _cmAction(act) {
