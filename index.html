@@ -6513,6 +6513,25 @@
     return v;
   }
   const MAX_ALIVE = MAX_ALIVE_BASE;  // 레거시 참조용 (UI 등에서 사용)
+  // ❄️ CC 취약 — "CC 상태의 적은 받는 피해가 증가한다" 는 엔진 전역 규칙.
+  //   ⚠️ 클래식 패배 조건은 "화면의 생존 적 > maxAlive" 이고 타워 HP 가 없다. 멈춘 적도 카운트에 남고
+  //      스폰은 계속되므로 정지/슬로우는 그 자체로 승리에 기여하지 않는다. CC 를 딜로 환산하는 것이 이 규칙의 목적.
+  //   ⚠️ 합성은 곱이 아니라 max — 정지를 거는 능력은 전부 같은 줄에서 슬로우도 함께 걸기 때문에,
+  //      곱으로 하면 "정지 = 항상 slow×stop" 이 되어 표시값과 실제값이 어긋난다.
+  //   ⚠️ minFrames — 잔여 슬로우가 이보다 짧으면 슬로우 티어 미적용. 상시 슬로우 8★ 6종
+  //      (abyssalWrath 6 / sirensSong 6 / cherrySingularity 8 / omniSolvent 10 /
+  //       eventHorizon 12 / gorgonRealm 14 프레임)은 매 프레임 재부여라 가동률이 100% 다.
+  //      게이트가 없으면 이 규칙이 "조건부 보상" 이 아니라 "무조건 전역 버프" 가 된다.
+  //      부작용으로 긴 슬로우도 마지막 24프레임 동안은 취약이 풀린다 — 의도된 설계 선택이다.
+  //   ⚠️ 보스는 관례상 timeStopped 가 안 걸린다 → stop 티어는 자연히 비보스 전용이라 isBoss 분기를 두지 않는다.
+  //      보스는 슬로우 티어(×1.15)만 받는다.
+  const CC_VULN = {
+    stop:         1.30,   // 완전정지(timeStopped) — 이동속도 ×0
+    slow:         1.15,   // 슬로우(slowFrames)    — 이동속도 대폭 감소
+    minFrames:    24,     // 슬로우 티어 최소 잔여 프레임(0.4초). 밸런싱 손잡이.
+    paradox:      2.5,    // paradoxFreeze(미사키 8★) 기본 배율 — 기존 수치 그대로
+    paradoxPerLv: 0.1,    //  +레벨당. max 합성이라 2.5 > 1.30 > 1.15 로 항상 이 값이 이긴다(수치 불변).
+  };
   const MAX_SLOTS = 6;          // 액티브/패시브 각각 6칸씩
   function maxActiveSlots() {
     const metaBonus = (META.upgrades && META.upgrades.extraSlot) || 0;
@@ -26426,6 +26445,33 @@
     }
     return ab._stats;
   }
+  // ❄️ CC 취약 — 공용 판정. 수치는 최상위 CC_VULN 한 곳에서 관리한다.
+  //   ⚠️ 단일 판정원이다. timeStopped/slowFrames 를 직접 비교해 피해 배율을 만드는 코드를 새로 만들지 말 것.
+  //   ⚠️ 합성은 max — 정지(1.30) · 슬로우(1.15) · paradoxFreeze(2.5+lv×0.1) 중 가장 큰 것 하나만 먹는다.
+  //      2.5 > 1.30 > 1.15 가 lv ≥ 0 에서 항상 성립하므로 paradoxFreeze 수치는 흡수 전후로 정확히 동일하다.
+  //   ⚠️ 잔여 슬로우가 CC_VULN.minFrames 미만이면 슬로우 티어는 붙지 않는다(상시 슬로우 8★ 6종 배제).
+  function _ccVulnMul(e) {
+    let v = 1;
+    if (e.timeStopped && e.timeStopped > state.t) v = CC_VULN.stop;
+    if ((e.slowFrames || 0) >= CC_VULN.minFrames && v < CC_VULN.slow) v = CC_VULN.slow;
+    // 🌟 paradoxFreeze(미사키 8★) — 기존 _paradoxVuln 마커를 이 규칙에 흡수. 곱이 아니라 max 라 수치 변화 0.
+    //    마커에 레벨을 싣지 않으므로 발동 능력을 역탐색한다 — 기존 damageEnemy 안의 로직을 그대로 옮긴 것이다.
+    if (e._paradoxVuln) {
+      let pv = CC_VULN.paradox;
+      if (state.tower && state.tower.abilities) {
+        const pf = state.tower.abilities.find(a => a.id === 'paradoxFreeze');
+        if (pf) pv = CC_VULN.paradox + pf.level * CC_VULN.paradoxPerLv;
+      }
+      // 디펜스 모드 — towers 에서 찾기
+      if (state.towers) {
+        for (const t of state.towers) {
+          if (t.ab && t.ab.id === 'paradoxFreeze') pv = Math.max(pv, CC_VULN.paradox + t.ab.level * CC_VULN.paradoxPerLv);
+        }
+      }
+      if (pv > v) v = pv;
+    }
+    return v;
+  }
   function damageEnemy(e, dmg) {
     if (e.hp <= 0) return;
     // 👁 공허의 눈 — 점멸 무적 중 피해 무효
@@ -26453,24 +26499,15 @@
       // 🌟 능력별 영구 강화 (스타더스트 강화) — 모든 능력
       const permaBonus = _phantomDmg ? 0 : getAbilityPermaBonus(state.currentAbilityId);
       if (permaBonus > 0) mul *= (1 + permaBonus);
-      // ❄️ paradoxFreeze 동결 중 — 받는 데미지 증폭
-      if (e._paradoxVuln) {
-        // paradoxFreeze 의 발동 lv 가 필요 → 가장 높은 미사키 8★ 능력의 lv 추정 (기본 ×2.5)
-        let vulnMul = 2.5;
-        // state.tower.abilities 에서 paradoxFreeze 찾아서 lv 반영
-        if (state.tower && state.tower.abilities) {
-          const pf = state.tower.abilities.find(a => a.id === 'paradoxFreeze');
-          if (pf) vulnMul = 2.5 + pf.level * 0.1;
-        }
-        // 디펜스 모드 — towers 에서 찾기
-        if (state.towers) {
-          for (const t of state.towers) {
-            if (t.ab && t.ab.id === 'paradoxFreeze') {
-              vulnMul = Math.max(vulnMul, 2.5 + t.ab.level * 0.1);
-            }
-          }
-        }
-        mul *= vulnMul;
+      // ❄️ CC 취약 — 정지/슬로우/paradoxFreeze 를 max 합성한 공용 규칙 (판정은 _ccVulnMul 한 곳뿐).
+      //    사슬 내 위치는 기존 _paradoxVuln 블록 자리 그대로다(보스 분기 직전). 전부 순수 곱이라 순서는 무관하지만
+      //    metaMods 블록 안 / 보스 배율 앞이라는 게이트 조건은 유지해야 한다.
+      //    👻 환영은 제외 — 환영은 판정류를 전부 스킵하는 규약이다. 사슬이 33겹이라 "대상 상태" 배율까지
+      //       환영 3기에 각각 태우면 표시값 대비 절대 증분이 크게 어긋난다.
+      //       (환영은 위 _phantomScale 에서 이미 ×0.25~0.40 으로 눌려 있다)
+      if (!_phantomDmg) {
+        const ccVuln = _ccVulnMul(e);
+        if (ccVuln > 1) mul *= ccVuln;
       }
       if (e.isBoss) {
         // 🛡 v257 — ironwillBonus cap (한 슬롯당 +500%)
