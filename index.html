@@ -34321,7 +34321,7 @@
                 { avail: () => _ancientAvail('kaira'), make: () => _charRelicEv('kaira') } ],
     feria:    [ { make: () => _charEv('🧲 페리아의 자장',      '"당겨서 뭉칠까, 밀어서 흩을까?"',                       'dmg',  22, 'polarField') },
                 { avail: () => _ancientAvail('feria'), make: () => _charRelicEv('feria') } ],
-    somnia:   [ { make: () => _charEv('💤 솜니아의 자장가',    '"더 세게 재울까요, 아니면 깰 때 더 아프게 할까요?"',       'dmg',  22, 'lullaby') },
+    somnia:   [ { make: () => _charEv('💤 솜니아의 자장가',    '"더 세게 재울까… 아니면, 깰 때 더 아프게 해줄까?"',       'dmg',  22, 'lullaby') },
                 { avail: () => _ancientAvail('somnia'), make: () => _charRelicEv('somnia') } ],
     sakura:   [ { make: () => _charEv('🌸 사쿠라의 만개',     '"꽃잎처럼 흩날리는 칼날, 더 날카롭게 해줄까?"',             'dmg',  22, 'sakuraSlash') } ],
     luna:     [ { make: () => _charEv('🌙 루나의 월광',       '"달빛을 더 퍼뜨릴까, 월광탄을 더 키울까?"',                 'dmg',  18, 'moonShot') } ],
@@ -34646,13 +34646,13 @@
     // ── 💤 솜니아 (꿈·수면) ── 브릿지: luna (전용 신규 SR 없이 합류 — 미사키와 루나를 공유. SR_TO_SSR 주석 참조)
     //    루나가 속한 R타워 5종 중 축이 겹치지 않는 4종만 채택 → blast·pierce·ice·echo 4축 전부 커버(shock은 루나 경로에 없음).
     starfall_somnia:      { sr:'luna',     ssr:'somnia',    axis:'blast', name:'별 헤는 자장가',
-                            lines:['루나: 별 하나에 하나씩 — 세어줄게.', '솜니아: 좋아요. 다 세기 전에… 전부 잠들 거예요.'] },
+                            lines:['루나: 별 하나에 하나씩 — 세어줄게.', '솜니아: 응… 다 세기도 전에, 전부 잠들 거야.'] },
     beam_somnia:          { sr:'luna',     ssr:'somnia',    axis:'pierce',name:'월광 각성',
-                            lines:['루나: 달빛 한 줄기, 곧게 세워둘게.', '솜니아: 그 빛으로 깨울게요 — 아주 아프게.'] },
+                            lines:['루나: 달빛 한 줄기, 곧게 세워둘게.', '솜니아: 그 빛으로 깨울게. …아주 아프게.'] },
     frost_somnia:         { sr:'luna',     ssr:'somnia',    axis:'ice',   name:'동면의 서리',
-                            lines:['루나: 숨결까지 얼려둘게. 뒤척이지도 못하게.', '솜니아: 언 채로 잠들면… 다시는 못 깨요.'] },
+                            lines:['루나: 숨결까지 얼려둘게. 뒤척이지도 못하게.', '솜니아: 언 채로 잠들면… 다시는 못 깨.'] },
     orbital_somnia:       { sr:'luna',     ssr:'somnia',    axis:'echo',  name:'꿈나라 궤도',
-                            lines:['루나: 네 꿈 둘레를 돌게 해줄게 — 끝없이.', '솜니아: 그럼 여긴, 나가는 길이 없는 꿈이네요.'] },
+                            lines:['루나: 네 꿈 둘레를 돌게 해줄게 — 끝없이.', '솜니아: 그럼 여긴… 나가는 길이 없는 꿈이네.'] },
   };
   // 🧬 ③ 계보 공명 — 각성한 것 추적(기기-로컬, META 분리) + 진화트리 도감(떡밥 + 점진공개)
   function _getResonanceSeen() { try { return JSON.parse(localStorage.getItem('_dd_resonance') || '{}') || {}; } catch (e) { return {}; } }
@@ -37725,7 +37725,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 687;
+  const APP_VERSION = 688;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
