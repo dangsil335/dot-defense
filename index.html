@@ -35245,9 +35245,8 @@
     blanche: [{ id: 'crystal',    name: '크리스탈 라군 리조트' }],
     kaira:   [{ id: 'whitetiger', name: '백호 사냥대장' }],
     lara:    [{ id: 'gothic',     name: '고딕 마리오네트' }],
-    marine:  [{ id: 'navy',       name: '네이비' }],
     sakura:  [{ id: 'summer',     name: '블루 서머 페스티벌' }],
-    somnia:  [{ id: 'beachnap',   name: '해변 낮잠' }, { id: 'black', name: '블랙' }],
+    somnia:  [{ id: 'beachnap',   name: '해변 낮잠' }],
     sumika:  [{ id: 'snowmoon',   name: '설월검희' }],
   };
   function _skinsOf(charId) { return SKINS[charId] || []; }
@@ -35255,7 +35254,7 @@
   function _skinOwned(charId, skinId) { return !!(META.skins && META.skins.owned && META.skins.owned[_skinKey(charId, skinId)]); }
   function _skinApplied(charId) { return (META.skins && META.skins.applied) ? (META.skins.applied[charId] || null) : null; }
   // 🎨 캐릭 일러 id 해석 — 적용+보유 스킨이 있으면 스킨 일러 base 반환(체인이 그 파일 프로브), 없으면 원본 charId.
-  function _resolveIllustId(charId) { const s = _skinApplied(charId); if (s && _skinOwned(charId, s)) return _skinKey(charId, s); return charId; }
+  function _resolveIllustId(charId) { const s = _skinApplied(charId); if (s && _skinOwned(charId, s) && _skinsOf(charId).some(sk => sk.id === s)) return _skinKey(charId, s); return charId; }   // 스킨이 레지스트리에 아직 있을 때만(삭제된 스킨 적용 상태면 기본 일러로 폴백)
   function _buySkin(charId, skinId) {
     if (_skinOwned(charId, skinId)) return true;
     // 💠 별조각(starShards) 400 소비 — spendShards 가 잔액체크+차감+spent추적+저장+UI펄스+bool 반환
@@ -38591,7 +38590,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 704;
+  const APP_VERSION = 705;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
