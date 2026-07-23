@@ -22528,6 +22528,35 @@
   function _tutActive() { const s = _tutStage(); return !!s && s !== 'done' && !META.tutorialDone; }
   function _tutStart() { META.tutorial = { stage: 'intro' }; try { saveMeta(); } catch (e) {} }
   function _tutDone() { return !!(META && (META.tutorialDone || _tutStage() === 'done')); }
+  // 🎓 솜니아 튜토리얼 대사 (나른·반말·천진난만한 딸 톤)
+  const TUTORIAL_LINES = {
+    intro: [
+      '으음… 왔구나, 함장. 나 솜니아라고 해. 반가워—.',
+      '여긴 처음이지? 걱정 마, 내가 옆에서 알려줄게. 어렵지 않아.',
+      '자, 저 아래 행성 하나 골라서 시작해 보자. 가볍게.'
+    ],
+    evolve: '이제 날 불러! 저 카드 누르면 내가 나올게. 이번만 특별히 도와주는 거야.',
+    done: '거봐, 할 만하지? 이제 진짜 시작이야. 잘 부탁해, 함장.'
+  };
+  // 🎓 인트로 컷인 — 솜니아 일러(char-cutin) 3연 순차 재생 후 메뉴 보장 (Phase 1: 스포트라이트 없음)
+  function _tutIntro() {
+    const lines = (TUTORIAL_LINES && TUTORIAL_LINES.intro) || [];
+    const ch = (typeof CHARACTERS !== 'undefined' && CHARACTERS.somnia) || {};
+    let i = 0;
+    (function showOne() {
+      if (i >= lines.length) { try { if (typeof showScreen === 'function') showScreen('menu'); } catch (e) {} return; }
+      try {
+        const wrap = document.createElement('div'); wrap.className = 'char-cutin';
+        wrap.style.setProperty('--cc', ch.color || '#c8b0ff');
+        const img = _charPortraitImg('somnia', 'char-cutin-illus');
+        const nm = document.createElement('div'); nm.className = 'char-cutin-name'; nm.textContent = ch.name || '💤 솜니아';
+        const ln = document.createElement('div'); ln.className = 'char-cutin-line'; ln.textContent = '"' + lines[i] + '"';
+        wrap.appendChild(img); wrap.appendChild(nm); wrap.appendChild(ln);
+        document.body.appendChild(wrap);
+        setTimeout(() => { wrap.classList.add('out'); setTimeout(() => { try { wrap.remove(); } catch (e) {} i++; showOne(); }, 420); }, 2200);
+      } catch (e) { i++; showOne(); }
+    })();
+  }
   // 🎓 기존 유저 봉인 — 닉네임이 이미 있고 튜토리얼 기록이 전혀 없으면 '완료'로 못박아,
   //    나중에 닉네임을 수정(setNickname 재호출)해도 튜토리얼이 소급 발동하지 않게 한다.
   (function _tutMigrateExisting() {
@@ -23600,9 +23629,11 @@
     btn.textContent = '계정 생성 중...';
     try {
       await signupAccount(nick, pw);
+      const _tutNew = (META.tutorial === undefined && !META.tutorialDone);   // 🎓 신규 유저 판정(계정생성 직후)
       refreshMenuNickname();
       closeAuthModal();
       toast('✅ 계정 생성 완료!');
+      if (_tutNew) { _tutStart(); setTimeout(() => { try { _tutIntro(); } catch (e) {} }, 650); }   // 🎓 튜토리얼 시작 + 인트로
     } catch (e) {
       errEl.textContent = '⚠ ' + (e.message || '실패');
     } finally {
@@ -23938,8 +23969,12 @@
 
     // 4. 저장 — ⚠ 순서 중요: 칭호 먼저 저장 → 그 다음 메뉴 새로고침 (안 그러면 1회 lag)
     META.nickname = newNick;
+    // 🎓 신규 유저(첫 닉네임 확정) 여부를 지금 포착 — 이후 로직(ensureUserId·updateProfileInRankings 등)이
+    //    던져도 튜토리얼 시작이 막히지 않게, 닉네임 확정 직후 즉시 판정·발동한다.
+    const _tutNewUser = (META.tutorial === undefined && !META.tutorialDone);
     setSelectedTitle(_modalPreviewTitle);  // META.selectedTitle 갱신 + 저장
     refreshMenuNickname();                  // 이제 새 칭호 반영된 상태로 메뉴 갱신
+    if (_tutNewUser) { _tutStart(); setTimeout(() => { try { _tutIntro(); } catch (e) {} }, 650); }   // 🎓 stage='intro' + 인트로 컷인
     ensureUserId();
     const modal = document.getElementById('nicknameModal');
     modal._forceRequired = false;
