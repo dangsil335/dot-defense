@@ -35115,24 +35115,50 @@
       } };
     }
 
-    // ── 🔮 엘레미아 — 바람/불/얼음 세 원소구가 모여 폭발 ──
+    // ── 🔮 엘레미아 — 바람(소용돌이)·불(불꽃혀)·얼음(결정) 세 정령이 공전→합류 대폭발 ──
     if (style === 'elementia') {
-      const cols = [fx.wind || '#6fd8ff', fx.fire || '#ff7a3c', fx.ice || '#8affe0'];
+      const cols = [fx.wind || '#7fe0ff', fx.fire || '#ff8a3c', fx.ice || '#8affe0'];
+      // 각 정령의 궤적 파티클(꼬리) + 폭발 파편
+      const TRAIL = [];
+      for (let k = 0; k < 3; k++) for (let i = 0; i < 16; i++) TRAIL.push({ k, lag: i * 0.06, size: 4 - i * 0.16 });
       const SHARDS = [];
-      for (let i = 0; i < 40; i++) SHARDS.push({ ang: R(0, PI2), sp: 0.6 + Math.random() * 0.9, size: 2 + Math.random() * 3, col: cols[i % 3] });
-      return { draw: function (ctx, g, t, post) {
-        const cx = g.cx, cy = g.cy, maxR = g.maxR; const conv = Math.min(1, t / 1600); const orbR = Math.min(g.W, g.H) * 0.32 * (1 - conv * 0.92);
-        if (conv < 1) { ctx.strokeStyle = C('#ffffff', 0.12 * post); ctx.lineWidth = 1; ctx.beginPath(); for (let k = 0; k < 3; k++) { const a = k / 3 * PI2 - PI / 2 + t * 0.001; const x = cx + Math.cos(a) * orbR, y = cy + Math.sin(a) * orbR; k === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y); } ctx.closePath(); ctx.stroke(); }
-        const fade = t > FLASH_AT ? Math.max(0, 1 - (t - FLASH_AT) / 300) : 1;
-        for (let k = 0; k < 3; k++) {   // 세 원소구 (각자 색·글로우)
-          const a = k / 3 * PI2 - PI / 2 + t * 0.0016; const x = cx + Math.cos(a) * orbR, y = cy + Math.sin(a) * orbR;
-          const rr = (18 + 8 * Math.sin(t * 0.01 + k)) * (0.7 + 0.3 * (1 - conv)) * fade; if (rr <= 0) continue;
-          const gg = ctx.createRadialGradient(x, y, 0, x, y, rr * 2); gg.addColorStop(0, C(cols[k], 0.9 * post)); gg.addColorStop(0.5, C(cols[k], 0.4 * post)); gg.addColorStop(1, C(cols[k], 0));
-          ctx.fillStyle = gg; ctx.beginPath(); ctx.arc(x, y, rr * 2, 0, PI2); ctx.fill();
+      for (let i = 0; i < 64; i++) SHARDS.push({ ang: R(0, PI2), sp: 0.5 + Math.random() * 1.0, size: 2 + Math.random() * 4, col: cols[i % 3], spin: R(0, PI2) });
+      const sprite = function (ctx, k, x, y, rr, a, tt) {
+        const col = cols[k];
+        // 공통 글로우 코어
+        const gg = ctx.createRadialGradient(x, y, 0, x, y, rr * 2.2);
+        gg.addColorStop(0, C('#ffffff', a)); gg.addColorStop(0.35, C(col, a * 0.85)); gg.addColorStop(1, C(col, 0));
+        ctx.fillStyle = gg; ctx.beginPath(); ctx.arc(x, y, rr * 2.2, 0, PI2); ctx.fill();
+        ctx.save(); ctx.globalCompositeOperation = 'lighter';
+        if (k === 0) {   // 바람 — 회전 소용돌이 나선 팔 3개
+          for (let s = 0; s < 3; s++) { ctx.strokeStyle = C(col, a * 0.9); ctx.lineWidth = 2; ctx.beginPath(); for (let p = 0; p <= 14; p++) { const pr = p / 14; const aa = tt * 0.02 + s / 3 * PI2 + pr * 3.2; const r2 = rr * (0.2 + pr * 1.7); const px = x + Math.cos(aa) * r2, py = y + Math.sin(aa) * r2; p === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py); } ctx.stroke(); }
+        } else if (k === 1) {   // 불 — 위로 일렁이는 불꽃 혀
+          for (let s = 0; s < 5; s++) { const off = (s - 2) * rr * 0.34; const h = rr * (1.6 + 0.5 * Math.sin(tt * 0.02 + s)); ctx.fillStyle = C(col, a * 0.8); ctx.beginPath(); ctx.moveTo(x + off - rr * 0.28, y + rr * 0.3); ctx.quadraticCurveTo(x + off + Math.sin(tt * 0.02 + s) * rr * 0.3, y - h * 0.5, x + off, y - h); ctx.quadraticCurveTo(x + off - Math.sin(tt * 0.02 + s) * rr * 0.3, y - h * 0.5, x + off + rr * 0.28, y + rr * 0.3); ctx.closePath(); ctx.fill(); }
+        } else {   // 얼음 — 회전하는 육각 결정 + 십자 축
+          const rot = tt * 0.006; ctx.strokeStyle = C('#ffffff', a); ctx.lineWidth = 2;
+          for (let s = 0; s < 6; s++) { const aa = rot + s / 6 * PI2; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + Math.cos(aa) * rr * 1.5, y + Math.sin(aa) * rr * 1.5); ctx.stroke(); const bx = x + Math.cos(aa) * rr * 1.5, by = y + Math.sin(aa) * rr * 1.5; ctx.strokeStyle = C(col, a * 0.8); for (const dd of [-0.5, 0.5]) { ctx.beginPath(); ctx.moveTo(bx, by); ctx.lineTo(bx + Math.cos(aa + dd) * rr * 0.5, by + Math.sin(aa + dd) * rr * 0.5); ctx.stroke(); } ctx.strokeStyle = C('#ffffff', a); }
         }
-        if (t > FLASH_AT - 120) {   // 폭발 — 원소 파편이 사방으로
-          const ep = Math.max(0, Math.min(1, (t - (FLASH_AT - 120)) / 500));
-          for (let i = 0; i < SHARDS.length; i++) { const s = SHARDS[i]; const rr = ep * s.sp * maxR * 0.8; const x = cx + Math.cos(s.ang) * rr, y = cy + Math.sin(s.ang) * rr; const a = (1 - ep) * 0.9 * post; if (a <= 0) continue; ctx.fillStyle = C(s.col, a); ctx.beginPath(); ctx.arc(x, y, s.size * (1 + ep), 0, PI2); ctx.fill(); }
+        ctx.restore();
+      };
+      return { draw: function (ctx, g, t, post) {
+        const cx = g.cx, cy = g.cy, maxR = g.maxR; const conv = Math.min(1, t / 1550); const ease = conv * conv * (3 - 2 * conv);
+        const orbR = Math.min(g.W, g.H) * 0.34 * (1 - ease * 0.9);
+        const fade = t > FLASH_AT ? Math.max(0, 1 - (t - FLASH_AT) / 300) : 1;
+        const angOf = k => k / 3 * PI2 - PI / 2 + t * 0.0022 + ease * 2.2;   // 공전 + 합류 회오리
+        // 꼬리(잔상) — 각 정령이 지나온 궤적
+        ctx.save(); ctx.globalCompositeOperation = 'lighter';
+        for (let i = 0; i < TRAIL.length; i++) { const tr = TRAIL[i]; const aa = angOf(tr.k) - tr.lag; const x = cx + Math.cos(aa) * orbR, y = cy + Math.sin(aa) * orbR; ctx.fillStyle = C(cols[tr.k], 0.4 * post * fade * (1 - tr.lag * 2)); ctx.beginPath(); ctx.arc(x, y, tr.size * (0.6 + (1 - conv) * 0.6), 0, PI2); ctx.fill(); }
+        ctx.restore();
+        // 세 정령 본체
+        for (let k = 0; k < 3; k++) { const aa = angOf(k); const x = cx + Math.cos(aa) * orbR, y = cy + Math.sin(aa) * orbR; const rr = (14 + 5 * Math.sin(t * 0.012 + k)) * (0.8 + 0.35 * (1 - conv)) * fade; if (rr <= 0) continue; sprite(ctx, k, x, y, rr, 0.9 * post, t + k * 400); }
+        // 합류 순간 중앙 코어 응축
+        if (conv > 0.6 && t < FLASH_AT) { const cp = (conv - 0.6) / 0.4; const gg = ctx.createRadialGradient(cx, cy, 0, cx, cy, maxR * 0.5 * cp); gg.addColorStop(0, C('#ffffff', 0.5 * cp * post)); gg.addColorStop(0.5, C(cols[1], 0.3 * cp * post)); gg.addColorStop(1, C(cols[0], 0)); ctx.fillStyle = gg; ctx.beginPath(); ctx.arc(cx, cy, maxR * 0.5 * cp, 0, PI2); ctx.fill(); }
+        // 대폭발 — 삼색 파편 사방으로 (회전하며)
+        if (t > FLASH_AT - 120) {
+          const ep = Math.max(0, Math.min(1, (t - (FLASH_AT - 120)) / 560));
+          ctx.save(); ctx.globalCompositeOperation = 'lighter';
+          for (let i = 0; i < SHARDS.length; i++) { const s = SHARDS[i]; const rr = ep * s.sp * maxR * 0.95; const aa = s.ang + ep * 0.6; const x = cx + Math.cos(aa) * rr, y = cy + Math.sin(aa) * rr; const a = (1 - ep) * 0.95 * post; if (a <= 0) continue; ctx.fillStyle = C(s.col, a); ctx.beginPath(); ctx.arc(x, y, s.size * (1 + ep * 0.8), 0, PI2); ctx.fill(); }
+          ctx.restore();
         }
       } };
     }
@@ -35388,7 +35414,7 @@
     const DUST = [];
     for (let i = 0; i < 60; i++) DUST.push({ ang: R(0, PI2), rad: 0.36 + Math.random() * 0.64, spin: (0.7 + Math.random() * 1.7) * (Math.random() < 0.5 ? -1 : 1), size: 1.1 + Math.random() * 2.7, tw: R(0, PI2), delay: Math.random() * 580 });
     const BUB = [];
-    for (let i = 0; i < 26; i++) BUB.push({ x0: 0.10 + Math.random() * 0.80, r: 6 + Math.random() * 38, delay: 120 + Math.random() * 1050, rise: 0.5 + Math.random() * 0.46, wob: R(0, PI2) });
+    for (let i = 0; i < 30; i++) BUB.push({ x0: 0.06 + (i / 30) * 0.88 + (Math.random() - 0.5) * 0.06, r: 6 + Math.random() * 40, delay: Math.random() * 1500, rise: 0.62 + Math.random() * 0.5, wob: R(0, PI2), sway: 18 + Math.random() * 26, spd: 0.6 + Math.random() * 0.8 });
     return { draw: function (ctx, g, t, post) {
       const cx = g.cx, cy = g.cy, W = g.W, H = g.H, maxR = g.maxR;
       for (let i = 0; i < DUST.length; i++) {   // 별가루 소용돌이 → 중앙 수렴 (더 풍성)
@@ -35398,13 +35424,17 @@
         const a = tw * (0.42 + 0.58 * prog) * post; if (a <= 0) continue;
         ctx.fillStyle = C(fx.dust, a); ctx.beginPath(); ctx.arc(x, y, d.size * (0.6 + prog * 0.85), 0, PI2); ctx.fill();
       }
-      for (let i = 0; i < BUB.length; i++) {   // 비눗방울(꿈) — 떠올라 수렴 후 팡 (개수·크기 다양)
+      for (let i = 0; i < BUB.length; i++) {   // 비눗방울(꿈) — 화면 전역에서 각자 위로, 좌우로 흔들리며 떠오름(수렴 X)
         const b = BUB[i], bt = t - b.delay; if (bt < 0) continue;
-        const prog = Math.min(1, bt / 1560); const sx = b.x0 * W; const x = sx + (cx - sx) * prog + Math.sin(t * 0.002 + b.wob) * 14;
-        const y = H * 1.06 - (H * 1.06 - cy) * prog * b.rise; const r = b.r * (0.5 + prog * 0.75);
-        const a = (prog < 0.86 ? 0.5 : Math.max(0, 0.5 * (1 - (prog - 0.86) / 0.14))) * post; if (a <= 0) continue;
-        ctx.strokeStyle = C(fx.bubble, a); ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(x, y, r, 0, PI2); ctx.stroke();
-        ctx.fillStyle = C('#ffffff', a * 0.5); ctx.beginPath(); ctx.arc(x - r * 0.32, y - r * 0.32, r * 0.16, 0, PI2); ctx.fill();
+        const prog = Math.min(1, bt / 1700); const sx = b.x0 * W;
+        const x = sx + Math.sin(t * 0.0016 * b.spd + b.wob) * b.sway;   // 제자리 x 에서 좌우 흔들림(중앙 수렴 없음)
+        const y = H * 1.08 - (H * 1.16) * prog * b.rise;                 // 아래→위 자유 상승
+        if (y < -b.r) continue; const r = b.r * (0.55 + prog * 0.55);
+        const a = (prog < 0.85 ? 0.5 : Math.max(0, 0.5 * (1 - (prog - 0.85) / 0.15))) * post; if (a <= 0) continue;
+        // 방울 테두리에 옅은 무지갯빛 이중선 → 비눗방울 질감
+        ctx.strokeStyle = C(fx.bubble, a); ctx.lineWidth = 1.6; ctx.beginPath(); ctx.arc(x, y, r, 0, PI2); ctx.stroke();
+        ctx.strokeStyle = C('#ffffff', a * 0.35); ctx.lineWidth = 0.8; ctx.beginPath(); ctx.arc(x, y, r * 0.9, 0, PI2); ctx.stroke();
+        ctx.fillStyle = C('#ffffff', a * 0.55); ctx.beginPath(); ctx.arc(x - r * 0.34, y - r * 0.34, r * 0.16, 0, PI2); ctx.fill();
       }
     } };
   }
@@ -38072,7 +38102,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 692;
+  const APP_VERSION = 693;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
