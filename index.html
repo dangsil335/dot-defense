@@ -33947,7 +33947,7 @@
     blanche:   '빛은 꺾일 뿐, 결코 꺾이지 않아.',
     kaira:     '숨어도 소용없어. …냄새로 다 찾아낼 거야.',
     feria:     '전부 끌어당겨. …도망칠 방향이 없게.',
-    somnia:    '자, 눈 감아요. …일어나면 다 끝나 있을 거예요.',
+    somnia:    '자… 눈 감아. 일어나면, 다 끝나 있을 거야.',
     sakura:    '벚꽃과 함께… 이 검을 받으렴.',
     luna:      '달빛이 너를 비춘다… 조용히, 받으렴.',
     cardista:  '운 좋은 패네 — 이 힘, 한번 베팅해봐!',
@@ -34298,7 +34298,7 @@
       blanche:   { title: '🌌 분광의 프리즘',   text: '"이 프리즘, 네 빛으로 채워봐. 일곱 색이 널 따를 거야."' },
       kaira:     { title: '🌌 야수왕의 송곳니', text: '"이 송곳니… 네 안의 야수가 반응하고 있어. 가져."' },
       feria:     { title: '🌌 자기 코어',       text: '"이 코어… 네 극에 맞춰 돌기 시작했어. 가져."' },
-      somnia:    { title: '🌌 꿈의 베개',       text: '"이거 베고 자면 좋은 꿈 꿔요. …드릴게요. 저는 아무 데서나 잘 자니까."' },
+      somnia:    { title: '🌌 꿈의 베개',       text: '"이거 베고 자면 좋은 꿈 꿔. …줄게. 난 아무 데서나 잘 자니까."' },
     };
     const lo = lore[charId] || { title: `🌌 ${rn}`, text: '"이 유물, 너에게 어울려."' };
     return { title: lo.title, text: lo.text, choices: [
@@ -37725,7 +37725,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 688;
+  const APP_VERSION = 689;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
