@@ -6772,6 +6772,13 @@
   };
   function _gearSigName(it) { const s = it && _gearIsUnique(it) && SIGNATURE_GEAR[it.charId]; return s ? s.name : null; }
   function _gearSigDesc(it) { const s = it && _gearIsUnique(it) && SIGNATURE_GEAR[it.charId]; return s ? s.desc : null; }
+  // ✨ 고유장비 아이콘 — 캐릭터별 구분 이모지(전부 ✨ 뭉침 방지). 정식 아트(sig-<charId>.png) 생성 시 _gearCoreImg 분기로 교체 예정.
+  const SIGNATURE_GEAR_ICON = {
+    aria:'🎼', misaki:'🦋', elementia:'🔮', sumika:'🗡️', blanche:'🪄', kaira:'🐾', feria:'🧲', somnia:'💤',
+    marine:'⚓', solar:'☀️', gravitas:'🌀', amy:'🛸', chloe:'⚗️', lara:'🎭', galatea:'🗿', sakura:'🌸',
+    luna:'🏹', levina:'⚡', cardista:'🃏', iris:'📷', trina:'🎨',
+  };
+  function _gearSigIcon(it) { return (it && _gearIsUnique(it) && SIGNATURE_GEAR_ICON[it.charId]) || ''; }
   // 슬롯별 옵션 풀 — 전부 "빌드타임 metaMods 필드"에만 매핑 (패시브 파생 필드는 매프레임 리셋되므로 제외)
   const GEAR_OPTIONS = {
     offense:   [ {key:'dmgBoost',        op:'add', label:'데미지',        base:0.02},
@@ -26250,7 +26257,7 @@
       const rc = _GEAR_RARCOL[it.rarity] || '#9aa3b3';
       const lines = it.lines.map(l => `${l.label} ${l.flat ? '+' + l.val + 's' : '+' + Math.round(l.val * 100) + '%'}`).join(' · ');
       html += `<div class="reward-row hot" style="border-color:${rc}55">
-        <div class="reward-ico" style="font-size:30px">${_gearCoreImg(it, 34) || _GEAR_SLOTICO[it.slot]}</div>
+        <div class="reward-ico" style="font-size:30px">${_gearCoreImg(it, 34) || _gearSigIcon(it) || _GEAR_SLOTICO[it.slot]}</div>
         <div class="reward-txt">
           <div class="reward-kind" style="color:${rc}">전술 코어 획득</div>
           <div class="reward-name" style="color:${rc}">${GEAR_RARITY_LABEL[it.rarity]} ${GEAR_SLOT_LABEL[it.slot]} 코어</div>
@@ -38281,7 +38288,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 697;
+  const APP_VERSION = 698;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
@@ -38836,7 +38843,7 @@
     const sig = it ? _gearSigName(it) : null;
     const tip = it ? (sig ? `${sig}${ch ? ' · ' + ch.name : ''}` : `${ch ? ch.name + ' ' : ''}고유장비`) : '고유 슬롯 — 캐릭터 고유장비 전용';
     // 고유장비는 set 이 없어 _gearCoreImg 가 '' 를 돌려준다 → ✨ 아이콘으로 폴백(빈칸 방지)
-    return `<span class="cm-slots-sep"></span><div class="cm-slot sig ${it ? 'filled' : 'empty'}" data-id="${it ? it.id : ''}" style="border-color:${col}" title="${tip}"><span class="cm-slot-sigico">${(it && _gearCoreImg(it, 40)) || _GEAR_SLOTICO.signature}</span></div>`;
+    return `<span class="cm-slots-sep"></span><div class="cm-slot sig ${it ? 'filled' : 'empty'}" data-id="${it ? it.id : ''}" style="border-color:${col}" title="${tip}"><span class="cm-slot-sigico">${(it && _gearCoreImg(it, 40)) || (it && _gearSigIcon(it)) || _GEAR_SLOTICO.signature}</span></div>`;
   }
   function _renderCoreMgr() {
     const g = _ensureGear();
@@ -38875,7 +38882,7 @@
             : `${_sic}${_gearArchName(it)}`;
           let dim = false;
           if (_cmFuseMode && !fsel) dim = it.locked || on || it.rarity === 'legend' || it.rarity === 'unique' || (fFirst && (fFirst.slot !== it.slot || fFirst.rarity !== it.rarity));
-          return `<div class="cm-litem${sel && !_cmFuseMode ? ' sel' : ''}${fsel ? ' fusesel' : ''}${dim ? ' dim' : ''}" data-id="${it.id}" style="--rc:${col}"><span class="cm-li-ico">${_gearCoreImg(it, 26) || _GEAR_SLOTICO[it.slot]}</span><span class="cm-li-info"><b style="color:${col}">${GEAR_RARITY_LABEL[it.rarity]}</b> ${_nm}</span>${it.locked ? '<span class="cm-li-lock">🔒</span>' : ''}${on ? '<span class="cm-li-on">E</span>' : ''}${fsel ? '<span class="cm-li-fnum">✓</span>' : ''}</div>`;
+          return `<div class="cm-litem${sel && !_cmFuseMode ? ' sel' : ''}${fsel ? ' fusesel' : ''}${dim ? ' dim' : ''}" data-id="${it.id}" style="--rc:${col}"><span class="cm-li-ico">${_gearCoreImg(it, 26) || _gearSigIcon(it) || _GEAR_SLOTICO[it.slot]}</span><span class="cm-li-info"><b style="color:${col}">${GEAR_RARITY_LABEL[it.rarity]}</b> ${_nm}</span>${it.locked ? '<span class="cm-li-lock">🔒</span>' : ''}${on ? '<span class="cm-li-on">E</span>' : ''}${fsel ? '<span class="cm-li-fnum">✓</span>' : ''}</div>`;
         }).join('');
         listEl.querySelectorAll('.cm-litem').forEach(el => el.onclick = () => { const id = +el.dataset.id; if (_cmFuseMode) { _cmFusePick(id); return; } _cmSel = id; _gearRerollPending = null; _gearLocks.clear(); _renderCoreMgr(); });
       }
@@ -38917,7 +38924,7 @@
           if (l.uniq) return _gearUniqRow(l, lockBtn);
           return `<div class="gcm-line${_gearLocks.has(i) ? ' locked' : ''}${i === 0 && sdef ? ' sig' : ''}${l.aff ? ' aff' : ''}">${lockBtn}<span class="gcm-tier t${l.tier}">T${l.tier}</span><span class="gcm-lbl">${l.label}${i === 0 && sdef ? ' <span class="gcm-sig">시그니처</span>' : ''}${_gearAffBadge(l)}</span><b>${l.flat ? '+' + l.val + 's' : '+' + Math.round(l.val * 100) + '%'}</b></div>`;
         }).join('');
-    let h = `<div class="cm-d-head" style="border-color:${col}"><span class="cm-d-ico">${_gearCoreImg(it, 34) || _GEAR_SLOTICO[it.slot]}</span><div><div class="cm-d-name">${uq ? (_gearSigName(it) || (uqch ? uqch.name + ' 고유장비' : '고유장비')) : _gearArchName(it) + ' 코어'}</div><div class="cm-d-rar" style="color:${col}">${GEAR_RARITY_LABEL[it.rarity]}${equipped ? ' · 장착중' : ''}${sdef ? ` · <span style="color:${sdef.color}">${sdef.icon}${sdef.name}</span>` : ''}${uq ? ` · <span style="color:${col}">✨${uqch ? uqch.name : '고유장비'}</span>` : ''}${it.locked ? ' · <span style="color:#ffd479">🔒</span>' : ''}</div></div></div>${uq && _gearSigDesc(it) ? `<div class="cm-d-sigflavor">“${_gearSigDesc(it)}”</div>` : ''}${levelRow}<div class="cm-d-cols"><div class="cm-d-col"><div class="cm-d-colt">현재 잠재능력${lockN ? ` · 🔒${lockN}` : ''}</div>${curLines}</div>`;
+    let h = `<div class="cm-d-head" style="border-color:${col}"><span class="cm-d-ico">${_gearCoreImg(it, 34) || _gearSigIcon(it) || _GEAR_SLOTICO[it.slot]}</span><div><div class="cm-d-name">${uq ? (_gearSigName(it) || (uqch ? uqch.name + ' 고유장비' : '고유장비')) : _gearArchName(it) + ' 코어'}</div><div class="cm-d-rar" style="color:${col}">${GEAR_RARITY_LABEL[it.rarity]}${equipped ? ' · 장착중' : ''}${sdef ? ` · <span style="color:${sdef.color}">${sdef.icon}${sdef.name}</span>` : ''}${uq ? ` · <span style="color:${col}">✨${uqch ? uqch.name : '고유장비'}</span>` : ''}${it.locked ? ' · <span style="color:#ffd479">🔒</span>' : ''}</div></div></div>${uq && _gearSigDesc(it) ? `<div class="cm-d-sigflavor">“${_gearSigDesc(it)}”</div>` : ''}${levelRow}<div class="cm-d-cols"><div class="cm-d-col"><div class="cm-d-colt">현재 잠재능력${lockN ? ` · 🔒${lockN}` : ''}</div>${curLines}</div>`;
     if (_gearRerollPending) h += `<div class="cm-d-arrow">→</div><div class="cm-d-col new"><div class="cm-d-colt">새 잠재능력</div>${_gearRerollPending.map(_gearLineRow).join('')}</div>`;
     h += `</div>`;
     if (_gearRerollPending) h += `<div class="cm-d-acts"><button class="gcm-btn apply" data-act="applyRoll">✅ 교체 적용</button><button class="gcm-btn" data-act="keepRoll">유지 (되돌리기)</button></div>`;
