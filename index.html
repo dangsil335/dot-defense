@@ -5104,6 +5104,8 @@
   .cm-d-ico { font-size:26px; }
   .cm-d-name { font-size:15px; font-weight:800; color:#e8eef7; }
   .cm-d-rar { font-size:12px; font-weight:800; letter-spacing:.4px; margin-top:2px; }
+  /* ✨ 고유장비 플레이버 — 상세 헤드 아래 은은한 이탤릭 서사 한 줄 */
+  .cm-d-sigflavor { font-size:11.5px; line-height:1.5; color:#c9b6d8; font-style:italic; background:rgba(255,157,226,0.06); border-left:2px solid #ff9de2; border-radius:0 6px 6px 0; padding:7px 10px; margin-bottom:12px; }
   .cm-d-cols { display:flex; align-items:stretch; gap:9px; margin-bottom:14px; }
   .cm-d-col { flex:1; min-width:0; background:#141a26; border:1px solid #232c3c; border-radius:10px; padding:10px; }
   .cm-d-col.new { border-color:#7ad7ff; box-shadow:0 0 12px rgba(122,215,255,0.2); }
@@ -6743,6 +6745,33 @@
   const GEAR_UNIQUE_KEYS = ['reload', 'barrage', 'overcore'];
   function _gearArch(slot, set) { return (GEAR_ARCHETYPES[slot] && GEAR_ARCHETYPES[slot][set]) || null; }
   function _gearArchName(item) { const a = item && _gearArch(item.slot, item.set); return a ? a.name : (GEAR_SLOT_LABEL[item && item.slot] || '코어'); }
+  // ✨ 고유장비 고유명 — charId 로 유도(세이브 미저장). 아이템엔 name 이 없고 charId 만 있으므로 여기서 조회한다.
+  //    (기획: .superpowers/sdd/unique-gear-names.md — 가챠 21명, 고대유물 8종과 이름 충돌 0건)
+  const SIGNATURE_GEAR = {
+    aria:      { name:'천상성가집',            desc:'펼치면 성가 한 소절마다 금빛 별과 반짝임이 쏟아지는, 빛이 들리는 성가집.' },
+    misaki:    { name:'영겁나비 브로치',        desc:'반투명 보라 나비가 잔상을 남기며 갇혀 있는, 시간을 붙잡아 두는 브로치.' },
+    elementia: { name:'만화의 정령구',          desc:'안에서 청록 정령이 물·불·번개 짐승의 형상으로 끝없이 바뀌는 수정 구슬.' },
+    sumika:    { name:'묵참도',                desc:'젖은 먹이 뚝뚝 흐르는 칠흑 도 — 단 한 획으로 표적을 처형하는 먹빛 사신의 검.' },
+    blanche:   { name:'칠광의 지팡이',          desc:'끝에 박힌 크리스탈이 한 줄기 백광을 일곱 빛깔 파편으로 흩뿌리는 마녀의 지팡이.' },
+    kaira:     { name:'월하의 사냥발톱',        desc:'휘두를 때 흰 열선과 주황 잔광 3줄기를 남기는, 달빛에 벼려진 야수의 강철 발톱.' },
+    feria:     { name:'공전하는 자철편',        desc:'몸이 아닌 허공을 맴도는 강철 파편들 — N·S 극의 자기력선으로 서로를 밀고 당기는 부유 갑주.' },
+    somnia:    { name:'몽환의 요람',            desc:'흔들면 자장가와 함께 졸음이 쌓이는, 적을 아이처럼 재워버리는 몽환의 요람.' },
+    marine:    { name:'항구의 유실어뢰',        desc:'항구서 건져 올려 끌어안고 다니는, 물거품을 뿜으며 헤엄치는 낡은 군용 어뢰.' },
+    solar:     { name:'응축된 소태양',          desc:'표면에 흑점이 도는 손바닥만 한 태양 — 응축된 빛이 12갈래 광선으로 뻗는다.' },
+    gravitas:  { name:'인력의 고리',            desc:'손끝을 까딱이면 중력 우물이 열려 모든 것을 중심으로 빨아들이는 인력의 반지.' },
+    amy:       { name:"자율 요격 드론 '삐삐'",   desc:'홀로 하늘을 지키는 에이미의 단짝 — 자전하는 결정 코어로 표적을 유도·요격하는 자율 드론.' },
+    chloe:     { name:'용해자의 산성 플라스크',   desc:'부글대는 연둣빛 산이 담긴, 닿는 모든 것을 녹이는 연성술사의 부식 플라스크.' },
+    lara:      { name:'인형사의 조종대',        desc:'매만지면 실이 춤추고 인형이 홀로 서는, 인형사의 나무 십자 조종대.' },
+    galatea:   { name:'석화의 조각끌',          desc:'스치면 살아있는 것을 회색 석상으로 굳혀 영원에 새기는, 조각가의 석화 끌.' },
+    sakura:    { name:'일섬의 벚꽃도',          desc:'뽑는 순간 벚꽃이 흩날리는, 가장 아름다운 한 베기만을 위한 연분홍 도.' },
+    luna:      { name:'월광의 장궁',            desc:'달빛으로 시위를 메워 초승달 화살을 쏘는, 밤에만 또렷해지는 장궁.' },
+    levina:    { name:'낙뢰의 지팡이',          desc:'치켜들면 폭풍을 통째로 빨아들여 연쇄 번개를 내리치는 뇌격의 지팡이.' },
+    cardista:  { name:'협잡의 카드덱',          desc:'부채처럼 펼쳐 던지면 슈트빛과 불씨를 흩뿌리는, 요행을 부르는 협잡꾼의 카드 한 벌.' },
+    iris:      { name:'장노출의 필드 카메라',    desc:'오래 열어둔 조리개로 움직임의 잔상을 필름에 태워 붙잡는, 장노출 전용 사진기.' },
+    trina:     { name:'삼중인화의 무대가면',      desc:'쓰면 시안·마젠타·옐로 세 겹으로 어긋나 갈라지는, 환영 대역을 세우는 무대 가면.' },
+  };
+  function _gearSigName(it) { const s = it && _gearIsUnique(it) && SIGNATURE_GEAR[it.charId]; return s ? s.name : null; }
+  function _gearSigDesc(it) { const s = it && _gearIsUnique(it) && SIGNATURE_GEAR[it.charId]; return s ? s.desc : null; }
   // 슬롯별 옵션 풀 — 전부 "빌드타임 metaMods 필드"에만 매핑 (패시브 파생 필드는 매프레임 리셋되므로 제외)
   const GEAR_OPTIONS = {
     offense:   [ {key:'dmgBoost',        op:'add', label:'데미지',        base:0.02},
@@ -38252,7 +38281,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 696;
+  const APP_VERSION = 697;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
@@ -38804,7 +38833,8 @@
     const it = (id != null) ? g.inv.find(x => x.id === id) : null;
     const col = _GEAR_RARCOL.unique;   // #ff9de2 — 고유 등급색
     const ch = it ? CHARACTERS[it.charId] : null;
-    const tip = it ? `${ch ? ch.name + ' ' : ''}고유장비` : '고유 슬롯 — 캐릭터 고유장비 전용';
+    const sig = it ? _gearSigName(it) : null;
+    const tip = it ? (sig ? `${sig}${ch ? ' · ' + ch.name : ''}` : `${ch ? ch.name + ' ' : ''}고유장비`) : '고유 슬롯 — 캐릭터 고유장비 전용';
     // 고유장비는 set 이 없어 _gearCoreImg 가 '' 를 돌려준다 → ✨ 아이콘으로 폴백(빈칸 방지)
     return `<span class="cm-slots-sep"></span><div class="cm-slot sig ${it ? 'filled' : 'empty'}" data-id="${it ? it.id : ''}" style="border-color:${col}" title="${tip}"><span class="cm-slot-sigico">${(it && _gearCoreImg(it, 40)) || _GEAR_SLOTICO.signature}</span></div>`;
   }
@@ -38841,7 +38871,7 @@
           // ✨ 고유장비는 세트·기종이 없어 이름이 전부 "고유" 로 겹친다 → 어느 캐릭터 것인지 이름으로 구분한다.
           //    (등급색은 _GEAR_RARCOL.unique = #ff9de2 로 이미 col 에 잡혀 있다 — 좌측 바·등급 라벨에 적용됨)
           const _nm = _gearIsUnique(it)
-            ? `<span class="cm-li-uq">${(CHARACTERS[it.charId] && CHARACTERS[it.charId].name) || _gearArchName(it)}</span>`
+            ? `<span class="cm-li-uq">${_gearSigName(it) || (CHARACTERS[it.charId] && CHARACTERS[it.charId].name) || _gearArchName(it)}</span>`
             : `${_sic}${_gearArchName(it)}`;
           let dim = false;
           if (_cmFuseMode && !fsel) dim = it.locked || on || it.rarity === 'legend' || it.rarity === 'unique' || (fFirst && (fFirst.slot !== it.slot || fFirst.rarity !== it.rarity));
@@ -38887,7 +38917,7 @@
           if (l.uniq) return _gearUniqRow(l, lockBtn);
           return `<div class="gcm-line${_gearLocks.has(i) ? ' locked' : ''}${i === 0 && sdef ? ' sig' : ''}${l.aff ? ' aff' : ''}">${lockBtn}<span class="gcm-tier t${l.tier}">T${l.tier}</span><span class="gcm-lbl">${l.label}${i === 0 && sdef ? ' <span class="gcm-sig">시그니처</span>' : ''}${_gearAffBadge(l)}</span><b>${l.flat ? '+' + l.val + 's' : '+' + Math.round(l.val * 100) + '%'}</b></div>`;
         }).join('');
-    let h = `<div class="cm-d-head" style="border-color:${col}"><span class="cm-d-ico">${_gearCoreImg(it, 34) || _GEAR_SLOTICO[it.slot]}</span><div><div class="cm-d-name">${_gearArchName(it)} 코어</div><div class="cm-d-rar" style="color:${col}">${GEAR_RARITY_LABEL[it.rarity]}${equipped ? ' · 장착중' : ''}${sdef ? ` · <span style="color:${sdef.color}">${sdef.icon}${sdef.name}</span>` : ''}${uq ? ` · <span style="color:${col}">✨${uqch ? uqch.name : '고유장비'}</span>` : ''}${it.locked ? ' · <span style="color:#ffd479">🔒</span>' : ''}</div></div></div>${levelRow}<div class="cm-d-cols"><div class="cm-d-col"><div class="cm-d-colt">현재 잠재능력${lockN ? ` · 🔒${lockN}` : ''}</div>${curLines}</div>`;
+    let h = `<div class="cm-d-head" style="border-color:${col}"><span class="cm-d-ico">${_gearCoreImg(it, 34) || _GEAR_SLOTICO[it.slot]}</span><div><div class="cm-d-name">${uq ? (_gearSigName(it) || (uqch ? uqch.name + ' 고유장비' : '고유장비')) : _gearArchName(it) + ' 코어'}</div><div class="cm-d-rar" style="color:${col}">${GEAR_RARITY_LABEL[it.rarity]}${equipped ? ' · 장착중' : ''}${sdef ? ` · <span style="color:${sdef.color}">${sdef.icon}${sdef.name}</span>` : ''}${uq ? ` · <span style="color:${col}">✨${uqch ? uqch.name : '고유장비'}</span>` : ''}${it.locked ? ' · <span style="color:#ffd479">🔒</span>' : ''}</div></div></div>${uq && _gearSigDesc(it) ? `<div class="cm-d-sigflavor">“${_gearSigDesc(it)}”</div>` : ''}${levelRow}<div class="cm-d-cols"><div class="cm-d-col"><div class="cm-d-colt">현재 잠재능력${lockN ? ` · 🔒${lockN}` : ''}</div>${curLines}</div>`;
     if (_gearRerollPending) h += `<div class="cm-d-arrow">→</div><div class="cm-d-col new"><div class="cm-d-colt">새 잠재능력</div>${_gearRerollPending.map(_gearLineRow).join('')}</div>`;
     h += `</div>`;
     if (_gearRerollPending) h += `<div class="cm-d-acts"><button class="gcm-btn apply" data-act="applyRoll">✅ 교체 적용</button><button class="gcm-btn" data-act="keepRoll">유지 (되돌리기)</button></div>`;
