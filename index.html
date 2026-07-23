@@ -4995,6 +4995,10 @@
   .evo-story-chip { font-size: 11.5px; padding: 6px 11px; border-radius: 20px; background: #1a2030; border: 1px solid #3a4256; color: #cdd5e3; cursor: pointer; font-family: inherit; }
   .evo-story-chip:hover { border-color: #7ad7ff; }
   .evo-story-chip.locked { opacity: 0.5; cursor: default; color: #6b7283; }
+  /* 🌟 SSR 등장 연출 미리보기 버튼 (캐릭터 상세) */
+  .evo-ssr-preview-btn { display: block; width: 100%; margin: 12px 0 4px; padding: 11px; font-family: inherit; font-size: 13px; font-weight: 800; letter-spacing: 0.5px; color: var(--gc, #7ad7ff); background: linear-gradient(180deg, rgba(20,26,40,0.9), rgba(14,18,28,0.9)); border: 1px solid var(--gc, #7ad7ff); border-radius: 12px; cursor: pointer; box-shadow: 0 0 0 rgba(0,0,0,0); transition: box-shadow .15s, transform .1s; }
+  .evo-ssr-preview-btn:hover { box-shadow: 0 0 16px -2px var(--gc, #7ad7ff); }
+  .evo-ssr-preview-btn:active { transform: scale(0.98); }
   .story-text { flex: 1 1 auto; font-size: 13px; line-height: 1.75; color: #cdd5e3; background: #0e1320; border: 1px solid #232a3a; border-radius: 10px; padding: 14px 15px; margin-bottom: 10px; overflow-y: auto; white-space: pre-wrap; }
   .evo-d-unlock { font-size:11px; color:#9aa3b3; margin-top:2px; }
   .evo-d-sec-title { font-size:12px; font-weight:800; color:#8aa0c0; margin:16px 0 8px; padding-bottom:5px; border-bottom:1px solid rgba(122,215,255,0.14); }
@@ -37909,7 +37913,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 690;
+  const APP_VERSION = 691;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
@@ -38710,6 +38714,10 @@
             : `<button class="evo-story-chip locked" disabled>🔒 ${c.star}★</button>`;
         }).join('') + `</div>`;
       }
+      // 🌟 SSR 등장 연출 미리보기 — 뽑지 않아도 상세창에서 바로 확인(연출 검수·튜토리얼용)
+      if (isChar && kind === 'SSR' && typeof _playNextSSRReveal === 'function') {
+        body += `<button class="evo-ssr-preview-btn" data-ssrprev="${id}" style="--gc:${gc.color}">🌟 등장 연출 미리보기</button>`;
+      }
       const rid = (typeof ANCIENT_RELIC_BY_CHAR !== 'undefined') ? ANCIENT_RELIC_BY_CHAR[id] : null;
       if (rid && RELICS[rid]) {
         const r = RELICS[rid]; const rar = (RELIC_RARITY[r.rarity] || { color: '#ff88ff' });
@@ -38734,6 +38742,14 @@
     bodyEl.querySelectorAll('.evo-story-chip:not(.locked)').forEach(btn => {
       btn.onclick = () => openCharStory(btn.dataset.char, +btn.dataset.idx);
     });
+    // 🌟 SSR 등장 연출 미리보기 버튼 — 큐에 넣어 재생(_playNextSSRReveal). isNew=false(재회 대사)로 미리보기.
+    const _prevBtn = bodyEl.querySelector('.evo-ssr-preview-btn');
+    if (_prevBtn) _prevBtn.onclick = () => {
+      try {
+        _ssrRevealQueue.push({ charId: _prevBtn.dataset.ssrprev, isNew: false });
+        if (!_ssrRevealActive) _playNextSSRReveal();
+      } catch (e) {}
+    };
     if (titleEl) titleEl.textContent = displayName;
     if (scroll) scroll.scrollTop = 0;
     showScreen('evoDetail');
