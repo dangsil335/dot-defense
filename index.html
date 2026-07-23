@@ -5017,6 +5017,16 @@
   .evo-ssr-preview-btn { display: block; width: 100%; margin: 12px 0 4px; padding: 11px; font-family: inherit; font-size: 13px; font-weight: 800; letter-spacing: 0.5px; color: var(--gc, #7ad7ff); background: linear-gradient(180deg, rgba(20,26,40,0.9), rgba(14,18,28,0.9)); border: 1px solid var(--gc, #7ad7ff); border-radius: 12px; cursor: pointer; box-shadow: 0 0 0 rgba(0,0,0,0); transition: box-shadow .15s, transform .1s; }
   .evo-ssr-preview-btn:hover { box-shadow: 0 0 16px -2px var(--gc, #7ad7ff); }
   .evo-ssr-preview-btn:active { transform: scale(0.98); }
+  /* 🎨 스킨 섹션 (캐릭터 상세) */
+  .evo-skins { display: flex; flex-direction: column; gap: 6px; margin: 6px 0 4px; }
+  .skin-opt { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 12px; background: rgba(20,26,40,0.6); border: 1px solid rgba(120,140,180,0.25); border-radius: 10px; }
+  .skin-opt.on { border-color: #ffd479; box-shadow: inset 0 0 0 1px rgba(255,212,121,0.4), 0 0 10px -3px rgba(255,212,121,0.5); }
+  .skin-name { font-size: 13px; font-weight: 700; color: #dbe4f5; }
+  .skin-cur { font-size: 12px; font-weight: 800; color: #ffd479; white-space: nowrap; }
+  .skin-btn { font-family: inherit; font-size: 12px; font-weight: 800; padding: 6px 12px; border-radius: 8px; cursor: pointer; border: 1px solid; background: transparent; transition: transform .1s, box-shadow .15s; white-space: nowrap; }
+  .skin-btn:active { transform: scale(0.95); }
+  .skin-btn.apply { color: #7ad7ff; background: rgba(122,215,255,0.1); border-color: #7ad7ff; }
+  .skin-btn.buy { color: #ffd479; background: rgba(255,212,121,0.12); border-color: #ffd479; }
   .story-text { flex: 1 1 auto; font-size: 13px; line-height: 1.75; color: #cdd5e3; background: #0e1320; border: 1px solid #232a3a; border-radius: 10px; padding: 14px 15px; margin-bottom: 10px; overflow-y: auto; white-space: pre-wrap; }
   .evo-d-unlock { font-size:11px; color:#9aa3b3; margin-top:2px; }
   .evo-d-sec-title { font-size:12px; font-weight:800; color:#8aa0c0; margin:16px 0 8px; padding-bottom:5px; border-bottom:1px solid rgba(122,215,255,0.14); }
@@ -35227,20 +35237,56 @@
       setTimeout(() => { wrap.classList.add('out'); setTimeout(() => { try { wrap.remove(); } catch (e) {} }, 420); }, 1600);
     } catch (e) {}
   }
+  // ═══════ 🎨 스킨 시스템 — 캐릭터 대체 일러(별조각 400개 구매·적용). 적용 시 그 캐릭 일러 표시처 전부 스킨으로 ═══════
+  //   · 스킨 아트 = icons/illust/<charId>__<skinId>.(webp|gif|png) → 기존 일러 체인 그대로 재활용(스킨도 애니 가능).
+  //   · META.skins = { owned:{ '<charId>__<skinId>':1 }, applied:{ <charId>:<skinId> } } — JSON 블롭이라 서버 자동 동기화.
+  const SKIN_COST = 400;
+  const SKINS = {
+    blanche: [{ id: 'crystal',    name: '크리스탈 라군 리조트' }],
+    kaira:   [{ id: 'whitetiger', name: '백호 사냥대장' }],
+    lara:    [{ id: 'gothic',     name: '고딕 마리오네트' }],
+    marine:  [{ id: 'navy',       name: '네이비' }],
+    sakura:  [{ id: 'summer',     name: '블루 서머 페스티벌' }],
+    somnia:  [{ id: 'beachnap',   name: '해변 낮잠' }, { id: 'black', name: '블랙' }],
+    sumika:  [{ id: 'snowmoon',   name: '설월검희' }],
+  };
+  function _skinsOf(charId) { return SKINS[charId] || []; }
+  function _skinKey(charId, skinId) { return charId + '__' + skinId; }   // = 일러 파일 base (icons/illust/<charId>__<skinId>.png)
+  function _skinOwned(charId, skinId) { return !!(META.skins && META.skins.owned && META.skins.owned[_skinKey(charId, skinId)]); }
+  function _skinApplied(charId) { return (META.skins && META.skins.applied) ? (META.skins.applied[charId] || null) : null; }
+  // 🎨 캐릭 일러 id 해석 — 적용+보유 스킨이 있으면 스킨 일러 base 반환(체인이 그 파일 프로브), 없으면 원본 charId.
+  function _resolveIllustId(charId) { const s = _skinApplied(charId); if (s && _skinOwned(charId, s)) return _skinKey(charId, s); return charId; }
+  function _buySkin(charId, skinId) {
+    if (_skinOwned(charId, skinId)) return true;
+    // 💠 별조각(starShards) 400 소비 — spendShards 가 잔액체크+차감+spent추적+저장+UI펄스+bool 반환
+    if (typeof spendShards !== 'function' || !spendShards(SKIN_COST)) { try { toast('💠 별조각이 부족해요 — ' + SKIN_COST + ' 필요'); } catch (e) {} return false; }
+    if (!META.skins) META.skins = { owned: {}, applied: {} };
+    if (!META.skins.owned) META.skins.owned = {};
+    META.skins.owned[_skinKey(charId, skinId)] = 1;
+    try { saveMeta(); } catch (e) {}
+    return true;
+  }
+  function _applySkin(charId, skinId) {   // skinId null = 기본(원본)으로 되돌림
+    if (!META.skins) META.skins = { owned: {}, applied: {} };
+    if (!META.skins.applied) META.skins.applied = {};
+    if (skinId) META.skins.applied[charId] = skinId; else delete META.skins.applied[charId];
+    try { saveMeta(); } catch (e) {}
+  }
   // 🖼 캐릭터 일러 포맷 세션 캐시 + 소스 체인 — webp→gif→png 순으로 "있는 것"을 쓴다(애니 webp/gif면 <img>가 자동 무한반복).
   //    · 캐릭터당 1회만 프로브하고 성공 포맷을 _illustFmt 에 캐시 → PNG-only 캐릭터가 매 렌더 webp/gif 404 내는 걸 막는다.
   //    · 전부 없으면 'none' 캐시 후 onFail(도트/이모지 폴백). 직접 호출 4곳(_charPortraitImg·메뉴히어로·가챠카드) + _hydrateIllusts(마커) 로 전 표시처 공유.
   //    · gif 가 없으면 자연히 png 로 폴백 → "gif 없으면 지금처럼 정적 png" 요구 그대로.
   var _illustFmt = {};   // charId -> 'webp'|'gif'|'png'|'none'
   function _applyIllustChain(img, charId, onFail) {
-    const base = './icons/illust/' + charId + '.';
-    if (_illustFmt[charId] === 'none') { if (onFail) onFail(); return; }
-    const chain = _illustFmt[charId] ? [_illustFmt[charId]] : ['webp', 'gif', 'png'];
+    const rid = (typeof _resolveIllustId === 'function') ? _resolveIllustId(charId) : charId;   // 🎨 스킨 적용 시 스킨 일러 base
+    const base = './icons/illust/' + rid + '.';
+    if (_illustFmt[rid] === 'none') { if (onFail) onFail(); return; }
+    const chain = _illustFmt[rid] ? [_illustFmt[rid]] : ['webp', 'gif', 'png'];
     let i = 0;
-    img.onload = () => { _illustFmt[charId] = chain[i]; };
+    img.onload = () => { _illustFmt[rid] = chain[i]; };
     img.onerror = () => {
       if (++i < chain.length) { img.src = base + chain[i]; return; }   // 다음 포맷 시도
-      img.onerror = null; img.onload = null; _illustFmt[charId] = 'none'; if (onFail) onFail();   // 전부 실패 → 폴백(이후 프로브 생략)
+      img.onerror = null; img.onload = null; _illustFmt[rid] = 'none'; if (onFail) onFail();   // 전부 실패 → 폴백(이후 프로브 생략)
     };
     img.src = base + chain[0];
   }
@@ -35270,7 +35316,8 @@
     const char = CHARACTERS[charId] || {};
     const emoji = (char.name ? char.name.split(' ')[0] : '🎴') || '🎴';
     const mkEmoji = () => { const d = document.createElement('div'); if (cls) d.className = cls; d.style.display = 'flex'; d.style.alignItems = 'center'; d.style.justifyContent = 'center'; d.style.fontSize = '72px'; d.textContent = emoji; return d; };
-    if (_illustFmt[charId] === 'none') return mkEmoji();   // 이미 '일러 없음' 확정 → 프로브 없이 바로 이모지
+    const _rid = (typeof _resolveIllustId === 'function') ? _resolveIllustId(charId) : charId;   // 🎨 스킨 반영
+    if (_illustFmt[_rid] === 'none') return mkEmoji();   // 이미 '일러 없음' 확정 → 프로브 없이 바로 이모지
     const img = document.createElement('img'); if (cls) img.className = cls; img.alt = '';
     _applyIllustChain(img, charId, () => { img.replaceWith(mkEmoji()); });
     return img;
@@ -38544,7 +38591,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 702;
+  const APP_VERSION = 703;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
@@ -39354,6 +39401,21 @@
       if (isChar && kind === 'SSR' && typeof _playNextSSRReveal === 'function') {
         body += `<button class="evo-ssr-preview-btn" data-ssrprev="${id}" style="--gc:${gc.color}">🌟 등장 연출 미리보기</button>`;
       }
+      // 🎨 스킨 섹션 — 이 캐릭에 스킨이 있으면 (기본 + 스킨들, 구매 400★ / 적용)
+      if (isChar && _skinsOf(id).length) {
+        const _ap = _skinApplied(id);
+        const _row = (sid, label, owned) => {
+          const on = sid ? (sid === _ap) : !_ap;   // 적용중 여부 (sid 빈값 = 기본)
+          let act;
+          if (sid && !owned) act = `<button class="skin-btn buy" data-skinbuy="${id}:${sid}">💠 ${SKIN_COST}</button>`;
+          else if (on) act = `<span class="skin-cur">✓ 적용중</span>`;
+          else act = `<button class="skin-btn apply" data-skinapply="${id}:${sid}">적용</button>`;
+          return `<div class="skin-opt${on ? ' on' : ''}"><span class="skin-name">${label}</span>${act}</div>`;
+        };
+        let sh = _row('', '기본', true);
+        _skinsOf(id).forEach(sk => { sh += _row(sk.id, sk.name, _skinOwned(id, sk.id)); });
+        body += `<div class="evo-d-sec-title">🎨 스킨 <span style="font-size:11px;opacity:.55;font-weight:400">보유 💠 ${(META.starShards || 0).toLocaleString()}</span></div><div class="evo-skins">${sh}</div>`;
+      }
       const rid = (typeof ANCIENT_RELIC_BY_CHAR !== 'undefined') ? ANCIENT_RELIC_BY_CHAR[id] : null;
       if (rid && RELICS[rid]) {
         const r = RELICS[rid]; const rar = (RELIC_RARITY[r.rarity] || { color: '#ff88ff' });
@@ -39388,6 +39450,13 @@
         if (!_ssrRevealActive) _playNextSSRReveal();
       } catch (e) {}
     };
+    // 🎨 스킨 구매(400★)/적용 — 후 상세 재렌더로 적용상태 + 스킨 일러 반영. 구매 시 자동 적용.
+    bodyEl.querySelectorAll('[data-skinbuy]').forEach(btn => {
+      btn.onclick = () => { const p = btn.dataset.skinbuy.split(':'); if (_buySkin(p[0], p[1])) { _applySkin(p[0], p[1]); try { toast('🎨 스킨 획득 & 적용!'); } catch (e) {} _evoShowDetail(kind, id); } };
+    });
+    bodyEl.querySelectorAll('[data-skinapply]').forEach(btn => {
+      btn.onclick = () => { const p = btn.dataset.skinapply.split(':'); _applySkin(p[0], p[1] || null); _evoShowDetail(kind, id); };
+    });
     if (titleEl) titleEl.textContent = displayName;
     if (scroll) scroll.scrollTop = 0;
     showScreen('evoDetail');
