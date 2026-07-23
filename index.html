@@ -874,6 +874,22 @@
   }
   /* 🎓 튜토리얼 잠금 — 새 게임 외 메뉴 버튼 (기능적 잠금 + 시각 표시). disabled 와 병행. */
   .tut-locked { opacity: 0.38 !important; filter: grayscale(0.65) !important; pointer-events: none !important; cursor: not-allowed !important; }
+  /* 🎓 Phase 2 — 스포트라이트(대상을 어둠막 위로 raise) + 글로우 링 + 안내 말풍선 */
+  .tut-dark { position: fixed; inset: 0; z-index: 9500; background: rgba(4,6,12,0.74); pointer-events: auto; animation: tutDarkIn .25s ease; }
+  @keyframes tutDarkIn { from { opacity: 0 } to { opacity: 1 } }
+  .tut-raise { position: relative !important; z-index: 9600 !important; }
+  .tut-ring { position: fixed; z-index: 9560; pointer-events: none; border-radius: 12px; border: 2px solid #ffe08a;
+    box-shadow: 0 0 0 3px rgba(255,224,138,0.22), 0 0 20px 4px rgba(255,224,138,0.5); animation: tutRingPulse 1.3s ease-in-out infinite; }
+  @keyframes tutRingPulse { 0%,100% { box-shadow: 0 0 0 3px rgba(255,224,138,0.20), 0 0 16px 3px rgba(255,224,138,0.42); } 50% { box-shadow: 0 0 0 5px rgba(255,224,138,0.34), 0 0 30px 8px rgba(255,224,138,0.68); } }
+  .tut-bubble { position: fixed; z-index: 9700; max-width: min(330px, 88vw); display: flex; gap: 9px; align-items: flex-end; pointer-events: none; animation: tutBubbleIn .3s cubic-bezier(.2,1.2,.4,1); }
+  .tut-bubble.pos-bottom { left: 50%; bottom: 12vh; transform: translateX(-50%); }
+  .tut-bubble.pos-top { left: 50%; top: 12vh; transform: translateX(-50%); }
+  @keyframes tutBubbleIn { from { opacity: 0; transform: translateX(-50%) translateY(10px) } to { opacity: 1; } }
+  .tut-bubble-face { width: 50px; height: 50px; flex-shrink: 0; border-radius: 50%; overflow: hidden; border: 2px solid #c8b0ff; box-shadow: 0 2px 10px rgba(0,0,0,.5); background: #0a0a12; }
+  .tut-bubble-face img { width: 100%; height: 100%; object-fit: cover; object-position: center top; }
+  .tut-bubble-body { background: linear-gradient(160deg, #1c1636, #0e0b1c); border: 1px solid rgba(200,176,255,0.4); border-left: 3px solid #c8b0ff; border-radius: 4px 12px 12px 12px; padding: 9px 13px; color: #eee6ff; font-size: 13px; line-height: 1.5; font-weight: 600; box-shadow: 0 4px 18px rgba(0,0,0,.55); }
+  .tut-bubble-name { font-size: 10px; color: #c8b0ff; font-weight: 800; letter-spacing: 1px; margin-bottom: 2px; }
+  .tut-bubble-tap { font-size: 10px; color: #9a90b8; margin-top: 5px; }
   .menu-btn {
     padding: clamp(10px, 2vmin, 16px);
     font-size: clamp(13px, 1.9vmin, 16px);
@@ -22357,6 +22373,7 @@
     // 🎓 튜토리얼 런 종료 — 보상·기록·글로벌제출·업적·XP·gearGold·gearDrop 전부 스킵(파밍/leak 방지).
     //    솜니아 진화까지 마쳤으면 완주(done→전 잠금 해제) / 진화 전 사망이면 stage=planet 유지(재도전).
     if (state.tutorial) {
+      try { _tutClearGuide(); } catch (e) {}   // 🎓 인게임 안내(말풍선/링) 정리
       const _tutFinished = (_tutStage() === 'evolved');
       if (_tutFinished) _tutSetStage('done'); else { try { saveMeta(); } catch (e) {} }
       try { if (typeof queueServerSync === 'function') queueServerSync(true); } catch (e) {}
@@ -22597,7 +22614,7 @@
     })();
   }
   // 🎓 인트로 컷인 — 솜니아 3연 재생 후 메뉴 보장 (Phase 1: 스포트라이트 없음)
-  function _tutIntro() { _tutPlayCutins((TUTORIAL_LINES && TUTORIAL_LINES.intro) || [], () => { try { if (typeof showScreen === 'function') showScreen('menu'); } catch (e) {} }); }
+  function _tutIntro() { _tutPlayCutins((TUTORIAL_LINES && TUTORIAL_LINES.intro) || [], () => { try { if (typeof showScreen === 'function') showScreen('menu'); } catch (e) {} try { _tutStep('menuStart'); } catch (e) {} }); }
   // 🎓 아웃트로 컷인 — 튜토리얼 완주 후 마무리 대사 1연
   function _tutOutro() { _tutPlayCutins([(TUTORIAL_LINES && TUTORIAL_LINES.done) || ''].filter(Boolean), null); }
   // 🎓 메뉴 게이팅 — 튜토리얼 활성 중엔 새 게임(startBtn)·이어하기(continueBtn) 외 전부 잠금.
@@ -22610,6 +22627,70 @@
       b.disabled = active;
       b.classList.toggle('tut-locked', active);
     });
+  }
+  // ── 🎓 Phase 2: 스포트라이트 = 대상 위 글로우 링 (최상위 fixed 라 stacking context 에 안 갇힘).
+  //    ⚠️ 어둠막+raise 방식은 대상이 낮은 stacking context(#menu 등)에 갇히면 안 떠서 링+말풍선으로 강조.
+  //    클릭 차단은 Phase 1 메뉴 게이팅 + 선택지 적은 화면(행성/게이트)으로 대체.
+  var _tutSpotEls = null, _tutSpotReposition = null;
+  function _tutClearSpotlight() {
+    if (_tutSpotEls) { _tutSpotEls.forEach(el => { try { el.remove(); } catch (e) {} }); _tutSpotEls = null; }
+    if (_tutSpotReposition) { window.removeEventListener('resize', _tutSpotReposition); window.removeEventListener('scroll', _tutSpotReposition, true); _tutSpotReposition = null; }
+  }
+  function _tutSpotlight(target) {
+    _tutClearSpotlight();
+    if (!target) return;
+    const ring = document.createElement('div'); ring.className = 'tut-ring';
+    document.body.appendChild(ring);
+    _tutSpotEls = [ring];
+    const place = () => { const r = target.getBoundingClientRect(); const pad = 6;
+      ring.style.left = (r.left - pad) + 'px'; ring.style.top = (r.top - pad) + 'px';
+      ring.style.width = (r.width + pad * 2) + 'px'; ring.style.height = (r.height + pad * 2) + 'px'; };
+    place();
+    _tutSpotReposition = () => { try { place(); } catch (e) {} };
+    window.addEventListener('resize', _tutSpotReposition);
+    window.addEventListener('scroll', _tutSpotReposition, true);
+  }
+  // ── 🎓 Phase 2: 안내 말풍선 (솜니아 미니초상 + 텍스트). opts.pos 'bottom'(기본)|'top' ──
+  var _tutBubbleEl = null;
+  function _tutClearBubble() { if (_tutBubbleEl) { try { _tutBubbleEl.remove(); } catch (e) {} _tutBubbleEl = null; } }
+  function _tutBubble(text, opts) {
+    _tutClearBubble(); opts = opts || {};
+    const b = document.createElement('div'); b.className = 'tut-bubble pos-' + (opts.pos === 'top' ? 'top' : 'bottom');
+    const face = document.createElement('div'); face.className = 'tut-bubble-face';
+    try { face.appendChild(_charPortraitImg('somnia', '')); } catch (e) {}
+    const body = document.createElement('div'); body.className = 'tut-bubble-body';
+    body.innerHTML = '<div class="tut-bubble-name">💤 솜니아</div>' + text + (opts.tap ? '<div class="tut-bubble-tap">— ' + opts.tap + '</div>' : '');
+    b.appendChild(face); b.appendChild(body);
+    document.body.appendChild(b); _tutBubbleEl = b;
+    if (opts.autoMs) { const mine = b; setTimeout(() => { if (_tutBubbleEl === mine) _tutClearBubble(); }, opts.autoMs); }   // 자동 소멸(인게임 안내용)
+  }
+  // 🎓 스포트라이트+말풍선 동시 정리 (단계 전환/완료 시)
+  function _tutClearGuide() { _tutClearSpotlight(); _tutClearBubble(); }
+  // 🎓 Phase 2: 단계별 안내 — 각 순간에 스포트라이트+말풍선. roundOne/levelCard/comboCard 는 1회만.
+  var _tutStepSeen = {};
+  function _tutStep(name) {
+    if (!_tutActive()) return;
+    const once = { roundOne: 1, levelCard: 1, comboCard: 1 };
+    if (once[name] && _tutStepSeen[name]) return;
+    _tutStepSeen[name] = true;
+    _tutClearGuide();
+    setTimeout(() => {
+      const scr = (typeof currentScreen !== 'undefined') ? currentScreen : null;   // 🎓 지연 후 화면이 바뀌었으면(빠른 클릭) 스킵 — 엉뚱한 화면 스포트라이트 방지
+      if (!_tutActive()) return;
+      if (name === 'menuStart') { if (scr !== 'menu') return; const b = document.getElementById('startBtn'); if (b) _tutSpotlight(b); _tutBubble('여긴 처음이지? <b>새 게임</b>을 눌러서 출격해 보자!', { pos: 'top' }); }
+      else if (name === 'planetLaunch') { if (scr !== 'difficulty') return; const b = document.querySelector('#difficultyScreen .planet-launch'); if (b) _tutSpotlight(b); _tutBubble('행성 하나 골라서 <b>출격</b>! 가벼운 데로 가면 돼.', { pos: 'top' }); }
+      else if (name === 'roundOne') { if (scr !== 'game') return; _tutBubble('저것들이 너무 많아지면 우리가 밀려. 시간 안에 적당히 정리하면 돼 — 어렵지 않아.', { autoMs: 6500 }); }
+      else if (name === 'levelCard') { _tutBubble('오, 카드 떴다! 이걸로 새 능력을 배우는 거야. 맘에 드는 거 골라 봐.', { autoMs: 6000 }); }
+      else if (name === 'comboCard') { _tutBubble('잠깐, 이거! 완전 좋은 거야 — 두 능력이 합쳐지는 거라구. 무조건 이거!', { autoMs: 6000 }); }
+      else if (name === 'somniaGate') { const y = document.getElementById('evoYes'); if (y) _tutSpotlight(y); _tutBubble('이제 날 불러! 저 <b>진화</b> 누르면 내가 나올게. 이번만 특별히 도와주는 거야.', { pos: 'top' }); }
+    }, name === 'menuStart' ? 500 : 350);
+  }
+  // 🎓 화면 전환 시 튜토리얼 안내 디스패치 (showScreen 에서 호출)
+  function _tutOnScreen(name) {
+    if (!_tutActive()) return;
+    if (name === 'menu') _tutStep('menuStart');           // 복귀 포함 — stale 말풍선 교체
+    else if (name === 'difficulty') _tutStep('planetLaunch');
+    else if (name === 'game') _tutStep('roundOne');
   }
   // 🎓 기존 유저 봉인 — 닉네임이 이미 있고 튜토리얼 기록이 전혀 없으면 '완료'로 못박아,
   //    나중에 닉네임을 수정(setNickname 재호출)해도 튜토리얼이 소급 발동하지 않게 한다.
@@ -27610,6 +27691,13 @@
     state.killsToNextLevel = Math.max(3, Math.floor((8 + state.playerLevel * 4) * mul - fast));
     const choices = generateLevelUpChoices();
     state.levelUpChoices = choices;
+    // 🎓 튜토리얼: 첫 레벨업 카드 안내 (조합 카드 있으면 조합 강조). 카드는 캔버스라 말풍선만.
+    if (state.tutorial && typeof _tutActive === 'function' && _tutActive()) {
+      try {
+        const hasCombo = choices.some(c => { const d = ABILITY_DEFS[c.id]; return d && d.isCombo; });
+        _tutStep(hasCombo ? 'comboCard' : 'levelCard');
+      } catch (e) {}
+    }
     state.rerollAvailable = metaLv('reroll') > 0;
     // 모든 카드가 보너스(점수/스타더스트)면 3초 자동 선택 타이머 시작
     // ⏱ 자동 선택 — 실시간 5초 (게임 속도 배율과 무관). 0 = 비활성, >0 = 절대 시각(ms)
@@ -34980,6 +35068,7 @@
     const yes = document.getElementById('evoYes'), no = document.getElementById('evoNo');
     if (yes) yes.onclick = () => {
       el.style.display = 'none'; paused = el._prevPaused || false;
+      try { _tutClearGuide(); } catch (e) {}   // 🎓 게이트 안내(말풍선/링) 정리
       applyEvolution(kind, id, info.abId);
       // 🎓 튜토리얼 강제 솜니아 진화 완료 → evolved 단계 + 2라운드 더 체험 후 자동 완료(advanceRound에서 endGame)
       if (forced && state && state.tutorial && kind === 'SSR' && id === 'somnia' && typeof _tutSetStage === 'function') {
@@ -34991,6 +35080,7 @@
       no.style.display = forced ? 'none' : '';   // 🎓 튜토리얼 강제진화 = 거절 버튼 숨김(진화만 가능)
       no.onclick = forced ? null : () => { el.style.display = 'none'; paused = el._prevPaused || false; try { toast('진화 거절 — 현 단계 유지'); } catch (e) {} };
     }
+    if (forced) { try { _tutStep('somniaGate'); } catch (e) {} }   // 🎓 진화 유도 말풍선 + evoYes 링
   }
   function applyEvolution(kind, id, abId) {
     if (!state) return;
@@ -36641,7 +36731,10 @@
     const outgoing = (prevScreen && prevScreen !== name)
       ? allScreens.find(s => s.classList.contains('show'))
       : null;
+    const _tutScrChanged = (prevScreen !== name);
     currentScreen = name;
+    if (_tutScrChanged) { try { _tutClearSpotlight(); } catch (e) {} }   // 🎓 화면 전환 시 스포트라이트(링)만 정리. 말풍선은 자동소멸/교체로 관리 — showScreen 재호출이 인게임 말풍선 지우던 버그 방지
+    try { _tutOnScreen(name); } catch (e) {}   // 🎓 새 화면 튜토리얼 안내 (difficulty 출격 / game 진입)
     // 🔴 해당 화면 진입 시 NEW 해제 + 게임 외 전환 시 보상 패널 닫기
     if (META.unseen) {
       let _cl = false;
@@ -38451,7 +38544,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 701;
+  const APP_VERSION = 702;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
