@@ -22243,6 +22243,12 @@
       }
     }
     state.round++;
+    // 🎓 튜토리얼: 솜니아 진화(evolved) 후 정해진 라운드까지 체험하면 자동 완료(승리). 무조건-클리어 행성이라
+    //    R100 을 기다릴 수 없으므로, 여기서 endGame(win) → 튜토리얼 branch 가 done 처리 + 잠금 해제.
+    if (state.tutorial && state._tutEndRound && state.round >= state._tutEndRound && !state.gameOver) {
+      endGame('🎓 튜토리얼 완료 — 잘했어, 함장!', true);
+      return;
+    }
     if (state.round > MAX_ROUND && !state.endless) {
       // ♾ R100 클리어 — 우선 승리 확정 (업적/랭킹용), 그 다음 엔드리스 진입 여부 물어봄
       state.gameWin = true;
@@ -22552,7 +22558,7 @@
     try { saveMeta(); } catch (e) {}
   }
   function _tutActive() { const s = _tutStage(); return !!s && s !== 'done' && !META.tutorialDone; }
-  function _tutStart() { META.tutorial = { stage: 'intro' }; try { saveMeta(); } catch (e) {} }
+  function _tutStart() { META.tutorial = { stage: 'intro' }; try { saveMeta(); } catch (e) {} try { _tutApplyMenuGate(); } catch (e) {} }   // 즉시 잠금(인트로 컷인 중 클릭 방지)
   function _tutDone() { return !!(META && (META.tutorialDone || _tutStage() === 'done')); }
   // 🎓 솜니아 튜토리얼 대사 (나른·반말·천진난만한 딸 톤)
   const TUTORIAL_LINES = {
@@ -34975,8 +34981,11 @@
     if (yes) yes.onclick = () => {
       el.style.display = 'none'; paused = el._prevPaused || false;
       applyEvolution(kind, id, info.abId);
-      // 🎓 튜토리얼 강제 솜니아 진화 완료 → evolved 단계 (이후 게임 종료 시 done)
-      if (forced && state && state.tutorial && kind === 'SSR' && id === 'somnia' && typeof _tutSetStage === 'function') _tutSetStage('evolved');
+      // 🎓 튜토리얼 강제 솜니아 진화 완료 → evolved 단계 + 2라운드 더 체험 후 자동 완료(advanceRound에서 endGame)
+      if (forced && state && state.tutorial && kind === 'SSR' && id === 'somnia' && typeof _tutSetStage === 'function') {
+        _tutSetStage('evolved');
+        state._tutEndRound = (state.round || 5) + 2;
+      }
     };
     if (no) {
       no.style.display = forced ? 'none' : '';   // 🎓 튜토리얼 강제진화 = 거절 버튼 숨김(진화만 가능)
@@ -38442,7 +38451,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 700;
+  const APP_VERSION = 701;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
