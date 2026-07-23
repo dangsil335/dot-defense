@@ -22348,6 +22348,20 @@
     shake(20, 15);
     if (win) SFX.victory(); else SFX.gameOver();
     state.totalTime = state.t;  // 게임 시간 (프레임)
+    // 🎓 튜토리얼 런 종료 — 보상·기록·글로벌제출·업적·XP·gearGold·gearDrop 전부 스킵(파밍/leak 방지).
+    //    솜니아 진화까지 마쳤으면 완주(done→전 잠금 해제) / 진화 전 사망이면 stage=planet 유지(재도전).
+    if (state.tutorial) {
+      const _tutFinished = (_tutStage() === 'evolved');
+      if (_tutFinished) _tutSetStage('done'); else { try { saveMeta(); } catch (e) {} }
+      try { if (typeof queueServerSync === 'function') queueServerSync(true); } catch (e) {}
+      try { renderPanel(); } catch (e) {}
+      setTimeout(() => {
+        try { if (typeof showScreen === 'function') showScreen('menu'); } catch (e) {}
+        try { if (typeof refreshMenuButtons === 'function') refreshMenuButtons(); } catch (e) {}   // done이면 잠금 해제 반영
+        if (_tutFinished) { try { _tutOutro(); } catch (e) {} }   // 솜니아 마무리 대사
+      }, 900);
+      return;   // 나머지 보상/제출/기록 로직 전부 스킵
+    }
     // 남은 골드 → 점수 환산 (G/10) — 강화 안 쓰고 남긴 골드 보상 (위로 보너스)
     // 🛡 유물 스택으로 골드가 지수 폭증 시 점수 인플레 방지 — 환산 점수 상한 100k
     state.goldRemaining = Math.max(0, state.gold || 0);
@@ -22558,13 +22572,12 @@
     extraBossRounds: false, bossDmgMul: 0.4, enemyCountAdd: 0, roundTimeMul: 0.7,
     enhanceMul: 1, startGoldMul: 1, startScoreMul: 1
   };
-  // 🎓 인트로 컷인 — 솜니아 일러(char-cutin) 3연 순차 재생 후 메뉴 보장 (Phase 1: 스포트라이트 없음)
-  function _tutIntro() {
-    const lines = (TUTORIAL_LINES && TUTORIAL_LINES.intro) || [];
+  // 🎓 솜니아 컷인 시퀀스 — char-cutin 재활용, 대사 배열을 순차 재생 후 onEnd. 인트로/아웃트로 공용.
+  function _tutPlayCutins(lines, onEnd) {
     const ch = (typeof CHARACTERS !== 'undefined' && CHARACTERS.somnia) || {};
     let i = 0;
     (function showOne() {
-      if (i >= lines.length) { try { if (typeof showScreen === 'function') showScreen('menu'); } catch (e) {} return; }
+      if (i >= lines.length) { if (onEnd) { try { onEnd(); } catch (e) {} } return; }
       try {
         const wrap = document.createElement('div'); wrap.className = 'char-cutin';
         wrap.style.setProperty('--cc', ch.color || '#c8b0ff');
@@ -22577,6 +22590,10 @@
       } catch (e) { i++; showOne(); }
     })();
   }
+  // 🎓 인트로 컷인 — 솜니아 3연 재생 후 메뉴 보장 (Phase 1: 스포트라이트 없음)
+  function _tutIntro() { _tutPlayCutins((TUTORIAL_LINES && TUTORIAL_LINES.intro) || [], () => { try { if (typeof showScreen === 'function') showScreen('menu'); } catch (e) {} }); }
+  // 🎓 아웃트로 컷인 — 튜토리얼 완주 후 마무리 대사 1연
+  function _tutOutro() { _tutPlayCutins([(TUTORIAL_LINES && TUTORIAL_LINES.done) || ''].filter(Boolean), null); }
   // 🎓 메뉴 게이팅 — 튜토리얼 활성 중엔 새 게임(startBtn)·이어하기(continueBtn) 외 전부 잠금.
   //    Phase 1은 스포트라이트 없이 기능적 잠금(disabled + .tut-locked)만. refreshMenuButtons 끝에서 호출.
   function _tutApplyMenuGate() {
