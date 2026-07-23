@@ -19834,16 +19834,16 @@
         ctx.restore(); ctx.globalAlpha = 1;
       },
     },
-    // 💤 소미아(SSR) — 꿈/수면 킷. 축 = e._drowse(졸음 최대5) · e._drowseT(4s 만료) · e._sleepT(수면)
+    // 💤 솜니아(SSR) — 꿈/수면 킷. 축 = e._drowse(졸음 최대5) · e._drowseT(4s 만료) · e._sleepT(수면)
     //    ⚠️ 졸음을 쌓고/읽고/깨우는 모든 지점은 _addDrowse / _drowse / _isAsleep / _wakeDrowse 헬퍼를 거칠 것.
     //       졸음 상수는 lullaby.stats 단일 출처 — 다른 5종 stats 에 복제 금지(재우는 쪽과 깨우는 쪽이 어긋난다).
     //    ⚠️ 킷 규약 — 보스에게 완전정지(timeStopped) 금지(강슬로우로 대체) · 즉사/처형 없음(스미카 담당) · 진영 전환 없음.
     lullaby: {
       name: '자장가', isGachaUnique: true, single: true, baseCost: 130, color: '#8fd8ff',
       desc: lv => `0.4s마다 가장 가까운 적 1체 자장가 · 졸음 +1(최대 5중첩, 4s 만료) · 5중첩 시 수면 1.5s(보스는 정지 대신 강슬로우 2.2s) · 졸음 1스택당 +DMG ${4 + lv * 2} · DMG ${10 + lv * 4}`,
-      // 📊 v679 — 앞 5개(drowseCap/drowseDur/sleepDur/bossSlowDur/wakeBonus)는 소미아 킷 6종의 단일 출처다.
+      // 📊 v679 — 앞 5개(drowseCap/drowseDur/sleepDur/bossSlowDur/wakeBonus)는 솜니아 킷 6종의 단일 출처다.
       //   읽기는 전부 _drowseStat() 헬퍼를 거치고, 고유 옵션은 state.abilityStatOverrides.lullaby.<키> 로 개입한다.
-      //   ⚠️ 다른 소미아 능력의 stats 에 복제하지 말 것.
+      //   ⚠️ 다른 솜니아 능력의 stats 에 복제하지 말 것.
       stats: { drowseCap: 5, drowseDur: 240, sleepDur: 90, bossSlowDur: 135, wakeBonus: 0.5, range: 340, ringRadius: 26, ringLife: 18, dustLife: 30, idleCooldown: 12 },
       init(ab) { ab.cooldown = 0; ab.rings = []; ab.dust = []; },
       tick(ab) {
@@ -20152,7 +20152,7 @@
         ctx.restore(); ctx.globalAlpha = 1;
       },
     },
-    // 💤 소미아 4★ 별해금 — 양 세기 (자율 배회 졸음 살포)
+    // 💤 솜니아 4★ 별해금 — 양 세기 (자율 배회 졸음 살포)
     //    ⚠️ 별돌파 능력은 startAbilities 에 없어 permaCount(자기 id) 가 영구히 0 이다 → 호출하지 않는다.
     countingSheep: {
       name: '양 세기', isGachaUnique: true, isStarUnlock: true, baseCost: 280, color: '#cfeeff',
@@ -20215,7 +20215,7 @@
         ctx.restore(); ctx.globalAlpha = 1;
       },
     },
-    // 💤 소미아 8★ 별해금 — 몽유 (잠든 적이 정지 대신 배회하다 서로 부딪힘)
+    // 💤 솜니아 8★ 별해금 — 몽유 (잠든 적이 정지 대신 배회하다 서로 부딪힘)
     //    ⚠️ 진영 전환 없음(아군화 아님) · 즉사 없음 · 보스는 몽유하지 않는다(정지가 안 걸리므로).
     //    ⚠️ 남의 timeStopped 를 해제하지 않는다 — 정지된 채로 좌표를 직접 흔들어 "비틀걸음" 을 만든다.
     somnambulism: {
@@ -21291,7 +21291,7 @@
     finalSeal:        ['광역', '폭발'],
     elementCycle:     ['자율', '연쇄', '슬로우'],
     elementalMonarch: ['회전', '자율', '폭발'],
-    // 💤 소미아 — 졸음/수면 (수면 = timeStopped 이므로 '정지', 보스는 헬퍼가 slowFrames 로 대체 → '정지' 툴팁이 그대로 설명한다)
+    // 💤 솜니아 — 졸음/수면 (수면 = timeStopped 이므로 '정지', 보스는 헬퍼가 slowFrames 로 대체 → '정지' 툴팁이 그대로 설명한다)
     //   ⚠️ '슬로우' 를 함께 달지 않는다 — CC 취약은 max 합성이라 정지(1.30)가 항상 이기고, 정지+슬로우 동시 태깅 선례가 없다.
     //   ⚠️ pillowThrow 는 "깨우는" 쪽이 본체라 '정지' 를 달지 않았다(졸음 +1 은 부수 효과).
     lullaby:       ['단일', '정지'],
@@ -21395,7 +21395,7 @@
     // 🆕 SSR 스미카·엘레미아 별해금 (4★/8★) — SSR 20명 전원 별돌파 완비
     'inkBlot', 'finalSeal',               // 스미카
     'elementCycle', 'elementalMonarch',   // 엘레미아
-    // 🆕 소미아(SSR) 꿈/수면 킷 + 별해금 2종
+    // 🆕 솜니아(SSR) 꿈/수면 킷 + 별해금 2종
     'lullaby', 'pillowThrow', 'dreamland', 'daydream', 'countingSheep', 'somnambulism',
   ];
   // (구 숫자 매핑 ABILITY_ICON_NUMBER/getIconNumber 제거 — 파일명이 id가 되어 불필요. ABILITY_ICON_ORDER는 프리로드 목록으로 유지)
@@ -21622,7 +21622,7 @@
     { parts: ['longExposure', 'mine'],         combo: 'overexposed' },
     { parts: ['overexposed', 'turret'],        combo: 'contactSheet', tier: 3 },
     { parts: ['contactSheet', 'timeStop'],     combo: 'developingTray', tier: 4 },
-    // 💤 소미아(꿈/수면) 조합 체인 — 재료는 전부 R 기본 액티브. 시그니처 lullaby 는 다른 캐릭과 동일하게 t2 에서 소진된다.
+    // 💤 솜니아(꿈/수면) 조합 체인 — 재료는 전부 R 기본 액티브. 시그니처 lullaby 는 다른 캐릭과 동일하게 t2 에서 소진된다.
     //   mortar(포격, 광역+폭발) = 던져서 착탄 반경으로 터지는 pillowThrow 와 태그가 그대로 겹친다.
     //   mine(지뢰, 영역+폭발) = "아레나에 설치되는 지대" 라는 구조가 dreamland 의 졸음 지대와 같다.
     //   nova(노바, 광역) = daydream 의 일괄 각성 = 전 맵 광역 폭발.
@@ -24517,7 +24517,7 @@
     },
     {
       id: 'feriaSomnia',
-      name: '🧲💤 페리아 · 소미아 픽업',
+      name: '🧲💤 페리아 · 솜니아 픽업',
       desc: '자력과 꿈 — 둘 중 누가 올진 운',
       bannerImg: './icons/gacha-feriaSomnia.jpg',
       pool: {
@@ -25354,7 +25354,7 @@
       ],
     },
     somnia: {
-      name: '💤 소미아', color: '#8fd8ff',
+      name: '💤 솜니아', color: '#8fd8ff',
       desc: '[SSR] 자장가로 시작. 데미지 +52% / 보스 +55% / 레벨업 -20% / 슬롯 +1 / 둔화 +65%. 졸음을 쌓아 재우고, 깨울 때 누적 졸음만큼 터뜨린다. 자장가 + 포격 = 베개 던지기. ★4 양 세기 · ★8 몽유.',
       startAbilities: ['lullaby'],
       passive: { dmgMul: 1.52, bossDmgMul: 1.55, slotMod: 1, levelUpMul: 0.80, slowMul: 1.65 },
@@ -25369,18 +25369,18 @@
 루나가 어이없다는 듯 웃었다. "얘, 나보다 심하네."
 
 옆에서 실이 풀린 양 인형을 주워 든 라라가 조용히 바늘을 꺼냈다. "일어나면 돌려줄게. 자는 애 깨우는 건 예의가 아니니까."` },
-        { star: 4, title: '자는 거 아니에요, 재우는 거예요', text: `전선 한복판에서 소미아가 눈을 감고 앉아 있었다. 누가 봐도 자고 있었다.
+        { star: 4, title: '자는 거 아니에요, 재우는 거예요', text: `전선 한복판에서 솜니아가 눈을 감고 앉아 있었다. 누가 봐도 자고 있었다.
 
 "야! 지금 자면 어떡해!"
 
-소미아는 눈도 안 뜨고 손가락을 까딱였다. 달려오던 것들이 하나둘, 그 자리에 폭 하고 주저앉았다.
+솜니아는 눈도 안 뜨고 손가락을 까딱였다. 달려오던 것들이 하나둘, 그 자리에 폭 하고 주저앉았다.
 
 "자는 거 아니에요오. …재우는 거예요."
 
 그리고 덧붙였다. "근데 하다 보면 저도 좀 졸려요. 헤헤."` },
         { star: 8, title: '다 같이 자고, 다 같이 일어나요', text: `"전부 재워버리면… 그 다음은 어떡해?"
 
-함장의 물음에 소미아는 베개를 고쳐 안으며 배시시 웃었다.
+함장의 물음에 솜니아는 베개를 고쳐 안으며 배시시 웃었다.
 
 "깨우면 되죠! 깊게 잘수록, 일어날 때 더 깜짝 놀라거든요."
 
@@ -26003,7 +26003,7 @@
       check: () => ((META.charStars || {}).kaira || 0) >= 8 },
     { id: 'char8_feria',    name: '🧲 자력의 지배자',  desc: '🧲 페리아 8★ 달성',   reward: 1500,
       check: () => ((META.charStars || {}).feria || 0) >= 8 },
-    { id: 'char8_somnia',   name: '💤 꿈의 인도자',    desc: '💤 소미아 8★ 달성',   reward: 1500,
+    { id: 'char8_somnia',   name: '💤 꿈의 인도자',    desc: '💤 솜니아 8★ 달성',   reward: 1500,
       check: () => ((META.charStars || {}).somnia || 0) >= 8 },
     // SR 캐릭터 8★
     { id: 'char8_sakura',   name: '🌸 벚꽃의 검객',    desc: '🌸 사쿠라 8★ 달성',   reward: 800,
@@ -26578,12 +26578,12 @@
     const d = ABILITY_DEFS.inkSlash;
     return (d && d.stats && d.stats.markDur) || 240;
   }
-  // 💤 v679 — 소미아 졸음(drowse) 스택 헬퍼. 스미카 표식과 완전히 동일한 만료 규약을 따른다.
+  // 💤 v679 — 솜니아 졸음(drowse) 스택 헬퍼. 스미카 표식과 완전히 동일한 만료 규약을 따른다.
   //   졸음은 _drowseT(찍은 시점 + drowseDur) 에 만료된다. 만료 뒤에는 0중첩으로 취급하고,
   //   만료된 위에 새로 쌓을 땐 누적이 아니라 1부터 다시 쌓인다.
   //   ⚠️ e._drowse 를 직접 읽지 말 것 — 만료가 무시되어 졸음이 사실상 영구가 된다.
   function _drowse(e) { return (e._drowseT > state.t) ? (e._drowse || 0) : 0; }
-  // 📊 졸음 상수(상한5 / 지속240 / 수면90 / 보스슬로우135 / 각성배율0.5)는 소미아 킷 6종이 공유한다:
+  // 📊 졸음 상수(상한5 / 지속240 / 수면90 / 보스슬로우135 / 각성배율0.5)는 솜니아 킷 6종이 공유한다:
   //   lullaby · pillowThrow · dreamland · daydream · countingSheep · somnambulism.
   //   능력별 stats 로 흩어 놓으면 "재우는 쪽" 과 "깨우는 쪽" 의 상한이 어긋나므로
   //   lullaby.stats 한 곳에서만 관리하고 6종 전부 아래 헬퍼를 거치게 한다.
@@ -26609,7 +26609,7 @@
     e._drowse  = next;
     e._drowseT = state.t + _drowseDur();
     if (next >= cap) {
-      // 💤 만개 → 수면. _sleepT 는 "소미아가 재웠다" 는 전용 표식이며 _isAsleep 의 단일 판정원이다.
+      // 💤 만개 → 수면. _sleepT 는 "솜니아가 재웠다" 는 전용 표식이며 _isAsleep 의 단일 판정원이다.
       //   보스는 timeStopped 가 안 걸리므로 실제 CC(정지/슬로우)로는 수면 여부를 알 수 없고,
       //   비보스도 남의 능력(석화 등)이 건 timeStopped 와 구분되어야 하므로 별도 플래그가 필요하다.
       if (e.isBoss) {
@@ -30779,16 +30779,16 @@
     //   finalSeal : 표식 보유 적 전체 대상, 반경 개념 없음 ⇒ 등재
     //   elementCycle(R=220 하드캡) / elementalMonarch(공전70+타격62=132, 합류폭발160)는 240 이하 ⇒ 미등재
     'inkBlot', 'finalSeal',                                                // 스미카 (필드 전역 먹점 / 전역 표식 인장)
-    // 🆕 소미아 — 도달거리 실측 후 "자기 티어 기본 캡(기본240 / 조합280 / 트리플320) 초과 or 반경 개념 없음" 만 등재
+    // 🆕 솜니아 — 도달거리 실측 후 "자기 티어 기본 캡(기본240 / 조합280 / 트리플320) 초과 or 반경 개념 없음" 만 등재
     //   dreamland     : 지대를 아레나의 무작위 생존 적 위에 놓는다(거리 필터 자체가 없음) ⇒ 반경 개념 없음 ⇒ 등재
     //   daydream      : 전 맵 수면 → 전 맵 각성. 거리 개념 없음 ⇒ 등재
     //   countingSheep : 양이 ARENA_R(290)까지 배회 + 접촉 20 = 실효 310px > 240 ⇒ 등재 (inkBlot 283px 선례와 동형)
     //   somnambulism  : 자립 졸음 펄스 pulseRange 320 > 240 + 몽유 충돌은 맵 전역 판정 ⇒ 등재
     //   lullaby(340) / pillowThrow(360) 는 미등재 —
     //     340 = ARENA_R+50 은 t1 시그니처의 하우스 표준 사거리이고 inkSlash·moonShot·cardThrow·stormBrand
-    //     4종이 같은 340 으로 전부 미등재다. 여기만 등재하면 소미아 t1 만 캡이 풀리는 이상치가 된다.
+    //     4종이 같은 340 으로 전부 미등재다. 여기만 등재하면 솜니아 t1 만 캡이 풀리는 이상치가 된다.
     //     pillowThrow 도 착탄 반경(72+lv×2)이 뚜렷한 투척물이라 조합 캡 280 이 의미상 맞다(feria reversePolarity 선례).
-    'dreamland', 'daydream', 'countingSheep', 'somnambulism',              // 소미아 (지대 무작위 배치 / 전 맵 / 아레나 배회 / 전역 몽유)
+    'dreamland', 'daydream', 'countingSheep', 'somnambulism',              // 솜니아 (지대 무작위 배치 / 전 맵 / 아레나 배회 / 전역 몽유)
   ]);
   // 🎯 능력별 표적 사거리 — TD 모드 사거리 캡 + 시각 표시용
   // def.range(lv) 가 정의돼있으면 사용, 아니면 능력 타입/티어별 기본값
@@ -34303,7 +34303,7 @@
                 { avail: () => _ancientAvail('kaira'), make: () => _charRelicEv('kaira') } ],
     feria:    [ { make: () => _charEv('🧲 페리아의 자장',      '"당겨서 뭉칠까, 밀어서 흩을까?"',                       'dmg',  22, 'polarField') },
                 { avail: () => _ancientAvail('feria'), make: () => _charRelicEv('feria') } ],
-    somnia:   [ { make: () => _charEv('💤 소미아의 자장가',    '"더 세게 재울까요, 아니면 깰 때 더 아프게 할까요?"',       'dmg',  22, 'lullaby') },
+    somnia:   [ { make: () => _charEv('💤 솜니아의 자장가',    '"더 세게 재울까요, 아니면 깰 때 더 아프게 할까요?"',       'dmg',  22, 'lullaby') },
                 { avail: () => _ancientAvail('somnia'), make: () => _charRelicEv('somnia') } ],
     sakura:   [ { make: () => _charEv('🌸 사쿠라의 만개',     '"꽃잎처럼 흩날리는 칼날, 더 날카롭게 해줄까?"',             'dmg',  22, 'sakuraSlash') } ],
     luna:     [ { make: () => _charEv('🌙 루나의 월광',       '"달빛을 더 퍼뜨릴까, 월광탄을 더 키울까?"',                 'dmg',  18, 'moonShot') } ],
@@ -34625,16 +34625,16 @@
                             lines:['아이리스: 움직이지 말라니까. 셔터 열어둘게.', '페리아: 멈춘 건 …자석에서 못 벗어나.'] },
     beam_feria:           { sr:'iris',     ssr:'feria',     axis:'pierce',name:'관통 인화',
                             lines:['아이리스: 한 줄로 세워줘. 그럼 한 컷에 담겨.', '페리아: 정렬 완료. …꿰뚫는다.'] },
-    // ── 💤 소미아 (꿈·수면) ── 브릿지: luna (전용 신규 SR 없이 합류 — 미사키와 루나를 공유. SR_TO_SSR 주석 참조)
+    // ── 💤 솜니아 (꿈·수면) ── 브릿지: luna (전용 신규 SR 없이 합류 — 미사키와 루나를 공유. SR_TO_SSR 주석 참조)
     //    루나가 속한 R타워 5종 중 축이 겹치지 않는 4종만 채택 → blast·pierce·ice·echo 4축 전부 커버(shock은 루나 경로에 없음).
     starfall_somnia:      { sr:'luna',     ssr:'somnia',    axis:'blast', name:'별 헤는 자장가',
-                            lines:['루나: 별 하나에 하나씩 — 세어줄게.', '소미아: 좋아요. 다 세기 전에… 전부 잠들 거예요.'] },
+                            lines:['루나: 별 하나에 하나씩 — 세어줄게.', '솜니아: 좋아요. 다 세기 전에… 전부 잠들 거예요.'] },
     beam_somnia:          { sr:'luna',     ssr:'somnia',    axis:'pierce',name:'월광 각성',
-                            lines:['루나: 달빛 한 줄기, 곧게 세워둘게.', '소미아: 그 빛으로 깨울게요 — 아주 아프게.'] },
+                            lines:['루나: 달빛 한 줄기, 곧게 세워둘게.', '솜니아: 그 빛으로 깨울게요 — 아주 아프게.'] },
     frost_somnia:         { sr:'luna',     ssr:'somnia',    axis:'ice',   name:'동면의 서리',
-                            lines:['루나: 숨결까지 얼려둘게. 뒤척이지도 못하게.', '소미아: 언 채로 잠들면… 다시는 못 깨요.'] },
+                            lines:['루나: 숨결까지 얼려둘게. 뒤척이지도 못하게.', '솜니아: 언 채로 잠들면… 다시는 못 깨요.'] },
     orbital_somnia:       { sr:'luna',     ssr:'somnia',    axis:'echo',  name:'꿈나라 궤도',
-                            lines:['루나: 네 꿈 둘레를 돌게 해줄게 — 끝없이.', '소미아: 그럼 여긴, 나가는 길이 없는 꿈이네요.'] },
+                            lines:['루나: 네 꿈 둘레를 돌게 해줄게 — 끝없이.', '솜니아: 그럼 여긴, 나가는 길이 없는 꿈이네요.'] },
   };
   // 🧬 ③ 계보 공명 — 각성한 것 추적(기기-로컬, META 분리) + 진화트리 도감(떡밥 + 점진공개)
   function _getResonanceSeen() { try { return JSON.parse(localStorage.getItem('_dd_resonance') || '{}') || {}; } catch (e) { return {}; } }
@@ -34688,7 +34688,7 @@
   // SR → SSR 진화 종착 (R25)
   // 무료 진화트리(R→SR→SSR) 전용. 신규 SR도 편입 — 단 _evoTowerUnlocked가 가챠해금 게이팅하므로 무료 유출 없음(가챠로 뽑아야 트리 도달가능).
   //   신규 SR→신규 SSR 브릿지: amy·galatea→blanche / chloe·lara→kaira (계보 공명 축 분배용, R_TOWERS.sr에도 편입됨).
-  //   값은 문자열(단일 수렴) 또는 배열(복수 수렴). 💤 소미아는 전용 신규 SR 없이 합류 → 🌙 루나가 미사키·소미아 둘 다로 수렴한다.
+  //   값은 문자열(단일 수렴) 또는 배열(복수 수렴). 💤 솜니아는 전용 신규 SR 없이 합류 → 🌙 루나가 미사키·솜니아 둘 다로 수렴한다.
   //   (기존 매핑 재배치 0 · R_TOWERS.sr 변경 0 — 루나는 R타워 5종/4축(blast·pierce·ice·echo)을 커버하는 유일한 SR이라 추가 배선이 필요 없다.)
   const SR_TO_SSR = { marine:'elementia', levina:'elementia', luna:['misaki','somnia'], gravitas:'misaki', sakura:'sumika', cardista:'sumika', solar:'aria', amy:'blanche', galatea:'blanche', chloe:'kaira', lara:'kaira', trina:'feria', iris:'feria' };
   // SR_TO_SSR 값 정규화 — 문자열/배열을 항상 배열로. 모든 소비처는 반드시 이걸 거친다(SR_TO_SSR[x] 직접 인덱싱 금지).
@@ -34914,7 +34914,7 @@
     reversePolarity:  '극을 뒤집을게. …당긴 채로, 얼려버린다.',
     magRail:          '일직선으로 당겨서, 끝까지 꿰뚫는다.',
     magnetStorm:      '전부 끌려온다. …이게, 자기 폭풍이야.',
-    // 💤 소미아 (졸린 잠꾸러기)
+    // 💤 솜니아 (졸린 잠꾸러기)
     pillowThrow:      '푹 자고 있었죠? 미안해요 — 기상 시간이에요!',
     dreamland:        '여기서부턴 꿈나라예요. 발 들이면 못 나와요.',
     daydream:         '다 같이 자고… 자, 다 같이 일어나요!',
@@ -37489,7 +37489,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 685;
+  const APP_VERSION = 686;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
