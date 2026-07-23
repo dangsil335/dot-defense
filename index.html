@@ -6032,6 +6032,11 @@
   .ssr-reveal-stage.show .ssr-reveal-rar { animation: ssrRarIn .5s ease .04s forwards; }
   .ssr-reveal-stage.show .ssr-reveal-name { animation: ssrNameIn .5s cubic-bezier(.2,.9,.3,1.1) .2s forwards; }
   .ssr-reveal-stage.show .ssr-reveal-line { animation: ssrLineIn .5s ease .4s forwards; }
+  /* 🖐 탭 안내 — 자동 종료 없음. 일러 등장 후 살짝 늦게 나타나 은은히 깜빡 */
+  .ssr-reveal-tap { position: absolute; bottom: 4%; left: 0; right: 0; text-align: center; font-size: 12px; letter-spacing: 1px; color: rgba(220,240,255,0.72); text-shadow: 0 1px 6px #000; opacity: 0; pointer-events: none; }
+  .ssr-reveal-stage.show .ssr-reveal-tap { animation: ssrTapIn .5s ease .8s forwards, ssrTapPulse 1.6s ease-in-out 1.3s infinite; }
+  @keyframes ssrTapIn { from { opacity: 0; } to { opacity: 0.72; } }
+  @keyframes ssrTapPulse { 0%,100% { opacity: 0.32; } 50% { opacity: 0.82; } }
   @keyframes ssrPortraitIn { 0% { opacity: 0; transform: translateY(46px) scale(.84); filter: brightness(3.2) drop-shadow(0 0 70px #eaf7ff); } 50% { opacity: 1; filter: brightness(1.5) drop-shadow(0 0 46px var(--ssrGlow, rgba(143,216,255,.85))); } 100% { opacity: 1; transform: translateY(0) scale(1); filter: drop-shadow(0 0 34px var(--ssrGlow, rgba(143,216,255,.6))) drop-shadow(0 10px 30px rgba(0,0,0,.6)); } }
   @keyframes ssrRarIn { 0% { opacity: 0; transform: translateY(-14px); letter-spacing: 16px; } 100% { opacity: .96; transform: translateY(0); letter-spacing: 5px; } }
   @keyframes ssrNameIn { 0% { opacity: 0; transform: translateY(18px); } 100% { opacity: 1; transform: translateY(0); } }
@@ -35610,6 +35615,11 @@
       lineEl.textContent = '"' + line + '"';
       stage.appendChild(lineEl);
     }
+    // 🖐 탭 안내 — 자동 종료가 없으므로 "화면을 탭하면 닫힘"을 알린다(일러 등장 후 깜빡).
+    const tapEl = document.createElement('div');
+    tapEl.className = 'ssr-reveal-tap';
+    tapEl.textContent = '화면을 탭하여 계속';
+    stage.appendChild(tapEl);
     overlay.appendChild(stage);
     document.body.appendChild(overlay);
 
@@ -35695,8 +35705,11 @@
         _playNextSSRReveal();   // 큐 다음 (없으면 active=false)
       }, 360);
     }
-    overlay.addEventListener('click', cleanup);   // 탭/클릭 즉시 스킵 (유저가 갇히지 않게)
-    autoTimer = setTimeout(cleanup, AUTO_AT);
+    // 🖐 자동 종료 없음 — 일러+대사가 다 뜬 뒤 유저가 탭할 때까지 대기(감상 시간 보장).
+    //    'shown' 은 일러 등장 시 true(frame 안). 등장 후부터 클릭으로 닫힘 + 탭힌트 노출.
+    overlay.addEventListener('click', () => { if (shown) cleanup(); });
+    // 백업: 혹시 일러가 끝내 안 뜨는 예외에도 갇히지 않게 넉넉한 안전 타이머(정상은 탭으로 닫힘).
+    autoTimer = setTimeout(cleanup, 20000);
   }
   // 📖 v613 — 캐릭터 스토리 리더 (★ 돌파로만 게이트, 능력/조합과 무관)
   function openCharStory(charId, idx) {
@@ -38239,7 +38252,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 695;
+  const APP_VERSION = 696;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
