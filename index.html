@@ -22107,6 +22107,16 @@
     state.ascension = getSelectedAscension();
     const asc = getAscensionMods(state.ascension);
     state.asc = asc;
+    // 🎓 튜토리얼 런 — 난이도를 무조건-클리어로 덮어씀 + 플래그(런 한정). 이후 골드·점수·metaMods 계산이 이 asc 를 씀.
+    //    getAscensionMods/PLANET_TIERS 는 안 건드림. 신규 유저는 어차피 terra(asc0)만 해금이라 자연히 튜토리얼 행성.
+    if (typeof _tutActive === 'function' && _tutActive()) {
+      state.tutorial = true;
+      state.asc = Object.assign({}, TUTORIAL_ASC);
+      state.ascension = 0;
+      if (_tutStage() === 'intro') _tutSetStage('planet');   // 게임 시작 = 튜토리얼 행성 진입 단계
+    } else {
+      state.tutorial = false;
+    }
     initBackground();   // 🌌 단계별 우주 배경 재구성 (기본/승천/초월 팔레트 반영)
     state.gold = Math.floor(mods.startGold * asc.startGoldMul);
     state.metaMods = {
@@ -22539,6 +22549,14 @@
     ],
     evolve: '이제 날 불러! 저 카드 누르면 내가 나올게. 이번만 특별히 도와주는 거야.',
     done: '거봐, 할 만하지? 이제 진짜 시작이야. 잘 부탁해, 함장.'
+  };
+  // 🎓 튜토리얼 전용 난이도 — 무조건 클리어 가능 + 파밍 방지(보상 극소). reset()에서 state.asc 를 이걸로 덮어씀.
+  //    getAscensionMods 의 필드 스키마와 동일해야 함(enemyHpMul·maxAliveAdd·scoreReward·roundTimeMul 등).
+  const TUTORIAL_ASC = {
+    enemyHpMul: 0.45, bossHpMul: 0.5, maxAliveAdd: 40, scoreReward: 0.05,
+    stardustMul: 0.05, enemySpeedMul: 0.75, extraBossCount: 0, eliteEscorts: 0,
+    extraBossRounds: false, bossDmgMul: 0.4, enemyCountAdd: 0, roundTimeMul: 0.7,
+    enhanceMul: 1, startGoldMul: 1, startScoreMul: 1
   };
   // 🎓 인트로 컷인 — 솜니아 일러(char-cutin) 3연 순차 재생 후 메뉴 보장 (Phase 1: 스포트라이트 없음)
   function _tutIntro() {
