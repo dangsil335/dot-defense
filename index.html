@@ -872,6 +872,8 @@
     letter-spacing: clamp(2px, 0.6vmin, 4px);
     font-size: clamp(10px, 1.6vmin, 13px);
   }
+  /* 🎓 튜토리얼 잠금 — 새 게임 외 메뉴 버튼 (기능적 잠금 + 시각 표시). disabled 와 병행. */
+  .tut-locked { opacity: 0.38 !important; filter: grayscale(0.65) !important; pointer-events: none !important; cursor: not-allowed !important; }
   .menu-btn {
     padding: clamp(10px, 2vmin, 16px);
     font-size: clamp(13px, 1.9vmin, 16px);
@@ -22557,6 +22559,17 @@
       } catch (e) { i++; showOne(); }
     })();
   }
+  // 🎓 메뉴 게이팅 — 튜토리얼 활성 중엔 새 게임(startBtn)·이어하기(continueBtn) 외 전부 잠금.
+  //    Phase 1은 스포트라이트 없이 기능적 잠금(disabled + .tut-locked)만. refreshMenuButtons 끝에서 호출.
+  function _tutApplyMenuGate() {
+    const active = _tutActive();
+    const LOCK = ['gachaBtn', 'shopBtn', 'codexBtn', 'abilityPermaBtn', 'achievementsBtn', 'charCollectionBtn', 'recordsBtn', 'coreMgrBtn', 'globalRankBtn'];
+    LOCK.forEach(id => {
+      const b = document.getElementById(id); if (!b) return;
+      b.disabled = active;
+      b.classList.toggle('tut-locked', active);
+    });
+  }
   // 🎓 기존 유저 봉인 — 닉네임이 이미 있고 튜토리얼 기록이 전혀 없으면 '완료'로 못박아,
   //    나중에 닉네임을 수정(setNickname 재호출)해도 튜토리얼이 소급 발동하지 않게 한다.
   (function _tutMigrateExisting() {
@@ -36719,6 +36732,7 @@
     }
     // 🎴 v221 — 현재 선택 캐릭터 미리보기 갱신
     if (typeof refreshMenuCharPreview === 'function') refreshMenuCharPreview();
+    try { _tutApplyMenuGate(); } catch (e) {}   // 🎓 튜토리얼 활성 중 새게임 외 잠금 (버튼 상태 확정 뒤 마지막에)
   }
 
   // 🛰️ v461 — 메인 메뉴 로테이션 간판 캐릭터 백드롭 (메뉴 진입마다 순환)
@@ -36740,6 +36754,7 @@
   try { refreshMenuHero(); } catch (e) {}   // 🛰️ 초기 로드 1회 (메뉴가 정적 show로 뜨고 init은 showScreen('menu') 미호출)
   try { refreshMenuNickname(); } catch (e) {}   // 🎖️ 함장 크리덴셜 초기 1회
   try { _hydrateIllusts(document.body); } catch (e) {}   // 🖼 정적 마커 일러(능력강화 아리아 배경 등) webp→gif→png 체인 1회
+  try { _tutApplyMenuGate(); } catch (e) {}   // 🎓 정적 부팅 메뉴에도 튜토리얼 잠금 1회 적용 (refreshMenuButtons 미호출 대응)
   try { refreshWeeklyPanel(); } catch (e) {}   // 🌀📋 v614 — 주간 모디파이어 + 일일 임무 초기 1회 (같은 이유)
 
   // 🎴 v221 — 메뉴 캐릭터 미리보기 (카드 스타일)
