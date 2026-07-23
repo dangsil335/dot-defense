@@ -35299,74 +35299,87 @@
 
     // ── 🌈 블랑슈 — 삼각 프리즘 분광: 흰 입사광이 프리즘을 지나 매끄러운 무지개 스펙트럼으로 ──
     if (style === 'blanche') {
-      const SPEC = ['#ff4d4d', '#ff9a3c', '#ffe24a', '#5cff8f', '#4dd2ff', '#7a7dff', '#c86bff'];
-      const MOTE = [];   // 스펙트럼 속 미세 광진(먼지) — 은은한 반짝
-      for (let i = 0; i < 16; i++) MOTE.push({ u: Math.random(), spread: R(-0.5, 0.5), drift: R(0.2, 0.9), tw: R(0, PI2), col: SPEC[(Math.random() * 7) | 0], sz: 1 + Math.random() * 2 });
-      const HEX = [];   // 보조 육각 크리스탈(난반사 반짝) — 아주 소수 배경 반짝만(주역 아님)
-      for (let i = 0; i < 5; i++) HEX.push({ x: 0.56 + Math.random() * 0.38, y: 0.28 + Math.random() * 0.5, size: 8 + Math.random() * 13, rot: R(0, PI2), spin: R(-0.6, 0.6), tw: R(0, PI2), col: SPEC[(Math.random() * 7) | 0] });
+      // 🌈→❌ 무지개 폐기. 프리즘(유리 질감) + 굵기·길이·밝기 제각각인 시안~백색 빛줄기 다발.
+      const CB = fx.glow || '#9fd8ff';
+      const RAYS = [];   // 출사 빛줄기 — 각도·굵기·길이·밝기·등장타이밍 전부 랜덤
+      const NR = 9;
+      for (let i = 0; i < NR; i++) RAYS.push({
+        ang: -0.34 * PI + (i / (NR - 1)) * 0.66 * PI + R(-0.03, 0.03) * PI,   // 우측 부채 범위에 흩뿌림
+        w: 1 + Math.random() * Math.random() * 7,        // 굵기 편차 크게(가는 게 다수, 굵은 게 소수)
+        len: 0.42 + Math.random() * 0.58,                // 길이 제각각
+        bright: 0.4 + Math.random() * 0.6,
+        delay: 620 + Math.random() * 520,                // 하나씩 순차로 터져나옴
+        white: Math.random() < 0.4,                      // 일부는 순백, 나머지는 시안기
+      });
+      const HEX = [];   // 프리즘 내부 굴절 반짝(소수)
+      for (let i = 0; i < 4; i++) HEX.push({ off: R(-0.4, 0.4), depth: 0.2 + Math.random() * 0.6, size: 5 + Math.random() * 9, tw: R(0, PI2) });
       return { draw: function (ctx, g, t, post) {
         const cx = g.cx, cy = g.cy, W = g.W, H = g.H, maxR = g.maxR, S = Math.min(W, H);
-        const pxc = cx - S * 0.04, pyc = cy + S * 0.01, triW = S * 0.2, triH = S * 0.2;
-        const Ax = pxc, Ay = pyc - triH * 0.62, Bx = pxc - triW * 0.5, By = pyc + triH * 0.4, Cx2 = pxc + triW * 0.5, Cy2 = pyc + triH * 0.4;
-        const Mix = (Ax + Bx) * 0.5, Miy = (Ay + By) * 0.5, Mox = (Ax + Cx2) * 0.5, Moy = (Ay + Cy2) * 0.5;   // 입사점(좌면)·출사점(우면)
-        const appear = Math.min(1, Math.max(0, (t - 150) / 450));
+        const pxc = cx - S * 0.03, pyc = cy + S * 0.01, triW = S * 0.26, triH = S * 0.28;
+        const Ax = pxc, Ay = pyc - triH * 0.6, Bx = pxc - triW * 0.5, By = pyc + triH * 0.42, Cx2 = pxc + triW * 0.5, Cy2 = pyc + triH * 0.42;
+        const Mix = (Ax + Bx) * 0.5, Miy = (Ay + By) * 0.5, Mox = (Ax + Cx2) * 0.5, Moy = (Ay + Cy2) * 0.5;
+        const appear = Math.min(1, Math.max(0, (t - 150) / 500));
         const inP = Math.min(1, Math.max(0, (t - 120) / 560));
-        const fanP = Math.min(1, Math.max(0, (t - 620) / 900));
-        if (appear > 0) {   // 프리즘 유리(반투명·발광 테두리)
-          const ga = 0.16 * post * appear;
-          const gg = ctx.createLinearGradient(Bx, By, Ax, Ay);
-          gg.addColorStop(0, C(fx.glow, ga * 0.5)); gg.addColorStop(1, C('#ffffff', ga));
-          ctx.fillStyle = gg; ctx.beginPath(); ctx.moveTo(Ax, Ay); ctx.lineTo(Bx, By); ctx.lineTo(Cx2, Cy2); ctx.closePath(); ctx.fill();
-          ctx.strokeStyle = C('#dff0ff', 0.6 * post * appear); ctx.lineWidth = 1.6; ctx.lineJoin = 'round'; ctx.stroke();
-        }
-        if (inP > 0) {   // 입사 백색광(좌측 밖 → 입사점)
-          const sx = -W * 0.02, sy = Miy - (Miy - cy) * 0.15;
-          const ex = sx + (Mix - sx) * inP, ey = sy + (Miy - sy) * inP;
-          ctx.lineCap = 'round';
-          ctx.strokeStyle = C('#ffffff', 0.1 * post); ctx.lineWidth = S * 0.03; ctx.beginPath(); ctx.moveTo(sx, sy); ctx.lineTo(ex, ey); ctx.stroke();
-          ctx.strokeStyle = C('#ffffff', 0.9 * post); ctx.lineWidth = 2.2; ctx.beginPath(); ctx.moveTo(sx, sy); ctx.lineTo(ex, ey); ctx.stroke();
-          ctx.lineCap = 'butt';
-        }
-        if (fanP > 0 && inP > 0.6) {   // 매끄러운 스펙트럼 광폭: 우면에서 빨강→보라 연속 그라디언트 부채꼴(핵심)
-          const baseAng = -0.03 * PI, spread = 0.46 * PI * fanP, rayLen = maxR * (0.42 + 0.58 * fanP);
-          const a0 = baseAng, a1 = baseAng + spread, frac = spread / PI2;
-          const cols = ['#ff3030', '#ff7a1e', '#ffd23c', '#57ff7e', '#33c6ff', '#5a6bff', '#c766ff'];   // 빨→주→노→초→파→남→보(연속)
-          ctx.save();   // 진입 합성(lighter) 유지 — 빛은 가산 · 여러 겹 알파 = 부드러운 방사 blur
-          const hasConic = (typeof ctx.createConicGradient === 'function');
-          for (let layer = 0; layer < 3; layer++) {
-            const rr = rayLen * (0.68 + layer * 0.21);
-            const la = post * (0.30 - layer * 0.08) * (0.45 + 0.55 * fanP); if (la <= 0) continue;
-            let grad;
-            if (hasConic) {   // 각도 기준 무지개 — 경계 없는 연속 색전환
-              grad = ctx.createConicGradient(a0, Mox, Moy);
-              grad.addColorStop(0, C(cols[0], 0));
-              for (let i = 0; i < 7; i++) grad.addColorStop(Math.min(0.999, frac * (0.06 + 0.9 * i / 6)), C(cols[i], la));
-              grad.addColorStop(Math.min(1, frac + 0.02), C(cols[6], 0)); grad.addColorStop(1, C(cols[6], 0));
-            } else {   // 폴백: 부채 현(弦) 따라 선형 무지개
-              const pr = { x: Mox + Math.cos(a0) * rr, y: Moy + Math.sin(a0) * rr };
-              const pv = { x: Mox + Math.cos(a1) * rr, y: Moy + Math.sin(a1) * rr };
-              grad = ctx.createLinearGradient(pr.x, pr.y, pv.x, pv.y);
-              for (let i = 0; i < 7; i++) grad.addColorStop(i / 6, C(cols[i], la));
-            }
-            ctx.fillStyle = grad;
-            ctx.beginPath(); ctx.moveTo(Mox, Moy); ctx.arc(Mox, Moy, rr, a0, a1); ctx.closePath(); ctx.fill();
+        // ── 프리즘 유리: 면마다 다른 밝기 + 모서리 하이라이트 + 내부 반짝 ──
+        if (appear > 0) {
+          ctx.save();
+          // 유리 본체(면별 그라디언트 — 좌면 어둡고 우면 밝게, 유리 두께감)
+          const body = ctx.createLinearGradient(Bx, By, Cx2, Ay);
+          body.addColorStop(0, C(CB, 0.10 * post * appear));
+          body.addColorStop(0.55, C('#ffffff', 0.05 * post * appear));
+          body.addColorStop(1, C('#ffffff', 0.22 * post * appear));
+          ctx.fillStyle = body; ctx.beginPath(); ctx.moveTo(Ax, Ay); ctx.lineTo(Bx, By); ctx.lineTo(Cx2, Cy2); ctx.closePath(); ctx.fill();
+          // 내부 굴절 반짝(작은 육각/점)
+          ctx.save(); ctx.globalCompositeOperation = 'lighter';
+          for (let i = 0; i < HEX.length; i++) {
+            const h = HEX[i]; const hx = pxc + h.off * triW * 0.4, hy = pyc + (h.depth - 0.4) * triH * 0.6;
+            const tw = 0.4 + 0.6 * Math.abs(Math.sin(h.tw + t * 0.006)); const a = 0.5 * post * appear * tw;
+            hexagon(ctx, hx, hy, h.size * (0.7 + 0.3 * tw), t * 0.001 + h.tw, C(CB, a * 0.4), C('#ffffff', a));
           }
           ctx.restore();
-          const fla = ctx.createRadialGradient(Mox, Moy, 0, Mox, Moy, S * 0.055);   // 출사점 백색 플레어
-          fla.addColorStop(0, C('#ffffff', 0.85 * post)); fla.addColorStop(0.5, C(fx.glow, 0.4 * post)); fla.addColorStop(1, C('#ffffff', 0));
-          ctx.fillStyle = fla; ctx.beginPath(); ctx.arc(Mox, Moy, S * 0.055, 0, PI2); ctx.fill();
-          for (let i = 0; i < MOTE.length; i++) {   // 스펙트럼 속 미세 광진(먼지) — 은은한 반짝(선 아님)
-            const m = MOTE[i]; const ang = baseAng + m.u * spread; const rr = rayLen * (0.25 + m.drift * 0.7);
-            const px = Mox + Math.cos(ang) * rr + Math.cos(t * 0.001 + m.tw) * S * 0.02;
-            const py = Moy + Math.sin(ang) * rr + m.spread * S * 0.03 + Math.sin(t * 0.0012 + m.tw) * S * 0.02;
-            const a = (0.2 + 0.35 * Math.abs(Math.sin(m.tw + t * 0.004))) * post * fanP; if (a <= 0) continue;
-            ctx.fillStyle = C(m.col, a); ctx.beginPath(); ctx.arc(px, py, m.sz * 0.85, 0, PI2); ctx.fill();
-          }
+          // 모서리 하이라이트(3면 각각 밝기 다르게)
+          ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+          const edge = [[Ax, Ay, Bx, By, 0.35], [Bx, By, Cx2, Cy2, 0.7], [Cx2, Cy2, Ax, Ay, 1.0]];
+          for (const e of edge) { ctx.strokeStyle = C('#eaf6ff', e[4] * 0.75 * post * appear); ctx.lineWidth = 1.4 + e[4] * 1.2; ctx.beginPath(); ctx.moveTo(e[0], e[1]); ctx.lineTo(e[2], e[3]); ctx.stroke(); }
+          ctx.restore();
         }
-        for (let i = 0; i < HEX.length; i++) {   // 보조 육각 크리스탈 — 아주 소수 배경 반짝만
-          const h = HEX[i]; const twk = 0.4 + 0.6 * Math.abs(Math.sin(h.tw + t * 0.005)); const a = 0.28 * post * appear * twk;
-          hexagon(ctx, h.x * W, h.y * H, h.size, h.rot + t * 0.001 * h.spin, C(h.col, a * 0.5), C('#ffffff', a));
-          if (twk > 0.9) spark(ctx, h.x * W, h.y * H, h.size * 0.7, C('#ffffff', a));
+        // ── 입사 백색광 1줄기(좌측 밖 → 입사점) ──
+        if (inP > 0) {
+          const sx = -W * 0.02, sy = Miy - (Miy - cy) * 0.12;
+          const ex = sx + (Mix - sx) * inP, ey = sy + (Miy - sy) * inP;
+          ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.lineCap = 'round';
+          ctx.strokeStyle = C('#ffffff', 0.14 * post); ctx.lineWidth = S * 0.028; ctx.beginPath(); ctx.moveTo(sx, sy); ctx.lineTo(ex, ey); ctx.stroke();
+          ctx.strokeStyle = C('#ffffff', 0.95 * post); ctx.lineWidth = 2.4; ctx.beginPath(); ctx.moveTo(sx, sy); ctx.lineTo(ex, ey); ctx.stroke();
+          ctx.restore();
+        }
+        // ── 입사점 굴절 광점(빛이 유리에 닿는 순간의 반짝) ──
+        if (inP > 0.85) {
+          const ia = ctx.createRadialGradient(Mix, Miy, 0, Mix, Miy, S * 0.04);
+          ia.addColorStop(0, C('#ffffff', 0.9 * post)); ia.addColorStop(1, C(CB, 0));
+          ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.fillStyle = ia; ctx.beginPath(); ctx.arc(Mix, Miy, S * 0.04, 0, PI2); ctx.fill(); ctx.restore();
+        }
+        // ── 출사 빛줄기 다발: 굵기·길이·밝기 제각각, 하나씩 뻗어나감 ──
+        if (inP > 0.7) {
+          ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.lineCap = 'round';
+          for (let i = 0; i < RAYS.length; i++) {
+            const rp = Math.min(1, Math.max(0, (t - RAYS[i].delay) / 620)); if (rp <= 0) continue;
+            const r = RAYS[i]; const len = maxR * r.len * rp; const col = r.white ? '#ffffff' : CB;
+            const ex = Mox + Math.cos(r.ang) * len, ey = Moy + Math.sin(r.ang) * len;
+            const fade = t > FLASH_AT ? Math.max(0, 1 - (t - FLASH_AT) / 320) : 1;
+            const a = r.bright * post * fade * (0.5 + 0.5 * rp);
+            // 빛줄기: 끝으로 갈수록 옅어지는 그라디언트(줄기 느낌)
+            const gr = ctx.createLinearGradient(Mox, Moy, ex, ey);
+            gr.addColorStop(0, C(col, a)); gr.addColorStop(0.5, C(col, a * 0.6)); gr.addColorStop(1, C(col, 0));
+            ctx.strokeStyle = gr; ctx.lineWidth = r.w * (0.6 + 0.4 * rp);
+            ctx.beginPath(); ctx.moveTo(Mox, Moy); ctx.lineTo(ex, ey); ctx.stroke();
+            // 굵은 줄기엔 옅은 외곽 광 한 겹 더
+            if (r.w > 3) { ctx.strokeStyle = C(col, a * 0.25); ctx.lineWidth = r.w * 2.2; ctx.beginPath(); ctx.moveTo(Mox, Moy); ctx.lineTo(ex, ey); ctx.stroke(); }
+          }
+          ctx.restore();
+          // 출사점 백색 플레어
+          const fla = ctx.createRadialGradient(Mox, Moy, 0, Mox, Moy, S * 0.06);
+          fla.addColorStop(0, C('#ffffff', 0.9 * post)); fla.addColorStop(0.5, C(CB, 0.45 * post)); fla.addColorStop(1, C('#ffffff', 0));
+          ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.fillStyle = fla; ctx.beginPath(); ctx.arc(Mox, Moy, S * 0.06, 0, PI2); ctx.fill(); ctx.restore();
         }
       } };
     }
@@ -38226,7 +38239,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 694;
+  const APP_VERSION = 695;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
