@@ -17,7 +17,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Jua&family=Black+Han+Sans&family=Rajdhani:wght@400;500;600;700&family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
 <!-- Supabase JS SDK (글로벌 랭킹용) — 키 미설정 시 자동 비활성 -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
-<title>Dot Defense</title>
+<title>아크 제로 · ARC ZERO</title>
 <style>
   /* 🚫 스크롤바 전역 숨김 — PC/모바일 모두 시각적으로 깔끔하게 (스크롤 기능은 유지) */
   * {
@@ -662,6 +662,82 @@
   #wrap.portrait .speed-btn { font-size: 14px; }
 
   /* ===== 메뉴 / 도감 화면 ===== */
+  /* ===== 🌟 부팅 스플래시 — 아크 제로 ===== */
+  #splash {
+    position: fixed; inset: 0;
+    z-index: 9999;                 /* 모든 화면 위 */
+    display: flex; align-items: center; justify-content: center;
+    background:
+      radial-gradient(ellipse 90% 70% at 50% 45%, #12203a 0%, #0b0d12 62%, #07080c 100%);
+    /* ⚠️ 배경은 처음부터 불투명(opacity:1)으로 메인화면을 즉시 가린다.
+       배경까지 페이드인시키면 그 사이 뒤 화면이 비쳐 보인다(메인 깜빡임). 로고만 페이드인. */
+    opacity: 1;
+    animation: splashFade 3s ease-in-out forwards;   /* 총 3초 */
+    pointer-events: none;          /* 클릭이 뒤 화면으로 통과 — 스플래시가 조작을 막지 않음 */
+  }
+  #splash .splash-logo {
+    width: min(72vw, 520px);
+    height: auto;
+    filter: drop-shadow(0 0 26px rgba(122, 215, 255, 0.45));
+    opacity: 0;                    /* 로고는 투명에서 시작해 페이드인 */
+    animation: splashLogo 3s ease-out forwards;
+  }
+  /* 배경은 끝까지 불투명하게 화면을 덮다가, 마지막에만 페이드아웃 */
+  @keyframes splashFade {
+    0%   { opacity: 1; }           /* 즉시 메인화면을 가림 */
+    84%  { opacity: 1; }           /* 2.52s 까지 유지 */
+    100% { opacity: 0; visibility: hidden; }  /* 3.0s 에 페이드아웃 + 렌더 트리 제외 */
+  }
+  /* 🔒 스플래시가 도는 동안 메인 메뉴를 아예 숨긴다 — 스플래시 뒤로 메뉴가 새어 보이는 것을 원천 차단.
+     레이아웃은 유지(visibility)되어 부팅 중 크기 측정에 영향 없음. 완료 시 JS 가 클래스 제거. */
+  body.splash-active #menu { visibility: hidden; }
+  @keyframes splashLogo {
+    0%   { transform: scale(0.86); opacity: 0; }
+    18%  { transform: scale(1.00); opacity: 1; }   /* 0.54s 에 완전 등장 */
+    84%  { transform: scale(1.02); opacity: 1; }   /* 2.52s 까지 유지 */
+    100% { transform: scale(1.06); opacity: 0; }
+  }
+  /* 모션 최소화 선호 사용자 — 확대/이동 없이 페이드만 */
+  @media (prefers-reduced-motion: reduce) {
+    #splash .splash-logo { animation: none; }
+  }
+
+  /* ===== 🌊 메인 메뉴 등장 — 스플래시가 걷히면(splash-active 제거) 주요 그룹이 순차로 떠오른다.
+     배경(hero)은 즉시, 콘텐츠는 아래에서 살짝 올라오며 페이드인. 한 번만 재생(부팅 시). ===== */
+  body:not(.splash-active) #menu .menu-logo,
+  body:not(.splash-active) #menu .subtitle,
+  body:not(.splash-active) #menu .menu-char-preview,
+  body:not(.splash-active) #menu .weekly-panel,
+  body:not(.splash-active) #menu .menu-cta-group,
+  body:not(.splash-active) #menu .gacha-circle-btn,
+  body:not(.splash-active) #menu .menu-nav3,
+  body:not(.splash-active) #menu .menu-btn-wide {
+    animation: menuItemRise 0.5s ease-out both;
+  }
+  body:not(.splash-active) #menu .menu-logo         { animation-delay: 0.00s; }
+  body:not(.splash-active) #menu .subtitle          { animation-delay: 0.06s; }
+  body:not(.splash-active) #menu .menu-char-preview { animation-delay: 0.12s; }
+  body:not(.splash-active) #menu .weekly-panel      { animation-delay: 0.18s; }
+  body:not(.splash-active) #menu .menu-cta-group    { animation-delay: 0.24s; }
+  body:not(.splash-active) #menu .gacha-circle-btn  { animation-delay: 0.30s; }
+  body:not(.splash-active) #menu .menu-nav3         { animation-delay: 0.36s; }
+  body:not(.splash-active) #menu .menu-btn-wide     { animation-delay: 0.42s; }
+  @keyframes menuItemRise {
+    0%   { opacity: 0; transform: translateY(14px); }
+    100% { opacity: 1; transform: translateY(0); }
+  }
+  /* 모션 최소화 — 이동 없이 그냥 표시 */
+  @media (prefers-reduced-motion: reduce) {
+    body:not(.splash-active) #menu .menu-logo,
+    body:not(.splash-active) #menu .subtitle,
+    body:not(.splash-active) #menu .menu-char-preview,
+    body:not(.splash-active) #menu .weekly-panel,
+    body:not(.splash-active) #menu .menu-cta-group,
+    body:not(.splash-active) #menu .gacha-circle-btn,
+    body:not(.splash-active) #menu .menu-nav3,
+    body:not(.splash-active) #menu .menu-btn-wide { animation: none; }
+  }
+
   .screen {
     position: fixed; inset: 0;
     display: none;
@@ -699,6 +775,21 @@
     color: #7ad7ff;
     text-shadow: 0 0 30px rgba(122, 215, 255, 0.45);
     margin: 0 0 clamp(4px, 1.5vmin, 12px);
+  }
+  /* 🌟 아크 제로 로고 — 이미지 타이틀. 로고 원본이 흰 배경 전제라 어두운 배경에서
+     묻히지 않도록 명도 하한을 올린 파일을 쓰고, 여기에 푸른 글로우를 얹는다. */
+  #menu h1.menu-logo {
+    font-size: 0;               /* 텍스트 노드 잔여 여백 제거 */
+    letter-spacing: 0;
+    text-shadow: none;
+    line-height: 0;
+  }
+  #menu h1.menu-logo img {
+    width: clamp(240px, 62vmin, 460px);
+    height: auto;
+    display: block;
+    margin: 0 auto;
+    filter: drop-shadow(0 0 18px rgba(122, 215, 255, 0.40));
   }
   /* v218 — 데이터 초기화 버튼은 이제 설정 모달 안에 (settings-action-btn.danger 사용)
      이전 .reset-data-btn 클래스는 호환성 위해 남겨두지만 모달 내부 스타일 우선 */
@@ -4405,7 +4496,13 @@
   .reward-foot { text-align: center; font-size: 11px; color: #6b7283; margin-top: 9px; }
 </style>
 </head>
-<body>
+<body class="splash-active">
+<!-- ===== 🌟 부팅 스플래시 — 아크 제로 로고. 순수 CSS 애니메이션이라 스크립트 파싱을 안 기다리고 즉시 표시.
+       body.splash-active 로 메인화면을 숨겨, 스플래시가 끝날 때까지 메뉴가 절대 먼저 보이지 않게 한다.
+       (스플래시 opacity 에만 의존하면, 애니 시계가 어긋난 환경에서 뒤 화면이 새어 보일 수 있음.) ===== -->
+<div id="splash" aria-hidden="true">
+  <img src="./icons/arczero_logo.png" alt="ARC ZERO · 아크 제로" class="splash-logo">
+</div>
 <!-- ===== 메뉴 화면 (v218 — 그룹화 + 그리드 레이아웃) ===== -->
 <div id="menu" class="screen show">
   <!-- 🛰️ v461 — 로테이션 간판 캐릭터 백드롭 (진입마다 순환, 콘솔 뒤 시네마틱) -->
@@ -4415,8 +4512,8 @@
   <!-- 상단 우측: 설정 (데이터 초기화/동기화 모음) -->
   <button id="settingsBtn" class="settings-btn" title="설정">⚙</button>
   <!-- 🎰 가챠 원형 버튼 — 우측 하단 -->
-  <!-- 타이틀 -->
-  <h1>DOT DEFENSE</h1>
+  <!-- 타이틀 — 🌟 아크 제로 로고 (텍스트 h1 → 이미지, alt 로 접근성 유지) -->
+  <h1 class="menu-logo"><img src="./icons/arczero_logo.png" alt="ARC ZERO · 아크 제로"></h1>
   <div class="subtitle">픽셀 디펜스 · 능력 조합 빌더</div>
 
   <!-- 메인 컨테이너 — 그룹별 정렬 -->
@@ -5618,7 +5715,7 @@
          onerror="this.src='./icons/gacha.png'; this.onerror=null;" />
     <div id="gacha-banner-fallback" class="gacha-fullbanner-fallback" style="display:none;">
       <div class="gacha-banner-sparkles">✨</div>
-      <div class="gacha-banner-title">DOT DEFENSE</div>
+      <div class="gacha-banner-title">ARC ZERO</div>
       <div class="gacha-banner-sub">캐릭터 픽업 · 차원 스카우트</div>
     </div>
     <button id="gachaBannerPrev" class="gacha-banner-arrow gacha-arrow-left" title="이전 배너">◀</button>
@@ -35839,6 +35936,25 @@
     }
   })();
 
+  // 🌟 스플래시 정리 — CSS 애니(2.4s)가 끝나면 DOM 에서 제거하고 완료 신호를 쏜다.
+  //    이 신호로 로그인/인증 화면이 스플래시 뒤에 뜬다(스플래시 → 로그인 순서).
+  //    animationend 를 우선 쓰고, 못 받으면 타이머로 백업(로고 로드 실패·백그라운드 탭 등).
+  (function cleanupSplash() {
+    const sp = document.getElementById('splash');
+    let done = false;
+    const finish = () => {
+      if (done) return;
+      done = true;
+      if (sp && sp.parentNode) sp.parentNode.removeChild(sp);
+      document.body.classList.remove('splash-active');   // 🔓 메뉴 표시 허용
+      window._splashDone = true;
+      window.dispatchEvent(new Event('arczero:splashdone'));
+    };
+    if (!sp) { finish(); return; }   // 스플래시가 없으면 즉시 완료 처리
+    sp.addEventListener('animationend', finish, { once: true });
+    setTimeout(finish, 3400);        // 백업 — 애니 3.0s + 여유
+  })();
+
   // ===== 🎮 치트 시스템 (메뉴에서 "123123123" 입력) =====
   const CHEAT_CODE = '123123123';
   let cheatBuffer = '';
@@ -36205,8 +36321,14 @@
   document.getElementById('nicknameModal').addEventListener('click', (e) => {
     if (e.target.id === 'nicknameModal') closeNicknameModal();
   });
-  // 첫 실행 감지 — 닉네임 없으면 강제 모달
-  checkFirstLaunch();
+  // 첫 실행 감지 — 닉네임 없으면 강제 모달.
+  // 🌟 단, 로그인/인증 화면은 스플래시가 끝난 뒤에 뜨도록 미룬다(스플래시 → 로그인 순서).
+  //    _splashDone 이 이미 참이면(스플래시가 없거나 벌써 끝났으면) 즉시 실행.
+  if (window._splashDone) {
+    checkFirstLaunch();
+  } else {
+    window.addEventListener('arczero:splashdone', checkFirstLaunch, { once: true });
+  }
   // 시즌 칭호 백그라운드 동기화 (페이지 로드 시 1회) — 닉네임 모달 열 때 미리 보이도록
   setTimeout(fetchMySeasonTitles, 2000);
 
@@ -37367,7 +37489,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 679;
+  const APP_VERSION = 685;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {

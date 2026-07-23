@@ -1,7 +1,7 @@
 // Dot Defense — 서비스워커
 // 업데이트 시: CACHE 이름의 v숫자만 올리면 자동으로 새 캐시 생성 + 기존 캐시 폐기.
 // HTML/메인페이지는 network-first 전략 → 인터넷 연결되어 있으면 항상 최신본 반영.
-const CACHE = 'dot-defense-v679';
+const CACHE = 'dot-defense-v685';
 const ASSETS = [
   './',
   './index.html',
@@ -9,6 +9,7 @@ const ASSETS = [
   './icons/icon-192.png',
   './icons/icon-512.png',
   './icons/icon-512-maskable.png',
+  './icons/arczero_logo.png',   // 🌟 메인화면 타이틀 로고 — 첫 화면에 바로 보이므로 즉시 캐싱
 ];
 // 🚀 큰 가챠 배너 이미지는 별도 배열 — SW 설치 후 백그라운드 캐싱 (블로킹 X)
 //    설치 자체는 위 ASSETS만 기다리므로 SW 활성화 지연 안 됨.

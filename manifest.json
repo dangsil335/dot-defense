@@ -1,7 +1,7 @@
 {
-  "name": "Dot Defense",
-  "short_name": "DotDef",
-  "description": "픽셀 도트 디펜스 — 14가지 능력과 8가지 조합, 5라운드마다 보스",
+  "name": "아크 제로",
+  "short_name": "아크제로",
+  "description": "ARC ZERO — 능력을 조합해 성장하는 궤도 디펜스 로그라이크",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
