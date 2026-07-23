@@ -22516,6 +22516,29 @@
     if (typeof queueServerSync === 'function') queueServerSync();
   }
 
+  // ===== 🎓 튜토리얼 상태 (META.tutorial.stage: intro → planet → evolved → done) =====
+  //   서버는 META 전체를 JSON 블롭으로 저장하므로 tutorial/ tutorialDone 필드는 자동 동기화(스키마 작업 불필요).
+  function _tutStage() { return (META && META.tutorial) ? META.tutorial.stage : null; }
+  function _tutSetStage(s) {
+    if (!META.tutorial) META.tutorial = {};
+    META.tutorial.stage = s;
+    if (s === 'done') META.tutorialDone = true;
+    try { saveMeta(); } catch (e) {}
+  }
+  function _tutActive() { const s = _tutStage(); return !!s && s !== 'done' && !META.tutorialDone; }
+  function _tutStart() { META.tutorial = { stage: 'intro' }; try { saveMeta(); } catch (e) {} }
+  function _tutDone() { return !!(META && (META.tutorialDone || _tutStage() === 'done')); }
+  // 🎓 기존 유저 봉인 — 닉네임이 이미 있고 튜토리얼 기록이 전혀 없으면 '완료'로 못박아,
+  //    나중에 닉네임을 수정(setNickname 재호출)해도 튜토리얼이 소급 발동하지 않게 한다.
+  (function _tutMigrateExisting() {
+    try {
+      if (META && META.nickname && META.tutorial === undefined && !META.tutorialDone) {
+        META.tutorialDone = true;
+        localStorage.setItem(META_KEY, _packMeta(META));   // 조용히 로컬만 (부팅 중 서버 push 유발 안 함)
+      }
+    } catch (e) {}
+  })();
+
   // ===== 🌐 Supabase 글로벌 랭킹 시스템 =====
   // ⚠ 아래 두 값을 Supabase 대시보드(Settings → API)에서 복사해 채우세요.
   //   비워두면 로컬 기록만 사용 (글로벌 랭킹 비활성).
