@@ -1,7 +1,7 @@
 // Dot Defense — 서비스워커
 // 업데이트 시: CACHE 이름의 v숫자만 올리면 자동으로 새 캐시 생성 + 기존 캐시 폐기.
 // HTML/메인페이지는 network-first 전략 → 인터넷 연결되어 있으면 항상 최신본 반영.
-const CACHE = 'dot-defense-v698';
+const CACHE = 'dot-defense-v699';
 const ASSETS = [
   './',
   './index.html',
@@ -70,8 +70,9 @@ self.addEventListener('fetch', e => {
     e.respondWith(
       caches.match(e.request).then(res =>
         res || fetch(e.request).then(net => {
-          const copy = net.clone();
-          caches.open(CACHE).then(c => c.put(e.request, copy)).catch(() => {});
+          // 🖼 성공(2xx) 응답만 캐싱 — 없는 webp/gif 프로브의 404 를 캐시에 굳히지 않는다.
+          //    (굳히면 나중에 애니 일러를 넣어도 캐시 버전 올리기 전까진 stale 404 로 계속 폴백됨)
+          if (net.ok) { const copy = net.clone(); caches.open(CACHE).then(c => c.put(e.request, copy)).catch(() => {}); }
           return net;
         })
       )

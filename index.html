@@ -5849,7 +5849,7 @@
   </div>
   <div class="up-hero up-hero-left" style="--npc:#9fd0ff;">
     <span class="up-hero-fb">🌟</span>
-    <img class="up-hero-img" src="./icons/illust/aria.png" alt="" loading="lazy" onerror="this.style.display='none';this.parentNode.classList.add('noimg');">
+    <img class="up-hero-img" data-illust="aria" data-emoji="🌟" data-illust-fb="hide" alt="">
   </div>
   <div class="up-dialog" style="--npc:#9fd0ff;">
     <div class="up-stage-role">전술 인도자</div>
@@ -35008,17 +35008,52 @@
       setTimeout(() => { wrap.classList.add('out'); setTimeout(() => { try { wrap.remove(); } catch (e) {} }, 420); }, 1600);
     } catch (e) {}
   }
-  // 🖼 캐릭터 전용 이벤트 일러스트 — icons/illust/<id>.png (도트와 별개 폴더). 없으면 이모지 폴백 (도트 안 씀)
+  // 🖼 캐릭터 일러 포맷 세션 캐시 + 소스 체인 — webp→gif→png 순으로 "있는 것"을 쓴다(애니 webp/gif면 <img>가 자동 무한반복).
+  //    · 캐릭터당 1회만 프로브하고 성공 포맷을 _illustFmt 에 캐시 → PNG-only 캐릭터가 매 렌더 webp/gif 404 내는 걸 막는다.
+  //    · 전부 없으면 'none' 캐시 후 onFail(도트/이모지 폴백). 직접 호출 4곳(_charPortraitImg·메뉴히어로·가챠카드) + _hydrateIllusts(마커) 로 전 표시처 공유.
+  //    · gif 가 없으면 자연히 png 로 폴백 → "gif 없으면 지금처럼 정적 png" 요구 그대로.
+  var _illustFmt = {};   // charId -> 'webp'|'gif'|'png'|'none'
+  function _applyIllustChain(img, charId, onFail) {
+    const base = './icons/illust/' + charId + '.';
+    if (_illustFmt[charId] === 'none') { if (onFail) onFail(); return; }
+    const chain = _illustFmt[charId] ? [_illustFmt[charId]] : ['webp', 'gif', 'png'];
+    let i = 0;
+    img.onload = () => { _illustFmt[charId] = chain[i]; };
+    img.onerror = () => {
+      if (++i < chain.length) { img.src = base + chain[i]; return; }   // 다음 포맷 시도
+      img.onerror = null; img.onload = null; _illustFmt[charId] = 'none'; if (onFail) onFail();   // 전부 실패 → 폴백(이후 프로브 생략)
+    };
+    img.src = base + chain[0];
+  }
+  // 🖼 마커 하이드레이터 — 문자열 템플릿으로 innerHTML 에 꽂는 일러 표시처(진화트리·코어관리·상세 등)용.
+  //    <img data-illust="<id>" data-emoji="<em>" data-illust-fb="hide|text|self"> 를 만들어 두고,
+  //    컨테이너가 DOM 에 들어간 뒤 _hydrateIllusts(container) 한 번 부르면 그 안의 마커를 전부 체인 교체한다.
+  //    · fb='hide'(기본): 실패 시 부모에 noimg + 이모지(data-em·data-emoji 둘 다 세팅 — CSS 규칙 혼용 대응)
+  //    · fb='text': 실패 시 부모를 이모지 텍스트로 (기존 parentElement.textContent 패턴)
+  //    · fb='self': 실패 시 자신을 이모지 텍스트로 치환 (기존 outerHTML=이모지 패턴)
+  //    이미 처리한 img 는 _illustHydrated 플래그로 재프로브 방지. 표시처를 열거하지 않고 마커만 심으면 끝.
+  function _hydrateIllusts(root) {
+    if (!root || !root.querySelectorAll) return;
+    const list = (root.matches && root.matches('img[data-illust]')) ? [root] : root.querySelectorAll('img[data-illust]');
+    list.forEach(img => {
+      if (img._illustHydrated) return; img._illustHydrated = true;
+      const id = img.dataset.illust; if (!id) return;
+      const em = img.dataset.emoji || '🎴', fb = img.dataset.illustFb || 'hide';
+      _applyIllustChain(img, id, () => {
+        if (fb === 'text') { const p = img.parentElement; if (p) p.textContent = em; }
+        else if (fb === 'self') { img.replaceWith(document.createTextNode(em)); }
+        else { const p = img.parentElement; img.style.display = 'none'; if (p) { p.classList.add('noimg'); p.dataset.emoji = em; p.dataset.em = em; } }
+      });
+    });
+  }
+  // 🖼 캐릭터 전용 이벤트 일러스트 — icons/illust/<id>.(webp|gif|png). 없으면 이모지 폴백 (도트 안 씀)
   function _charPortraitImg(charId, cls) {
     const char = CHARACTERS[charId] || {};
     const emoji = (char.name ? char.name.split(' ')[0] : '🎴') || '🎴';
+    const mkEmoji = () => { const d = document.createElement('div'); if (cls) d.className = cls; d.style.display = 'flex'; d.style.alignItems = 'center'; d.style.justifyContent = 'center'; d.style.fontSize = '72px'; d.textContent = emoji; return d; };
+    if (_illustFmt[charId] === 'none') return mkEmoji();   // 이미 '일러 없음' 확정 → 프로브 없이 바로 이모지
     const img = document.createElement('img'); if (cls) img.className = cls; img.alt = '';
-    img.onerror = () => {
-      const d = document.createElement('div'); if (cls) d.className = cls;
-      d.style.display = 'flex'; d.style.alignItems = 'center'; d.style.justifyContent = 'center'; d.style.fontSize = '72px';
-      d.textContent = emoji; img.replaceWith(d);
-    };
-    img.src = './icons/illust/' + charId + '.png';
+    _applyIllustChain(img, charId, () => { img.replaceWith(mkEmoji()); });
     return img;
   }
   // ═══════════════════════════════════════════════════════════════════
@@ -36640,15 +36675,13 @@
     do { next = Math.floor(Math.random() * MENU_HERO_IDS.length); }
     while (MENU_HERO_IDS.length > 1 && next === _menuHeroIdx);
     _menuHeroIdx = next;
-    const src = `./icons/illust/${MENU_HERO_IDS[_menuHeroIdx]}.png`;
-    if (el.getAttribute('src') !== src) {
-      el.onerror = () => { el.classList.remove('show'); };
-      el.src = src;
-    }
-    el.classList.add('show');   // 즉시 표시 — CSS transition이 페이드인 (캐시 src는 onload 미발화하므로 onload 의존 X)
+    const heroId = MENU_HERO_IDS[_menuHeroIdx];
+    _applyIllustChain(el, heroId, () => { el.classList.remove('show'); });   // webp→gif→png, 전부 없으면 숨김
+    if (_illustFmt[heroId] !== 'none') el.classList.add('show');   // 즉시 표시 — CSS transition이 페이드인 (일러 없음 확정이면 숨김 유지)
   }
   try { refreshMenuHero(); } catch (e) {}   // 🛰️ 초기 로드 1회 (메뉴가 정적 show로 뜨고 init은 showScreen('menu') 미호출)
   try { refreshMenuNickname(); } catch (e) {}   // 🎖️ 함장 크리덴셜 초기 1회
+  try { _hydrateIllusts(document.body); } catch (e) {}   // 🖼 정적 마커 일러(능력강화 아리아 배경 등) webp→gif→png 체인 1회
   try { refreshWeeklyPanel(); } catch (e) {}   // 🌀📋 v614 — 주간 모디파이어 + 일일 임무 초기 1회 (같은 이유)
 
   // 🎴 v221 — 메뉴 캐릭터 미리보기 (카드 스타일)
@@ -37933,7 +37966,7 @@
       // 🖼 일러스트(icons/illust/) 우선 표시 — 폴백(도트→이모지)은 카드 생성 후 JS onerror로 부착
       const emoji = (c.name.match(/^[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/u) || ['🎴'])[0];
       const portraitHTML = `<div class="card-portrait" style="background:#0a0a12;padding:0;overflow:hidden;">
-          <img class="char-illust" src="./icons/illust/${r.charId}.png" style="width:100%;height:100%;object-fit:cover;object-position:center top;" />
+          <img class="char-illust" style="width:100%;height:100%;object-fit:cover;object-position:center top;" />
         </div>`;
       // 결과 상태: 신규 / 별업 / 환불
       let status;
@@ -37950,15 +37983,14 @@
         <div class="card-name">${c.name.replace(/^[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]\s*/u, '')}</div>
         ${status}
       `;
-      // 🖼 일러스트 로드 실패 시 도트(투명 dataURL)로, 그것도 없으면 이모지로 폴백 (dataURL을 HTML에 안 박음 — 가벼움)
+      // 🖼 일러스트 webp→gif→png 체인 → 전부 실패 시 도트, 그것도 없으면 이모지 (dataURL을 HTML에 안 박음 — 가벼움)
       const _illustImg = card.querySelector('.card-portrait img.char-illust');
       if (_illustImg) {
-        _illustImg.onerror = function () {
-          this.onerror = null;
+        _applyIllustChain(_illustImg, r.charId, function () {
           const d = (typeof getCharacterImageSrc === 'function') ? getCharacterImageSrc(r.charId) : null;
-          if (d) { this.src = d; this.style.objectFit = 'contain'; this.style.objectPosition = 'center'; this.style.imageRendering = 'pixelated'; }
-          else { const par = this.parentElement; this.remove(); if (par) par.innerHTML = '<span style="font-size:64px">' + emoji + '</span>'; }
-        };
+          if (d) { _illustImg.src = d; _illustImg.style.objectFit = 'contain'; _illustImg.style.objectPosition = 'center'; _illustImg.style.imageRendering = 'pixelated'; }
+          else { const par = _illustImg.parentElement; _illustImg.remove(); if (par) par.innerHTML = '<span style="font-size:64px">' + emoji + '</span>'; }
+        });
       }
       { const _f = document.createElement('div'); _f.className = 'card-face-front'; while (card.firstChild) _f.appendChild(card.firstChild); card.appendChild(_f); }
       cards.appendChild(card);
@@ -38288,7 +38320,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 698;
+  const APP_VERSION = 699;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
@@ -38652,7 +38684,7 @@
     const ch = CHARACTERS[ssrId] || {};
     const em = (ch.name ? ch.name.split(' ')[0] : '🎴');
     return `<div class="evo-ds-evotarget">
-      <div class="et-illust"><img src="./icons/illust/${ssrId}.png" alt="" onerror="this.style.display='none';this.parentElement.textContent='${em}';"></div>
+      <div class="et-illust"><img data-illust="${ssrId}" data-emoji="${em}" data-illust-fb="text" alt=""></div>
       <div class="et-info"><div class="et-label">⬆ R40에서 진화 가능</div><div class="et-name">${ch.name || ssrId}</div></div>
     </div>`;
   }
@@ -38714,7 +38746,7 @@
     const gc = EVO_GRADE[kind] || EVO_GRADE.base;
     let nm = id, ico = '';
     if (kind === 'R') { const rt = R_TOWERS[id] || {}; nm = rt.title || id; ico = rt.ability ? iconHtml(rt.ability, 18) : '🌳'; }
-    else { const ch = CHARACTERS[id] || {}; nm = ch.name || id; const em = (ch.name ? ch.name.split(' ')[0] : '🎴'); ico = `<img class="evo-chip-illust" src="./icons/illust/${id}.png" alt="" onerror="this.outerHTML='${em}';">`; }
+    else { const ch = CHARACTERS[id] || {}; nm = ch.name || id; const em = (ch.name ? ch.name.split(' ')[0] : '🎴'); ico = `<img class="evo-chip-illust" data-illust="${id}" data-emoji="${em}" data-illust-fb="self" alt="">`; }
     return `<span class="evo-chip${isSelf ? ' self' : ''}" style="border-color:${gc.color};color:${gc.color}">${ico}<span>${nm}</span></span>`;
   }
   function _evoClearHighlight() {
@@ -38748,13 +38780,15 @@
     el.className = 'evo-star tier-' + kind + (unlocked ? '' : ' locked');
     el.style.setProperty('--gc', gc.color);
     el.dataset.kind = kind; el.dataset.id = id;
-    let nm = id, imgSrc = '', em = '✦';
+    let nm = id, imgSrc = '', em = '✦', isChar = false;
     if (kind === 'R') { const rt = R_TOWERS[id] || {}; nm = rt.title || id; imgSrc = rt.ability ? ('./icons/abilities/' + rt.ability + '.png') : ''; }
     else if (kind === 'base') { nm = '기본 타워'; imgSrc = './icons/abilities/shot.png'; }
-    else { const ch = CHARACTERS[id] || {}; nm = ch.name || id; imgSrc = './icons/illust/' + id + '.png'; em = (ch.name ? ch.name.split(' ')[0] : '🎴'); }
-    const core = imgSrc
-      ? `<div class="evo-star-core"><img src="${imgSrc}" alt="" onerror="this.style.display='none';this.parentElement.classList.add('noimg');this.parentElement.dataset.em='${em}';"></div>`
-      : `<div class="evo-star-core noimg" data-em="${em}"></div>`;
+    else { const ch = CHARACTERS[id] || {}; nm = ch.name || id; isChar = true; em = (ch.name ? ch.name.split(' ')[0] : '🎴'); }
+    const core = isChar
+      ? `<div class="evo-star-core"><img data-illust="${id}" data-emoji="${em}" data-illust-fb="hide" alt=""></div>`
+      : (imgSrc
+        ? `<div class="evo-star-core"><img src="${imgSrc}" alt="" onerror="this.style.display='none';this.parentElement.classList.add('noimg');this.parentElement.dataset.em='${em}';"></div>`
+        : `<div class="evo-star-core noimg" data-em="${em}"></div>`);
     // ★ 돌파 레벨 배지 — 상세 안 들어가도 진척 보이게 (해금된 가챠 캐릭터만)
     let starBadge = '';
     if ((kind === 'SR' || kind === 'SSR') && unlocked && CHARACTERS[id]) {
@@ -38764,6 +38798,7 @@
     }
     el.innerHTML = core + `<div class="evo-star-name">${nm}</div>` + starBadge;
     el.onclick = function () { _evoTreeSelect(kind, id); };
+    _hydrateIllusts(el);   // 캐릭터 노드면 일러 webp→gif→png 체인 적용 (R/기본은 마커 없어 no-op)
     return el;
   }
   // 🔩 전술 코어 — 표시 공용 상수(등급색 · 슬롯 아이콘 · 코어 이미지). 코어 관리 화면과 보상 화면이 함께 쓴다.
@@ -38800,7 +38835,7 @@
   function _cmCharIllust(id) {
     if (!id || id === 'standard') return `<div class="cm-char-ph">🔰</div>`;
     const ch = CHARACTERS[id] || {}; const emoji = ch.name ? ch.name.split(' ')[0] : '⭐';
-    return `<img src="./icons/illust/${id}.png" alt="" onerror="this.style.display='none';this.parentElement.classList.add('noimg');this.parentElement.dataset.emoji='${emoji}';">`;
+    return `<img data-illust="${id}" data-emoji="${emoji}" data-illust-fb="hide" alt="">`;
   }
   // 🎽 세트 현황 — 장착 세트별 (N/4) + 2/4피스 활성/비활성
   function _cmSetsHtml() {
@@ -38848,7 +38883,7 @@
   function _renderCoreMgr() {
     const g = _ensureGear();
     const charEl = document.getElementById('cm-char');
-    if (charEl) { charEl.className = 'cm-char'; charEl.innerHTML = _cmCharIllust(selectedCharacter); }
+    if (charEl) { charEl.className = 'cm-char'; charEl.innerHTML = _cmCharIllust(selectedCharacter); _hydrateIllusts(charEl); }
     const nameEl = document.getElementById('cm-charname');
     if (nameEl) { const ch = CHARACTERS[selectedCharacter] || {}; nameEl.textContent = ch.name || '기본 도트 타워'; }
     const slotsEl = document.getElementById('cm-slots');
@@ -39017,9 +39052,10 @@
     const ids = ['standard'].concat(Object.keys(CHARACTERS).filter(id => id !== 'standard' && (typeof isCharUnlocked !== 'function' || isCharUnlocked(id))));
     pop.innerHTML = `<div class="cm-pop-inner"><div class="cm-pop-head">캐릭터 변경 <button class="gcm-x" id="cm-pop-x">✕</button></div><div class="cm-pop-grid">` + ids.map(id => {
       const ch = CHARACTERS[id] || {}; const on = id === selectedCharacter;
-      const thumb = (id === 'standard') ? '🔰' : `<img src="./icons/illust/${id}.png" alt="" onerror="this.replaceWith(document.createTextNode('⭐'))">`;
+      const thumb = (id === 'standard') ? '🔰' : `<img data-illust="${id}" data-emoji="⭐" data-illust-fb="self" alt="">`;
       return `<div class="cm-pop-c${on ? ' on' : ''}" data-char="${id}"><div class="cm-pop-thumb">${thumb}</div><div class="cm-pop-name">${ch.name || '기본 타워'}</div></div>`;
     }).join('') + `</div></div>`;
+    _hydrateIllusts(pop);   // 팝업 썸네일 일러 webp→gif→png 체인
     pop.classList.add('show');
     pop.onclick = (e) => { if (e.target === pop) pop.classList.remove('show'); };
     const x = document.getElementById('cm-pop-x'); if (x) x.onclick = () => pop.classList.remove('show');
@@ -39060,7 +39096,7 @@
       const emoji = (ch.name ? ch.name.split(' ')[0] : '🔰');
       if (isChar) {
         illustEl.className = 'evo-ds-illust';
-        illustHTML = `<img src="./icons/illust/${id}.png" alt="" onerror="this.style.display='none';this.parentElement.classList.add('noimg');this.parentElement.dataset.emoji='${emoji}';">`;
+        illustHTML = `<img alt="" data-illust="${id}" data-emoji="${emoji}" data-illust-fb="hide">`;   // src 는 _hydrateIllusts 가 webp→gif→png 체인으로 설정
       } else {
         illustEl.className = 'evo-ds-illust r-icon';
         illustHTML = `<div class="evo-ds-bigico">${iconHtml('shot', 120) || '🔰'}</div>`;
@@ -39114,7 +39150,9 @@
     }
 
     illustEl.innerHTML = illustHTML + `<div class="evo-ds-nameplate"><div class="evo-ds-grade" style="background:${gc.color}26;color:${gc.color};border:1px solid ${gc.color}">${gradeLabel}</div><div class="evo-ds-name" style="color:${gc.color}">${displayName}</div></div>`;
+    _hydrateIllusts(illustEl);   // 🖼 상세창 큰 일러 webp→gif→png 체인 (캐릭터 상세일 때만 마커 존재)
     bodyEl.innerHTML = body;
+    _hydrateIllusts(bodyEl);     // 🖼 본문 안의 진화대상 카드(et-illust)·계보 미니칩 일러도 체인 적용
     bodyEl.querySelectorAll('.evo-story-chip:not(.locked)').forEach(btn => {
       btn.onclick = () => openCharStory(btn.dataset.char, +btn.dataset.idx);
     });
