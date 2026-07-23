@@ -34996,14 +34996,14 @@
     misaki:    { style: 'misaki',    dust: '#e6c8ff', bubble: '#f2ddff', glow: '#cc88ff', flashMid: '#efd9ff' },
     // 🔮 엘레미아 — 정령. 바람/불/얼음 세 원소구가 모여 폭발.
     elementia: { style: 'elementia', wind: '#6fd8ff', fire: '#ff7a3c', ice: '#8affe0', glow: '#9fe8d8', flashMid: '#ffffff' },
-    // 🖌️ 스미카 — 먹. 먹 번짐 + 붓획 스윕 + 붉은 처형 섬광.
+    // 🖌️ 스미카 — 먹. 농담 번짐(정상합성) + 비백(飛白) 붓획 한 획 + 낙관 인장(붉은 처형).
     sumika:    { style: 'sumika',    ink: '#7b8290', red: '#ff2a3a',     glow: '#aab0be', flashMid: '#ff6a5a' },
-    // 🌈 블랑슈 — 프리즘. 육각 크리스탈 난반사 + 무지개 분광 광선.
+    // 🌈 블랑슈 — 프리즘. 흰 입사광 → 삼각 프리즘 → 무지개 부챗살 분광 + 보조 크리스탈.
     blanche:   { style: 'blanche',                                       glow: '#9fd8ff', flashMid: '#e6d8ff' },
-    // 🐾 카이라 — 야수. 발톱 X자 참격 + 야수 에너지 서지(embers).
+    // 🐾 카이라 — 야수. 테이퍼·내향 곡선 발톱 참격 + 속살 빛 + 에너지 embers.
     kaira:     { style: 'kaira',     dust: '#ffd27a',                    glow: '#ff8a3c', flashMid: '#ffb066' },
-    // 🧲 페리아 — 자기. 자기장 격자가 조이며 쇳가루가 중앙으로 빨려듦 + 자기 펄스.
-    feria:     { style: 'feria',     dust: '#cfd8e6',                    glow: '#7fa8e0', flashMid: '#cdddf5' },
+    // 🧲 페리아 — 자력. 금속 파편이 자기장 역선 따라 정렬·수렴 + 극성 대비 + 자기 펄스.
+    feria:     { style: 'feria',     dust: '#cfd8e6',                    glow: '#7fa8e0', flashMid: '#cdddf5', poleN: '#ff6b6b', poleS: '#6ba8ff', core: '#dbe9ff' },
   };
   const SSR_REVEAL_LINES = {
     somnia: {
@@ -35137,90 +35137,249 @@
       } };
     }
 
-    // ── 🖌️ 스미카 — 먹 번짐 + 붓획 스윕 + 붉은 처형 섬광 ──
+    // ── 🖌️ 스미카 — 먹 한 획: 농담 번짐(정상합성) + 비백 붓획 + 낙관 인장 ──
     if (style === 'sumika') {
-      const BLOTS = [];
-      for (let i = 0; i < 13; i++) BLOTS.push({ x: 0.12 + Math.random() * 0.76, y: 0.16 + Math.random() * 0.62, r: 30 + Math.random() * 90, delay: Math.random() * 1100, lobes: 5 + ((Math.random() * 4) | 0), seed: R(0, PI2) });
-      const SPAT = [];
-      for (let i = 0; i < 40; i++) SPAT.push({ x: Math.random(), y: Math.random(), r: 1 + Math.random() * 3.5, delay: Math.random() * 1300 });
+      // 붓 궤적(2차 베지어): 좌상 → 우하 대각, 살짝 휨. 정규화 좌표.
+      const P0x = 0.14, P0y = 0.19, PCx = 0.44, PCy = 0.60, P1x = 0.87, P1y = 0.75;
+      function inkPt(s, W, H) { const u = 1 - s; return { x: (u * u * P0x + 2 * u * s * PCx + s * s * P1x) * W, y: (u * u * P0y + 2 * u * s * PCy + s * s * P1y) * H }; }
+      function inkNrm(s, W, H) { const u = 1 - s; const tx = (2 * u * (PCx - P0x) + 2 * s * (P1x - PCx)) * W, ty = (2 * u * (PCy - P0y) + 2 * s * (P1y - PCy)) * H; const m = Math.hypot(tx, ty) || 1; return { x: -ty / m, y: tx / m }; }
+      const BRIS = [];   // 붓털 다발(飛白) — 폭방향 오프셋·도달거리·명도 각기
+      for (let i = 0; i < 17; i++) BRIS.push({ off: (i / 16 - 0.5) * 2, reach: (i % 3 === 0) ? (0.6 + Math.random() * 0.22) : (0.86 + Math.random() * 0.14), a: 0.42 + Math.random() * 0.4, w: 0.8 + Math.random() * 1.1, wob: R(0, PI2) });
+      const POOL = [];   // 먹 고임(번짐) — 궤적 위 로브형 웅덩이
+      for (let i = 0; i < 7; i++) POOL.push({ s: 0.05 + Math.random() * 0.82, off: R(-0.045, 0.045), r: 24 + Math.random() * 44, delay: Math.random() * 700, seed: R(0, PI2), lobes: 6 + ((Math.random() * 3) | 0) });
+      const DROP = [];   // 튄 먹방울 — 궤적에서 수직으로 튐
+      for (let i = 0; i < 34; i++) DROP.push({ s: Math.random(), side: Math.random() < 0.5 ? -1 : 1, dist: 0.015 + Math.random() * 0.11, r: 1 + Math.random() * 3, delay: 260 + Math.random() * 1150 });
       return { draw: function (ctx, g, t, post) {
-        const cx = g.cx, cy = g.cy, W = g.W, H = g.H, maxR = g.maxR;
-        for (let i = 0; i < BLOTS.length; i++) {   // 먹 번짐 (불규칙 로브) — 'lighter' 라 회청 연무처럼 퍼짐
-          const b = BLOTS[i], dt = t - b.delay; if (dt < 0) continue;
-          const prog = Math.min(1, dt / 900); const bx = b.x * W, by = b.y * H; const rr = b.r * (0.2 + prog * 0.9);
-          const a = 0.16 * post * (prog < 0.9 ? 1 : Math.max(0, 1 - (prog - 0.9) / 0.1)); if (a <= 0) continue;
-          ctx.fillStyle = C(fx.ink, a); ctx.beginPath();
-          for (let k = 0; k <= b.lobes; k++) { const ang = k / b.lobes * PI2; const wob = 1 + 0.35 * Math.sin(b.seed + k * 1.7 + t * 0.002); const x = bx + Math.cos(ang) * rr * wob, y = by + Math.sin(ang) * rr * wob * 0.9; k === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y); }
+        const W = g.W, H = g.H, S = Math.min(W, H);
+        ctx.globalCompositeOperation = 'source-over';   // 먹은 정상합성 — 'lighter' 금지(먹이 배경을 밝히면 안 됨)
+        const drawP = Math.min(1, Math.max(0, (t - 240) / 1050));   // 획이 그려지는 진행
+        const fade = t > FLASH_AT ? Math.max(0, 1 - (t - FLASH_AT) / 300) : 1;
+        for (let i = 0; i < POOL.length; i++) {   // 먹 번짐: 중심 진함 → 가장자리 흐림(농담), 획 지난 자리에만
+          const pl = POOL[i]; if (pl.s > drawP + 0.03) continue;
+          const bp = Math.min(1, Math.max(0, (t - pl.delay) / 950)); if (bp <= 0) continue;
+          const bpt = inkPt(pl.s, W, H), nn = inkNrm(pl.s, W, H);
+          const px = bpt.x + nn.x * pl.off * S, py = bpt.y + nn.y * pl.off * S;
+          const rr = pl.r * (0.45 + bp * 0.8) * (S / 620);
+          const a = 0.34 * post * fade * (bp < 0.85 ? 1 : Math.max(0, 1 - (bp - 0.85) / 0.15)); if (a <= 0) continue;
+          const gr = ctx.createRadialGradient(px, py, rr * 0.12, px, py, rr);
+          gr.addColorStop(0, C(fx.ink, a)); gr.addColorStop(0.5, C(fx.ink, a * 0.45)); gr.addColorStop(1, C(fx.ink, 0));
+          ctx.fillStyle = gr; ctx.beginPath();
+          for (let k = 0; k <= pl.lobes; k++) { const ang = k / pl.lobes * PI2; const wob = 1 + 0.26 * Math.sin(pl.seed + k * 1.7 + t * 0.0014); const x = px + Math.cos(ang) * rr * wob, y = py + Math.sin(ang) * rr * wob * 0.85; k === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y); }
           ctx.closePath(); ctx.fill();
         }
-        for (let i = 0; i < SPAT.length; i++) { const s = SPAT[i], dt = t - s.delay; if (dt < 0) continue; ctx.fillStyle = C(fx.ink, 0.4 * post); ctx.beginPath(); ctx.arc(s.x * W, s.y * H, s.r, 0, PI2); ctx.fill(); }   // 튄 먹방울
-        const bp = Math.min(1, Math.max(0, (t - 500) / 700));   // 붓획 대각 스윕
-        if (bp > 0) { const a = 0.5 * post * (t > FLASH_AT ? Math.max(0, 1 - (t - FLASH_AT) / 300) : 1); ctx.strokeStyle = C(fx.glow, a); ctx.lineCap = 'round'; ctx.lineWidth = Math.min(W, H) * 0.05; ctx.beginPath(); const x1 = W * 0.1, y1 = H * 0.72; ctx.moveTo(x1, y1); ctx.lineTo(x1 + W * 0.82 * bp, y1 - H * 0.44 * bp); ctx.stroke(); ctx.lineCap = 'butt'; }
-        if (t > 1500) {   // 붉은 처형 섬광 (X 슬래시)
-          const rp = Math.min(1, (t - 1500) / 240); const fade = t > FLASH_AT ? Math.max(0, 1 - (t - FLASH_AT) / 260) : 1;
-          for (let k = 0; k < 2; k++) { const a = rp * 0.9 * post * fade; if (a <= 0) continue; const dir = k ? 1 : -1; ctx.strokeStyle = C(fx.red, a); ctx.lineWidth = 3 + k; ctx.beginPath(); ctx.moveTo(cx - maxR * 0.5 * rp * dir, cy - maxR * 0.42 * rp); ctx.lineTo(cx + maxR * 0.5 * rp * dir, cy + maxR * 0.42 * rp); ctx.stroke(); }
+        for (let bi = 0; bi < BRIS.length; bi++) {   // 붓획: 가는 선다발 — 시작 굵고 진함, 끝으로 성기며 갈라지는 飛白
+          const br = BRIS[bi]; const end = Math.min(drawP, br.reach); if (end <= 0.02) continue;
+          const a0 = br.a * post * fade; if (a0 <= 0) continue;
+          const pS = inkPt(0.02, W, H), pE = inkPt(end, W, H);
+          const lg = ctx.createLinearGradient(pS.x, pS.y, pE.x, pE.y);
+          lg.addColorStop(0, C(fx.ink, a0)); lg.addColorStop(1, C(fx.ink, a0 * 0.16));   // 획 끝으로 갈수록 마름(乾筆)
+          ctx.strokeStyle = lg; ctx.lineWidth = Math.max(0.8, br.w * S * 0.0042); ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+          ctx.beginPath();
+          const NS = 20;
+          for (let k = 0; k <= NS; k++) {
+            const s = end * k / NS;
+            const spread = S * 0.052 * (0.62 + 0.38 * (1 - s));   // 다발 폭: 시작 넓고 끝은 좁아지되 유지(틈=飛白)
+            const wobx = Math.sin(s * 7 + br.wob) * S * 0.004;
+            const bp2 = inkPt(s, W, H), nn2 = inkNrm(s, W, H);
+            const x = bp2.x + nn2.x * (br.off * spread + wobx), y = bp2.y + nn2.y * (br.off * spread + wobx);
+            k === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+          }
+          ctx.stroke();
         }
+        for (let i = 0; i < DROP.length; i++) {   // 튄 먹방울 (획 궤적에서 수직으로)
+          const d = DROP[i]; if (d.s > drawP) continue; const dt = t - d.delay; if (dt < 0) continue;
+          const bp3 = inkPt(d.s, W, H), nn3 = inkNrm(d.s, W, H); const gp = Math.min(1, dt / 300);
+          const tx = bp3.x + nn3.x * d.side * d.dist * S, ty = bp3.y + nn3.y * d.side * d.dist * S;
+          const x = bp3.x + (tx - bp3.x) * gp, y = bp3.y + (ty - bp3.y) * gp; const a = 0.5 * post * fade; if (a <= 0) continue;
+          ctx.fillStyle = C(fx.ink, a); ctx.beginPath(); ctx.arc(x, y, d.r * (0.6 + 0.4 * gp), 0, PI2); ctx.fill();
+        }
+        if (t > 1440) {   // 낙관 인장(붉은 처형 섬광) — 마지막 포인트, 과하지 않게
+          const sp = Math.min(1, (t - 1440) / 200); const ov = 1 + 0.22 * Math.sin(Math.min(1, sp) * PI);
+          const se = inkPt(0.9, W, H); const sx = se.x + S * 0.02, sy = se.y + S * 0.02;
+          const sz = S * 0.048 * (0.4 + 0.6 * sp) * ov; const seA = post * fade * (t > FLASH_AT ? 1 : Math.min(1, sp));
+          if (seA > 0 && sz > 0) {
+            const rp = Math.min(1, (t - 1440) / 320);   // 인장 충격 링(붉은 섬광)
+            if (rp < 1) { ctx.strokeStyle = C(fx.red, (1 - rp) * 0.5 * post * fade); ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(sx, sy, sz * (0.9 + rp * 1.7), 0, PI2); ctx.stroke(); }
+            ctx.save(); ctx.translate(sx, sy); ctx.rotate(-0.06);
+            ctx.fillStyle = C(fx.red, 0.82 * seA); ctx.fillRect(-sz, -sz, sz * 2, sz * 2);   // 인장 몸통
+            ctx.strokeStyle = C('#3a0c11', 0.9 * seA); ctx.lineWidth = Math.max(1.4, sz * 0.16); ctx.lineCap = 'round';   // 음각 새김
+            ctx.beginPath(); ctx.moveTo(-sz * 0.42, -sz * 0.42); ctx.lineTo(-sz * 0.42, sz * 0.42); ctx.moveTo(-sz * 0.05, -sz * 0.42); ctx.lineTo(-sz * 0.05, sz * 0.1); ctx.moveTo(sz * 0.34, -sz * 0.3); ctx.lineTo(sz * 0.34, sz * 0.42); ctx.stroke();
+            ctx.lineCap = 'butt'; ctx.restore();
+          }
+        }
+        ctx.globalCompositeOperation = 'lighter';   // 진입 합성(lighter)로 복원 — 공통 플래시가 뒤에 그려짐
       } };
     }
 
-    // ── 🌈 블랑슈 — 무지개 분광 광선 + 육각 크리스탈 난반사 ──
+    // ── 🌈 블랑슈 — 삼각 프리즘 분광: 흰 입사광이 프리즘을 지나 무지개 부챗살로 ──
     if (style === 'blanche') {
       const SPEC = ['#ff4d4d', '#ff9a3c', '#ffe24a', '#5cff8f', '#4dd2ff', '#7a7dff', '#c86bff'];
-      const HEX = [];
-      for (let i = 0; i < 12; i++) HEX.push({ ang: R(0, PI2), rad: 0.25 + Math.random() * 0.5, spin: (0.4 + Math.random() * 0.8) * (Math.random() < 0.5 ? -1 : 1), size: 14 + Math.random() * 26, rot: R(0, PI2), delay: Math.random() * 700, col: SPEC[(Math.random() * SPEC.length) | 0] });
+      const MOTE = [];   // 스펙트럼 빛 속 먼지 모티(공간이 비지 않게)
+      for (let i = 0; i < 26; i++) MOTE.push({ u: Math.random(), spread: R(-0.5, 0.5), drift: R(0.2, 0.9), tw: R(0, PI2), col: SPEC[(Math.random() * 7) | 0], sz: 1 + Math.random() * 2 });
+      const HEX = [];   // 보조 육각 크리스탈(난반사 반짝) — 몇 개만
+      for (let i = 0; i < 6; i++) HEX.push({ x: 0.56 + Math.random() * 0.38, y: 0.28 + Math.random() * 0.5, size: 8 + Math.random() * 13, rot: R(0, PI2), spin: R(-0.6, 0.6), tw: R(0, PI2), col: SPEC[(Math.random() * 7) | 0] });
       return { draw: function (ctx, g, t, post) {
-        const cx = g.cx, cy = g.cy, maxR = g.maxR; const conv = Math.min(1, t / 1650);
-        for (let i = 0; i < SPEC.length; i++) { const a = 0.22 * post * Math.min(1, t / 1000); const ang = i / SPEC.length * PI2 + t * 0.0009; ctx.strokeStyle = C(SPEC[i], a); ctx.lineWidth = 2.4; ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + Math.cos(ang) * maxR * 0.9, cy + Math.sin(ang) * maxR * 0.9); ctx.stroke(); }
-        for (let i = 0; i < HEX.length; i++) {   // 육각 크리스탈 난반사
-          const h = HEX[i], dt = t - h.delay; if (dt < 0) continue;
-          const prog = Math.min(1, dt / 1600); const rad = h.rad * Math.min(g.W, g.H) * (1 - conv * 0.55); const ang = h.ang + h.spin * prog * 2.4;
-          const x = cx + Math.cos(ang) * rad, y = cy + Math.sin(ang) * rad; const a = 0.5 * post * (0.5 + 0.5 * prog);
-          hexagon(ctx, x, y, h.size * (0.6 + prog * 0.5), h.rot + t * 0.002 * h.spin, C(h.col, a), C('#ffffff', a * 0.5));
+        const cx = g.cx, cy = g.cy, W = g.W, H = g.H, maxR = g.maxR, S = Math.min(W, H);
+        const pxc = cx - S * 0.04, pyc = cy + S * 0.01, triW = S * 0.2, triH = S * 0.2;
+        const Ax = pxc, Ay = pyc - triH * 0.62, Bx = pxc - triW * 0.5, By = pyc + triH * 0.4, Cx2 = pxc + triW * 0.5, Cy2 = pyc + triH * 0.4;
+        const Mix = (Ax + Bx) * 0.5, Miy = (Ay + By) * 0.5, Mox = (Ax + Cx2) * 0.5, Moy = (Ay + Cy2) * 0.5;   // 입사점(좌면)·출사점(우면)
+        const appear = Math.min(1, Math.max(0, (t - 150) / 450));
+        const inP = Math.min(1, Math.max(0, (t - 120) / 560));
+        const fanP = Math.min(1, Math.max(0, (t - 620) / 900));
+        if (appear > 0) {   // 프리즘 유리(반투명·발광 테두리)
+          const ga = 0.16 * post * appear;
+          const gg = ctx.createLinearGradient(Bx, By, Ax, Ay);
+          gg.addColorStop(0, C(fx.glow, ga * 0.5)); gg.addColorStop(1, C('#ffffff', ga));
+          ctx.fillStyle = gg; ctx.beginPath(); ctx.moveTo(Ax, Ay); ctx.lineTo(Bx, By); ctx.lineTo(Cx2, Cy2); ctx.closePath(); ctx.fill();
+          ctx.strokeStyle = C('#dff0ff', 0.6 * post * appear); ctx.lineWidth = 1.6; ctx.lineJoin = 'round'; ctx.stroke();
         }
-      } };
-    }
-
-    // ── 🐾 카이라 — 발톱 X자 참격 + 야수 에너지 서지(embers) ──
-    if (style === 'kaira') {
-      const SLASH = [{ t0: 350, ang: -0.7 }, { t0: 720, ang: 0.7 }, { t0: 1120, ang: -0.55 }];
-      const EMB = [];
-      for (let i = 0; i < 44; i++) EMB.push({ ang: R(0, PI2), sp: 0.4 + Math.random() * 0.9, size: 1.5 + Math.random() * 3, delay: Math.random() * 1500, alt: Math.random() < 0.5 });
-      return { draw: function (ctx, g, t, post) {
-        const cx = g.cx, cy = g.cy, W = g.W, H = g.H, maxR = g.maxR;
-        for (let i = 0; i < EMB.length; i++) {   // 야수 에너지 서지 — embers 바깥으로 (얼굴 없이)
-          const e = EMB[i], dt = t - e.delay; if (dt < 0) continue;
-          const prog = (dt % 1400) / 1400; const rad = prog * maxR * 0.7 * e.sp; const x = cx + Math.cos(e.ang) * rad, y = cy + Math.sin(e.ang) * rad;
-          const a = (1 - prog) * 0.7 * post; if (a <= 0) continue; ctx.fillStyle = C(e.alt ? fx.dust : fx.glow, a); ctx.beginPath(); ctx.arc(x, y, e.size, 0, PI2); ctx.fill();
-        }
-        for (let i = 0; i < SLASH.length; i++) {   // 발톱 참격 — 4줄 평행 랙, ±각도가 겹쳐 X
-          const s = SLASH[i], dt = t - s.t0; if (dt < 0 || dt > 520) continue;
-          const p = dt / 520; const a = Math.sin(Math.min(1, p * 1.25) * PI) * post; if (a <= 0) continue;
-          const nx = Math.cos(s.ang), ny = Math.sin(s.ang), px = -ny, py = nx; const len = maxR * 1.15, gap = Math.min(W, H) * 0.042;
+        if (inP > 0) {   // 입사 백색광(좌측 밖 → 입사점)
+          const sx = -W * 0.02, sy = Miy - (Miy - cy) * 0.15;
+          const ex = sx + (Mix - sx) * inP, ey = sy + (Miy - sy) * inP;
           ctx.lineCap = 'round';
-          for (let c = 0; c < 4; c++) { const off = (c - 1.5) * gap; const mx = cx + px * off, my = cy + py * off; ctx.strokeStyle = C(c % 2 ? fx.dust : fx.glow, a * (0.95 - c * 0.12)); ctx.lineWidth = 3.4 - c * 0.5; ctx.beginPath(); ctx.moveTo(mx - nx * len * 0.5, my - ny * len * 0.5); ctx.lineTo(mx + nx * len * 0.5, my + ny * len * 0.5); ctx.stroke(); }
+          ctx.strokeStyle = C('#ffffff', 0.1 * post); ctx.lineWidth = S * 0.03; ctx.beginPath(); ctx.moveTo(sx, sy); ctx.lineTo(ex, ey); ctx.stroke();
+          ctx.strokeStyle = C('#ffffff', 0.9 * post); ctx.lineWidth = 2.2; ctx.beginPath(); ctx.moveTo(sx, sy); ctx.lineTo(ex, ey); ctx.stroke();
           ctx.lineCap = 'butt';
         }
+        if (fanP > 0 && inP > 0.6) {   // 분광 부챗살: 우면에서 빨강→보라 7색이 부채꼴로 벌어짐(핵심)
+          const baseAng = -0.02 * PI, spread = 0.42 * PI * fanP, rayLen = maxR * (0.4 + 0.6 * fanP);
+          ctx.lineCap = 'round';
+          for (let i = 0; i < SPEC.length; i++) {
+            const ang = baseAng + (i / (SPEC.length - 1)) * spread;   // 빨강(위·최소편향) → 보라(아래·최대편향)
+            const ex = Mox + Math.cos(ang) * rayLen, ey = Moy + Math.sin(ang) * rayLen; const la = post * (0.5 + 0.5 * fanP);
+            const lg = ctx.createLinearGradient(Mox, Moy, ex, ey);
+            lg.addColorStop(0, C(SPEC[i], 0.85 * la)); lg.addColorStop(1, C(SPEC[i], 0));
+            ctx.strokeStyle = lg; ctx.lineWidth = S * 0.02; ctx.beginPath(); ctx.moveTo(Mox, Moy); ctx.lineTo(ex, ey); ctx.stroke();
+            ctx.strokeStyle = C(SPEC[i], 0.5 * la); ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(Mox, Moy); ctx.lineTo(ex, ey); ctx.stroke();
+          }
+          ctx.lineCap = 'butt';
+          const fla = ctx.createRadialGradient(Mox, Moy, 0, Mox, Moy, S * 0.05);   // 출사점 백색 플레어
+          fla.addColorStop(0, C('#ffffff', 0.8 * post)); fla.addColorStop(1, C('#ffffff', 0));
+          ctx.fillStyle = fla; ctx.beginPath(); ctx.arc(Mox, Moy, S * 0.05, 0, PI2); ctx.fill();
+          for (let i = 0; i < MOTE.length; i++) {   // 스펙트럼 먼지 모티 — 부챗살 안을 떠다니며 반짝
+            const m = MOTE[i]; const ang = baseAng + m.u * spread; const rr = rayLen * (0.2 + m.drift * 0.75);
+            const px = Mox + Math.cos(ang) * rr + Math.cos(t * 0.001 + m.tw) * S * 0.02;
+            const py = Moy + Math.sin(ang) * rr + m.spread * S * 0.03 + Math.sin(t * 0.0012 + m.tw) * S * 0.02;
+            const a = (0.3 + 0.5 * Math.abs(Math.sin(m.tw + t * 0.004))) * post * fanP; if (a <= 0) continue;
+            ctx.fillStyle = C(m.col, a); ctx.beginPath(); ctx.arc(px, py, m.sz, 0, PI2); ctx.fill();
+          }
+        }
+        for (let i = 0; i < HEX.length; i++) {   // 보조 육각 크리스탈(난반사 반짝)
+          const h = HEX[i]; const twk = 0.4 + 0.6 * Math.abs(Math.sin(h.tw + t * 0.005)); const a = 0.4 * post * appear * twk;
+          hexagon(ctx, h.x * W, h.y * H, h.size, h.rot + t * 0.001 * h.spin, C(h.col, a * 0.5), C('#ffffff', a));
+          if (twk > 0.9) spark(ctx, h.x * W, h.y * H, h.size * 0.7, C('#ffffff', a));
+        }
       } };
     }
 
-    // ── 🧲 페리아 — 자기장 격자 조임 + 쇳가루 중앙 흡입 + 자기 펄스 ──
-    if (style === 'feria') {
-      const FIL = [];
-      for (let i = 0; i < 80; i++) FIL.push({ x0: (i % 10) / 9, y0: ((i / 10) | 0) / 7, delay: Math.random() * 500 });
+    // ── 🐾 카이라 — 짐승 발톱: 테이퍼·내향 곡선 참격 + 속살 빛 + 야수 embers ──
+    if (style === 'kaira') {
+      const SW = [   // 참격 3회(사선 교차) — 방향·시점·갈퀴 수
+        { t0: 300, ax: -0.62, cx0: 0.32, cy0: 0.32, tines: 4 },
+        { t0: 700, ax: 0.66, cx0: 0.66, cy0: 0.36, tines: 4 },
+        { t0: 1120, ax: -0.5, cx0: 0.46, cy0: 0.6, tines: 3 }
+      ];
+      const EMB = [];   // 야수 에너지 서지(embers) — 유지
+      for (let i = 0; i < 46; i++) EMB.push({ ang: R(0, PI2), sp: 0.4 + Math.random() * 0.95, size: 1.4 + Math.random() * 3, delay: Math.random() * 1500, alt: Math.random() < 0.5 });
       return { draw: function (ctx, g, t, post) {
-        const cx = g.cx, cy = g.cy, W = g.W, H = g.H, maxR = g.maxR;
-        const pull = Math.min(1, Math.max(0, (t - 200) / 1500)); const ease = pull * pull * (3 - 2 * pull);
-        ctx.strokeStyle = C(fx.glow, 0.14 * post); ctx.lineWidth = 1;   // 자기장 곡선 격자 (조여듦)
-        for (let i = 0; i <= 7; i++) { ctx.beginPath(); for (let j = 0; j <= 20; j++) { const fx0 = j / 20, fy0 = i / 7; let x = fx0 * W, y = fy0 * H; x = x + (cx - x) * ease * 0.6 * (0.4 + Math.abs(fy0 - 0.5) * 1.2); y = y + (cy - y) * ease * 0.6; j === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y); } ctx.stroke(); }
-        for (let i = 0; i < FIL.length; i++) {   // 쇳가루 — 중앙으로 빨려듦(소용돌이 가미)
-          const f = FIL[i], dt = t - f.delay; if (dt < 0) continue;
-          const bx = f.x0 * W, by = f.y0 * H; const dx = cx - bx, dy = cy - by;
-          const rx = bx + dx * ease + (-dy) * ease * 0.16, ry = by + dy * ease + dx * ease * 0.16;
-          const ang = Math.atan2(cy - ry, cx - rx); const a = 0.6 * post * (1 - ease * 0.25); const len = 5 + 6 * (1 - ease);
-          ctx.strokeStyle = C(fx.dust, a); ctx.lineWidth = 1.6; ctx.beginPath(); ctx.moveTo(rx - Math.cos(ang) * len, ry - Math.sin(ang) * len); ctx.lineTo(rx + Math.cos(ang) * len, ry + Math.sin(ang) * len); ctx.stroke();
+        const cx = g.cx, cy = g.cy, W = g.W, H = g.H, maxR = g.maxR, S = Math.min(W, H);
+        for (let i = 0; i < EMB.length; i++) {   // 야수 에너지 서지 — embers 바깥으로
+          const e = EMB[i], dt = t - e.delay; if (dt < 0) continue;
+          const prog = (dt % 1400) / 1400; const rad = prog * maxR * 0.72 * e.sp;
+          const x = cx + Math.cos(e.ang) * rad, y = cy + Math.sin(e.ang) * rad; const a = (1 - prog) * 0.7 * post; if (a <= 0) continue;
+          ctx.fillStyle = C(e.alt ? fx.dust : fx.glow, a); ctx.beginPath(); ctx.arc(x, y, e.size, 0, PI2); ctx.fill();
         }
-        if (t > FLASH_AT - 150) {   // 자기 펄스 링 (플래시)
-          const pp = Math.max(0, Math.min(1, (t - (FLASH_AT - 150)) / 450)); const a = (1 - pp) * 0.6 * post; if (a > 0) { ctx.strokeStyle = C(fx.glow, a); ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(cx, cy, pp * maxR * 0.9, 0, PI2); ctx.stroke(); }
+        for (let si = 0; si < SW.length; si++) {   // 발톱 참격 — 갈퀴마다 테이퍼(양끝 뾰족) 곡선 날 + 속살 빛
+          const s = SW[si], dt = t - s.t0; if (dt < 0) continue;
+          const cutP = Math.min(1, dt / 210); const a0 = post * Math.min(1, cutP * 1.3); if (a0 <= 0) continue;   // 베는 진행(선단 전진)
+          const dx = Math.cos(s.ax), dy = Math.sin(s.ax), nx = -dy, ny = dx;
+          const len = maxR * 1.25, gap = S * 0.055, mid = (s.tines - 1) / 2;
+          const startX = s.cx0 * W - dx * len * 0.5, startY = s.cy0 * H - dy * len * 0.5;
+          for (let c = 0; c < s.tines; c++) {
+            const off = (c - mid) * gap, bow = -off * 0.6, wMax = S * (0.02 - Math.abs(c - mid) * 0.002);   // 안쪽으로 휨(외곽 갈퀴가 더)·중앙 갈퀴 굵음
+            const bx = startX + nx * off, by = startY + ny * off;
+            const NP = 16, px = [], py = [], hw = [];
+            for (let k = 0; k <= NP; k++) {
+              const u = k / NP, along = u * len, bowk = Math.sin(u * PI) * bow;
+              px.push(bx + dx * along + nx * bowk); py.push(by + dy * along + ny * bowk);
+              hw.push(wMax * Math.pow(Math.sin(Math.max(0.001, Math.min(0.999, u)) * PI), 0.6));   // 양끝 뾰족한 날 폭
+            }
+            const lim = Math.max(1, Math.floor(NP * cutP));
+            ctx.beginPath();   // 날(발톱 자국) — 테이퍼 폴리곤
+            for (let k = 0; k <= lim; k++) { const x = px[k] + nx * hw[k], y = py[k] + ny * hw[k]; k === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y); }
+            for (let k = lim; k >= 0; k--) { ctx.lineTo(px[k] - nx * hw[k], py[k] - ny * hw[k]); }
+            ctx.closePath(); ctx.fillStyle = C(fx.glow, 0.5 * a0); ctx.fill();
+            ctx.strokeStyle = C(fx.glow, 0.16 * a0); ctx.lineWidth = wMax * 3.2; ctx.lineCap = 'round'; ctx.lineJoin = 'round';   // 속살 빛(베인 자리 번짐)
+            ctx.beginPath(); for (let k = 0; k <= lim; k++) { k === 0 ? ctx.moveTo(px[k], py[k]) : ctx.lineTo(px[k], py[k]); } ctx.stroke();
+            ctx.strokeStyle = C(fx.flashMid, 0.9 * a0); ctx.lineWidth = Math.max(1, wMax * 0.5);   // 밝은 코어(날카로운 절단선)
+            ctx.beginPath(); for (let k = 0; k <= lim; k++) { k === 0 ? ctx.moveTo(px[k], py[k]) : ctx.lineTo(px[k], py[k]); } ctx.stroke();
+            ctx.lineCap = 'butt';
+          }
+        }
+      } };
+    }
+
+    // ── 🧲 페리아 — 자력 지배: 금속 파편이 자기장 역선 따라 정렬·수렴 ──
+    if (style === 'feria') {
+      function bz(a, b, c, d, tt) { const it = 1 - tt; return it * it * it * a + 3 * it * it * tt * b + 3 * it * tt * tt * c + tt * tt * tt * d; }
+      const FRAG = [];   // 금속 파편(회전하는 다각형 조각) — 사방 산개 → 중앙 수렴
+      for (let i = 0; i < 66; i++) {
+        const nS = 3 + ((Math.random() * 3) | 0), verts = [];
+        for (let v = 0; v < nS; v++) verts.push({ a: v / nS * PI2 + R(-0.3, 0.3), r: 0.6 + Math.random() * 0.5 });
+        FRAG.push({ x0: R(-0.12, 1.12), y0: R(-0.12, 1.12), size: 3 + Math.random() * 5, rot: R(0, PI2), spin: R(-0.05, 0.05), delay: Math.random() * 360, dur: 1250 + Math.random() * 250, swirl: R(-1, 1), verts: verts });
+      }
+      return { draw: function (ctx, g, t, post) {
+        const cx = g.cx, cy = g.cy, W = g.W, H = g.H, maxR = g.maxR, S = Math.min(W, H);
+        const pull = Math.min(1, Math.max(0, (t - 150) / 1450)), pe = pull * pull * (3 - 2 * pull);
+        const dPole = S * 0.26, poleNy = cy - dPole, poleSy = cy + dPole;
+        const coreR = S * (0.05 + 0.09 * pe) * (0.9 + 0.1 * Math.sin(t * 0.012));   // 자기 코어 글로우(맥동·강화)
+        const cg = ctx.createRadialGradient(cx, cy, 0, cx, cy, coreR * 2.2);
+        cg.addColorStop(0, C(fx.core || '#dbe9ff', 0.75 * post)); cg.addColorStop(0.4, C(fx.glow, 0.4 * post * pe)); cg.addColorStop(1, C(fx.glow, 0));
+        ctx.fillStyle = cg; ctx.beginPath(); ctx.arc(cx, cy, coreR * 2.2, 0, PI2); ctx.fill();
+        for (let s2 = 0; s2 < 2; s2++) {   // 극점 글로우(극성 대비: N 붉음 / S 푸름)
+          const py = s2 ? poleSy : poleNy, col = s2 ? (fx.poleS || '#6ba8ff') : (fx.poleN || '#ff6b6b'), pr = S * 0.06 * (0.7 + 0.3 * pe);
+          const pgd = ctx.createRadialGradient(cx, py, 0, cx, py, pr);
+          pgd.addColorStop(0, C(col, 0.5 * post * (0.4 + 0.6 * pe))); pgd.addColorStop(1, C(col, 0));
+          ctx.fillStyle = pgd; ctx.beginPath(); ctx.arc(cx, py, pr, 0, PI2); ctx.fill();
+        }
+        const NL = 4;   // 자기장 역선(양극 잇는 곡선 루프) — 팽팽하게 강조
+        for (let j = 1; j <= NL; j++) {
+          const bulge = S * (0.08 + j * 0.11) * (1 - pe * 0.18), la = (0.1 + 0.14 * pe) * post * (1.05 - j * 0.12);
+          for (let sgn = -1; sgn <= 1; sgn += 2) {
+            const c1x = cx + sgn * bulge, c1y = poleNy + dPole * 0.55, c2x = cx + sgn * bulge, c2y = poleSy - dPole * 0.55;
+            ctx.strokeStyle = C(fx.glow, la); ctx.lineWidth = 2.4 - j * 0.3;
+            ctx.beginPath(); ctx.moveTo(cx, poleNy); ctx.bezierCurveTo(c1x, c1y, c2x, c2y, cx, poleSy); ctx.stroke();
+            const fl = (t * 0.0005 + j * 0.2) % 1;   // 역선 위를 흐르는 밝은 점(자기 흐름)
+            ctx.fillStyle = C(fx.core || '#dbe9ff', 0.5 * post * pe); ctx.beginPath(); ctx.arc(bz(cx, c1x, c2x, cx, fl), bz(poleNy, c1y, c2y, poleSy, fl), 1.8, 0, PI2); ctx.fill();
+          }
+        }
+        ctx.globalCompositeOperation = 'source-over';   // 금속 파편 = 고체(정상합성) — 선분 아닌 회전 조각
+        for (let i = 0; i < FRAG.length; i++) {
+          const f = FRAG[i], dt = t - f.delay; if (dt < 0) continue;
+          const lp = Math.min(1, dt / f.dur), le = lp * lp * (3 - 2 * lp);
+          const sx = f.x0 * W, sy = f.y0 * H;
+          let x = sx + (cx - sx) * le, y = sy + (cy - sy) * le;
+          const perpX = -(cy - y), perpY = (cx - x), sw = Math.sin(le * PI) * f.swirl * 0.35;   // 역선 따라 팽팽히 감기며 흡입
+          x += perpX * sw; y += perpY * sw;
+          const size = f.size * (1 - 0.35 * le) * (S / 640 + 0.35);
+          const align = Math.max(0, Math.min(1, (le - 0.45) / 0.55)), angToC = Math.atan2(cy - y, cx - x);
+          const rot = (f.rot + f.spin * dt) * (1 - align) + angToC * align;   // 초반 텀블 → 후반 정렬(일제히)
+          const a = post * (dt < 220 ? dt / 220 : 1) * (1 - le * 0.15); if (a <= 0 || size <= 0.2) continue;
+          ctx.save(); ctx.translate(x, y); ctx.rotate(rot); ctx.beginPath();
+          for (let v = 0; v < f.verts.length; v++) { const vp = f.verts[v], vx = Math.cos(vp.a) * size * vp.r, vy = Math.sin(vp.a) * size * vp.r; v === 0 ? ctx.moveTo(vx, vy) : ctx.lineTo(vx, vy); }
+          ctx.closePath(); ctx.fillStyle = C(fx.dust, 0.9 * a); ctx.fill();
+          const v0 = f.verts[0], v1 = f.verts[1 % f.verts.length];   // 금속 하이라이트(모서리 광택)
+          ctx.strokeStyle = C(fx.flashMid, a); ctx.lineWidth = Math.max(0.7, size * 0.18);
+          ctx.beginPath(); ctx.moveTo(Math.cos(v0.a) * size * v0.r, Math.sin(v0.a) * size * v0.r); ctx.lineTo(Math.cos(v1.a) * size * v1.r, Math.sin(v1.a) * size * v1.r); ctx.stroke();
+          ctx.restore();
+        }
+        ctx.globalCompositeOperation = 'lighter';   // 복원 — 이후 펄스/코어섬광·공통 플래시
+        if (t > FLASH_AT - 200) {   // 자기 펄스 링 + 코어 강섬광(수렴 완료·플래시)
+          const pp = Math.max(0, Math.min(1, (t - (FLASH_AT - 200)) / 480)), a = (1 - pp) * 0.6 * post;
+          if (a > 0) { ctx.strokeStyle = C(fx.glow, a); ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(cx, cy, pp * maxR * 0.85, 0, PI2); ctx.stroke(); }
+          const hr = S * 0.14 * pp + 0.01, hg = ctx.createRadialGradient(cx, cy, 0, cx, cy, hr);
+          hg.addColorStop(0, C(fx.core || '#dbe9ff', 0.8 * (1 - pp) * post)); hg.addColorStop(1, C(fx.core || '#dbe9ff', 0));
+          ctx.fillStyle = hg; ctx.beginPath(); ctx.arc(cx, cy, hr, 0, PI2); ctx.fill();
         }
       } };
     }
@@ -37913,7 +38072,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 691;
+  const APP_VERSION = 692;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
