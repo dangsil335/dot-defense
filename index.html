@@ -34880,6 +34880,12 @@
     return { kind: null, list: [] };
   }
   function maybeTriggerEvolutionGate(roundNum) {
+    // 🎓 튜토리얼: R5 도달 시 정상 base→R 게이트를 가로채 솜니아 SSR 게이트를 강제(거절 불가).
+    //    applyEvolution 은 state.character 만 세팅하고 META.gachaUnlocked 는 안 건드림 → 격리 보장(뽑아야 소유).
+    if (typeof _tutActive === 'function' && _tutActive() && _tutStage() === 'planet' && state && state.tutorial && (roundNum || state.round) === 5) {
+      showEvoGate('SSR', 'somnia', true);
+      return true;
+    }
     const c = _evoCandidates(roundNum);
     if (!c.kind || !c.list.length) return false;
     if (c.kind === 'R') { openCardDraft('evolve', c.list); return true; }                        // R: 타로 NPC 카드 드래프트 → 진화 이벤트(무조건 승낙)
@@ -34932,7 +34938,7 @@
     const ch = CHARACTERS[id] || {}; const sig = (CHAR_SIG_ABILITIES[id] || [])[0]; const ab = ABILITY_DEFS[sig] || {};
     return { name: charNameNoEmoji(ch.name || id), grade: ch.rarity || kind, color: ch.color || '#ffd060', abId: sig, abName: ab.name || sig || '', abDesc: (ab.desc ? ab.desc(1) : '') };
   }
-  function showEvoGate(kind, id) {
+  function showEvoGate(kind, id, forced) {
     const el = document.getElementById('evoGate'); if (!el) return;
     const info = _evoInfo(kind, id);
     try {
@@ -34949,8 +34955,16 @@
     el.style.display = 'flex';
     try { SFX.click(); } catch (e) {}
     const yes = document.getElementById('evoYes'), no = document.getElementById('evoNo');
-    if (yes) yes.onclick = () => { el.style.display = 'none'; paused = el._prevPaused || false; applyEvolution(kind, id, info.abId); };
-    if (no) no.onclick = () => { el.style.display = 'none'; paused = el._prevPaused || false; try { toast('진화 거절 — 현 단계 유지'); } catch (e) {} };
+    if (yes) yes.onclick = () => {
+      el.style.display = 'none'; paused = el._prevPaused || false;
+      applyEvolution(kind, id, info.abId);
+      // 🎓 튜토리얼 강제 솜니아 진화 완료 → evolved 단계 (이후 게임 종료 시 done)
+      if (forced && state && state.tutorial && kind === 'SSR' && id === 'somnia' && typeof _tutSetStage === 'function') _tutSetStage('evolved');
+    };
+    if (no) {
+      no.style.display = forced ? 'none' : '';   // 🎓 튜토리얼 강제진화 = 거절 버튼 숨김(진화만 가능)
+      no.onclick = forced ? null : () => { el.style.display = 'none'; paused = el._prevPaused || false; try { toast('진화 거절 — 현 단계 유지'); } catch (e) {} };
+    }
   }
   function applyEvolution(kind, id, abId) {
     if (!state) return;
