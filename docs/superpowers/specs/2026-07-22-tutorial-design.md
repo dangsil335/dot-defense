@@ -1,7 +1,7 @@
 # 첫 플레이 튜토리얼 설계 (아크 제로)
 
-작성일: 2026-07-22
-현재 버전: v686 (SSR 등장 연출 v687 진행 중 — 튜토리얼 구현은 그 이후)
+작성일: 2026-07-22 · 개정: 2026-07-23 (v699 코드 실측 반영 + Phase 1 스코프 확정 — 아래 🔒 섹션 참조)
+현재 버전: v699 (애니 일러 완료. 튜토리얼 Phase 1 구현 착수)
 
 ## 목표
 
@@ -18,6 +18,40 @@
 | 보상 | `scoreReward` 등 대폭 삭감(파밍 방지) |
 | 대사 | 솜니아 나른·반말·천진난만한 딸 톤 |
 | 완료 | `META.tutorialDone` 영구 잠금 + 서버 동기화 포함. 재시청 없음 |
+
+---
+
+## 🔒 Phase 1 구현 확정 (2026-07-23, v699 코드 실측 반영)
+
+**스코프 분할 (함장 확정):** 위험한 핵심을 먼저 잡는다.
+- **Phase 1 (이번) — "작동하는 골격":** ① 상태머신+진입 게이팅 · ③ 튜토리얼 행성 · ④ 솜니아 강제진화 · ⑤ 완료처리 + **격리 검증**. 스포트라이트·말풍선 없이도 처음→끝 완주 가능.
+- **Phase 2 (다음) — "가르치는 레이어":** §4 스포트라이트 강제 오버레이 + §3 이벤트감지 안내 말풍선.
+
+**확정 결정 (이번 정렬):**
+- 튜토리얼 행성 난이도 = **무조건 클리어 가능**할 만큼 쉽게 (§5 그대로, 이견 없음).
+- 행성 구현 = **임시 asc 주입** (PLANET_TIERS/getAscensionMods 안 건드림). 4번째 정식 행성 추가는 '가짜 행성'이 도감·통계·보상 순회처에 새는 위험으로 기각.
+- R5 강제진화 게이트 = **거절 버튼 비활성**(진화만 가능). "거절 시 재표시"가 아니라 거절 자체 불가.
+- Phase 1 강제 방식 = 스포트라이트 대신 **기능적 잠금**(다른 버튼/행성 disable). 스포트라이트 연출은 Phase 2.
+
+**⚠️ 문서 정정 — 진입점:** 아래 본문의 `checkFirstLaunch`(§2·§7·§10)는 **현재 코드에 존재하지 않는다.** 실제 흐름: `#splash`(L665~ 3초 부팅) → `#nicknameModal`(L4692) → `setNickname(n)`(L22793). **튜토리얼 진입 = `setNickname()` 완료 시점에 `META.tutorial===undefined`(신규 유저)면 stage='intro' 시작.**
+
+**v699 실측 코드 훅 (본문의 낡은 라인번호 대체):**
+| 용도 | 실제 위치 |
+|---|---|
+| 부팅/닉네임 진입 | `#splash` L665 · `#nicknameModal` L4692 · `setNickname()` L22793 |
+| 난이도 → asc | `getSelectedAscension()` L24445 · `getAscensionMods()` L24456 · 게임시작 `state.asc=` L22105-22107 |
+| asc 필드 | enemyHpMul·bossHpMul·maxAliveAdd·**scoreReward**·enemySpeedMul·eliteEscorts·roundTimeMul·extraBossCount 등 |
+| 보상 삭감 소비처 | 점수 `state.asc.scoreReward` L22308 · 계정 XP `_runXp` L22368 |
+| R5 진화 게이트 | `#evoGate` L6217 · 표시 `showEvoGate(kind,id)` L34846 · 트리거 롤 L34797 · **진화 시 `state.character=id` L34890 (런 한정)** |
+| SSR 해금 게이팅 | `SR_TO_SSR` L34756 (`luna:['misaki','somnia']`) · `_ssrOf()` L34758 · `_evoTowerUnlocked()` L34779 · `_gachaUnlocked()` L34778 (`META.gachaUnlocked[id]>0`) |
+| 저장/동기화 | `saveMeta()` L22511 · 종료 직후 서버 push `queueServerSync(true)` L22381 |
+| Phase 2 감지훅 | 카드모달 `state.levelUpChoices` L22012 · 조합카드 = 능력def `isCombo:true` |
+
+**④ 솜니아 강제진화 — 격리 명세 (핵심·위험):**
+- `stage==='planet'` && R5 도달 → `_evoTowerUnlocked` 게이팅 우회하고 **`showEvoGate('SSR','somnia')` 직접 호출**, 거절 버튼 비활성.
+- 수락 시 기존 SSR 진화 경로대로 **`state.character='somnia'`만** 세팅(능력 셋업 동일 경로 재활용). 진화 후 `stage='evolved'`.
+- **🚫 절대 금지: `META.gachaUnlocked['somnia']` 또는 META 어디에도 솜니아 해금 기록.** 강제진화는 런 `state` 한정.
+- **격리 수용기준(Phase 1 완료 판정):** 튜토리얼 완주 후 정상 게임에서 솜니아가 가챠 풀·진화트리·도감에 **공짜로 안 뜬다**(뽑아야 등장). 실기기 검증 필수.
 
 ---
 
@@ -119,7 +153,7 @@ R5 진화 게이트에서 정상적으로는 SSR 합류에 가챠 해금이 필�
 
 ## 10. 미결 (구현 중 확정)
 
-- 조합 카드 감지의 정확한 방법(카드 생성부 데이터 구조).
-- 스포트라이트 구멍 뚫기 CSS 기법(box-shadow vs 4분할 vs SVG mask) — 기존 패턴 확인 후.
-- 튜토리얼 행성을 `PLANET_TIERS` 에 넣을지, 진입 시 임시 asc 주입으로 처리할지.
-- 인게임 안내 말풍선 UI(솜니아 미니 초상 + 말풍선) 스타일.
+- ~~조합 카드 감지의 정확한 방법~~ → **확정: 능력def `isCombo:true` 플래그로 감지** (Phase 2).
+- ~~튜토리얼 행성을 `PLANET_TIERS`에 넣을지, 임시 asc 주입할지~~ → **확정: 임시 asc 주입** (🔒 Phase 1 섹션 참조).
+- 스포트라이트 구멍 뚫기 CSS 기법(box-shadow vs 4분할 vs SVG mask) — **Phase 2**, 기존 패턴 확인 후.
+- 인게임 안내 말풍선 UI(솜니아 미니 초상 + 말풍선) 스타일 — **Phase 2**.
