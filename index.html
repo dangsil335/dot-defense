@@ -35243,13 +35243,17 @@
   //   · META.skins = { owned:{ '<charId>__<skinId>':1 }, applied:{ <charId>:<skinId> } } — JSON 블롭이라 서버 자동 동기화.
   const SKIN_COST = 400;
   const SKINS = {
-    blanche: [{ id: 'crystal',    name: '크리스탈 라군 리조트' }],
-    kaira:   [{ id: 'whitetiger', name: '백호 사냥대장' }],
-    lara:    [{ id: 'gothic',     name: '고딕 마리오네트' }],
-    luna:    [{ id: 'moonlit',    name: '월광 셀레스티얼' }],
-    sakura:  [{ id: 'tide',       name: '타이드 검객' }],
-    somnia:  [{ id: 'beachnap',   name: '해변 낮잠' }],
-    sumika:  [{ id: 'snowmoon',   name: '설월검희' }],
+    blanche:   [{ id: 'crystal',      name: '크리스탈 라군 리조트' }],
+    cardista:  [{ id: 'casino',       name: '비치 카지노 갬블러' }],
+    elementia: [{ id: 'spirit',       name: '스피릿 비치' }],
+    feria:     [{ id: 'queen',        name: '마그네틱 비치 퀸' }],
+    iris:      [{ id: 'photographer', name: '비치 포토그래퍼' }],
+    kaira:     [{ id: 'whitetiger',   name: '백호 사냥대장' }],
+    lara:      [{ id: 'gothic',       name: '고딕 마리오네트' }],
+    luna:      [{ id: 'moonlit',      name: '월광 셀레스티얼' }],
+    sakura:    [{ id: 'tide',         name: '타이드 검객' }],
+    somnia:    [{ id: 'beachnap',     name: '해변 낮잠' }],
+    sumika:    [{ id: 'snowmoon',     name: '설월검희' }],
   };
   function _skinsOf(charId) { return SKINS[charId] || []; }
   function _skinKey(charId, skinId) { return charId + '__' + skinId; }   // = 일러 파일 base (icons/illust/<charId>__<skinId>.png)
@@ -38592,7 +38596,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 707;
+  const APP_VERSION = 708;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
