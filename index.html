@@ -30753,7 +30753,7 @@
     ctx.strokeStyle = 'rgba(255,120,140,0.4)'; ctx.lineWidth = 1; rr(x - 3, y - 3, w + 6, h + 6, (h+6)/2); ctx.stroke();
     ctx.fillStyle = '#fff'; ctx.textAlign = 'center';
     ctx.font = 'bold 11px Rajdhani, "IBM Plex Sans KR", sans-serif';
-    ctx.fillText(`BOSS  ${boss.hp} / ${boss.maxHp}`, W/2, y + 10);
+    ctx.fillText(`BOSS  ${Math.ceil(boss.hp).toLocaleString()} / ${Math.ceil(boss.maxHp).toLocaleString()}`, W/2, y + 10);   // 소수점 제거 + 천단위 콤마 (데미지로 hp가 부동소수가 됨)
     ctx.textAlign = 'start';
   }
   // 🌟 색상별 발광 오브 스프라이트 캐시 (radial gradient를 매 프레임 새로 만들지 않게 — 성능)
@@ -38602,7 +38602,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 710;
+  const APP_VERSION = 711;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
