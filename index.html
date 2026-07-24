@@ -22140,6 +22140,7 @@
       state.asc = Object.assign({}, TUTORIAL_ASC);
       state.ascension = 0;
       if (_tutStage() === 'intro') _tutSetStage('planet');   // 게임 시작 = 튜토리얼 행성 진입 단계
+      else if (_tutStage() === 'evolved') state._tutEndRound = (state.round || 1) + 2;   // 🐛 진화 후 새로고침→재시작 런: 곧 자동완료(이미 솜니아 체험, R100 소프트락 방지)
     } else {
       state.tutorial = false;
     }
@@ -38591,7 +38592,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 706;
+  const APP_VERSION = 707;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
