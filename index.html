@@ -5017,16 +5017,21 @@
   .evo-ssr-preview-btn { display: block; width: 100%; margin: 12px 0 4px; padding: 11px; font-family: inherit; font-size: 13px; font-weight: 800; letter-spacing: 0.5px; color: var(--gc, #7ad7ff); background: linear-gradient(180deg, rgba(20,26,40,0.9), rgba(14,18,28,0.9)); border: 1px solid var(--gc, #7ad7ff); border-radius: 12px; cursor: pointer; box-shadow: 0 0 0 rgba(0,0,0,0); transition: box-shadow .15s, transform .1s; }
   .evo-ssr-preview-btn:hover { box-shadow: 0 0 16px -2px var(--gc, #7ad7ff); }
   .evo-ssr-preview-btn:active { transform: scale(0.98); }
-  /* 🎨 스킨 섹션 (캐릭터 상세) */
-  .evo-skins { display: flex; flex-direction: column; gap: 6px; margin: 6px 0 4px; }
-  .skin-opt { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 12px; background: rgba(20,26,40,0.6); border: 1px solid rgba(120,140,180,0.25); border-radius: 10px; }
-  .skin-opt.on { border-color: #ffd479; box-shadow: inset 0 0 0 1px rgba(255,212,121,0.4), 0 0 10px -3px rgba(255,212,121,0.5); }
-  .skin-name { font-size: 13px; font-weight: 700; color: #dbe4f5; }
-  .skin-cur { font-size: 12px; font-weight: 800; color: #ffd479; white-space: nowrap; }
-  .skin-btn { font-family: inherit; font-size: 12px; font-weight: 800; padding: 6px 12px; border-radius: 8px; cursor: pointer; border: 1px solid; background: transparent; transition: transform .1s, box-shadow .15s; white-space: nowrap; }
-  .skin-btn:active { transform: scale(0.95); }
-  .skin-btn.apply { color: #7ad7ff; background: rgba(122,215,255,0.1); border-color: #7ad7ff; }
-  .skin-btn.buy { color: #ffd479; background: rgba(255,212,121,0.12); border-color: #ffd479; }
+  /* 🎨 스킨 캐러셀 (캐릭터 상세) — 일러 위 ◀▶ + 아래 잔액/버튼 바 */
+  .skin-arrow { position: absolute; top: 44%; transform: translateY(-50%); z-index: 5; width: 40px; height: 58px; display: flex; align-items: center; justify-content: center; font-size: 32px; color: #fff; background: rgba(10,12,20,0.5); border: 1px solid rgba(255,255,255,0.25); border-radius: 10px; cursor: pointer; padding: 0; line-height: 1; transition: background .12s, transform .1s; }
+  .skin-arrow:hover { background: rgba(30,36,54,0.85); }
+  .skin-arrow:active { transform: translateY(-50%) scale(0.9); }
+  .skin-arrow.left { left: 7px; }
+  .skin-arrow.right { right: 7px; }
+  .skin-ctrl { display: flex; align-items: center; gap: 10px; margin: 0 0 12px; padding: 9px 12px; background: linear-gradient(160deg, rgba(28,22,54,0.7), rgba(14,11,28,0.7)); border: 1px solid rgba(200,176,255,0.28); border-radius: 12px; }
+  .skin-bal { font-size: 13px; font-weight: 800; color: #c9a3ff; white-space: nowrap; }
+  .skin-cur-name { flex: 1; min-width: 0; font-size: 13px; font-weight: 700; color: #eee6ff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .skin-idx { font-size: 11px; color: #9a90b8; font-weight: 600; }
+  .skin-cta { font-family: inherit; font-size: 13px; font-weight: 800; padding: 8px 15px; border-radius: 9px; cursor: pointer; border: 1px solid; background: transparent; white-space: nowrap; transition: transform .1s; }
+  .skin-cta:active { transform: scale(0.95); }
+  .skin-cta.buy { color: #ffd479; border-color: #ffd479; background: rgba(255,212,121,0.12); }
+  .skin-cta.apply { color: #7ad7ff; border-color: #7ad7ff; background: rgba(122,215,255,0.1); }
+  .skin-cta.cur { color: #9a90b8; border-color: rgba(154,144,184,0.4); cursor: default; }
   .story-text { flex: 1 1 auto; font-size: 13px; line-height: 1.75; color: #cdd5e3; background: #0e1320; border: 1px solid #232a3a; border-radius: 10px; padding: 14px 15px; margin-bottom: 10px; overflow-y: auto; white-space: pre-wrap; }
   .evo-d-unlock { font-size:11px; color:#9aa3b3; margin-top:2px; }
   .evo-d-sec-title { font-size:12px; font-weight:800; color:#8aa0c0; margin:16px 0 8px; padding-bottom:5px; border-bottom:1px solid rgba(122,215,255,0.14); }
@@ -35282,8 +35287,8 @@
   //    · 전부 없으면 'none' 캐시 후 onFail(도트/이모지 폴백). 직접 호출 4곳(_charPortraitImg·메뉴히어로·가챠카드) + _hydrateIllusts(마커) 로 전 표시처 공유.
   //    · gif 가 없으면 자연히 png 로 폴백 → "gif 없으면 지금처럼 정적 png" 요구 그대로.
   var _illustFmt = {};   // charId -> 'webp'|'gif'|'png'|'none'
-  function _applyIllustChain(img, charId, onFail) {
-    const rid = (typeof _resolveIllustId === 'function') ? _resolveIllustId(charId) : charId;   // 🎨 스킨 적용 시 스킨 일러 base
+  function _applyIllustChain(img, charId, onFail, exactId) {
+    const rid = exactId || ((typeof _resolveIllustId === 'function') ? _resolveIllustId(charId) : charId);   // 🎨 exactId(미리보기) 있으면 그대로, 없으면 적용스킨 반영
     const base = './icons/illust/' + rid + '.';
     if (_illustFmt[rid] === 'none') { if (onFail) onFail(); return; }
     const chain = _illustFmt[rid] ? [_illustFmt[rid]] : ['webp', 'gif', 'png'];
@@ -38596,7 +38601,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 708;
+  const APP_VERSION = 709;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
@@ -39406,21 +39411,8 @@
       if (isChar && kind === 'SSR' && typeof _playNextSSRReveal === 'function') {
         body += `<button class="evo-ssr-preview-btn" data-ssrprev="${id}" style="--gc:${gc.color}">🌟 등장 연출 미리보기</button>`;
       }
-      // 🎨 스킨 섹션 — 이 캐릭에 스킨이 있으면 (기본 + 스킨들, 구매 400★ / 적용)
-      if (isChar && _skinsOf(id).length) {
-        const _ap = _skinApplied(id);
-        const _row = (sid, label, owned) => {
-          const on = sid ? (sid === _ap) : !_ap;   // 적용중 여부 (sid 빈값 = 기본)
-          let act;
-          if (sid && !owned) act = `<button class="skin-btn buy" data-skinbuy="${id}:${sid}">💠 ${SKIN_COST}</button>`;
-          else if (on) act = `<span class="skin-cur">✓ 적용중</span>`;
-          else act = `<button class="skin-btn apply" data-skinapply="${id}:${sid}">적용</button>`;
-          return `<div class="skin-opt${on ? ' on' : ''}"><span class="skin-name">${label}</span>${act}</div>`;
-        };
-        let sh = _row('', '기본', true);
-        _skinsOf(id).forEach(sk => { sh += _row(sk.id, sk.name, _skinOwned(id, sk.id)); });
-        body += `<div class="evo-d-sec-title">🎨 스킨 <span style="font-size:11px;opacity:.55;font-weight:400">보유 💠 ${(META.starShards || 0).toLocaleString()}</span></div><div class="evo-skins">${sh}</div>`;
-      }
+      // 🎨 스킨 캐러셀은 아래 illustEl 렌더 후 JS로 구성(일러 위 화살표 + 잔액/버튼 바). body 최상단에 컨테이너만 예약.
+      if (isChar && _skinsOf(id).length) body = `<div class="skin-ctrl" id="skin-ctrl"></div>` + body;
       const rid = (typeof ANCIENT_RELIC_BY_CHAR !== 'undefined') ? ANCIENT_RELIC_BY_CHAR[id] : null;
       if (rid && RELICS[rid]) {
         const r = RELICS[rid]; const rar = (RELIC_RARITY[r.rarity] || { color: '#ff88ff' });
@@ -39455,13 +39447,49 @@
         if (!_ssrRevealActive) _playNextSSRReveal();
       } catch (e) {}
     };
-    // 🎨 스킨 구매(400★)/적용 — 후 상세 재렌더로 적용상태 + 스킨 일러 반영. 구매 시 자동 적용.
-    bodyEl.querySelectorAll('[data-skinbuy]').forEach(btn => {
-      btn.onclick = () => { const p = btn.dataset.skinbuy.split(':'); if (_buySkin(p[0], p[1])) { _applySkin(p[0], p[1]); try { toast('🎨 스킨 획득 & 적용!'); } catch (e) {} _evoShowDetail(kind, id); } };
-    });
-    bodyEl.querySelectorAll('[data-skinapply]').forEach(btn => {
-      btn.onclick = () => { const p = btn.dataset.skinapply.split(':'); _applySkin(p[0], p[1] || null); _evoShowDetail(kind, id); };
-    });
+    // 🎨 스킨 캐러셀 — 일러 위 ◀▶로 기본+스킨 미리보기, 아래 바에 별조각 잔액 + 구매/적용 버튼.
+    if (kind !== 'R' && kind !== 'base' && _skinsOf(id).length) {
+      const _skList = [null].concat(_skinsOf(id));   // 0=기본, 1+=스킨
+      const _em = (CHARACTERS[id] && CHARACTERS[id].name ? CHARACTERS[id].name.split(' ')[0] : '🎴');
+      const _dsImg = illustEl.querySelector('img');
+      const _ctrl = document.getElementById('skin-ctrl');
+      const _ap0 = _skinApplied(id);
+      let _pidx = _ap0 ? Math.max(0, _skList.findIndex(s => s && s.id === _ap0)) : 0;
+      illustEl.insertAdjacentHTML('beforeend', '<button class="skin-arrow left" aria-label="이전 스킨">‹</button><button class="skin-arrow right" aria-label="다음 스킨">›</button>');
+      const _arL = illustEl.querySelector('.skin-arrow.left'), _arR = illustEl.querySelector('.skin-arrow.right');
+      const _pIll = i => { const s = _skList[i]; return s ? _skinKey(id, s.id) : id; };
+      const _renderSkin = () => {
+        const cur = _skList[_pidx];
+        if (_dsImg) {
+          illustEl.classList.remove('noimg'); _dsImg.style.display = '';
+          _applyIllustChain(_dsImg, id, () => { _dsImg.style.display = 'none'; illustEl.classList.add('noimg'); illustEl.dataset.emoji = _em; }, _pIll(_pidx));
+        }
+        const owned = cur ? _skinOwned(id, cur.id) : true;
+        const isApp = cur ? (cur.id === _skinApplied(id)) : !_skinApplied(id);
+        const nm = cur ? cur.name : '기본';
+        let btn;
+        if (cur && !owned) btn = `<button class="skin-cta buy" id="skin-cta">💠 ${SKIN_COST} 구매</button>`;
+        else if (isApp) btn = `<button class="skin-cta cur" id="skin-cta" disabled>✓ 적용중</button>`;
+        else btn = `<button class="skin-cta apply" id="skin-cta">적용</button>`;
+        if (_ctrl) _ctrl.innerHTML =
+          `<div class="skin-bal" title="보유 별조각">💠 ${(META.starShards || 0).toLocaleString()}</div>` +
+          `<div class="skin-cur-name">🎨 ${nm} <span class="skin-idx">${_pidx + 1}/${_skList.length}</span></div>` + btn;
+        const cta = _ctrl && _ctrl.querySelector('#skin-cta');
+        if (cta) cta.onclick = () => {
+          const c = _skList[_pidx];
+          if (c && !_skinOwned(id, c.id)) {
+            if (_buySkin(id, c.id)) { _applySkin(id, c.id); try { toast('🎨 ' + c.name + ' 구매 완료 — 적용했어!'); } catch (e) {} }
+            // 부족 시엔 _buySkin 내부에서 "별조각 부족" 토스트
+          } else {
+            _applySkin(id, c ? c.id : null); try { toast(c ? ('🎨 ' + c.name + ' 적용') : '🎨 기본 일러로 되돌림'); } catch (e) {}
+          }
+          _renderSkin();
+        };
+      };
+      if (_arL) _arL.onclick = () => { _pidx = (_pidx - 1 + _skList.length) % _skList.length; _renderSkin(); };
+      if (_arR) _arR.onclick = () => { _pidx = (_pidx + 1) % _skList.length; _renderSkin(); };
+      _renderSkin();
+    }
     if (titleEl) titleEl.textContent = displayName;
     if (scroll) scroll.scrollTop = 0;
     showScreen('evoDetail');
