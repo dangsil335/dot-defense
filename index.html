@@ -5018,9 +5018,11 @@
   .evo-ssr-preview-btn:hover { box-shadow: 0 0 16px -2px var(--gc, #7ad7ff); }
   .evo-ssr-preview-btn:active { transform: scale(0.98); }
   /* 🎨 스킨 캐러셀 (캐릭터 상세) — 일러 위 ◀▶ + 아래 잔액/버튼 바 */
-  .skin-arrow { position: absolute; top: 44%; transform: translateY(-50%); z-index: 5; width: 40px; height: 58px; display: flex; align-items: center; justify-content: center; font-size: 32px; color: #fff; background: rgba(10,12,20,0.5); border: 1px solid rgba(255,255,255,0.25); border-radius: 10px; cursor: pointer; padding: 0; line-height: 1; transition: background .12s, transform .1s; }
+  /* ⚠️ 중앙정렬은 transform 이 아니라 margin-top 으로 — 전역 button:active:not(:disabled)(scale만 적용, 특성 0,2,1)이
+     .skin-arrow:active(0,2,0)를 이겨 translateY 를 덮으면 버튼이 아래로 떨어지기 때문(L251 참조). margin 정렬이라 무관. */
+  .skin-arrow { position: absolute; top: 50%; margin-top: -29px; z-index: 5; width: 40px; height: 58px; display: flex; align-items: center; justify-content: center; font-size: 32px; color: #fff; background: rgba(10,12,20,0.5); border: 1px solid rgba(255,255,255,0.25); border-radius: 10px; cursor: pointer; padding: 0; line-height: 1; transition: background .12s, transform .1s; }
   .skin-arrow:hover { background: rgba(30,36,54,0.85); }
-  .skin-arrow:active { transform: translateY(-50%) scale(0.9); }
+  .skin-arrow:active { background: rgba(52,62,92,0.95); }
   .skin-arrow.left { left: 7px; }
   .skin-arrow.right { right: 7px; }
   .skin-ctrl { display: flex; align-items: center; gap: 10px; margin: 0 0 12px; padding: 9px 12px; background: linear-gradient(160deg, rgba(28,22,54,0.7), rgba(14,11,28,0.7)); border: 1px solid rgba(200,176,255,0.28); border-radius: 12px; }
@@ -5267,7 +5269,7 @@
 
   /* 🌳 캐릭터 상세 — 풀스크린 전환 (일러 중앙 크게 + 하단 설명) */
   .evo-ds-scroll { flex:1; width:100%; max-width:560px; margin:0 auto; overflow-y:auto; overflow-x:hidden; padding:0 0 calc(34px + env(safe-area-inset-bottom)); }
-  .evo-ds-illust { position:relative; width:100%; height:46vh; min-height:240px; display:flex; align-items:flex-end; justify-content:center; overflow:hidden; background:radial-gradient(circle at 50% 36%, var(--gcA,rgba(120,160,255,0.26)), rgba(11,13,18,0) 68%); }
+  .evo-ds-illust { position:relative; width:100%; height:54vh; min-height:280px; display:flex; align-items:flex-end; justify-content:center; overflow:hidden; background:radial-gradient(circle at 50% 36%, var(--gcA,rgba(120,160,255,0.26)), rgba(11,13,18,0) 68%); }
   .evo-ds-illust > img { height:100%; max-width:100%; object-fit:contain; object-position:bottom center; filter:drop-shadow(0 6px 22px rgba(0,0,0,.55)); }
   .evo-ds-illust.r-icon { align-items:center; }
   .evo-ds-illust.r-icon .evo-ds-bigico { display:flex; align-items:center; justify-content:center; }
@@ -38602,7 +38604,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 711;
+  const APP_VERSION = 712;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
