@@ -21529,7 +21529,7 @@
     if (characterImages[charId]) return;
     characterImages[charId] = 'loading';
     const img = new Image();
-    const src = `./icons/characters/${charId}.png`;
+    const src = (charId.indexOf('__') >= 0 ? './icons/characters/skin/' : './icons/characters/') + charId + '.png';   // 🎨 스킨 치비는 skin/ 폴더 (<char>__<skin>)
     img.onload = () => {
       characterImages[charId] = {
         img, src,
@@ -21540,14 +21540,22 @@
     img.src = src;
   }
   // 캔버스 그리기용 — 원본 이미지 그대로 (이미 투명 PNG)
+  // 🎨 적용 스킨 반영 — 스킨 치비(<char>__<skin>) 있으면 그걸, 없으면/로딩중이면 기본 치비로 폴백.
+  function _resolveChibiEntry(charId) {
+    const rid = (typeof _resolveIllustId === 'function') ? _resolveIllustId(charId) : charId;
+    if (rid !== charId && !characterImages[rid]) loadCharacterImage(rid);   // 스킨 치비 지연 로드
+    let v = characterImages[rid];
+    if ((!v || v === 'loading' || v === 'missing') && rid !== charId) v = characterImages[charId];   // 스킨 치비 없음/로딩중 → 기본
+    return v;
+  }
   function getCharacterImage(charId) {
-    const v = characterImages[charId];
+    const v = _resolveChibiEntry(charId);
     if (!v || v === 'loading' || v === 'missing') return null;
     return v.img;
   }
-  // HTML <img src>용 — 원본 경로 그대로
+  // HTML <img src>용
   function getCharacterImageSrc(charId) {
-    const v = characterImages[charId];
+    const v = _resolveChibiEntry(charId);
     if (!v || v === 'loading' || v === 'missing') return null;
     return v.src;
   }
@@ -35292,7 +35300,7 @@
   var _illustFmt = {};   // charId -> 'webp'|'gif'|'png'|'none'
   function _applyIllustChain(img, charId, onFail, exactId) {
     const rid = exactId || ((typeof _resolveIllustId === 'function') ? _resolveIllustId(charId) : charId);   // 🎨 exactId(미리보기) 있으면 그대로, 없으면 적용스킨 반영
-    const base = './icons/illust/' + rid + '.';
+    const base = (rid.indexOf('__') >= 0 ? './icons/illust/skin/' : './icons/illust/') + rid + '.';   // 🎨 스킨(<char>__<skin>)은 skin/ 폴더
     if (_illustFmt[rid] === 'none') { if (onFail) onFail(); return; }
     const chain = _illustFmt[rid] ? [_illustFmt[rid]] : ['webp', 'gif', 'png'];
     let i = 0;
@@ -38604,7 +38612,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 712;
+  const APP_VERSION = 713;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
