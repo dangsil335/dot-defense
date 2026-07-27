@@ -4983,6 +4983,8 @@
   .sc-item { flex: 0 0 auto; width: 46px; height: 61px; border-radius: 5px; overflow: hidden; background: #0f1219; border: 1px solid #2a2f3a; padding: 0; cursor: pointer; position: relative; }
   .sc-item img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 0%; display: block; pointer-events: none; }
   .sc-item.sel { border: 2px solid #7ad7ff; box-shadow: 0 0 10px rgba(122,215,255,0.5); }
+  .sc-item.sc-none { display: flex; align-items: center; justify-content: center; color: #6a7280; font-size: 17px; background: #0b0e15; }
+  .sc-item.sc-none.sel { color: #7ad7ff; }
   .sc-item.skin::after { content: '★'; position: absolute; right: 2px; top: 0; font-size: 10px; color: #ffd479; text-shadow: 0 1px 3px #000; }
   #nicknameModal .title-pick-item { background: transparent !important; border: 0 !important; border-radius: 0 !important; position: relative; padding: 7px 10px !important; font-family: ui-monospace,'Courier New',monospace; font-size: 10.5px !important; min-height: 26px !important; }
   #nicknameModal .title-pick-item::before { content: ''; position: absolute; inset: 0; z-index: -1; transform: skewX(-12deg); border: 1px solid rgba(122,200,255,0.26); background: rgba(8,14,24,0.4); border-radius: 2px; transition: border-color .15s, background .15s, box-shadow .15s; }
@@ -24007,17 +24009,38 @@
     }
     strip.style.display = ''; prev.style.display = '';
     if (empty) empty.style.display = 'none';
+    // 미설정(null)은 정상 상태다 — 임의로 첫 항목을 골라주면 "선택돼 보이는데 랭킹엔 안 뜨는" 혼란이 생긴다.
     let cur = _showcaseGet();
-    if (!cur || !list.some(c => c.id === cur)) cur = list[0].id;
+    if (cur && !list.some(c => c.id === cur)) cur = null;   // 삭제된 스킨 등 → 미설정 취급
     const _paint = (id) => {
-      const it = list.find(c => c.id === id) || list[0];
-      prev.classList.remove('empty');
-      // 미리보기는 애니 일러 허용 — 한 장뿐이라 성능 부담 없음
-      if (typeof _applyIllustChain === 'function') _applyIllustChain(pimg, it.char, () => prev.classList.add('empty'), it.id);
-      else { pimg.onerror = () => prev.classList.add('empty'); pimg.src = _scSrc(it.id); }
-      pname.textContent = `${it.charName} · ${it.label}`;
-      strip.querySelectorAll('.sc-item').forEach(el => el.classList.toggle('sel', el.dataset.sid === it.id));
+      const it = id ? list.find(c => c.id === id) : null;
+      if (it) {
+        prev.classList.remove('empty');
+        // 미리보기는 애니 일러 허용 — 한 장뿐이라 성능 부담 없음
+        if (typeof _applyIllustChain === 'function') _applyIllustChain(pimg, it.char, () => prev.classList.add('empty'), it.id);
+        else { pimg.onerror = () => prev.classList.add('empty'); pimg.src = _scSrc(it.id); }
+        pname.textContent = `${it.charName} · ${it.label}`;
+      } else {
+        prev.classList.add('empty');
+        pimg.removeAttribute('src');
+        pname.textContent = '설정 안 함 — 랭킹에 빈 카드로 표시돼요';
+      }
+      strip.querySelectorAll('.sc-item').forEach(el => el.classList.toggle('sel', el.dataset.sid === (id || '')));
     };
+    // ✕ 없음 — 대표 일러 해제. 한 번 고르면 빈 상태로 못 돌아가는 일이 없게 항상 맨 앞에 둔다.
+    const noneBtn = document.createElement('button');
+    noneBtn.type = 'button';
+    noneBtn.className = 'sc-item sc-none';
+    noneBtn.dataset.sid = '';
+    noneBtn.title = '대표 일러 없음';
+    noneBtn.textContent = '✕';
+    noneBtn.onclick = () => {
+      if (strip._dragged) return;
+      _showcaseSet(null);
+      _paint(null);
+      try { if (typeof updateProfileInRankings === 'function') updateProfileInRankings(); } catch (_) {}
+    };
+    strip.appendChild(noneBtn);
     list.forEach(c => {
       const b = document.createElement('button');
       b.type = 'button';
@@ -35536,11 +35559,12 @@
     try { saveMeta(); } catch (e) {}
     return true;
   }
-  // 랭킹 행 → 표시할 일러 id. showcase 우선, 없거나 무효면 그 판에 쓴 캐릭의 기본 일러로 폴백.
+  // 랭킹 행 → 표시할 일러 id.
+  //   ⚠ 대표 일러를 설정하지 않았으면 아무것도 띄우지 않는다(빈 카드).
+  //     그 판에 쓴 캐릭으로 폴백하지 않는다 — 설정 안 한 사람은 비어 있는 게 정상이고,
+  //     그래야 "설정해야 내 일러가 뜬다"는 동기가 성립한다.
   function _showcaseForRow(row) {
-    if (row && _showcaseValid(row.showcase)) return row.showcase;
-    const c = row && row.character;
-    return (c && ILLUST_CHARS.has(c)) ? c : null;
+    return (row && _showcaseValid(row.showcase)) ? row.showcase : null;
   }
   // 대표 일러 후보 — 보유 캐릭 기본 일러 + 보유 스킨. 캐릭별로 [기본, 스킨...] 순서.
   function _showcaseCandidates() {
@@ -38890,7 +38914,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 716;
+  const APP_VERSION = 717;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
