@@ -24458,7 +24458,21 @@
       stale.textContent = '🔄 백그라운드에서 최신 기록 확인 중...';
       top10El.appendChild(stale);
     }
-    for (let i = 0; i < data.top10.length; i++) {
+    // 🏆 v716 — Top3 는 시상대 카드(2-1-3 배치), 4위↓ 는 썸네일 행
+    const top3 = data.top10.slice(0, 3);
+    if (top3.length) {
+      const podium = document.createElement('div');
+      podium.className = 'rank-podium';
+      // 가운데가 1위가 되도록 2-1-3 순서로 배치 (인원이 3 미만이면 있는 만큼만)
+      const order = top3.length >= 3 ? [1, 0, 2] : (top3.length === 2 ? [1, 0] : [0]);
+      order.forEach(idx => {
+        const r = top3[idx];
+        if (!r) return;
+        podium.appendChild(renderPodiumCard(idx + 1, r, !!(data.myRow && r.user_id === data.userId)));
+      });
+      top10El.appendChild(podium);
+    }
+    for (let i = 3; i < data.top10.length; i++) {
       const r = data.top10[i];
       const isMe = data.myRow && r.user_id === data.userId;
       top10El.appendChild(renderRankRow(i + 1, r, isMe));
@@ -24690,6 +24704,30 @@
       statusEl.style.display = '';
       statusEl.innerHTML = `<div style="color:#ff8888;">⚠ 불러오기 실패</div><div style="font-size:11px; margin-top:6px; color:#7a8090;">${escapeHtml((e.message || e).toString().substring(0, 100))}</div>`;
     }
+  }
+  // 🏆 v716 — Top3 시상대 카드. 대표 일러를 카드 전면에 3:4 크롭으로.
+  //   Top3 만 애니 일러 체인(webp→gif→png) 허용 — 4위↓ 는 성능 때문에 정지 png 고정.
+  function renderPodiumCard(rankNum, r, isMe) {
+    const card = document.createElement('div');
+    card.className = `podium-card p-${rankNum}${isMe ? ' me' : ''}`;
+    const ch = CHARACTERS[r.character];
+    card.style.setProperty('--ac', ch ? (ch.color || '#7ad7ff') : '#7ad7ff');
+    card.innerHTML = `
+      <div class="podium-art"><img alt=""></div>
+      <div class="podium-medal">${['🥇','🥈','🥉'][rankNum-1] || `#${rankNum}`}</div>
+      <div class="podium-info">
+        <div class="podium-nick">${isMe ? '👤 ' : ''}${titleHTML(r.title)}<span>${escapeHtml(r.nickname)}</span></div>
+        <div class="podium-score">${(r.score || 0).toLocaleString()}</div>
+      </div>`;
+    const art = card.querySelector('.podium-art');
+    const img = art.querySelector('img');
+    const sid = _showcaseForRow(r);
+    if (sid && typeof _applyIllustChain === 'function') {
+      _applyIllustChain(img, r.character, () => art.classList.add('no-art'), sid);
+    } else {
+      art.classList.add('no-art');
+    }
+    return card;
   }
   function renderRankRow(rankNum, r, isMe) {
     const row = document.createElement('div');
