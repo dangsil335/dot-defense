@@ -4867,6 +4867,57 @@
   /* 내 행 — 사이언 글로우 강조 */
   #globalRankScreen .rank-row.me { box-shadow: inset 0 0 0 1px rgba(122,215,255,0.5), 0 0 14px rgba(122,215,255,0.2) !important; background: rgba(122,215,255,0.07) !important; }
 
+  /* ===== 🖼 v716 — 대표 일러: Top3 시상대 카드 + 4위↓ 세로 썸네일 행 ===== */
+  #globalRankScreen .rank-podium {
+    display: flex; align-items: flex-end; justify-content: center;
+    gap: 8px; padding: 4px 0 14px; margin-bottom: 6px;
+    border-bottom: 1px solid rgba(122,215,255,0.10);
+  }
+  #globalRankScreen .podium-card {
+    position: relative; flex: 1 1 0; min-width: 0; max-width: 132px;
+    border-radius: 8px; overflow: hidden;
+    background: rgba(10,16,26,0.72);
+    border: 1px solid var(--ac,#7ad7ff);
+    box-shadow: 0 0 14px rgba(0,0,0,0.5);
+  }
+  #globalRankScreen .podium-card.p-1 { aspect-ratio: 3/4; max-width: 150px; border-width: 2px; box-shadow: 0 0 20px var(--ac,#7ad7ff), 0 0 30px rgba(0,0,0,0.5); }
+  #globalRankScreen .podium-card.p-2,
+  #globalRankScreen .podium-card.p-3 { aspect-ratio: 3/4.35; }
+  #globalRankScreen .podium-card.me { outline: 2px solid #7ad7ff; outline-offset: -2px; }
+  #globalRankScreen .podium-art { position: absolute; inset: 0; }
+  #globalRankScreen .podium-art img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 0%; display: block; }
+  #globalRankScreen .podium-art.no-art { background: linear-gradient(180deg, rgba(122,215,255,0.10), transparent); }
+  #globalRankScreen .podium-art.no-art img { display: none; }
+  #globalRankScreen .podium-medal { position: absolute; top: 4px; left: 5px; font-size: 19px; text-shadow: 0 2px 6px rgba(0,0,0,0.9); z-index: 2; }
+  #globalRankScreen .podium-info {
+    position: absolute; left: 0; right: 0; bottom: 0; z-index: 2;
+    padding: 14px 6px 5px;
+    background: linear-gradient(180deg, transparent, rgba(4,8,14,0.92) 55%);
+  }
+  #globalRankScreen .podium-nick {
+    font-weight: bold; color: #fff; font-size: 11.5px; line-height: 1.25;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  #globalRankScreen .podium-score { font-weight: bold; color: #ffd479; font-size: 13px; font-family: ui-monospace,'Courier New',monospace; }
+  /* 4위↓ — 세로 3:4 썸네일. 일러 22종 전부 머리 상단 1.2~10.1% → object-position 50% 0% 로 얼굴 확보 */
+  #globalRankScreen .rank-row { grid-template-columns: 58px minmax(0,1fr) minmax(120px,max-content); position: relative; overflow: hidden; }
+  #globalRankScreen .rank-thumb {
+    width: 57px; height: 76px; border-radius: 5px; overflow: hidden; position: relative;
+    background: rgba(10,16,26,0.6); border: 1px solid rgba(122,215,255,0.18);
+  }
+  #globalRankScreen .rank-thumb img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 0%; display: block; }
+  #globalRankScreen .rank-thumb b {
+    position: absolute; left: 0; right: 0; bottom: 0; text-align: center;
+    font-size: 11px; background: rgba(6,10,18,0.8); color: #cfe6ff; padding: 1px 0;
+  }
+  /* 행 배경 일러 — filter:blur() 금지(모바일 비쌈). 저투명도 + 확대 크롭으로 분위기만 */
+  #globalRankScreen .rank-row.has-art::before {
+    content: ''; position: absolute; inset: 0; z-index: 0; pointer-events: none;
+    background-image: var(--bgart); background-size: cover; background-position: 50% 12%;
+    opacity: 0.14;
+  }
+  #globalRankScreen .rank-row > * { position: relative; z-index: 1; }
+
   /* ===== 🛰️ v515 — 프로필/닉네임 모달 "지휘관 보안 인가 단말기": 글래스 투과 + 시안 사선 꺾쇠 ===== */
   #nicknameModal { background: rgba(5,7,10,0.45) !important; -webkit-backdrop-filter: blur(13px); backdrop-filter: blur(13px); }
   #nicknameModal .nick-card {
