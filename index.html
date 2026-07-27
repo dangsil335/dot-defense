@@ -35637,6 +35637,18 @@
   //   가챠/해금 이후가 될 수 있고, 그러면 방금 얻은 후보까지 '본 것'으로 삼켜 NEW 가 영영 안 뜬다.
   //   여기는 CHARACTERS·SKINS·META 가 모두 준비됐고 유저 조작은 아직 없는 지점이다.
   try { _showcaseSeenMap(); } catch (e) {}
+  // 🎨 적용 중인 스킨 치비 선로드.
+  //   _resolveChibiEntry 의 지연 로드만 두면 첫 렌더 시점엔 아직 'loading' 이라 기본 치비로 폴백되는데,
+  //   DOM UI(캐릭터 목록 등)는 한 번만 그려서 재렌더 전까지 기본 치비가 그대로 보인다.
+  //   (인게임 캔버스는 매 프레임 다시 그려서 저절로 교정되지만 DOM 은 아니다.)
+  //   ⚠ preloadAllCharacterImages() 는 SKINS 정의보다 앞(L26408)에서 호출돼 여기 못 넣는다 — SKINS TDZ.
+  try {
+    const _ap = (META.skins && META.skins.applied) || {};
+    for (const c in _ap) {
+      const r = _resolveIllustId(c);
+      if (r !== c && typeof loadCharacterImage === 'function') loadCharacterImage(r);
+    }
+  } catch (e) {}
   function _buySkin(charId, skinId) {
     if (_skinOwned(charId, skinId)) return true;
     // 💠 별조각(starShards) 400 소비 — spendShards 가 잔액체크+차감+spent추적+저장+UI펄스+bool 반환
@@ -38975,7 +38987,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 719;
+  const APP_VERSION = 720;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
