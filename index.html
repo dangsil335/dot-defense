@@ -4886,9 +4886,12 @@
     border: 1px solid var(--ac,#7ad7ff);
     box-shadow: 0 0 14px rgba(0,0,0,0.5);
   }
-  #globalRankScreen .podium-card.p-1 { aspect-ratio: 3/4; max-width: 150px; border-width: 2px; box-shadow: 0 0 20px var(--ac,#7ad7ff), 0 0 30px rgba(0,0,0,0.5); }
+  /* ⚠ 시상대 높이차: 폭이 균등해지는 좁은 화면(모바일)에선 height = width / aspect-ratio 라
+     ratio 가 "작을수록" 높아진다. 1위가 항상 제일 높으려면 1위 ratio 를 더 작게 줘야 한다.
+     (1위 3/4=0.75 < 2·3위 3/3.5=0.857 → 같은 폭이어도 1위가 높다) */
+  #globalRankScreen .podium-card.p-1 { flex-grow: 1.18; aspect-ratio: 3/4; max-width: 150px; border-width: 2px; box-shadow: 0 0 20px var(--ac,#7ad7ff), 0 0 30px rgba(0,0,0,0.5); }
   #globalRankScreen .podium-card.p-2,
-  #globalRankScreen .podium-card.p-3 { aspect-ratio: 3/4.35; }
+  #globalRankScreen .podium-card.p-3 { aspect-ratio: 3/3.5; }
   #globalRankScreen .podium-card.me { outline: 2px solid #7ad7ff; outline-offset: -2px; }
   #globalRankScreen .podium-art { position: absolute; inset: 0; }
   #globalRankScreen .podium-art img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 0%; display: block; }
@@ -38887,7 +38890,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 715;
+  const APP_VERSION = 716;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
