@@ -35286,6 +35286,49 @@
   function _skinApplied(charId) { return (META.skins && META.skins.applied) ? (META.skins.applied[charId] || null) : null; }
   // 🎨 캐릭 일러 id 해석 — 적용+보유 스킨이 있으면 스킨 일러 base 반환(체인이 그 파일 프로브), 없으면 원본 charId.
   function _resolveIllustId(charId) { const s = _skinApplied(charId); if (s && _skinOwned(charId, s) && _skinsOf(charId).some(sk => sk.id === s)) return _skinKey(charId, s); return charId; }   // 스킨이 레지스트리에 아직 있을 때만(삭제된 스킨 적용 상태면 기본 일러로 폴백)
+  // ===== 🖼 v716 — 대표 일러(SHOWCASE) =====
+  //   META.showcase = 'luna__moonlit'(스킨) | 'luna'(기본 일러) | null(미설정)
+  //   ⚠ 이 문자열 형식은 _resolveIllustId() 반환값과 완전히 동일하다.
+  //     → _applyIllustChain(img, charId, onFail, exactId) 의 exactId 에 그대로 투입 가능(로딩 코드 재사용).
+  //   일러 파일이 실제로 있는 캐릭 = 가챠 로스터(SR/SSR) 21명.
+  //   기본 캐릭 9종(standard/sniper/engineer/mage/berserker/chronos/researcher/agent/mixer)은 일러 파일이 없다.
+  const ILLUST_CHARS = new Set(Object.keys(CHARACTERS).filter(k => CHARACTERS[k] && CHARACTERS[k].isGacha));
+  function _showcaseGet() { return META.showcase || null; }
+  // 🛡 화이트리스트 검증 — 서버에서 온 값이든 로컬 값이든 렌더 직전 반드시 통과시킨다.
+  //    (showcase 는 클라가 보내는 값이라 조작 가능. 레지스트리에 없는 id 는 전부 거른다.)
+  function _showcaseValid(id) {
+    if (!id || typeof id !== 'string') return false;
+    const i = id.indexOf('__');
+    if (i < 0) return !!(CHARACTERS[id] && ILLUST_CHARS.has(id));
+    const c = id.slice(0, i), s = id.slice(i + 2);
+    if (!CHARACTERS[c] || !ILLUST_CHARS.has(c)) return false;
+    return _skinsOf(c).some(sk => sk.id === s);
+  }
+  function _showcaseSet(id) {
+    if (id && !_showcaseValid(id)) return false;
+    META.showcase = id || null;
+    try { saveMeta(); } catch (e) {}
+    return true;
+  }
+  // 랭킹 행 → 표시할 일러 id. showcase 우선, 없거나 무효면 그 판에 쓴 캐릭의 기본 일러로 폴백.
+  function _showcaseForRow(row) {
+    if (row && _showcaseValid(row.showcase)) return row.showcase;
+    const c = row && row.character;
+    return (c && ILLUST_CHARS.has(c)) ? c : null;
+  }
+  // 대표 일러 후보 — 보유 캐릭 기본 일러 + 보유 스킨. 캐릭별로 [기본, 스킨...] 순서.
+  function _showcaseCandidates() {
+    const out = [];
+    Object.keys(CHARACTERS).forEach(cid => {
+      if (!ILLUST_CHARS.has(cid) || !isCharUnlocked(cid)) return;
+      const cn = CHARACTERS[cid].name || cid;
+      out.push({ id: cid, char: cid, skin: null, charName: cn, label: '기본' });
+      _skinsOf(cid).forEach(sk => {
+        if (_skinOwned(cid, sk.id)) out.push({ id: _skinKey(cid, sk.id), char: cid, skin: sk.id, charName: cn, label: sk.name });
+      });
+    });
+    return out;
+  }
   function _buySkin(charId, skinId) {
     if (_skinOwned(charId, skinId)) return true;
     // 💠 별조각(starShards) 400 소비 — spendShards 가 잔액체크+차감+spent추적+저장+UI펄스+bool 반환
