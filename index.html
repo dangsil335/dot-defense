@@ -4723,6 +4723,12 @@
       <div id="nick-rank-display" class="nick-rank"></div>
       <input id="nicknameInput" type="text" maxlength="12" placeholder="예: 도트마스터" style="width:100%; box-sizing:border-box; background:#0f1219; border:2px solid #2a2f3a; color:#fff; padding:10px 14px; border-radius:8px; font-family:inherit; font-size:17px; text-align:center; margin-bottom:8px;" />
       <div id="nicknameError" style="color:#ff8888; font-size:12px; margin-bottom:8px; min-height:16px;"></div>
+      <div id="showcase-sec" style="margin-bottom:10px;">
+        <div class="nick-sec-label" style="color:#ffd479; font-size:11px; font-weight:bold; margin-bottom:6px; font-family:ui-monospace,'Courier New',monospace; letter-spacing:1px;">▍대표 일러 / SHOWCASE <span style="color:#7a6a3a; font-weight:400;">— 글로벌 랭킹에 표시됩니다</span></div>
+        <div id="showcase-preview"><img id="showcase-img" alt=""><div id="showcase-name"></div></div>
+        <div id="showcase-strip"></div>
+        <div id="showcase-empty" style="display:none; background:#241510; border:1px solid #aa5530; border-radius:6px; padding:8px 12px; font-size:12px; color:#ffaa88; line-height:1.5;">캐릭터를 뽑으면 대표 일러를 설정할 수 있어요.</div>
+      </div>
       <div>
         <div class="nick-sec-label" style="color:#ffd479; font-size:11px; font-weight:bold; margin-bottom:6px; font-family:ui-monospace,'Courier New',monospace; letter-spacing:1px;">▍약장 / RIBBONS <span style="color:#7a6a3a; font-weight:400;">— 업적 달성으로 해금</span></div>
         <div id="title-preview" style="background:#0f1219; border:1px solid #2a2f3a; border-radius:6px; padding:8px 12px; margin-bottom:6px; text-align:center; font-size:14px; min-height:22px;"></div>
@@ -4962,6 +4968,19 @@
   #nicknameModal .nick-rank .nrk-xp > i { display: block; height: 100%; box-shadow: 0 0 5px currentColor; }
   /* 약장(칭호) — -12° 평행사변형 슬림 칩 (글자 수직) */
   #nicknameModal .title-picker-grid { background: transparent !important; border: 0 !important; padding: 2px !important; gap: 9px 10px !important; grid-template-columns: repeat(auto-fill, minmax(102px,1fr)) !important; }
+  /* 🖼 v716 — 대표 일러 선택: 큰 미리보기 + 가로 드래그 썸네일 스트립 */
+  #showcase-preview { position: relative; width: 100%; aspect-ratio: 3/4; max-height: 190px; margin: 0 auto 7px; border-radius: 8px; overflow: hidden; background: #0f1219; border: 1px solid #2a3550; }
+  #showcase-preview img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 0%; display: block; }
+  #showcase-preview.empty img { display: none; }
+  #showcase-name { position: absolute; left: 0; right: 0; bottom: 0; padding: 10px 8px 5px; font-size: 12px; color: #cfe6ff; background: linear-gradient(180deg, transparent, rgba(4,8,14,0.92) 55%); }
+  #showcase-strip { display: flex; gap: 6px; overflow-x: auto; overflow-y: hidden; padding: 2px 0 6px; scrollbar-width: thin; touch-action: pan-x; cursor: grab; }
+  #showcase-strip::-webkit-scrollbar { height: 5px; }
+  #showcase-strip::-webkit-scrollbar-thumb { background: #2a3550; border-radius: 3px; }
+  #showcase-strip.dragging { cursor: grabbing; }
+  .sc-item { flex: 0 0 auto; width: 46px; height: 61px; border-radius: 5px; overflow: hidden; background: #0f1219; border: 1px solid #2a2f3a; padding: 0; cursor: pointer; position: relative; }
+  .sc-item img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 0%; display: block; pointer-events: none; }
+  .sc-item.sel { border: 2px solid #7ad7ff; box-shadow: 0 0 10px rgba(122,215,255,0.5); }
+  .sc-item.skin::after { content: '★'; position: absolute; right: 2px; top: 0; font-size: 10px; color: #ffd479; text-shadow: 0 1px 3px #000; }
   #nicknameModal .title-pick-item { background: transparent !important; border: 0 !important; border-radius: 0 !important; position: relative; padding: 7px 10px !important; font-family: ui-monospace,'Courier New',monospace; font-size: 10.5px !important; min-height: 26px !important; }
   #nicknameModal .title-pick-item::before { content: ''; position: absolute; inset: 0; z-index: -1; transform: skewX(-12deg); border: 1px solid rgba(122,200,255,0.26); background: rgba(8,14,24,0.4); border-radius: 2px; transition: border-color .15s, background .15s, box-shadow .15s; }
   #nicknameModal .title-pick-item:hover { transform: none !important; box-shadow: none !important; }
@@ -23952,6 +23971,7 @@
     _applyEditMode(_isSetup);
     // 미리보기 — 현재 저장된 칭호로 초기화
     _modalPreviewTitle = getSelectedTitle();
+    buildShowcasePicker();
     buildTitlePicker();
     updateTitlePreview();
     updateUnlockHint();
@@ -23963,6 +23983,88 @@
       input.addEventListener('input', updateTitlePreview);
       input._previewBound = true;
     }
+  }
+  // 🖼 v716 — 대표 일러 선택기. 큰 미리보기 + 하단 가로 드래그 썸네일 스트립.
+  //   드래그 패턴은 _wireDiffSwipe(난이도 스와이프)와 동일 원칙:
+  //   pointerdown 으로 시작, 이동거리 임계 넘으면 setPointerCapture 로 제스처를 붙잡는다.
+  function _scSrc(id) { return (id.indexOf('__') >= 0 ? './icons/illust/skin/' : './icons/illust/') + id + '.png'; }
+  function buildShowcasePicker() {
+    const strip = document.getElementById('showcase-strip');
+    const prev  = document.getElementById('showcase-preview');
+    const pimg  = document.getElementById('showcase-img');
+    const pname = document.getElementById('showcase-name');
+    const empty = document.getElementById('showcase-empty');
+    if (!strip || !prev || !pimg) return;
+    const list = _showcaseCandidates();
+    strip.innerHTML = '';
+    if (!list.length) {
+      strip.style.display = 'none'; prev.style.display = 'none';
+      if (empty) empty.style.display = '';
+      return;
+    }
+    strip.style.display = ''; prev.style.display = '';
+    if (empty) empty.style.display = 'none';
+    let cur = _showcaseGet();
+    if (!cur || !list.some(c => c.id === cur)) cur = list[0].id;
+    const _paint = (id) => {
+      const it = list.find(c => c.id === id) || list[0];
+      prev.classList.remove('empty');
+      // 미리보기는 애니 일러 허용 — 한 장뿐이라 성능 부담 없음
+      if (typeof _applyIllustChain === 'function') _applyIllustChain(pimg, it.char, () => prev.classList.add('empty'), it.id);
+      else { pimg.onerror = () => prev.classList.add('empty'); pimg.src = _scSrc(it.id); }
+      pname.textContent = `${it.charName} · ${it.label}`;
+      strip.querySelectorAll('.sc-item').forEach(el => el.classList.toggle('sel', el.dataset.sid === it.id));
+    };
+    list.forEach(c => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'sc-item' + (c.skin ? ' skin' : '');
+      b.dataset.sid = c.id;
+      b.title = `${c.charName} · ${c.label}`;
+      const im = document.createElement('img');
+      im.alt = ''; im.loading = 'lazy';
+      im.onerror = () => { b.style.display = 'none'; };
+      im.src = _scSrc(c.id);
+      b.appendChild(im);
+      b.onclick = () => {
+        if (strip._dragged) return;   // 드래그 끝자락의 오발 클릭 무시
+        if (!_showcaseSet(c.id)) return;
+        _paint(c.id);
+        try { if (typeof updateProfileInRankings === 'function') updateProfileInRankings(); } catch (_) {}
+      };
+      strip.appendChild(b);
+    });
+    _paint(cur);
+    _wireStripDrag(strip);
+  }
+  function _wireStripDrag(strip) {
+    if (strip._dragWired) return;
+    strip._dragWired = true;
+    let on = false, sx = 0, sl = 0, moved = false, pid = null;
+    strip.addEventListener('pointerdown', e => {
+      on = true; moved = false; sx = e.clientX; sl = strip.scrollLeft; pid = e.pointerId;
+      strip._dragged = false;
+    });
+    strip.addEventListener('pointermove', e => {
+      if (!on) return;
+      const dx = e.clientX - sx;
+      if (!moved && Math.abs(dx) > 6) {
+        moved = true; strip.classList.add('dragging');
+        try { strip.setPointerCapture(pid); } catch (_) {}
+      }
+      if (moved) { strip.scrollLeft = sl - dx; e.preventDefault(); }
+    });
+    const _end = () => {
+      if (!on) return;
+      on = false;
+      strip.classList.remove('dragging');
+      try { strip.releasePointerCapture(pid); } catch (_) {}
+      strip._dragged = moved;
+      // 클릭 이벤트가 이 직후에 오므로 한 틱 뒤에 해제한다
+      setTimeout(() => { strip._dragged = false; }, 0);
+    };
+    strip.addEventListener('pointerup', _end);
+    strip.addEventListener('pointercancel', _end);
   }
   function buildAccountActions() {
     const box = document.getElementById('nicknameAccountActions');
