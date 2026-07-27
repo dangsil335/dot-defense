@@ -24735,8 +24735,6 @@
     row.className = `rank-row ${isMe ? 'me' : ''} rank-${isTop3 ? rankNum : 'n'}${isTop3 ? ' rank-top3' : ''}`;
     const ch = CHARACTERS[r.character];
     const charName = ch ? ch.name : (r.character || '?');
-    const charCol = ch ? (ch.color || '#7ad7ff') : '#7ad7ff';
-    const charSrc = (typeof getCharacterImageSrc === 'function' && r.character) ? getCharacterImageSrc(r.character) : null;
     // 🛡 v258 — ascensionLabel 사용 (초월 영역도 정상 표시)
     const ascText = r.ascension > 0 ? ascensionLabel(r.ascension) : '기본';
     // 🏆 v514 — 지휘관 계급장 (서버 account_level)
@@ -24749,16 +24747,26 @@
     if      (nickLen >= 16) lenClass = ' len-xl';
     else if (nickLen >= 12) lenClass = ' len-lg';
     else if (nickLen >=  8) lenClass = ' len-md';
-    const avatar = (isTop3 && charSrc) ? `<div class="rank-avatar" style="--ac:${charCol}"><img src="${charSrc}" alt="" onerror="this.parentNode.style.display='none'"></div>` : '';
+    // 🖼 v716 — 세로 3:4 대표 일러 썸네일. 일러가 세로로 길어 가로 배경으로 깔면 몸통 한 줄만 남아 식별 불가 →
+    //    썸네일로 얼굴을 확보하고(object-position 50% 0%), 배경엔 같은 일러를 저투명도로 깐다.
     row.innerHTML = `
-      <div class="rank-num">${isTop3 ? ['🥇','🥈','🥉'][rankNum-1] : `#${rankNum}`}</div>
-      ${avatar}
+      <div class="rank-thumb"><img alt="" loading="lazy"><b>${isTop3 ? ['🥇','🥈','🥉'][rankNum-1] : `#${rankNum}`}</b></div>
       <div class="rank-info">
         <div class="rank-nick${lenClass}">${isMe ? '👤 ' : ''}${titleHTML(r.title)}<span>${escapeHtml(r.nickname)}</span></div>
         <div class="rank-meta">${insignia}${rk ? `<span class="rank-rkname" style="color:${rk.color}">${rk.name}</span> · ` : ''}R${r.round} · ${ascText} · ${charName}</div>
       </div>
       <div class="rank-score">${(r.score || 0).toLocaleString()}</div>
     `;
+    // 4위↓ 는 정지 png 고정 — 한 화면 10장이라 애니 체인은 성능상 Top3 카드에서만 쓴다.
+    const _sid = _showcaseForRow(r);
+    if (_sid) {
+      const _src = (_sid.indexOf('__') >= 0 ? './icons/illust/skin/' : './icons/illust/') + _sid + '.png';
+      const _im = row.querySelector('.rank-thumb img');
+      _im.onerror = () => { _im.style.display = 'none'; };
+      _im.src = _src;
+      row.style.setProperty('--bgart', `url("${_src}")`);
+      row.classList.add('has-art');
+    }
     return row;
   }
   function escapeHtml(s) {
