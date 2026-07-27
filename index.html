@@ -4985,6 +4985,8 @@
   .sc-item.sel { border: 2px solid #7ad7ff; box-shadow: 0 0 10px rgba(122,215,255,0.5); }
   .sc-item.sc-none { display: flex; align-items: center; justify-content: center; color: #6a7280; font-size: 17px; background: #0b0e15; }
   .sc-item.sc-none.sel { color: #7ad7ff; }
+  /* 🔴 새로 얻은 일러 — 스트립에서 어느 게 새 것인지 바로 찾게 */
+  .sc-item.sc-new::before { content: ''; position: absolute; left: 2px; top: 2px; width: 7px; height: 7px; border-radius: 50%; background: #ff4d5a; box-shadow: 0 0 6px rgba(255,77,90,0.9); z-index: 2; }
   .sc-item.skin::after { content: '★'; position: absolute; right: 2px; top: 0; font-size: 10px; color: #ffd479; text-shadow: 0 1px 3px #000; }
   #nicknameModal .title-pick-item { background: transparent !important; border: 0 !important; border-radius: 0 !important; position: relative; padding: 7px 10px !important; font-family: ui-monospace,'Courier New',monospace; font-size: 10.5px !important; min-height: 26px !important; }
   #nicknameModal .title-pick-item::before { content: ''; position: absolute; inset: 0; z-index: -1; transform: skewX(-12deg); border: 1px solid rgba(122,200,255,0.26); background: rgba(8,14,24,0.4); border-radius: 2px; transition: border-color .15s, background .15s, box-shadow .15s; }
@@ -24038,13 +24040,15 @@
       if (strip._dragged) return;
       _showcaseSet(null);
       _paint(null);
-      try { if (typeof updateProfileInRankings === 'function') updateProfileInRankings(); } catch (_) {}
+      try { if (typeof _queueProfileSync === 'function') _queueProfileSync(); } catch (_) {}
     };
     strip.appendChild(noneBtn);
+    // 🔴 NEW 표시 기준은 "렌더 직전" 스냅샷 — 아래에서 전부 본 것으로 처리하기 때문에 먼저 떠둬야 한다.
+    const seenSnap = Object.assign({}, _showcaseSeenMap());
     list.forEach(c => {
       const b = document.createElement('button');
       b.type = 'button';
-      b.className = 'sc-item' + (c.skin ? ' skin' : '');
+      b.className = 'sc-item' + (c.skin ? ' skin' : '') + (seenSnap[c.id] ? '' : ' sc-new');
       b.dataset.sid = c.id;
       b.title = `${c.charName} · ${c.label}`;
       const im = document.createElement('img');
@@ -24056,12 +24060,22 @@
         if (strip._dragged) return;   // 드래그 끝자락의 오발 클릭 무시
         if (!_showcaseSet(c.id)) return;
         _paint(c.id);
-        try { if (typeof updateProfileInRankings === 'function') updateProfileInRankings(); } catch (_) {}
+        try { if (typeof _queueProfileSync === 'function') _queueProfileSync(); } catch (_) {}
       };
       strip.appendChild(b);
     });
     _paint(cur);
     _wireStripDrag(strip);
+    // 이 화면이 대표 일러를 확인하는 경로 → 전부 본 것 처리하고 메뉴 닷을 즉시 반영한다.
+    if (_showcaseMarkAllSeen()) {
+      const _nd = document.getElementById('nickname-display');
+      const _dot = _nd && _nd.querySelector('.menu-new-dot');
+      if (_dot) {
+        const _rest = (META.unseen && META.unseen.titles) || 0;   // 칭호 NEW 는 별도로 남아있을 수 있다
+        if (_rest > 0) _dot.textContent = _rest > 9 ? '9+' : String(_rest);
+        else _dot.remove();
+      }
+    }
   }
   function _wireStripDrag(strip) {
     if (strip._dragWired) return;
@@ -24668,6 +24682,23 @@
   function updateProfileInRankings() {
     _updateProfilePromise = _updateProfileImpl();
     return _updateProfilePromise;
+  }
+  // 🖼 v718 — 대표 일러 변경 전용 동기화. 스트립을 훑으며 여러 개 눌러보는 게 정상 사용이라
+  //   클릭마다 upsert 하면 요청이 쏟아지고, 응답 순서가 뒤집히면 옛 값이 마지막에 쓰일 수 있다.
+  //   → 짧게 묶어서 한 번만 보낸다. 단, 랭킹 화면이 기다리는 _updateProfilePromise 에 반드시 물려서
+  //     "설정 바꾸고 바로 랭킹 열기" 가 항상 최신값을 보게 한다(칭호와 동일한 즉시성).
+  let _scSyncTimer = null, _scSyncPending = null, _scSyncDone = null;
+  function _queueProfileSync() {
+    if (_scSyncTimer) clearTimeout(_scSyncTimer);
+    // 한 번 만든 프로미스는 반드시 resolve 한다 — 대기자가 영원히 멈추는 일이 없게 재사용한다.
+    if (!_scSyncPending) _scSyncPending = new Promise(res => { _scSyncDone = res; });
+    _updateProfilePromise = _scSyncPending;
+    _scSyncTimer = setTimeout(() => {
+      _scSyncTimer = null;
+      const done = _scSyncDone;
+      _scSyncPending = null; _scSyncDone = null;
+      _updateProfileImpl().catch(() => {}).then(() => { if (done) done(); });
+    }, 350);
   }
   async function _updateProfileImpl() {
     if (!isSupabaseEnabled()) return;
@@ -35579,6 +35610,33 @@
     });
     return out;
   }
+  // 🔴 v718 — 대표 일러 NEW 뱃지.
+  //   카운터 증가식(META.unseen.titles 방식)이 아니라 "본 것 집합 vs 현재 후보"의 차집합으로 센다.
+  //   → 가챠·진화·스킨구매·치트 등 후보가 늘어나는 모든 경로를 일일이 훅킹하지 않아도 항상 정확하다.
+  function _showcaseSeenMap() {
+    if (!META.showcaseSeen) {
+      // 최초 1회 마이그레이션 — 기존 유저에게 보유분 전체가 NEW 로 터지지 않게 현재 후보를 전부 본 것 처리
+      META.showcaseSeen = {};
+      _showcaseCandidates().forEach(c => { META.showcaseSeen[c.id] = 1; });
+      try { saveMeta(); } catch (e) {}
+    }
+    return META.showcaseSeen;
+  }
+  function _showcaseUnseenCount() {
+    const seen = _showcaseSeenMap();
+    return _showcaseCandidates().reduce((n, c) => n + (seen[c.id] ? 0 : 1), 0);
+  }
+  function _showcaseMarkAllSeen() {
+    const seen = _showcaseSeenMap();
+    let changed = false;
+    _showcaseCandidates().forEach(c => { if (!seen[c.id]) { seen[c.id] = 1; changed = true; } });
+    if (changed) { try { saveMeta(); } catch (e) {} }
+    return changed;
+  }
+  // ⚠ 스크립트 초기화 시점에 "즉시" 시드한다. lazy(첫 읽기 때 생성)로 두면 그 첫 읽기가
+  //   가챠/해금 이후가 될 수 있고, 그러면 방금 얻은 후보까지 '본 것'으로 삼켜 NEW 가 영영 안 뜬다.
+  //   여기는 CHARACTERS·SKINS·META 가 모두 준비됐고 유저 조작은 아직 없는 지점이다.
+  try { _showcaseSeenMap(); } catch (e) {}
   function _buySkin(charId, skinId) {
     if (_skinOwned(charId, skinId)) return true;
     // 💠 별조각(starShards) 400 소비 — spendShards 가 잔액체크+차감+spent추적+저장+UI펄스+bool 반환
@@ -37231,7 +37289,10 @@
       const nd = document.getElementById('nickname-display');
       if (nd) {
         let dot = nd.querySelector(':scope > .menu-new-dot');
-        const n = u.titles || 0;
+        // 🖼 v718 — 내 정보 닷 = 미확인 칭호 + 미확인 대표 일러 후보 합산
+        let _sc = 0;
+        try { _sc = _showcaseUnseenCount(); } catch (_) {}
+        const n = (u.titles || 0) + _sc;
         if (n > 0) {
           if (!dot) { dot = document.createElement('span'); dot.className = 'menu-new-dot'; nd.appendChild(dot); }
           dot.textContent = n > 9 ? '9+' : String(n);
@@ -38914,7 +38975,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 717;
+  const APP_VERSION = 718;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
