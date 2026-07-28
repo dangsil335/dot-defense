@@ -35614,8 +35614,8 @@
     misaki:    [{ id: 'butterfly',    name: '바이올렛 버터플라이' }, { id: 'jazzbar',    name: '재즈바' }],
     sakura:    [{ id: 'blacklabel',   name: '블랙라벨 검객' }, { id: 'kendo',       name: '검도부' }],
     solar:     [{ id: 'sunbed',       name: '석양의 선베드' }, { id: 'cheer',       name: '치어리더' }],
-    somnia:    [{ id: 'beachnap',     name: '해변 낮잠' }],
-    sumika:    [{ id: 'blackserpent', name: '흑사 라군 리조트' }],
+    somnia:    [{ id: 'beachnap',     name: '해변 낮잠' }, { id: 'nightshift',  name: '야간 근무' }],
+    sumika:    [{ id: 'blackserpent', name: '흑사 라군 리조트' }, { id: 'officeassassin', name: '오피스 암살자' }],
     trina:     [{ id: 'prism',        name: '프리즘 스테이지' }, { id: 'primadonna',   name: '프리마돈나 서곡' }],
   };
   function _skinsOf(charId) { return SKINS[charId] || []; }
@@ -39048,7 +39048,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 733;
+  const APP_VERSION = 734;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
