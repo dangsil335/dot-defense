@@ -21746,7 +21746,6 @@
     { parts: ['stormOrbit',     'homingBlade'],    combo: 'galaxyOrbit',     tier: 3 },
     { parts: ['steelBoomerang', 'mortar'],  combo: 'titanMissile',    tier: 3 }, // 🔁 missile→mortar
     // ===== 액티브 + 패시브 조합 (서로 다른 카테고리) =====
-    { parts: ['shot',      'precision'], combo: 'precisionShot' },
     { parts: ['multi',     'haste'],     combo: 'rapidBarrage' },
     { parts: ['nova',      'frenzy'],    combo: 'frenzyWave' },
     { parts: ['mortar',    'vampiric'],  combo: 'lootBomb' },
@@ -21756,7 +21755,10 @@
     { parts: ['boomerang', 'ironwill'],  combo: 'resolveBoomerang' },
     // ===== 액티브 2-콤보 (기본) =====
     { parts: ['scatter',   'mortar'],    combo: 'shotgunBurst' },
-    { parts: ['shot',      'multi'],     combo: 'precisionBurst' },
+    // 🔫 v727 — 샷 조합 폐지. 샷은 R5 진화 때 능력으로 '교체'되는 자리라 조합 재료로 쓰지 않는다.
+    //   단 precisionBurst 는 이 레시피가 유일한 획득 경로였고, 그게 다시 ultraGatling(T3) 의 재료라
+    //   그냥 지우면 두 능력이 통째로 획득 불가가 된다 → 이름(정밀연사)에 맞는 multi+precision 으로 이관.
+    { parts: ['multi',     'precision'], combo: 'precisionBurst' },
     { parts: ['railgun',   'multi'],     combo: 'chainStorm' }, // 🔁 chain+thunder(둘다 진화-루트)→railgun+multi (전격 다발 연쇄)
     { parts: ['nova',      'frost'],     combo: 'frostNova' },
     { parts: ['laser',     'beam'],      combo: 'twinBeam' },
@@ -21768,7 +21770,6 @@
     { parts: ['meteor',    'blackhole'], combo: 'cosmicCollapse' },
     { parts: ['homingBlade', 'mortar'],  combo: 'swordRain' }, // 🔁 sword+starfall(둘다 진화-루트)→homingBlade+mortar (검우 낙하)
     // ===== 대체 조합 (자유도) — 정상 조합이 없을 때 활성화 =====
-    { parts: ['shot',      'sniper'],    combo: 'headshot' },
     { parts: ['multi',     'scatter'],   combo: 'pelletGun' },
     // ===== 신규 능력 조합 (8개 신규 + 2개 패시브 + 3개 트리플) =====
     { parts: ['plasmaArc',   'laser'],      combo: 'plasmaBeam' },
@@ -35478,7 +35479,19 @@
     if (abId && ABILITY_DEFS[abId] && !state.tower.abilities.some(a => a.id === abId)) {
       const ab = { id: abId, level: 1, acquiredRound: state.round || 1, _isNew: true };
       try { ABILITY_DEFS[abId].init(ab); } catch (e) {}
-      state.tower.abilities.push(ab);
+      // 🔫 v727 — 진화 능력은 시작 능력 'shot' 자리를 "교체"한다.
+      //   기존엔 무조건 push 라, 슬롯이 꽉 찬 상태로 진화하면 상한(6칸)을 넘겨 들어갔다
+      //   (카드·상점은 용량을 검사하는데 진화만 안 했다). 샷은 조합 재료에서도 빠졌으니
+      //   R5까지 자리만 지키다 진화 능력에 자리를 내주는 게 자연스럽다.
+      //   ⚠ 액티브/패시브가 다르면 교체 시 슬롯 계산이 어긋나므로 같은 종류일 때만 교체한다
+      //     (진화 능력 23종 중 scholar 만 패시브).
+      const _shotIdx = state.tower.abilities.findIndex(a => a.id === 'shot');
+      const _sameKind = !ABILITY_DEFS[abId].isPassive;   // shot 은 액티브
+      if (_shotIdx >= 0 && _sameKind) {
+        state.tower.abilities.splice(_shotIdx, 1, ab);   // 샷 자리 그대로 교체
+      } else {
+        state.tower.abilities.push(ab);
+      }
       try { unlockAbility(abId); } catch (e) {}
     }
     if ((kind === 'SR' || kind === 'SSR') && CHARACTERS[id] && typeof showCharComboCutin === 'function') {
@@ -39050,7 +39063,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 726;
+  const APP_VERSION = 727;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
