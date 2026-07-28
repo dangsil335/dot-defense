@@ -13259,28 +13259,6 @@
     },
 
     // ========== 패시브 + 액티브 조합 ==========
-    precisionShot: {
-      name: '정밀사격', isCombo: true, baseCost: 110, color: '#a0d8ff',
-      desc: lv => `크리티컬 단발 · DMG ${5+lv*3} · 50% ×2 · 전체 데미지 +${lv*8}%`,
-      init(ab) { ab.cooldown = 0; },
-      tick(ab) {
-        // 🎯 정확 패시브 계승 — 모든 데미지 +8%/lv
-        if (state.metaMods) {
-          const own = ab.level * 0.08;
-          state.metaMods.precisionBonus += own;  // 🛡 v256 — additive
-        }
-        if (--ab.cooldown > 0) return;
-        const target = findNearestEnemy(ARENA_R + 50);
-        if (!target) return;
-        const [tx, ty] = enemyXY(target);
-        const ang = Math.atan2(ty - CY, tx - CX);
-        const crit = Math.random() < 0.5;
-        const dmg = (5 + ab.level * 3) * (crit ? 2 : 1);
-        const b = fireBullet(ang, dmg, crit ? '#ffe070' : '#a0d8ff', target);
-        if (crit) { b.size = 4; b.glow = true; }
-        ab.cooldown = Math.max(10, 18 - ab.level);
-      },
-    },
     rapidBarrage: {
       name: '미니건', isCombo: true, baseCost: 110, color: '#80ffd0',
       desc: lv => `1발씩 초고속 연사 · DMG ${2+lv} · 타 액티브 쿨다운 -${lv*5}%/초`,
@@ -13607,51 +13585,6 @@
     },
 
     // ========== 대체 조합 (자유도) — 다른 파트너 조합 ==========
-    headshot: {
-      name: '헤드샷', isCombo: true, baseCost: 110, color: '#ffd0d0',
-      desc: lv => `2.5초 풀차징 단발 · DMG ${25+lv*15}`,
-      // 차징 후 강력 단발 — 풀충전(150프레임) 강제 → 최대 데미지로만 발사
-      init(ab) { ab.cooldown = 0; ab.chargeFrames = 0; },
-      tick(ab) {
-        if (ab.cooldown > 0) { ab.cooldown--; return; }
-        ab.chargeFrames++;
-        if (ab.chargeFrames < 150) return;  // 2.5초 풀차징 강제
-        const target = findNearestEnemy(ARENA_R + 50);
-        if (!target) return;  // 풀차징 유지하면서 적 대기
-        const ratio = 1;  // 풀차징 = 최대 데미지
-        const [tx, ty] = enemyXY(target);
-        const ang = Math.atan2(ty - CY, tx - CX);
-        const dmg = 25 + ab.level * 15;
-        state.bullets.push({
-          x: CX, y: CY,
-          vx: Math.cos(ang) * 20, vy: Math.sin(ang) * 20,
-          dmg, life: 50, color: '#ffd0d0',
-          target, leader: null, offsetAngle: 0,
-          size: 3 + Math.floor(ratio * 3), glow: true, tier: 'combo',
-          sourceId: state.currentAbilityId || null,
-        });
-        ab.chargeFrames = 0;
-        ab.cooldown = Math.max(15, 35 - ab.level * 2);
-      },
-      draw(ab) {
-        if (ab.chargeFrames < 60) return;
-        // 차징 시각: 타워 주변에 빛 모임
-        const prog = Math.min(1, (ab.chargeFrames - 60) / 90);
-        for (let k = 0; k < 4; k++) {
-          const pa = state.t * 0.2 + k * (Math.PI * 2 / 4);
-          const pr = 30 * (1 - prog) + 20;
-          ctx.fillStyle = `rgba(255, 208, 208, ${0.4 + prog * 0.5})`;
-          ctx.fillRect(CX + Math.cos(pa) * pr - 1, CY + Math.sin(pa) * pr - 1, 3, 3);
-        }
-        if (prog > 0.4) {
-          ctx.globalAlpha = (prog - 0.4) * 1.5;
-          ctx.strokeStyle = '#ffd0d0'; ctx.lineWidth = 1.5;
-          ctx.beginPath(); ctx.arc(CX, CY, 22, -Math.PI/2, -Math.PI/2 + prog * Math.PI * 2);
-          ctx.stroke();
-          ctx.globalAlpha = 1;
-        }
-      },
-    },
     pelletGun: {
       name: '펠릿건', isCombo: true, baseCost: 120, color: '#ffaa88',
       desc: lv => `${10+lv*3}발 집중 산탄 · DMG ${5+lv*5}`,
@@ -21299,7 +21232,6 @@
     kamikazeDrone:   ['자율', '폭발'],
     cosmicCollapse:  ['흡인', '광역', '폭발'],
     swordRain:       ['회전', '낙하', '광역'],
-    precisionShot:   ['단발'],
     rapidBarrage:    ['다중공격'],
     frenzyWave:      ['광역'],
     lootBomb:        ['광역', '유틸'],
@@ -21307,7 +21239,6 @@
     masteryOrbit:    ['회전', '영역'],
     scholarSnipe:    ['최강적', '단발'],
     resolveBoomerang:['최강적'],
-    headshot:        ['단발'],
     pelletGun:       ['다중공격', '광역'],
     plasmaBeam:      ['빔', '광역', '회전'],
     voidField:       ['영역', '슬로우'],
@@ -21515,9 +21446,9 @@
     'mastery', 'scholar', 'ironwill', 'executioner', 'resilience',
     'shotgunBurst', 'precisionBurst', 'chainStorm', 'frostNova', 'twinBeam',
     'stormOrbit', 'steelBoomerang', 'missileTurret', 'frostfireSpear', 'kamikazeDrone',
-    'cosmicCollapse', 'swordRain', 'precisionShot', 'rapidBarrage', 'frenzyWave',
+    'cosmicCollapse', 'swordRain', 'rapidBarrage', 'frenzyWave',
     'lootBomb', 'luckyChain', 'masteryOrbit', 'scholarSnipe', 'resolveBoomerang',
-    'headshot', 'pelletGun', 'plasmaBeam', 'voidField', 'piercingChain',
+    'pelletGun', 'plasmaBeam', 'voidField', 'piercingChain',
     'echoStorm', 'rocketBarrage', 'bladeStorm', 'magneticStun', 'purgeShot',
     'grandReaper', 'pyreShield',
     'ultraGatling', 'absoluteThunder', 'elementalStorm', 'fusionCannon', 'galaxyOrbit',
@@ -31355,7 +31286,7 @@
   // 🎯 무제한 사거리 능력 ID — 저격, 체인, 낙하, 시간/중력/번개 등 글로벌 또는 장거리 특수
   const TD_UNLIMITED_RANGE_IDS = new Set([
     // 저격류
-    'sniper', 'scholarSnipe', 'headshot', 'purgeShot',
+    'sniper', 'scholarSnipe', 'purgeShot',
     // 장거리 광선
     'railgun', 'siegeBeam', 'twinBeam', 'beam', 'laser', 'plasmaBeam',
     // 체인 번개
@@ -35483,14 +35414,18 @@
       //   기존엔 무조건 push 라, 슬롯이 꽉 찬 상태로 진화하면 상한(6칸)을 넘겨 들어갔다
       //   (카드·상점은 용량을 검사하는데 진화만 안 했다). 샷은 조합 재료에서도 빠졌으니
       //   R5까지 자리만 지키다 진화 능력에 자리를 내주는 게 자연스럽다.
-      //   ⚠ 액티브/패시브가 다르면 교체 시 슬롯 계산이 어긋나므로 같은 종류일 때만 교체한다
-      //     (진화 능력 23종 중 scholar 만 패시브).
+      //   📏 규칙: 진화로 얻는 능력은 반드시 "액티브"여야 한다. shot(액티브) 자리를 대신하기 때문에
+      //     패시브가 오면 액티브 칸이 하나 비고 패시브 칸이 넘쳐 슬롯 회계가 깨진다.
+      //     현재 R타워 13종·SR/SSR 시그니처 21종 전부 액티브라 이 규칙은 지켜지고 있고,
+      //     아래는 나중에 패시브가 섞여 들어올 때 조용히 망가지지 않도록 두는 안전망이다.
       const _shotIdx = state.tower.abilities.findIndex(a => a.id === 'shot');
-      const _sameKind = !ABILITY_DEFS[abId].isPassive;   // shot 은 액티브
-      if (_shotIdx >= 0 && _sameKind) {
+      if (ABILITY_DEFS[abId].isPassive) {
+        console.warn('[진화] 패시브 능력이 진화 보상으로 지정됨 — 액티브여야 한다:', abId);
+        state.tower.abilities.push(ab);   // 규칙 위반 시엔 교체하지 않고 추가(슬롯 회계 보호)
+      } else if (_shotIdx >= 0) {
         state.tower.abilities.splice(_shotIdx, 1, ab);   // 샷 자리 그대로 교체
       } else {
-        state.tower.abilities.push(ab);
+        state.tower.abilities.push(ab);   // 샷이 이미 없으면(삭제 등) 추가
       }
       try { unlockAbility(abId); } catch (e) {}
     }
@@ -39063,7 +38998,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 727;
+  const APP_VERSION = 728;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
