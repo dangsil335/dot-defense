@@ -25179,6 +25179,12 @@
   function earnCrystals() {
     let crystals = 0;
     const reasons = [];
+    // 🪙 v723 — 라운드 도달 저점 보장 (R10/20/30/40 각 +1, 최대 +4).
+    //   기존 조건(점수 50만·R50·클리어·트리플3·2000처치)은 문턱이 높아 초보 구간이 결정 0 이었다.
+    //   → 뽑기를 한 번도 못 돌려 경제 루프에 진입조차 못 하던 문제. 져도 간 만큼은 받게 한다.
+    //   ⚠ 플랫 상한(+4) — 승천 고인물도 동일하게 +4 라 후반 인플레엔 기여하지 않는다.
+    const _roundFloor = [10, 20, 30, 40].filter(r => (state.round || 0) >= r).length;
+    if (_roundFloor > 0) { crystals += _roundFloor; reasons.push(`라운드 도달 +${_roundFloor} 💎`); }
     if (state.score >= 500000) { crystals += 1; reasons.push('점수 50만점 +1 💎'); }
     if (state.score >= 1000000) { crystals += 1; reasons.push('점수 100만점 +1 💎'); }
     if (state.round >= 50) { crystals += 1; reasons.push('R50 도달 +1 💎'); }
@@ -38987,7 +38993,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 722;
+  const APP_VERSION = 723;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
