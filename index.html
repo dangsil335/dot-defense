@@ -32733,6 +32733,11 @@
     ctx.textAlign = 'start';
   }
   // 카드 4티어 색상 팔레트 (능력별 색 X — 티어별 통합)
+  // 🚀 v729 — 카드 배경 그라디언트 캐시 (키: tier|y|cardH).
+  //   세로 그라디언트라 x 는 결과에 무관 → 티어·세로위치만 같으면 재사용.
+  //   키에 y·cardH 가 들어가 있어 레이아웃이 바뀌면 자연히 새 항목이 생기고,
+  //   항목 수는 티어 수 × 레이아웃 수 정도라 무한 증식하지 않는다.
+  const _cardGradCache = {};
   const CARD_TIERS = {
     new: {
       bg1: '#1c1e26', bg2: '#0a0c14',
@@ -32988,9 +32993,16 @@
         ctx.restore();
       }
       // 카드 배경 (살짝만 둥근 + 그라데이션) — 여백 보존
-      const grad = ctx.createLinearGradient(x, y, x, y + cardH);
-      grad.addColorStop(0, p.bg1);
-      grad.addColorStop(1, p.bg2);
+      // 🚀 v729 — 카드 배경 그라디언트 캐시. 세로 그라디언트(x1==x2)라 x 는 결과에 영향이 없고
+      //   y·cardH·티어색만 같으면 재사용 가능하다. 기존엔 카드 3장 × 매 프레임마다 새로 만들었다.
+      const _gk = tier + '|' + y + '|' + cardH;
+      let grad = _cardGradCache[_gk];
+      if (!grad) {
+        grad = ctx.createLinearGradient(0, y, 0, y + cardH);
+        grad.addColorStop(0, p.bg1);
+        grad.addColorStop(1, p.bg2);
+        _cardGradCache[_gk] = grad;
+      }
       ctx.fillStyle = grad;
       rr(x, y, cardW, cardH, 2); ctx.fill();
       // 본체 테두리 — 1.5px 얇은 네온 라인 (메카닉 와이어프레임)
@@ -33004,10 +33016,16 @@
       {
         const bL = 16, bwid = 2.5;
         ctx.save();
-        ctx.strokeStyle = p.border; ctx.lineWidth = bwid; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
-        ctx.shadowColor = p.border; ctx.shadowBlur = 5;
-        const brk = (cx, cy, dx, dy) => { ctx.beginPath(); ctx.moveTo(cx + dx * bL, cy); ctx.lineTo(cx, cy); ctx.lineTo(cx, cy + dy * bL); ctx.stroke(); };
+        ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.strokeStyle = p.border;
+        // 🚀 v729 — 4모서리를 한 path 로 모으고 shadowBlur 를 제거.
+        //   기존: 모서리마다 beginPath+stroke (카드당 4회) + shadowBlur 5.
+        //   블러는 캔버스 2D 에서 가장 비싼 축에 속하고 카드 3장이면 프레임당 12회 돌았다.
+        //   넓은 반투명 stroke 를 밑에 한 번 깔아 같은 발광 느낌을 내되 블러는 쓰지 않는다 → stroke 2회.
+        const brk = (cx, cy, dx, dy) => { ctx.moveTo(cx + dx * bL, cy); ctx.lineTo(cx, cy); ctx.lineTo(cx, cy + dy * bL); };
+        ctx.beginPath();
         brk(x, y, 1, 1); brk(x + cardW, y, -1, 1); brk(x, y + cardH, 1, -1); brk(x + cardW, y + cardH, -1, -1);
+        ctx.globalAlpha = 0.3; ctx.lineWidth = bwid + 3.5; ctx.stroke();   // 발광 대체 언더레이
+        ctx.globalAlpha = 1;   ctx.lineWidth = bwid;       ctx.stroke();
         ctx.restore();
       }
 
@@ -33059,29 +33077,40 @@
 
       // 능력 태그 (광역/슬로우/관통 등) — 보너스 카드 X, 능력 카드만
       if (!isBonus && c.id) {
-        const tags = getAbilityTags(c.id);
-        if (tags.length > 0) {
-          ctx.font = 'bold 10px Rajdhani, "IBM Plex Sans KR", sans-serif';
-          // 전체 너비 측정 + 가운데 정렬
-          const segs = [];
-          for (let ti = 0; ti < tags.length; ti++) {
-            segs.push({ text: tags[ti], color: TAG_COLORS[tags[ti]] || '#888' });
-            if (ti < tags.length - 1) segs.push({ text: ' · ', color: '#555' });
+        // 🚀 v729 — 태그 세그먼트/폭 측정 결과를 카드에 캐시.
+        //   measureText 는 동기 텍스트 레이아웃을 강제하는데, 기존엔 카드당 (태그수+1)×2 회를
+        //   매 프레임 다시 쟀다(총폭 1회 + 그리며 1회씩). 카드 내용은 선택 전까지 안 바뀌므로 1회면 충분하다.
+        if (!c._tagCache) {
+          const tags = getAbilityTags(c.id);
+          if (!tags.length) { c._tagCache = { segs: [] }; }
+          else {
+            const segs = [];
+            for (let ti = 0; ti < tags.length; ti++) {
+              segs.push({ text: tags[ti], color: TAG_COLORS[tags[ti]] || '#888' });
+              if (ti < tags.length - 1) segs.push({ text: ' · ', color: '#555' });
+            }
+            let font = 'bold 10px Rajdhani, "IBM Plex Sans KR", sans-serif';
+            ctx.font = font;
+            let totalW = 0;
+            for (const s of segs) { s.w = ctx.measureText(s.text).width; totalW += s.w; }
+            if (totalW > cardW - 16) {   // 너비 초과 시 폰트 축소 후 재측정
+              font = 'bold 9px Rajdhani, "IBM Plex Sans KR", sans-serif';
+              ctx.font = font;
+              totalW = 0;
+              for (const s of segs) { s.w = ctx.measureText(s.text).width; totalW += s.w; }
+            }
+            c._tagCache = { segs, font, totalW };
           }
-          let totalW = 0;
-          for (const s of segs) totalW += ctx.measureText(s.text).width;
-          // 너비 초과 시 폰트 축소
-          if (totalW > cardW - 16) {
-            ctx.font = 'bold 9px Rajdhani, "IBM Plex Sans KR", sans-serif';
-            totalW = 0;
-            for (const s of segs) totalW += ctx.measureText(s.text).width;
-          }
+        }
+        const _tc = c._tagCache;
+        if (_tc.segs.length) {
+          ctx.font = _tc.font;
           ctx.textAlign = 'left';
-          let curX = x + cardW/2 - totalW/2;
-          for (const s of segs) {
+          let curX = x + cardW/2 - _tc.totalW/2;
+          for (const s of _tc.segs) {
             ctx.fillStyle = s.color;
             ctx.fillText(s.text, curX, y + 122);   // v582 — 태그줄 위로 → 이름과 간격 확보(20→30px)
-            curX += ctx.measureText(s.text).width;
+            curX += s.w;
           }
           ctx.textAlign = 'center';
         }
@@ -38998,7 +39027,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 728;
+  const APP_VERSION = 729;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
