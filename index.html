@@ -33407,11 +33407,14 @@
   // 🤖 AUTO — 이벤트/카드드래프트 자동 선택 (랜덤). 레벨업 카드는 _autoResolveCards가 담당.
   function _autoResolveScenes() {
     if (!autoPlay) return;
+    // 🤖 v726 — 백그라운드에선 연출을 보여줄 대상이 없으니 대기 없이 즉시 처리한다.
+    //   (레벨업 카드가 이미 `document.hidden ? 0 : 600` 으로 동작하는 것과 결을 맞춤)
+    const _d = document.hidden ? 0 : 1;
     const draft = document.getElementById('cardDraftScene');
     if (draft && draft.classList.contains('show')) {
       const cards = [...draft.querySelectorAll('.draft-card:not(.dim):not(.revealed)')];
       if (cards.length) {
-        if (!draft._autoAt) draft._autoAt = performance.now() + 700;
+        if (!draft._autoAt) draft._autoAt = performance.now() + 700 * _d;
         else if (performance.now() >= draft._autoAt) { draft._autoAt = 0; cards[Math.floor(Math.random() * cards.length)].click(); }
       }
       return;
@@ -33422,10 +33425,10 @@
       const foot = document.getElementById('eventFoot');
       const cont = document.getElementById('eventCloseBtn');
       if (choices.length) {
-        if (!ev._autoAt) ev._autoAt = performance.now() + 800;
+        if (!ev._autoAt) ev._autoAt = performance.now() + 800 * _d;
         else if (performance.now() >= ev._autoAt) { ev._autoAt = 0; choices[Math.floor(Math.random() * choices.length)].click(); }
       } else if (foot && foot.style.display !== 'none' && cont) {
-        if (!ev._autoAt) ev._autoAt = performance.now() + 700;
+        if (!ev._autoAt) ev._autoAt = performance.now() + 700 * _d;
         else if (performance.now() >= ev._autoAt) { ev._autoAt = 0; cont.click(); }
       }
     } else if (ev) ev._autoAt = 0;
@@ -33435,13 +33438,13 @@
       const items = [...shop.querySelectorAll('.shop-item:not(.soldout):not(.cant)')];
       const closeB = document.getElementById('shopCloseBtn');
       if (up) {
-        if (!shop._autoAt) shop._autoAt = performance.now() + 600;
+        if (!shop._autoAt) shop._autoAt = performance.now() + 600 * _d;
         else if (performance.now() >= shop._autoAt) { shop._autoAt = 0; up.click(); }
       } else if (items.length) {
-        if (!shop._autoAt) shop._autoAt = performance.now() + 800;
+        if (!shop._autoAt) shop._autoAt = performance.now() + 800 * _d;
         else if (performance.now() >= shop._autoAt) { shop._autoAt = 0; items[Math.floor(Math.random() * items.length)].click(); }
       } else if (closeB) {
-        if (!shop._autoAt) shop._autoAt = performance.now() + 700;
+        if (!shop._autoAt) shop._autoAt = performance.now() + 700 * _d;
         else if (performance.now() >= shop._autoAt) { shop._autoAt = 0; closeB.click(); }
       }
     } else if (shop) shop._autoAt = 0;
@@ -39047,7 +39050,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 725;
+  const APP_VERSION = 726;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
@@ -41202,8 +41205,14 @@
   }
   function runGameTick() {
     if (currentScreen !== 'game') return;
+    // 🤖 v726 — 이벤트/카드드래프트 자동선택은 원래 renderStats()(= RAF 렌더 루프)에서만 돌았다.
+    //   백그라운드에선 RAF 가 스로틀돼 멈추므로 AUTO 인데도 이벤트 창에서 영영 대기했다.
+    //   (레벨업 카드는 아래 _autoResolveCards 가 worker tick 으로 돌아 멀쩡했던 것)
+    //   ⚠ paused 검사보다 반드시 "앞"에 둔다 — 이벤트가 스스로 paused=true 를 켜므로
+    //     뒤에 두면 여전히 도달하지 못한다.
+    try { _autoResolveScenes(); } catch (e) {}
     if (paused || state.gameOver) return;
-    _autoResolveCards();                 // 🤖 AUTO면 대기 카드 즉시 처리
+    _autoResolveCards();               // 🤖 AUTO면 대기 카드 즉시 처리
     if (state.levelUpChoices) return;    // 비-AUTO거나 미해결 모달 → 멈춤 (기존 동작 보존)
     const steps = gameSpeed || 1;
     for (let i = 0; i < steps; i++) update();
