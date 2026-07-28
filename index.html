@@ -4461,6 +4461,17 @@
     align-items: center; justify-content: center; padding: 14px; box-sizing: border-box;
   }
   .reward-overlay.show { display: flex; }
+  /* 💀 v725 — 게임오버 화면은 캔버스에 그려지는데 HUD·능력패널·플레이컨트롤은 DOM 이라
+     캔버스 위에 그대로 떠서 결과창을 가리고 클릭까지 먹었다.
+     게임오버 동안 어둡게 죽이고 입력을 차단한다. (탈출은 캔버스의 다시하기/메뉴 버튼으로) */
+  body.game-over #playCtl,
+  body.game-over #topHud,
+  body.game-over #panel {
+    opacity: 0.18;
+    filter: grayscale(0.7);
+    pointer-events: none !important;
+    transition: opacity .35s ease, filter .35s ease;
+  }
   .reward-card {
     width: 100%; max-width: 440px; max-height: 86vh; display: flex; flex-direction: column;
     background: linear-gradient(180deg, #1a2030, #11151e);
@@ -21625,6 +21636,14 @@
     if ((!v || v === 'loading' || v === 'missing') && rid !== charId) v = characterImages[charId];   // 스킨 치비 없음/로딩중 → 기본
     return v;
   }
+  // ✨ v725 — 인게임 치비 교체 연출 트리거. 진화 등으로 state.character 가 바뀔 때 호출.
+  //   실제 그리기는 캔버스 렌더의 치비 블록에서 state._charSwap 을 읽어 처리한다(프레임 기반).
+  function _charSwapFx(id) {
+    if (typeof state === 'undefined' || !state) return;
+    const ch = (typeof CHARACTERS !== 'undefined' && CHARACTERS[id]) || {};
+    state._charSwap = { start: state.t || 0, dur: 42, col: ch.color || '#7ad7ff' };
+    try { if (typeof SFX !== 'undefined' && SFX.combo) SFX.combo(); } catch (e) {}
+  }
   function getCharacterImage(charId) {
     const v = _resolveChibiEntry(charId);
     if (!v || v === 'loading' || v === 'missing') return null;
@@ -22143,6 +22162,8 @@
       spawnPlan: [],        // 이번 라운드에 남은 스폰 시점
       gold: 0,
       score: 0,
+      // 💀 v725 — 새 판 시작 시 게임오버 DOM 차단 해제 (endGame 에서 걸었던 것)
+      _goCleared: (function () { try { document.body.classList.remove('game-over'); } catch (e) {} return true; })(),
       gameOver: false,
       gameOverReason: '',
       gameWin: false,
@@ -22457,6 +22478,8 @@
     if (state.gameOver) return;
     state.gameOver = true;
     state.gameOverReason = reason;
+    // 💀 v725 — 캔버스에 그려지는 게임오버 결과창 위로 DOM HUD 가 떠서 가리고 클릭까지 먹던 것 차단
+    try { document.body.classList.add('game-over'); } catch (e) {}
     // ♾ 엔드리스 중 사망해도 R100 클리어 기록은 유지
     state.gameWin = !!win || !!state.gameWin;
     // 카드 모달이 떠있었다면 환불 + 클리어
@@ -30061,16 +30084,36 @@
       ctx.fillStyle = glowCol;
       ctx.beginPath(); ctx.arc(CX, CY + 14, 12 * pulse, 0, Math.PI * 2); ctx.fill();
       ctx.restore();
+      // ✨ v725 — 캐릭터 교체 연출: 확장 링 + 팝인. 진화로 치비가 바뀐 걸 놓치지 않게.
+      let _swScale = 1, _swAlpha = 1;
+      const _sw = state._charSwap;
+      if (_sw) {
+        const p = ((state.t || 0) - _sw.start) / _sw.dur;
+        if (p >= 1) { state._charSwap = null; }
+        else {
+          const e = 1 - Math.pow(1 - p, 3);   // easeOutCubic
+          ctx.save();
+          ctx.strokeStyle = _sw.col;
+          ctx.globalAlpha = (1 - e) * 0.85; ctx.lineWidth = 2.5;
+          ctx.beginPath(); ctx.arc(CX, CY + 2, 10 + e * 46, 0, Math.PI * 2); ctx.stroke();
+          ctx.globalAlpha = (1 - e) * 0.35; ctx.lineWidth = 1.5;
+          ctx.beginPath(); ctx.arc(CX, CY + 2, 6 + e * 26, 0, Math.PI * 2); ctx.stroke();
+          ctx.restore();
+          _swScale = 0.45 + e * 0.55 + Math.sin(p * Math.PI) * 0.18;   // 살짝 부풀었다 안착
+          _swAlpha = Math.min(1, e * 1.8);
+        }
+      }
       // 고해상도 원본을 부드럽게 축소 (원본 비율 유지) — 또렷하고 세밀하게
       const meta = getCharacterImageMeta(charId) || { w: charImg.width, h: charImg.height };
-      const target = 44; // 그리는 영역 한 변 길이 (px) — 디테일 보이도록 약간 키움
+      const target = 44 * _swScale; // 그리는 영역 한 변 길이 (px) — 디테일 보이도록 약간 키움
       let dw, dh;
       if (meta.w >= meta.h) { dw = target; dh = target * (meta.h / meta.w); }
       else { dh = target; dw = target * (meta.w / meta.h); }
       const dx = CX - dw / 2;
       const dy = CY - dh / 2 + 2; // 약간 아래로 (발판 위 서있는 느낌)
       ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
-      ctx.drawImage(charImg, dx, dy, dw, dh);
+      if (_swAlpha < 1) { ctx.save(); ctx.globalAlpha = _swAlpha; ctx.drawImage(charImg, dx, dy, dw, dh); ctx.restore(); }
+      else ctx.drawImage(charImg, dx, dy, dw, dh);
       ctx.imageSmoothingQuality = 'low';   // 이후 글로우 스프라이트는 가벼운 기본 품질로
       return;
     }
@@ -35418,9 +35461,17 @@
         state.metaMods.levelUpMul = cp.levelUpMul || 1;
         state.metaMods.slotMod = cp.slotMod || 0;
         state.metaMods.enhanceMul = (mods.enhanceMul || 1) * (cp.enhanceMul || 1) * (asc.enhanceMul || 1);
-        state.character = id;
       }
     } catch (e) {}
+    // 🎭 v725 — 캐릭터 전환을 패시브 적용에서 분리.
+    //   기존엔 state.character = id 가 위 `if (ch && ch.passive && state.metaMods)` 안에 있어서,
+    //   패시브가 없거나 try 안에서 예외가 나면 조용히 건너뛰어 인게임 치비가 옛 캐릭 그대로 남았다.
+    //   (치비는 매 프레임 state.character 를 읽어 그린다 → 진화해도 안 바뀌던 버그)
+    if (CHARACTERS[id]) {
+      const _prevChar = state.character;
+      state.character = id;
+      if (_prevChar !== id) { try { _charSwapFx(id); } catch (e) {} }   // ✨ 교체 연출
+    }
     if (abId && ABILITY_DEFS[abId] && !state.tower.abilities.some(a => a.id === abId)) {
       const ab = { id: abId, level: 1, acquiredRound: state.round || 1, _isNew: true };
       try { ABILITY_DEFS[abId].init(ab); } catch (e) {}
@@ -37189,7 +37240,10 @@
       if (name === 'codex' && META.unseen.abilities) { META.unseen.abilities = 0; _cl = true; }
       if (_cl) saveMeta();
     }
-    if (name !== 'game') { const _rs = document.getElementById('rewardSummary'); if (_rs) _rs.classList.remove('show'); }
+    if (name !== 'game') {
+      const _rs = document.getElementById('rewardSummary'); if (_rs) _rs.classList.remove('show');
+      try { document.body.classList.remove('game-over'); } catch (e) {}   // 💀 v725 — 게임 밖으로 나가면 HUD 차단 해제
+    }
     menuEl.classList.toggle('show', name === 'menu');
     codexEl.classList.toggle('show', name === 'codex');
     recordsEl.classList.toggle('show', name === 'records');
@@ -38993,7 +39047,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 724;
+  const APP_VERSION = 725;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
