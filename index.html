@@ -5380,6 +5380,32 @@
   .evo-ds-scroll { flex:1; width:100%; max-width:560px; margin:0 auto; overflow-y:auto; overflow-x:hidden; padding:0 0 calc(34px + env(safe-area-inset-bottom)); }
   .evo-ds-illust { position:relative; width:100%; height:54vh; min-height:280px; display:flex; align-items:flex-end; justify-content:center; overflow:hidden; background:radial-gradient(circle at 50% 36%, var(--gcA,rgba(120,160,255,0.26)), rgba(11,13,18,0) 68%); }
   .evo-ds-illust > img { height:100%; max-width:100%; object-fit:contain; object-position:bottom center; filter:drop-shadow(0 6px 22px rgba(0,0,0,.55)); }
+  /* 🖼 v735 — 일러 전체화면 뷰어.
+     ⚠ 소스가 433x577 이라 확대하면 부드럽게 늘어난다(고해상도 원본 미보관 — A안).
+        image-rendering 은 기본(auto)로 둬야 픽셀이 튀지 않는다. */
+  .ivw { display:none; position:fixed; inset:0; z-index:10000; background:rgba(4,6,10,0.96);
+         align-items:center; justify-content:center; flex-direction:column; padding:16px; box-sizing:border-box; }
+  .ivw.show { display:flex; }
+  .ivw-img { max-width:100%; max-height:calc(100% - 64px); object-fit:contain;
+             filter:drop-shadow(0 10px 40px rgba(0,0,0,.7)); }
+  .ivw-name { margin-top:12px; font-size:15px; font-weight:800; color:#eaf2ff; text-align:center;
+              text-shadow:0 2px 10px rgba(0,0,0,.8); max-width:92%; }
+  .ivw-x { position:absolute; top:calc(12px + env(safe-area-inset-top)); right:14px; z-index:2;
+           width:40px; height:40px; padding:0; display:flex; align-items:center; justify-content:center;
+           background:rgba(20,26,38,0.9); color:#cfd8e6; border:1px solid #3a4256; border-radius:10px;
+           font-size:18px; cursor:pointer; }
+  .ivw-x:active { background:#2a3346; }
+  /* 🖼 v735 — 우하단 치비 미리보기. 같은 스킨의 인게임 SD 를 함께 보여준다.
+     세이프에어리어를 피해 오른쪽 아래에 고정하고, 이름줄과 겹치지 않게 살짝 띄운다. */
+  .ivw-chibi { position:absolute; right:calc(12px + env(safe-area-inset-right));
+               bottom:calc(12px + env(safe-area-inset-bottom));
+               width:96px; height:96px; object-fit:contain; object-position:bottom right;
+               background:rgba(14,18,28,0.55); border:1px solid rgba(122,215,255,0.22); border-radius:12px;
+               padding:4px; box-sizing:border-box; filter:drop-shadow(0 4px 14px rgba(0,0,0,.6)); }
+  .ivw-chibi.hide { display:none; }
+  @media (max-width:420px) { .ivw-chibi { width:76px; height:76px; } }
+  /* 상세 일러가 눌리는 곳임을 알리는 최소 힌트 */
+  .evo-ds-illust.zoomable { cursor:zoom-in; }
   .evo-ds-illust.r-icon { align-items:center; }
   .evo-ds-illust.r-icon .evo-ds-bigico { display:flex; align-items:center; justify-content:center; }
   .evo-ds-illust.noimg::after { content:attr(data-emoji); font-size:118px; align-self:center; }
@@ -6374,6 +6400,13 @@
   </div>
 </div>
 
+<!-- 🖼 v735 — 일러 전체화면 뷰어. 캐릭터 상세에서 일러를 누르면 열린다. X 버튼 / ESC / 배경 클릭으로 닫힘 -->
+<div id="illustViewer" class="ivw">
+  <button id="ivwClose" class="ivw-x" aria-label="닫기">✕</button>
+  <img id="ivwImg" class="ivw-img" alt="">
+  <div id="ivwName" class="ivw-name"></div>
+  <img id="ivwChibi" class="ivw-chibi" alt="">
+</div>
 <div id="rewardSummary" class="reward-overlay">
   <div class="reward-card">
     <div class="reward-head">
@@ -39048,7 +39081,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 734;
+  const APP_VERSION = 735;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
@@ -39534,6 +39567,50 @@
   const _GEAR_SLOTICO = { offense:'🔥', targeting:'🎯', supply:'💰', control:'⚙️', signature:'✨' };
   // 🖼 코어 아이템 이미지 (세트×슬롯). 파일 없으면 onerror로 제거(빈칸). 빈 슬롯은 호출 안 함.
   function _gearCoreImg(it, px) { if (!it || !it.set || !it.slot) return ''; const s = px || 28; return `<img class="gear-core-img" src="./icons/gear/${it.set}-${it.slot}.png" alt="" style="width:${s}px;height:${s}px" onerror="this.remove()">`; }
+  // 🖼 v735 — 일러 전체화면 뷰어.
+  //   exactId 는 _resolveIllustId 형식('luna' 또는 'luna__moonlit') — _applyIllustChain 의 exactId 로 그대로 넣는다.
+  //   ⚠ 소스가 433x577 이라 확대 시 부드럽게 늘어난다(고해상도 원본 미보관). 화질 개선이 필요해지면
+  //     별도 HD 에셋을 두고 여기서만 로드하면 된다 — 열기 지점이 이 함수 하나라 교체가 쉽다.
+  let _ivwPrevPaused = null;
+  function openIllustViewer(charId, exactId, label) {
+    const el = document.getElementById('illustViewer'); if (!el) return;
+    const img = document.getElementById('ivwImg');
+    const nm = document.getElementById('ivwName');
+    if (nm) nm.textContent = label || '';
+    if (img && typeof _applyIllustChain === 'function') {
+      img.style.display = '';
+      _applyIllustChain(img, charId, () => { img.style.display = 'none'; }, exactId);
+    }
+    // 🖼 우하단 치비 — 일러와 경로 체계가 다르다(스킨 치비는 icons/characters/skin/).
+    //   치비가 없는 스킨도 있으므로 onerror 로 조용히 숨긴다(폴백 안 함 — 여긴 "이 스킨의 치비"를 보는 자리).
+    const chibi = document.getElementById('ivwChibi');
+    if (chibi) {
+      const rid = exactId || charId;
+      chibi.classList.remove('hide');
+      chibi.onerror = () => chibi.classList.add('hide');
+      chibi.src = (rid.indexOf('__') >= 0 ? './icons/characters/skin/' : './icons/characters/') + rid + '.png';
+    }
+    el.classList.add('show');
+  }
+  function closeIllustViewer() {
+    const el = document.getElementById('illustViewer'); if (!el) return;
+    el.classList.remove('show');
+  }
+  (function _wireIllustViewer() {
+    const bind = () => {
+      const el = document.getElementById('illustViewer'); if (!el || el._wired) return;
+      el._wired = true;
+      const x = document.getElementById('ivwClose');
+      if (x) x.onclick = (e) => { e.stopPropagation(); closeIllustViewer(); };
+      // 배경(이미지 바깥) 클릭으로도 닫기 — 이미지/이름 자체 클릭은 무시
+      el.onclick = (e) => { if (e.target === el) closeIllustViewer(); };
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && el.classList.contains('show')) closeIllustViewer();
+      });
+    };
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bind);
+    else bind();
+  })();
   // 🔩 v733 — 캐릭터 상세용 "장착 현황" 요약 (읽기 전용).
   //   조작은 전용 '전술 코어 관리' 화면에서만 한다 — 여기선 무엇이 끼워져 있는지 확인만.
   //   ⚠ 장착은 캐릭터별이 아니라 계정 공용(g.equipped)이다. 고유 슬롯만 그 캐릭 전용이라
@@ -39922,6 +39999,15 @@
 
     illustEl.innerHTML = illustHTML + `<div class="evo-ds-nameplate"><div class="evo-ds-grade" style="background:${gc.color}26;color:${gc.color};border:1px solid ${gc.color}">${gradeLabel}</div><div class="evo-ds-name" style="color:${gc.color}">${displayName}</div></div>`;
     _hydrateIllusts(illustEl);   // 🖼 상세창 큰 일러 webp→gif→png 체인 (캐릭터 상세일 때만 마커 존재)
+    // 🖼 v735 — 스킨이 없는 캐릭터/기본 타워는 아래 캐러셀 블록을 안 타므로 여기서 기본 클릭을 달아둔다.
+    //   (스킨 있는 캐릭터는 캐러셀 쪽에서 _pidx 를 읽는 핸들러를 따로 달아 현재 미리보기 스킨을 연다)
+    if (kind !== 'R' && !(_skinsOf(id) || []).length) {
+      illustEl.classList.add('zoomable');
+      illustEl.addEventListener('click', () => {
+        const chName = (CHARACTERS[id] && CHARACTERS[id].name) || id;
+        openIllustViewer(id, _resolveIllustId(id), chName);
+      });
+    }
     bodyEl.innerHTML = body;
     _hydrateIllusts(bodyEl);     // 🖼 본문 안의 진화대상 카드(et-illust)·계보 미니칩 일러도 체인 적용
     bodyEl.querySelectorAll('.evo-story-chip:not(.locked)').forEach(btn => {
@@ -39946,6 +40032,15 @@
       illustEl.insertAdjacentHTML('beforeend', '<button class="skin-arrow left" aria-label="이전 스킨">‹</button><button class="skin-arrow right" aria-label="다음 스킨">›</button>');
       const _arL = illustEl.querySelector('.skin-arrow.left'), _arR = illustEl.querySelector('.skin-arrow.right');
       const _pIll = i => { const s = _skList[i]; return s ? _skinKey(id, s.id) : id; };
+      // 🖼 v735 — 일러 클릭 시 전체화면 뷰어. 캐러셀로 넘긴 "지금 보고 있는" 스킨이 열려야 하므로
+      //   클릭 시점의 _pidx 를 읽는다. 화살표 버튼 클릭은 뷰어를 열지 않는다.
+      illustEl.classList.add('zoomable');
+      illustEl.addEventListener('click', (ev) => {
+        if (ev.target.closest && ev.target.closest('.skin-arrow')) return;
+        const cur = _skList[_pidx];
+        const chName = (CHARACTERS[id] && CHARACTERS[id].name) || id;
+        openIllustViewer(id, _pIll(_pidx), cur ? chName + ' · ' + cur.name : chName + ' · 기본');
+      });
       const _renderSkin = () => {
         const cur = _skList[_pidx];
         if (_dsImg) {
