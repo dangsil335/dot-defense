@@ -4040,6 +4040,67 @@
     filter: drop-shadow(0 0 30px rgba(90,140,230,0.25));
   }
   #menu .menu-hero-bg.show { opacity: 0.5 !important; }
+
+  /* 🐾 v749 — 메뉴 펫 (제자리 아이들형).
+     ⚠ 걷거나 뛰게 만들지 않는다. 치비 67종이 전부 단일 정지 PNG인 데다
+       앉은 포즈(sumika__officeassassin·blanche__crystal·sumika__blackserpent)와
+       이펙트 일체형(feria__cataclysm 의 원형 소용돌이, chloe__madtea 의 부유 소품)이
+       섞여 있어서, 보행 모션을 흉내내면 이펙트째로 미끄러지며 오히려 망가진다.
+       → 이동 0. 숨쉬기 + 탭 반응만. 숨쉬기는 CSS 키프레임이라 JS 프레임 비용이 없고
+         메뉴를 벗어나 display:none 이 되면 브라우저가 알아서 애니메이션을 멈춘다. */
+  .menu-pet {
+    position: absolute; z-index: 6; cursor: pointer;
+    left: 2px; top: 116px; height: 82px;      /* 모바일: 로고 왼쪽 빈 공간 */
+    -webkit-tap-highlight-color: transparent; user-select: none;
+  }
+  .menu-pet.hide { display: none; }
+  .menu-pet img {
+    display: block; height: 100%; width: auto;
+    transform-origin: 50% 100%;               /* 발밑 기준 — 스쿼시가 자연스럽게 보이는 핵심 */
+    animation: petBreath 3.6s ease-in-out infinite;
+    filter: drop-shadow(0 5px 12px rgba(0,0,0,0.55));
+    -webkit-user-drag: none;
+  }
+  .menu-pet.hop img { animation: petHop 0.52s cubic-bezier(.28,.9,.32,1) 1; }
+  @keyframes petBreath {
+    0%, 100% { transform: scale(1, 1) translateY(0); }
+    50%      { transform: scale(0.986, 1.026) translateY(-1px); }
+  }
+  @keyframes petHop {   /* 웅크림 → 도약 → 착지 스쿼시. 다리를 안 움직여도 무게가 느껴진다. */
+    0%   { transform: scale(1.10, 0.90) translateY(0); }
+    28%  { transform: scale(0.94, 1.10) translateY(-18px); }
+    58%  { transform: scale(1.02, 0.99) translateY(-7px); }
+    84%  { transform: scale(1.09, 0.92) translateY(0); }
+    100% { transform: scale(1, 1)       translateY(0); }
+  }
+  /* 말풍선 — 펫 위쪽. 캐릭터 진화 대사(EVO_CHAR_LINES)를 그대로 쓴다. */
+  .menu-pet-bubble {
+    position: absolute; bottom: calc(100% + 8px); left: 0;
+    min-width: 116px; max-width: 46vw; padding: 7px 10px;
+    background: rgba(14,20,32,0.95); border: 1px solid #3a5570; border-radius: 10px;
+    font-size: 11.5px; line-height: 1.5; color: #cdd5e3; text-align: left;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.6);
+    opacity: 0; transform: translateY(6px) scale(0.96); transform-origin: 0 100%;
+    transition: opacity .18s ease, transform .18s cubic-bezier(.3,1.4,.5,1);
+    pointer-events: none; white-space: normal;
+  }
+  .menu-pet-bubble.show { opacity: 1; transform: translateY(0) scale(1); }
+  .menu-pet-bubble::after {   /* 꼬리 */
+    content: ''; position: absolute; top: 100%; left: 18px;
+    border: 6px solid transparent; border-top-color: #3a5570;
+  }
+  /* 넓은 화면: 메뉴 본체 왼쪽 옆구리에 크게.
+     ⚠ 브레이크포인트는 실측으로 정했다. .menu-main 은 가운데 정렬 폭 약 820px 이라
+       좌측 여백 = (vw-820)/2. 펫이 차지하는 폭은 left(28) + height(172) = 200 이고
+       정사각 치비(433x433)가 가장 넓은 경우다. 200 이 확보되려면 vw >= 1220.
+       그 아래에서는 위의 컴팩트 배치(로고 왼쪽)를 그대로 쓴다. */
+  @media (min-width: 1220px) {
+    .menu-pet { left: 28px; top: 272px; height: 172px; }
+    .menu-pet-bubble { font-size: 13px; max-width: 240px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .menu-pet img, .menu-pet.hop img { animation: none; }
+  }
   /* 나브 그리드 버튼(강화소/능력영구/도감/캐릭터진화/업적/기록) = 사선 네온 콘솔 칩. 글자 수직 유지. */
   #menu .menu-btn-grid {
     background: transparent !important; border: 0 !important; box-shadow: none !important;
@@ -4536,6 +4597,11 @@
 <div id="menu" class="screen show">
   <!-- 🛰️ v461 — 로테이션 간판 캐릭터 백드롭 (진입마다 순환, 콘솔 뒤 시네마틱) -->
   <img id="menu-hero-bg" class="menu-hero-bg" alt="">
+  <!-- 🐾 v749 — 메뉴 펫. 이동 없음(제자리 아이들) — 이유는 CSS 주석 참고. -->
+  <div id="menuPet" class="menu-pet hide" role="button" tabindex="0" aria-label="대표 캐릭터">
+    <div id="menuPetBubble" class="menu-pet-bubble"></div>
+    <img id="menuPetImg" alt="">
+  </div>
   <!-- 상단 좌측: 캐시 업데이트 -->
   <button id="updateCacheBtn" class="update-cache-btn" title="캐시만 지우고 최신 버전으로 업데이트 (저장 데이터는 유지)">업데이트</button>
   <!-- 상단 우측: 설정 (데이터 초기화/동기화 모음) -->
@@ -37428,6 +37494,7 @@
       if (typeof refreshMenuNickname === 'function') refreshMenuNickname();   // 🎖️ 함장 레벨/XP/닉 갱신(게임 후 XP 반영)
       if (typeof maybeShowPromotion === 'function') setTimeout(() => { try { maybeShowPromotion(); } catch (e) {} }, 500);   // 🎖️ 진급 시 시네마틱
       if (typeof refreshMenuHero === 'function') refreshMenuHero();  // 로테이션 간판 캐릭터 (진입 1회)
+      if (typeof refreshMenuPet === 'function') refreshMenuPet();    // 🐾 메뉴 펫 (대표 일러 변경 즉시 반영)
       // 🔄 다기기 동기화 — 메뉴 진입 시 서버 데이터 자동 새로고침 (20s 쿨다운)
       if (typeof refreshMetaFromServerIfStale === 'function') {
         refreshMetaFromServerIfStale().catch(() => {});
@@ -37540,7 +37607,72 @@
     _applyIllustChain(el, heroId, () => { el.classList.remove('show'); });   // webp→gif→png, 전부 없으면 숨김
     if (_illustFmt[heroId] !== 'none') el.classList.add('show');   // 즉시 표시 — CSS transition이 페이드인 (일러 없음 확정이면 숨김 유지)
   }
+  // 🐾 v749 — 메뉴 펫 (제자리 아이들형. 이동 안 함 — 이유는 .menu-pet CSS 주석 참고)
+  //   표시 대상 우선순위: 대표 일러 → 보유 가챠 캐릭 무작위 → 기본 도트포대.
+  //   대표 일러를 1순위로 두는 게 핵심 — 스킨 산 보람이 메뉴 들어올 때마다 눈에 보인다.
+  let _petId = null;
+  const PET_FALLBACK_LINES = [
+    '…대기 중. 명령을 기다린다.',
+    '시스템 정상. 언제든 출격 가능.',
+    '함장, 오늘도 잘 부탁해.',
+    '차원 좌표 안정. 이상 없음.',
+  ];
+  function _petChibiPath(id) {
+    return (id.indexOf('__') >= 0 ? './icons/characters/skin/' : './icons/characters/') + id + '.png';
+  }
+  function refreshMenuPet() {
+    const wrap = document.getElementById('menuPet');
+    const img = document.getElementById('menuPetImg');
+    if (!wrap || !img) return;
+    let id = null;
+    try { const sc = _showcaseGet(); if (sc && _showcaseValid(sc)) id = sc; } catch (e) {}
+    if (!id) {
+      try {
+        const owned = MENU_HERO_IDS.filter(c => isCharUnlocked(c));
+        if (owned.length) id = owned[Math.floor(Math.random() * owned.length)];
+      } catch (e) {}
+    }
+    if (!id) id = 'standard';
+    _petId = id;
+    // 스킨 치비가 없으면 기본 치비로, 그것도 없으면 펫 자체를 숨긴다.
+    img.onerror = () => {
+      const base = id.indexOf('__') >= 0 ? id.slice(0, id.indexOf('__')) : null;
+      if (base && img.dataset.fb !== '1') { img.dataset.fb = '1'; img.src = _petChibiPath(base); return; }
+      wrap.classList.add('hide');
+    };
+    img.dataset.fb = '';
+    wrap.classList.remove('hide');
+    img.src = _petChibiPath(id);
+  }
+  function _petPoke() {
+    const wrap = document.getElementById('menuPet');
+    const bub = document.getElementById('menuPetBubble');
+    if (!wrap || wrap.classList.contains('hide')) return;
+    wrap.classList.remove('hop'); void wrap.offsetWidth; wrap.classList.add('hop');   // 재부여로 애니 재시작
+    setTimeout(() => wrap.classList.remove('hop'), 560);
+    try { SFX.click(); } catch (e) {}
+    if (!bub || !_petId) return;
+    const base = _petId.indexOf('__') >= 0 ? _petId.slice(0, _petId.indexOf('__')) : _petId;
+    // EVO_CHAR_LINES 는 가챠 21명만 갖고 있다. 기본 도트포대(standard)가 펫일 때가 있으므로
+    // 대사 없는 캐릭용 폴백을 둔다 — 없으면 탭해도 아무 반응이 없어 죽은 UI 처럼 보인다.
+    const line = (typeof EVO_CHAR_LINES !== 'undefined' && EVO_CHAR_LINES[base])
+      || PET_FALLBACK_LINES[Math.floor(Math.random() * PET_FALLBACK_LINES.length)];
+    if (!line) return;
+    bub.textContent = line;
+    bub.classList.add('show');
+    clearTimeout(bub._t);
+    bub._t = setTimeout(() => bub.classList.remove('show'), 2600);
+  }
+  (function _wireMenuPet() {
+    const w = document.getElementById('menuPet');
+    if (!w || w._wired) return;
+    w._wired = true;
+    w.onclick = _petPoke;
+    w.onkeydown = (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); _petPoke(); } };
+  })();
+
   try { refreshMenuHero(); } catch (e) {}   // 🛰️ 초기 로드 1회 (메뉴가 정적 show로 뜨고 init은 showScreen('menu') 미호출)
+  try { refreshMenuPet(); } catch (e) {}    // 🐾 펫도 초기 1회 (같은 이유)
   try { refreshMenuNickname(); } catch (e) {}   // 🎖️ 함장 크리덴셜 초기 1회
   try { _hydrateIllusts(document.body); } catch (e) {}   // 🖼 정적 마커 일러(능력강화 아리아 배경 등) webp→gif→png 체인 1회
   try { _tutApplyMenuGate(); } catch (e) {}   // 🎓 정적 부팅 메뉴에도 튜토리얼 잠금 1회 적용 (refreshMenuButtons 미호출 대응)
@@ -39182,7 +39314,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 748;
+  const APP_VERSION = 749;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
