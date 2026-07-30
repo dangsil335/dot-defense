@@ -5359,10 +5359,20 @@
      기존엔 #panel 이 `#wrap:not(.portrait)` 조건에 묶여 있어 **세로(모바일)에서는 차단이 안 됐고**,
      카드 뒤의 능력 액티브 버튼이 그대로 눌렸다. 세로에선 능력 패널이 #abilities 로 따로 나가므로
      그것도 함께 막는다. (모달은 캔버스에 그려져 DOM 이 위로 뜬다) */
+  /* 시각 처리(흐리게)는 컨테이너에만 — 자식에도 opacity 를 걸면 값이 곱해져 거의 안 보이게 된다. */
   body.play-modal #playCtl,
   body.play-modal #panel,
   body.play-modal #abilities,
-  body.play-modal #topHud { opacity:0.16 !important; pointer-events:none !important; filter:grayscale(0.6); transition:opacity .12s; }
+  body.play-modal #topHud { opacity:0.16 !important; filter:grayscale(0.6); transition:opacity .12s; }
+  /* 🎯 v745 — 클릭 차단은 자손까지 내려야 한다.
+     가로모드엔 위쪽에 `#wrap:not(.portrait) #panel > * { pointer-events:auto }` 가 있어서
+     (캔버스 클릭이 패널을 통과하도록 만든 규칙) 컨테이너만 none 으로 막으면 자식이 되살아난다.
+     실제로 ACTIVE//PASSIVE 탭·랜덤버튼·유물버튼·푸터가 카드 모달 뒤에서 그대로 눌렸다.
+     v733 은 세로만 고쳤고 가로는 이 되살리기 규칙 때문에 계속 새고 있었다. */
+  body.play-modal #playCtl,   body.play-modal #playCtl *,
+  body.play-modal #panel,     body.play-modal #panel *,
+  body.play-modal #abilities, body.play-modal #abilities *,
+  body.play-modal #topHud,    body.play-modal #topHud * { pointer-events:none !important; }
   /* 🃏 능력 설명 말풍선 (탭 팝업 — 리스트 변형 없음) */
   #abTip { position:fixed; z-index:80; display:none; max-width:230px; background:#0e1524; border:1px solid #3a5570; border-radius:10px; padding:9px 12px; box-shadow:0 8px 24px rgba(0,0,0,0.65); font-size:11.5px; line-height:1.55; color:#cdd5e3; }
   #abTip.show { display:block; }
@@ -39172,7 +39182,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 744;
+  const APP_VERSION = 745;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
