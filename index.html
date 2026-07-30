@@ -4064,17 +4064,32 @@
     filter: drop-shadow(0 5px 12px rgba(0,0,0,0.55));
     -webkit-user-drag: none;
   }
-  .menu-pet.hop img { animation: petHop 0.52s cubic-bezier(.28,.9,.32,1) 1; }
+  /* ⚠ 전체 easing 을 shorthand 에 걸지 않는다. CSS 타이밍 함수는 "구간마다" 적용되므로
+     하나로 걸면 상승도 하강도 전부 같은 곡선이 돼 낙하가 감속한다(= 내려올 때 멈칫).
+     구간별로 따로 지정해서 올라갈 땐 감속, 떨어질 땐 가속시킨다. */
+  .menu-pet.hop img { animation: petHop 0.6s linear 1; }
+  /* ⚠ transform 은 translate 를 먼저 쓴다. scale 을 앞에 두면 이동량까지 배율이 곱해져
+     (scaleY 1.11 이면 -22px 이 -24.4px 로) 상하 이동이 들쭉날쭉해진다. */
   @keyframes petBreath {
-    0%, 100% { transform: scale(1, 1) translateY(0); }
-    50%      { transform: scale(0.986, 1.026) translateY(-1px); }
+    0%, 100% { transform: translateY(0) scale(1, 1); }
+    50%      { transform: translateY(-1px) scale(0.986, 1.026); }
   }
-  @keyframes petHop {   /* 웅크림 → 도약 → 착지 스쿼시. 다리를 안 움직여도 무게가 느껴진다. */
-    0%   { transform: scale(1.10, 0.90) translateY(0); }
-    28%  { transform: scale(0.94, 1.10) translateY(-18px); }
-    58%  { transform: scale(1.02, 0.99) translateY(-7px); }
-    84%  { transform: scale(1.09, 0.92) translateY(0); }
-    100% { transform: scale(1, 1)       translateY(0); }
+  @keyframes petHop {
+    /* 중립에서 시작한다 — 예전엔 0% 가 이미 웅크린 상태라 탭 순간 값이 순간이동했다 */
+    0%   { transform: translateY(0) scale(1, 1);
+           animation-timing-function: cubic-bezier(.33, 0, .67, 1); }        /* 준비 */
+    10%  { transform: translateY(3px) scale(1.13, 0.87);
+           animation-timing-function: cubic-bezier(.15, .75, .4, 1); }       /* 웅크림 → 상승(감속) */
+    34%  { transform: translateY(-22px) scale(0.93, 1.11);
+           animation-timing-function: cubic-bezier(.6, 0, .9, .45); }        /* 정점 → 낙하(가속) */
+    /* 착지 이후는 발을 땅에 붙인 채 스쿼시/스트레치로만 정리한다.
+       예전엔 여기서 -4px 로 다시 떠올랐는데, 그 구간이 400~440ms 에 정체를 만들어
+       (-3.65 → -3.97 → -3.41) 두 번째 작은 점프처럼 보였다 = 끊기는 느낌. */
+    58%  { transform: translateY(0) scale(1.17, 0.83);
+           animation-timing-function: cubic-bezier(.25, .6, .4, 1); }        /* 착지 최대 스쿼시 */
+    74%  { transform: translateY(0) scale(0.97, 1.05);
+           animation-timing-function: cubic-bezier(.4, 0, .5, 1); }          /* 반동 — 제자리에서 늘어남 */
+    100% { transform: translateY(0) scale(1, 1); }
   }
   /* 말풍선 — 펫 위쪽. 캐릭터 진화 대사(EVO_CHAR_LINES)를 그대로 쓴다. */
   .menu-pet-bubble {
@@ -37795,8 +37810,15 @@
     const wrap = document.getElementById('menuPet');
     const bub = document.getElementById('menuPetBubble');
     if (!wrap || wrap.classList.contains('hide')) return;
-    wrap.classList.remove('hop'); void wrap.offsetWidth; wrap.classList.add('hop');   // 재부여로 애니 재시작
-    setTimeout(() => wrap.classList.remove('hop'), 560);
+    // ⚠ 해제는 animationend 가 담당한다(_wireMenuPet 에 1회 등록).
+    //   예전엔 setTimeout 으로 뗐는데, 연속 탭 때 타이머가 쌓여 이전 타이머가 새 애니메이션
+    //   도중에 hop 을 떼어내면서 모션이 중간에 잘렸다.
+    //   아래 타이머는 "쌓이지 않는" 안전망 하나뿐이다 — 매번 clear 하고, 애니(0.6s)보다
+    //   충분히 길게 잡아 정상 재생을 자를 수 없다. animationend 가 유실돼도(탭 전환 등)
+    //   hop 이 영구히 남아 숨쉬기가 죽는 일은 없다.
+    if (wrap._hopT) clearTimeout(wrap._hopT);
+    wrap.classList.remove('hop'); void wrap.offsetWidth; wrap.classList.add('hop');
+    wrap._hopT = setTimeout(() => { wrap.classList.remove('hop'); wrap._hopT = null; }, 1200);
     try { SFX.click(); } catch (e) {}
     if (!bub || !_petId) return;
     const base = _petId.indexOf('__') >= 0 ? _petId.slice(0, _petId.indexOf('__')) : _petId;
@@ -37892,6 +37914,13 @@
     // ⚠ v751 — 더블클릭 = 기본 위치 복귀 를 없앴다. 주 조작이 "탭해서 쓰다듬기"라
     //   두 번 톡톡 치면 의도치 않게 원위치돼 버렸다. 되돌리려면 그냥 다시 끌면 된다.
     w.onkeydown = (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); _petPoke(); } };
+    // 🐾 홉 종료는 이벤트로 감지 — 타이머와 달리 연속 탭에도 어긋나지 않는다.
+    //   (petBreath 는 infinite 라 animationend 를 안 쏘므로 이름 비교로 충분)
+    w.addEventListener('animationend', (e) => {
+      if (e.animationName !== 'petHop') return;
+      if (w._hopT) { clearTimeout(w._hopT); w._hopT = null; }
+      w.classList.remove('hop');
+    });
     window.addEventListener('resize', () => { try { _petApplyPos(); } catch (err) {} });
   })();
 
@@ -39538,7 +39567,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 755;
+  const APP_VERSION = 756;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
