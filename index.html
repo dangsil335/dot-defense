@@ -5059,9 +5059,17 @@
   #showcase-preview img { width: 100%; height: 100%; object-fit: contain; object-position: 50% 50%; display: block; }
   #showcase-preview.empty img { display: none; }
   #showcase-name { position: absolute; left: 0; right: 0; bottom: 0; padding: 10px 8px 5px; font-size: 12px; color: #cfe6ff; background: linear-gradient(180deg, transparent, rgba(4,8,14,0.92) 55%); }
-  #showcase-strip { display: flex; gap: 6px; overflow-x: auto; overflow-y: hidden; padding: 2px 0 6px; scrollbar-width: thin; touch-action: pan-x; cursor: grab; }
-  #showcase-strip::-webkit-scrollbar { height: 5px; }
-  #showcase-strip::-webkit-scrollbar-thumb { background: #2a3550; border-radius: 3px; }
+  /* 🎨 v751 — 스크롤바 제거. 이 앱은 전역(*::-webkit-scrollbar{display:none})으로
+     스크롤바를 전부 숨기는데 여기만 scrollbar-width:thin 으로 되살려놔서
+     혼자 기본 스크롤바가 튀어나와 있었다. 전역 규칙을 따르게 되돌린다.
+     대신 스크롤 가능하다는 힌트는 양끝 페이드로 준다(드래그 스크롤은 그대로). */
+  #showcase-strip {
+    display: flex; gap: 6px; overflow-x: auto; overflow-y: hidden; padding: 2px 0;
+    scrollbar-width: none; -ms-overflow-style: none; touch-action: pan-x; cursor: grab;
+    -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 10px, #000 calc(100% - 14px), transparent 100%);
+            mask-image: linear-gradient(90deg, transparent 0, #000 10px, #000 calc(100% - 14px), transparent 100%);
+  }
+  #showcase-strip::-webkit-scrollbar { display: none; width: 0; height: 0; }
   #showcase-strip.dragging { cursor: grabbing; }
   .sc-item { flex: 0 0 auto; width: 46px; height: 61px; border-radius: 5px; overflow: hidden; background: #0f1219; border: 1px solid #2a2f3a; padding: 0; cursor: pointer; position: relative; }
   .sc-item img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 0%; display: block; pointer-events: none; }
@@ -37756,11 +37764,8 @@
     w.addEventListener('pointercancel', endDrag);
 
     w.onclick = () => { if (!moved) _petPoke(); };   // 끌고 놓은 직후엔 말풍선 안 띄움
-    w.ondblclick = () => {                            // 기본 위치로 되돌리기
-      META.petPos = null;
-      try { saveMeta(); } catch (err) {}
-      _petApplyPos();
-    };
+    // ⚠ v751 — 더블클릭 = 기본 위치 복귀 를 없앴다. 주 조작이 "탭해서 쓰다듬기"라
+    //   두 번 톡톡 치면 의도치 않게 원위치돼 버렸다. 되돌리려면 그냥 다시 끌면 된다.
     w.onkeydown = (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); _petPoke(); } };
     window.addEventListener('resize', () => { try { _petApplyPos(); } catch (err) {} });
   })();
@@ -39408,7 +39413,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 750;
+  const APP_VERSION = 751;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
