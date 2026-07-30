@@ -5384,12 +5384,32 @@
      ⚠ 소스가 433x577 이라 확대하면 부드럽게 늘어난다(고해상도 원본 미보관 — A안).
         image-rendering 은 기본(auto)로 둬야 픽셀이 튀지 않는다. */
   .ivw { display:none; position:fixed; inset:0; z-index:10000; background:rgba(4,6,10,0.96);
-         align-items:center; justify-content:center; flex-direction:column; padding:16px; box-sizing:border-box; }
+         align-items:center; justify-content:center; flex-direction:column; padding:16px; box-sizing:border-box;
+         overflow:hidden; }   /* 🔍 확대 시 이미지가 넘쳐도 스크롤바가 생기지 않게 */
   .ivw.show { display:flex; }
+  /* 🔍 v743 — 확대/이동. transform 만 쓰므로 레이아웃(이름줄 위치)은 배율과 무관하게 고정된다. */
   .ivw-img { max-width:100%; max-height:calc(100% - 64px); object-fit:contain;
-             filter:drop-shadow(0 10px 40px rgba(0,0,0,.7)); }
-  .ivw-name { margin-top:12px; font-size:15px; font-weight:800; color:#eaf2ff; text-align:center;
-              text-shadow:0 2px 10px rgba(0,0,0,.8); max-width:92%; }
+             filter:drop-shadow(0 10px 40px rgba(0,0,0,.7));
+             transform-origin:center center; will-change:transform; touch-action:none;
+             -webkit-user-drag:none; user-select:none; }
+  .ivw-img.zoomed { cursor:grab; }
+  .ivw-img.dragging { cursor:grabbing; }
+  /* 이름줄은 확대된 이미지 위로 올라와야 읽힌다 */
+  .ivw-name { position:relative; z-index:2;
+              margin-top:12px; font-size:15px; font-weight:800; color:#eaf2ff; text-align:center;
+              text-shadow:0 2px 10px rgba(0,0,0,.8), 0 0 18px rgba(0,0,0,.9); max-width:92%; }
+  /* 🔍 배율 컨트롤 — 좌하단(치비 썸네일은 우하단이라 안 겹친다) */
+  .ivw-zoom { position:absolute; z-index:3; display:flex; align-items:center; gap:6px;
+              left:calc(12px + env(safe-area-inset-left));
+              bottom:calc(12px + env(safe-area-inset-bottom)); }
+  .ivw-zbtn, .ivw-zlv { height:40px; padding:0; display:flex; align-items:center; justify-content:center;
+              background:rgba(20,26,38,0.9); color:#cfd8e6; border:1px solid #3a4256; border-radius:10px;
+              cursor:pointer; font-family:Rajdhani, "IBM Plex Sans KR", sans-serif; }
+  .ivw-zbtn { width:40px; font-size:20px; font-weight:700; }
+  .ivw-zlv  { min-width:56px; font-size:13px; font-weight:700; letter-spacing:0.3px; }
+  .ivw-zbtn:active, .ivw-zlv:active { background:#2a3346; }
+  .ivw-zbtn:disabled { opacity:0.35; cursor:default; }
+  @media (max-width:420px) { .ivw-zbtn { width:36px; height:36px; } .ivw-zlv { height:36px; min-width:50px; } }
   .ivw-x { position:absolute; top:calc(12px + env(safe-area-inset-top)); right:14px; z-index:2;
            width:40px; height:40px; padding:0; display:flex; align-items:center; justify-content:center;
            background:rgba(20,26,38,0.9); color:#cfd8e6; border:1px solid #3a4256; border-radius:10px;
@@ -5397,11 +5417,16 @@
   .ivw-x:active { background:#2a3346; }
   /* 🖼 v735 — 우하단 치비 미리보기. 같은 스킨의 인게임 SD 를 함께 보여준다.
      세이프에어리어를 피해 오른쪽 아래에 고정하고, 이름줄과 겹치지 않게 살짝 띄운다. */
-  .ivw-chibi { position:absolute; right:calc(12px + env(safe-area-inset-right));
+  /* 🖼 v743 — object-position 이 bottom right 라 썸네일이 오른쪽으로 치우쳐 있었다 → 가운데 정렬.
+     또 눌러서 메인 일러와 자리를 바꿀 수 있으므로 클릭 가능함을 커서/호버로 알린다. */
+  .ivw-chibi { position:absolute; z-index:3; right:calc(12px + env(safe-area-inset-right));
                bottom:calc(12px + env(safe-area-inset-bottom));
-               width:96px; height:96px; object-fit:contain; object-position:bottom right;
+               width:96px; height:96px; object-fit:contain; object-position:center bottom;
                background:rgba(14,18,28,0.55); border:1px solid rgba(122,215,255,0.22); border-radius:12px;
-               padding:4px; box-sizing:border-box; filter:drop-shadow(0 4px 14px rgba(0,0,0,.6)); }
+               padding:4px; box-sizing:border-box; filter:drop-shadow(0 4px 14px rgba(0,0,0,.6));
+               cursor:pointer; transition:border-color .12s, transform .12s; }
+  .ivw-chibi:hover { border-color:rgba(122,215,255,0.6); transform:translateY(-2px); }
+  .ivw-chibi:active { transform:scale(0.96); }
   .ivw-chibi.hide { display:none; }
   @media (max-width:420px) { .ivw-chibi { width:76px; height:76px; } }
   /* 상세 일러가 눌리는 곳임을 알리는 최소 힌트 */
@@ -6405,7 +6430,12 @@
   <button id="ivwClose" class="ivw-x" aria-label="닫기">✕</button>
   <img id="ivwImg" class="ivw-img" alt="">
   <div id="ivwName" class="ivw-name"></div>
-  <img id="ivwChibi" class="ivw-chibi" alt="">
+  <img id="ivwChibi" class="ivw-chibi" alt="" title="눌러서 크게 보기 (다시 누르면 되돌리기)">
+  <div class="ivw-zoom">
+    <button id="ivwZoomOut" class="ivw-zbtn" aria-label="축소">−</button>
+    <button id="ivwZoomReset" class="ivw-zlv" aria-label="배율 초기화">1.0×</button>
+    <button id="ivwZoomIn" class="ivw-zbtn" aria-label="확대">＋</button>
+  </div>
 </div>
 <div id="rewardSummary" class="reward-overlay">
   <div class="reward-card">
@@ -39142,7 +39172,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 742;
+  const APP_VERSION = 743;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
@@ -39633,13 +39663,57 @@
   //   ⚠ 소스가 433x577 이라 확대 시 부드럽게 늘어난다(고해상도 원본 미보관). 화질 개선이 필요해지면
   //     별도 HD 에셋을 두고 여기서만 로드하면 된다 — 열기 지점이 이 함수 하나라 교체가 쉽다.
   let _ivwPrevPaused = null;
+  // 🔍 v743 — 일러 뷰어 확대/이동 + 치비 스왑 상태.
+  //   · z(배율) 1.0~4.0. transform 으로만 처리 → 레이아웃 불변(이름줄이 안 밀린다).
+  //   · pan 은 z>1 일 때만. 클램프는 img 자기 박스 기준 w*(z-1)/2 → 네 모서리에 정확히 닿는다
+  //     (컨테이너 기준으로 잡으면 레터박스된 이미지에서 끝까지 못 간다).
+  //   · swap 은 메인/썸네일의 src 를 교환한다. DOM 을 옮기지 않으므로 확대·드래그 로직이 그대로 재사용된다.
+  //     일러 src 는 _applyIllustChain 이 webp→gif→png 로 프로브하며 확정되므로 load 시점에 받아 적는다.
+  const _ivw = { illustSrc: '', chibiSrc: '', swapped: false, z: 1, tx: 0, ty: 0, drag: null, moved: false };
+  const IVW_ZMIN = 1, IVW_ZMAX = 4, IVW_ZSTEP = 0.5;
+  function _ivwApply() {
+    const img = document.getElementById('ivwImg'); if (!img) return;
+    const w = img.offsetWidth || 1, h = img.offsetHeight || 1;
+    const mx = w * (_ivw.z - 1) / 2, my = h * (_ivw.z - 1) / 2;
+    _ivw.tx = Math.max(-mx, Math.min(mx, _ivw.tx));
+    _ivw.ty = Math.max(-my, Math.min(my, _ivw.ty));
+    img.style.transform = 'translate(' + _ivw.tx + 'px,' + _ivw.ty + 'px) scale(' + _ivw.z + ')';
+    img.classList.toggle('zoomed', _ivw.z > 1);
+    const lv = document.getElementById('ivwZoomReset');
+    if (lv) lv.textContent = _ivw.z.toFixed(1) + '×';
+    const bo = document.getElementById('ivwZoomOut'), bi = document.getElementById('ivwZoomIn');
+    if (bo) bo.disabled = _ivw.z <= IVW_ZMIN;
+    if (bi) bi.disabled = _ivw.z >= IVW_ZMAX;
+  }
+  function _ivwZoom(delta) {
+    const nz = Math.max(IVW_ZMIN, Math.min(IVW_ZMAX, Math.round((_ivw.z + delta) * 100) / 100));
+    if (nz === _ivw.z) return;
+    // 배율을 줄일 때 이동량도 같은 비율로 줄인다 → 화면이 튀지 않고 보던 지점이 유지된다.
+    if (_ivw.z > 1 && nz > 1) { const r = (nz - 1) / (_ivw.z - 1); _ivw.tx *= r; _ivw.ty *= r; }
+    if (nz === 1) { _ivw.tx = 0; _ivw.ty = 0; }
+    _ivw.z = nz; _ivwApply();
+  }
+  function _ivwReset() { _ivw.z = 1; _ivw.tx = 0; _ivw.ty = 0; _ivwApply(); }
+  // 🔄 메인 일러 ↔ 우하단 치비 자리 교환. 치비가 없는 스킨(썸네일 hide)이면 아무것도 안 한다.
+  function _ivwSwap() {
+    const img = document.getElementById('ivwImg'), ch = document.getElementById('ivwChibi');
+    if (!img || !ch || ch.classList.contains('hide') || !_ivw.chibiSrc || !_ivw.illustSrc) return;
+    _ivw.swapped = !_ivw.swapped;
+    img.style.display = '';
+    img.src = _ivw.swapped ? _ivw.chibiSrc : _ivw.illustSrc;
+    ch.src  = _ivw.swapped ? _ivw.illustSrc : _ivw.chibiSrc;
+    _ivwReset();   // 클램프 기준(offsetWidth/Height)이 바뀌므로 배율·이동 초기화
+  }
   function openIllustViewer(charId, exactId, label) {
     const el = document.getElementById('illustViewer'); if (!el) return;
     const img = document.getElementById('ivwImg');
     const nm = document.getElementById('ivwName');
     if (nm) nm.textContent = label || '';
+    // 🔍 열 때마다 배율/스왑 초기화 — 이전에 보던 상태가 남으면 안 된다
+    _ivw.swapped = false; _ivw.illustSrc = ''; _ivw.chibiSrc = '';
     if (img && typeof _applyIllustChain === 'function') {
       img.style.display = '';
+      img.style.transform = '';
       _applyIllustChain(img, charId, () => { img.style.display = 'none'; }, exactId);
     }
     // 🖼 우하단 치비 — 일러와 경로 체계가 다르다(스킨 치비는 icons/characters/skin/).
@@ -39649,13 +39723,16 @@
       const rid = exactId || charId;
       chibi.classList.remove('hide');
       chibi.onerror = () => chibi.classList.add('hide');
-      chibi.src = (rid.indexOf('__') >= 0 ? './icons/characters/skin/' : './icons/characters/') + rid + '.png';
+      _ivw.chibiSrc = (rid.indexOf('__') >= 0 ? './icons/characters/skin/' : './icons/characters/') + rid + '.png';
+      chibi.src = _ivw.chibiSrc;
     }
     el.classList.add('show');
+    _ivwReset();
   }
   function closeIllustViewer() {
     const el = document.getElementById('illustViewer'); if (!el) return;
     el.classList.remove('show');
+    _ivwReset();
   }
   (function _wireIllustViewer() {
     const bind = () => {
@@ -39664,10 +39741,67 @@
       const x = document.getElementById('ivwClose');
       if (x) x.onclick = (e) => { e.stopPropagation(); closeIllustViewer(); };
       // 배경(이미지 바깥) 클릭으로도 닫기 — 이미지/이름 자체 클릭은 무시
-      el.onclick = (e) => { if (e.target === el) closeIllustViewer(); };
+      //   ⚠ 확대 상태에서 드래그가 배경에서 끝나면 click 이 el 로 떨어져 닫혀 버린다 → moved 플래그로 막는다.
+      el.onclick = (e) => { if (e.target === el && !_ivw.moved) closeIllustViewer(); };
       document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape' && el.classList.contains('show')) closeIllustViewer();
+        if (!el.classList.contains('show')) return;
+        if (e.key === 'Escape') closeIllustViewer();
+        else if (e.key === '+' || e.key === '=') _ivwZoom(IVW_ZSTEP);
+        else if (e.key === '-' || e.key === '_') _ivwZoom(-IVW_ZSTEP);
+        else if (e.key === '0') _ivwReset();
       });
+
+      // 🔍 배율 버튼
+      const bo = document.getElementById('ivwZoomOut'), bi = document.getElementById('ivwZoomIn'), br = document.getElementById('ivwZoomReset');
+      if (bo) bo.onclick = (e) => { e.stopPropagation(); _ivwZoom(-IVW_ZSTEP); };
+      if (bi) bi.onclick = (e) => { e.stopPropagation(); _ivwZoom(IVW_ZSTEP); };
+      if (br) br.onclick = (e) => { e.stopPropagation(); _ivwReset(); };
+
+      // 🔄 치비 썸네일 클릭 → 메인 일러와 자리 교환
+      const ch = document.getElementById('ivwChibi');
+      if (ch) ch.onclick = (e) => { e.stopPropagation(); _ivwSwap(); };
+
+      const img = document.getElementById('ivwImg');
+      if (img) {
+        // 일러 src 확정 시점에 받아 적는다. _applyIllustChain 이 img.onload 프로퍼티를 쓰므로
+        // 여기선 addEventListener 로 붙여 서로 덮어쓰지 않게 한다.
+        img.addEventListener('load', () => {
+          if (!_ivw.swapped) _ivw.illustSrc = img.currentSrc || img.src;
+          _ivwApply();   // 새 이미지 크기로 클램프 재계산
+        });
+        // 🖐 확대 상태에서 드래그로 이동
+        img.addEventListener('pointerdown', (e) => {
+          if (_ivw.z <= 1) return;
+          _ivw.drag = { x: e.clientX, y: e.clientY, tx: _ivw.tx, ty: _ivw.ty };
+          _ivw.moved = false;
+          img.classList.add('dragging');
+          try { img.setPointerCapture(e.pointerId); } catch (err) {}
+          e.preventDefault();
+        });
+        img.addEventListener('pointermove', (e) => {
+          if (!_ivw.drag) return;
+          const dx = e.clientX - _ivw.drag.x, dy = e.clientY - _ivw.drag.y;
+          if (Math.abs(dx) + Math.abs(dy) > 4) _ivw.moved = true;
+          _ivw.tx = _ivw.drag.tx + dx; _ivw.ty = _ivw.drag.ty + dy;
+          _ivwApply();
+        });
+        const endDrag = (e) => {
+          if (!_ivw.drag) return;
+          _ivw.drag = null;
+          img.classList.remove('dragging');
+          try { if (e && e.pointerId != null) img.releasePointerCapture(e.pointerId); } catch (err) {}
+          // 드래그 직후 발생하는 click 한 번만 무시되도록 잠깐 뒤 해제
+          setTimeout(() => { _ivw.moved = false; }, 0);
+        };
+        img.addEventListener('pointerup', endDrag);
+        img.addEventListener('pointercancel', endDrag);
+        // 🖱 데스크톱 휠 확대 (모바일은 버튼)
+        el.addEventListener('wheel', (e) => {
+          if (!el.classList.contains('show')) return;
+          e.preventDefault();
+          _ivwZoom(e.deltaY < 0 ? IVW_ZSTEP : -IVW_ZSTEP);
+        }, { passive: false });
+      }
     };
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bind);
     else bind();
