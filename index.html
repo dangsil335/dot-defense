@@ -24940,6 +24940,19 @@
   }
 
   // 메인 진입점 — 캐시 + 병렬 fetch + 백그라운드 갱신
+  // ⏱ v752 — 랭킹 화면의 모든 대기에 상한을 둔다.
+  //   기존엔 _submitPromise / _updateProfilePromise / fetchRankingsData 를 전부
+  //   타임아웃 없이 await 했다. 셋 다 네트워크에 물려 있어서 요청이 응답 없이 멈추면
+  //   랭킹 화면이 영원히 로딩 상태로 남는다. 특히 _submitPromise 는 "게임을 한 판 한 뒤"
+  //   에만 생기므로, 플레이 후에만 랭킹이 안 뜨는 증상으로 나타난다.
+  //   상한을 넘기면 그냥 다음 단계로 진행한다 — 조금 오래된 순위라도 보여주는 게
+  //   아무것도 안 보여주는 것보다 낫고, 조회 자체가 늦으면 실패 UI(재시도)로 떨어진다.
+  //   ⚠ 여기서 에러를 삼키면 안 된다. 조회(fetchRankingsData)의 거부는 그대로 위로 올라가야
+  //     실패 UI 가 원래 원인 메시지를 보여준다. 삼키는 건 호출부에서 .catch 로 명시한다.
+  const RANK_TIMEOUT = Symbol('rank-timeout');
+  function _rankWait(p, ms) {
+    return Promise.race([p, new Promise(res => setTimeout(() => res(RANK_TIMEOUT), ms || 7000))]);
+  }
   async function loadGlobalRankings() {
     const statusEl = document.getElementById('globalRank-status');
     const top10El = document.getElementById('globalRank-top10');
@@ -24963,13 +24976,13 @@
       statusEl.innerHTML = `
         <div style="color:#7ad7ff;">⬆ 점수 제출 중...</div>
         <div style="margin-top:6px; font-size:11px; color:#7a8090;">방금 게임 결과를 서버에 전송하고 있어요</div>`;
-      try { await _submitPromise; } catch (e) {}
+      if (await _rankWait(_submitPromise.catch(() => {})) === RANK_TIMEOUT) console.warn('[랭킹] 점수 제출 대기 시간 초과 — 조회를 계속 진행');
       _submitPromise = null;
       invalidateRankingCache(); // 새 점수 제출됐으니 캐시 폐기
     }
-    // 진행 중인 프로필 갱신 대기 (닉네임/칭호 변경 직후 진입한 경우)
+    // 진행 중인 프로필 갱신 대기 (닉네임/칭호/대표일러 변경 직후 진입한 경우)
     if (_updateProfilePromise) {
-      try { await _updateProfilePromise; } catch (e) {}
+      if (await _rankWait(_updateProfilePromise.catch(() => {})) === RANK_TIMEOUT) console.warn('[랭킹] 프로필 동기화 대기 시간 초과 — 조회를 계속 진행');
       _updateProfilePromise = null;
     }
 
@@ -24995,7 +25008,8 @@
     statusEl.style.display = '';
     statusEl.textContent = '불러오는 중...';
     try {
-      const data = await fetchRankingsData(mode);
+      const data = await _rankWait(fetchRankingsData(mode), 12000);
+      if (data === RANK_TIMEOUT) throw new Error('서버 응답 없음 (12초 초과) — 다시 시도해 주세요');
       _rankingCache[mode] = { timestamp: Date.now(), data };
       renderRankings(data, false);
     } catch (e) {
@@ -37646,7 +37660,36 @@
     '시스템 정상. 언제든 출격 가능.',
     '함장, 오늘도 잘 부탁해.',
     '차원 좌표 안정. 이상 없음.',
+    '포신 정비 완료. 심심하다.',
+    '출격 대기 중… 아직인가?',
   ];
+  // 💬 v752 — 메뉴 펫 전용 대사 풀. EVO_CHAR_LINES 는 캐릭당 1줄이라 눌러도 늘 같은 말이 나온다.
+  //   진화 대사(전투 톤)와 달리 여기 것들은 "메뉴에서 쉬는 중" 톤으로 쓴다.
+  //   실제 풀 = EVO_CHAR_LINES 1줄 + 아래 3줄 = 캐릭당 4줄. 직전 대사는 연속으로 안 나온다.
+  const PET_LINES = {
+    marine:    ['오늘 파도 좋다! 나갈까?', '어뢰 정비 끝. 언제든 말만 해.', '바다 냄새… 아, 여긴 함교였지.'],
+    solar:     ['햇살 좀 쬐고 가. 공짜야.', '흑점이 하나 늘었어. 좋은 징조야, 아마?', '너무 가까이 오면 데인다? …농담이야.'],
+    gravitas:  ['…여긴 조용해서 좋다.', '떠 있는 게 편해. 앉는 건 귀찮아.', '가까이 와. 어차피 끌려오게 돼 있어.'],
+    amy:       ['전 구역 이상 없음. 편히 있어도 돼.', '드론 3기 순찰 중. 하늘은 내가 볼게.', '커피 한 잔? 관제탑은 그게 연료야.'],
+    chloe:     ['방금 뭔가 터졌는데… 못 봤지?', '이건 마시면 안 돼. 진짜로.', '배합 아이디어 떠올랐어! 잠깐만!'],
+    lara:      ['실은 잘 안 보여야 예쁜 거야.', '오늘 배역은 뭘로 할까?', '인형들이 심심하대. 나가자.'],
+    galatea:   ['움직이지 마. …구도가 좋았는데.', '돌은 거짓말을 안 해서 좋아.', '다음 작품 재료… 아, 너 말고.'],
+    blanche:   ['딱히 기다린 건 아니야.', '빛은 꺾여도 부러지진 않아. …나도 그래.', '뭘 봐. …그렇게 빤히 보지 마.'],
+    kaira:     ['냄새가 바뀌었네. 뭐 먹었어?', '가만히 있으면 좀이 쑤셔.', '사냥, 갈까? 지금.'],
+    feria:     ['가까이 오면 붙어. 경고했어.', '극을 뒤집으면 밀어내지. 사람도 그런가.', '…쇳가루 좀 치워야겠다.'],
+    somnia:    ['……음… 5분만 더…', '자장가 불러줄까? 대신 너도 자야 해.', '양이 세 마리 도망갔어. 같이 찾자.'],
+    sakura:    ['검은 뽑을 때보다 넣을 때가 어려워.', '벚꽃 지기 전에 한 판 어때.', '한 호흡. …됐어, 준비 끝.'],
+    luna:      ['달이 밝네. 나가기 좋은 밤이야.', '조용히 해… 조준 중이니까.', '화살은 하나면 충분해.'],
+    cardista:  ['한 판 걸까? 지면 네가 사는 거야.', '패는 좋아. 문제는 손이지.', '운이란 건 말이야, 부르면 온다니까?'],
+    levina:    ['만져볼래? 좀 찌릿할 텐데.', '구름 낀 날이 제일 신나!', '정전되면 내 탓 아니야. 아마도.'],
+    aria:      ['방금 그 음, 들었어? 별이 낸 소리야.', '무대는 준비됐어. 관객은 너 하나지만.', '앙코르는 공짜로 해줄게.'],
+    misaki:    ['시간은… 기다려주지 않아. 나만 빼고.', '이 순간, 몇 번째인지 알아?', '나비가 앉았어. 움직이지 마.'],
+    sumika:    ['……먹을 갈던 중이었어.', '한 획이면 끝나. 두 번은 없어.', '조용한 게 좋아. 지금처럼.'],
+    elementia: ['정령들이 너 좋아하네. 신기하다!', '불이 또 장난쳐. 미안, 금방 말릴게!', '넷 다 데려왔어. 시끄럽지?'],
+    trina:     ['오늘도 내가 주연이야. 이견 없지?', '분신들이 자꾸 대사를 틀려.', '커튼콜은 아직이야. 앉아 있어.'],
+    iris:      ['가만. …좋아, 지금이야.', '필름 아껴야 하는데 자꾸 찍게 돼.', '암실 다녀올게. 빛 들어오면 안 돼.'],
+  };
+  let _petLastLine = null;
   function _petChibiPath(id) {
     return (id.indexOf('__') >= 0 ? './icons/characters/skin/' : './icons/characters/') + id + '.png';
   }
@@ -37686,10 +37729,16 @@
     try { SFX.click(); } catch (e) {}
     if (!bub || !_petId) return;
     const base = _petId.indexOf('__') >= 0 ? _petId.slice(0, _petId.indexOf('__')) : _petId;
-    // EVO_CHAR_LINES 는 가챠 21명만 갖고 있다. 기본 도트포대(standard)가 펫일 때가 있으므로
-    // 대사 없는 캐릭용 폴백을 둔다 — 없으면 탭해도 아무 반응이 없어 죽은 UI 처럼 보인다.
-    const line = (typeof EVO_CHAR_LINES !== 'undefined' && EVO_CHAR_LINES[base])
-      || PET_FALLBACK_LINES[Math.floor(Math.random() * PET_FALLBACK_LINES.length)];
+    // 대사 풀 = 진화 대사 1줄 + 메뉴 전용 3줄. 둘 다 없는 캐릭(기본 도트포대)은 공용 폴백.
+    const evo = (typeof EVO_CHAR_LINES !== 'undefined' && EVO_CHAR_LINES[base]) ? [EVO_CHAR_LINES[base]] : [];
+    const pool = evo.concat(PET_LINES[base] || []);
+    const list = pool.length ? pool : PET_FALLBACK_LINES;
+    let line = list[0];
+    for (let i = 0; i < 8; i++) {   // 직전과 같은 대사는 연속으로 안 나오게
+      line = list[Math.floor(Math.random() * list.length)];
+      if (list.length === 1 || line !== _petLastLine) break;
+    }
+    _petLastLine = line;
     if (!line) return;
     bub.textContent = line;
     bub.classList.add('show');
@@ -39413,7 +39462,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 751;
+  const APP_VERSION = 752;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
