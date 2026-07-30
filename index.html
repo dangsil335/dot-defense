@@ -4049,11 +4049,14 @@
        → 이동 0. 숨쉬기 + 탭 반응만. 숨쉬기는 CSS 키프레임이라 JS 프레임 비용이 없고
          메뉴를 벗어나 display:none 이 되면 브라우저가 알아서 애니메이션을 멈춘다. */
   .menu-pet {
-    position: absolute; z-index: 6; cursor: pointer;
-    left: 2px; top: 116px; height: 82px;      /* 모바일: 로고 왼쪽 빈 공간 */
+    position: absolute; z-index: 6; cursor: grab;
+    left: 2px; top: 116px; height: 82px;      /* 모바일: 로고 왼쪽 빈 공간 (드래그로 옮기면 덮어씀) */
     -webkit-tap-highlight-color: transparent; user-select: none;
+    touch-action: none;                        /* 모바일에서 끌 때 메뉴가 스크롤되지 않게 */
   }
   .menu-pet.hide { display: none; }
+  .menu-pet.dragging { cursor: grabbing; z-index: 9; }
+  .menu-pet.dragging img { animation: none; filter: drop-shadow(0 10px 22px rgba(0,0,0,.7)); opacity: .92; }
   .menu-pet img {
     display: block; height: 100%; width: auto;
     transform-origin: 50% 100%;               /* 발밑 기준 — 스쿼시가 자연스럽게 보이는 핵심 */
@@ -5049,8 +5052,11 @@
   /* 약장(칭호) — -12° 평행사변형 슬림 칩 (글자 수직) */
   #nicknameModal .title-picker-grid { background: transparent !important; border: 0 !important; padding: 2px !important; gap: 9px 10px !important; grid-template-columns: repeat(auto-fill, minmax(102px,1fr)) !important; }
   /* 🖼 v716 — 대표 일러 선택: 큰 미리보기 + 가로 드래그 썸네일 스트립 */
-  #showcase-preview { position: relative; width: 100%; aspect-ratio: 3/4; max-height: 190px; margin: 0 auto 7px; border-radius: 8px; overflow: hidden; background: #0f1219; border: 1px solid #2a3550; }
-  #showcase-preview img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 0%; display: block; }
+  /* 🖼 v750 — 잘림 수정. aspect-ratio:3/4 를 걸어놨지만 max-height:190px 가 먼저 걸려
+     박스가 가로로 납작해지고, 거기에 object-fit:cover + object-position:50% 0% 라
+     일러 상단 38% 만 보였다. 일러는 3:4(433x577)라 contain 이면 통째로 들어간다. */
+  #showcase-preview { position: relative; width: 100%; aspect-ratio: 3/4; max-height: 260px; margin: 0 auto 7px; border-radius: 8px; overflow: hidden; background: #0f1219; border: 1px solid #2a3550; }
+  #showcase-preview img { width: 100%; height: 100%; object-fit: contain; object-position: 50% 50%; display: block; }
   #showcase-preview.empty img { display: none; }
   #showcase-name { position: absolute; left: 0; right: 0; bottom: 0; padding: 10px 8px 5px; font-size: 12px; color: #cfe6ff; background: linear-gradient(180deg, transparent, rgba(4,8,14,0.92) 55%); }
   #showcase-strip { display: flex; gap: 6px; overflow-x: auto; overflow-y: hidden; padding: 2px 0 6px; scrollbar-width: thin; touch-action: pan-x; cursor: grab; }
@@ -35846,6 +35852,11 @@
     if (id && !_showcaseValid(id)) return false;
     META.showcase = id || null;
     try { saveMeta(); } catch (e) {}
+    // 🐾🛰️ v750 — 대표 일러를 바꾸면 메뉴 펫과 배경 간판도 즉시 따라가야 한다.
+    //   기존엔 META 만 저장해서, 펫은 부팅 때 뽑힌 무작위 캐릭이 그대로 남아 있었다
+    //   (스미카로 바꿨는데 카르타 치비가 나오던 버그).
+    try { if (typeof refreshMenuPet === 'function') refreshMenuPet(); } catch (e) {}
+    try { if (typeof refreshMenuHero === 'function') refreshMenuHero(); } catch (e) {}
     return true;
   }
   // 랭킹 행 → 표시할 일러 id.
@@ -37598,6 +37609,17 @@
   function refreshMenuHero() {
     const el = document.getElementById('menu-hero-bg');
     if (!el) return;
+    // 🛰️ v750 — 대표 일러를 설정했으면 그것만 띄운다. 미설정이거나 해제하면 기존 랜덤 로테이션.
+    //   스킨을 대표로 골랐으면 그 스킨 일러가 그대로 배경이 된다(exactId 로 전달).
+    let sc = null;
+    try { const v = _showcaseGet(); if (v && _showcaseValid(v)) sc = v; } catch (e) {}
+    if (sc) {
+      const base = sc.indexOf('__') >= 0 ? sc.slice(0, sc.indexOf('__')) : sc;
+      _menuHeroIdx = -1;   // 해제 후 첫 랜덤이 직전 값에 막히지 않게 초기화
+      _applyIllustChain(el, base, () => { el.classList.remove('show'); }, sc);
+      if (_illustFmt[sc] !== 'none') el.classList.add('show');
+      return;
+    }
     // 🎲 진짜 랜덤 순서 (접속·진입 모두 무작위). 직전과 동일한 캐릭터만 회피.
     let next;
     do { next = Math.floor(Math.random() * MENU_HERO_IDS.length); }
@@ -37642,7 +37664,10 @@
     };
     img.dataset.fb = '';
     wrap.classList.remove('hide');
+    // 저장된 위치는 이미지 크기가 잡힌 뒤에 적용해야 클램프가 맞는다.
+    img.addEventListener('load', () => { try { _petApplyPos(); } catch (e) {} }, { once: true });
     img.src = _petChibiPath(id);
+    try { _petApplyPos(); } catch (e) {}
   }
   function _petPoke() {
     const wrap = document.getElementById('menuPet');
@@ -37663,12 +37688,81 @@
     clearTimeout(bub._t);
     bub._t = setTimeout(() => bub.classList.remove('show'), 2600);
   }
+  // 🖐 v750 — 펫 위치 드래그 이동 + 저장.
+  //   저장은 절대 px 가 아니라 비율(fx,fy)로 한다. 데스크톱에서 옮긴 위치를 모바일에서
+  //   열어도 화면 안에 들어오게 하려면 절대 좌표는 못 쓴다.
+  //   기준은 #menu 의 스크롤 박스 — 펫이 그 안의 absolute 요소이기 때문.
+  function _petApplyPos() {
+    const w = document.getElementById('menuPet'), menu = document.getElementById('menu');
+    if (!w || !menu) return;
+    const p = (typeof META !== 'undefined') ? META.petPos : null;
+    if (!p || typeof p.fx !== 'number' || typeof p.fy !== 'number') {
+      w.style.left = ''; w.style.top = ''; return;   // 미설정 → CSS 기본 배치로
+    }
+    const m = _petBounds(menu, w);
+    w.style.left = Math.round(Math.min(1, Math.max(0, p.fx)) * m.maxX) + 'px';
+    w.style.top = Math.round(Math.min(1, Math.max(0, p.fy)) * m.maxY) + 'px';
+  }
+  // ⚠ 한계는 scrollWidth/scrollHeight 가 아니라 client 박스로 잡아야 한다.
+  //   펫은 #menu 안의 absolute 요소라서, 오른쪽/아래로 끌면 그만큼 scrollWidth 가 같이 늘어나
+  //   한계가 계속 밀리는 피드백 루프가 생긴다(실측: 뷰포트 1440 인데 좌표 1628 까지 나감 = 화면 밖 분실).
+  //   client 박스로 잡으면 펫은 항상 첫 화면 안에 머문다.
+  //   PAD 는 #menu 콘텐츠 박스 원점과 뷰포트가 몇 px 어긋나는 걸 흡수한다
+  //   (실측: 하단이 6px 넘쳐 잘렸다). 가장자리에 딱 붙지 않아 보기에도 낫다.
+  function _petBounds(menu, w) {
+    const PAD = 12;
+    return {
+      maxX: Math.max(1, menu.clientWidth - w.offsetWidth - PAD),
+      maxY: Math.max(1, menu.clientHeight - w.offsetHeight - PAD),
+    };
+  }
   (function _wireMenuPet() {
     const w = document.getElementById('menuPet');
     if (!w || w._wired) return;
     w._wired = true;
-    w.onclick = _petPoke;
+    let drag = null, moved = false;
+
+    w.addEventListener('pointerdown', (e) => {
+      const b = w.getBoundingClientRect();
+      drag = { ox: e.clientX - b.left, oy: e.clientY - b.top, sx: e.clientX, sy: e.clientY };
+      moved = false;
+      w.classList.add('dragging');
+      try { w.setPointerCapture(e.pointerId); } catch (err) {}
+      e.preventDefault();
+    });
+    w.addEventListener('pointermove', (e) => {
+      if (!drag) return;
+      if (Math.abs(e.clientX - drag.sx) + Math.abs(e.clientY - drag.sy) > 5) moved = true;
+      if (!moved) return;
+      const menu = document.getElementById('menu');
+      const mb = menu.getBoundingClientRect();
+      const m = _petBounds(menu, w);
+      const x = Math.min(m.maxX, Math.max(0, e.clientX - mb.left - drag.ox + menu.scrollLeft));
+      const y = Math.min(m.maxY, Math.max(0, e.clientY - mb.top - drag.oy + menu.scrollTop));
+      w.style.left = Math.round(x) + 'px';
+      w.style.top = Math.round(y) + 'px';
+    });
+    const endDrag = (e) => {
+      if (!drag) return;
+      drag = null;
+      w.classList.remove('dragging');
+      try { if (e && e.pointerId != null) w.releasePointerCapture(e.pointerId); } catch (err) {}
+      if (!moved) return;
+      const m = _petBounds(document.getElementById('menu'), w);
+      META.petPos = { fx: (parseFloat(w.style.left) || 0) / m.maxX, fy: (parseFloat(w.style.top) || 0) / m.maxY };
+      try { saveMeta(); } catch (err) {}
+    };
+    w.addEventListener('pointerup', endDrag);
+    w.addEventListener('pointercancel', endDrag);
+
+    w.onclick = () => { if (!moved) _petPoke(); };   // 끌고 놓은 직후엔 말풍선 안 띄움
+    w.ondblclick = () => {                            // 기본 위치로 되돌리기
+      META.petPos = null;
+      try { saveMeta(); } catch (err) {}
+      _petApplyPos();
+    };
     w.onkeydown = (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); _petPoke(); } };
+    window.addEventListener('resize', () => { try { _petApplyPos(); } catch (err) {} });
   })();
 
   try { refreshMenuHero(); } catch (e) {}   // 🛰️ 초기 로드 1회 (메뉴가 정적 show로 뜨고 init은 showScreen('menu') 미호출)
@@ -39314,7 +39408,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 749;
+  const APP_VERSION = 750;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
