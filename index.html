@@ -5306,6 +5306,16 @@
   .cm-char img { height:100%; object-fit:contain; object-position:bottom center; filter:drop-shadow(0 6px 20px rgba(0,0,0,.5)); }
   .cm-char.noimg::after { content:attr(data-emoji); font-size:88px; align-self:center; }
   .cm-char-ph { font-size:82px; align-self:center; }
+  /* 🔩 v760 — 슬롯 탭. 전 코어를 한 리스트에 쏟으면 어느 게 어느 슬롯인지 안 보인다 → 한 슬롯씩. */
+  .cm-slottabs { display:flex; gap:5px; padding:0 10px 8px; overflow-x:auto; scrollbar-width:none; }
+  .cm-slottabs::-webkit-scrollbar { display:none; }
+  .cm-stab { flex:1 0 auto; min-width:60px; padding:8px 10px; font:inherit; font-size:12px; font-weight:700;
+             color:#8f9bb0; background:#141a28; border:1px solid #2a3346; border-radius:9px; cursor:pointer; white-space:nowrap; }
+  .cm-stab.on { color:#0b0e16; background:#7ad7ff; border-color:#7ad7ff; }
+  .cm-stab .cm-stab-n { opacity:.7; font-size:11px; margin-left:3px; }
+  /* 다른 캐릭터가 끼고 있는 코어 — 배타라 뺏어와야 한다는 걸 알린다 */
+  .cm-li-other { margin-left:auto; font-size:9.5px; font-weight:800; color:#ffb066; background:rgba(255,176,102,.14);
+                 border:1px solid rgba(255,176,102,.4); border-radius:5px; padding:1px 4px; white-space:nowrap; }
   .cm-charbtn { position:absolute; top:10px; right:10px; z-index:3; padding:7px 12px; font-size:11.5px; font-weight:700; font-family:inherit; color:#aef0ff; background:rgba(10,16,26,0.7); border:1px solid #3a5570; border-radius:20px; cursor:pointer; backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px); transition:all .15s; }
   .cm-charbtn:hover { border-color:#7ad7ff; box-shadow:0 0 12px rgba(122,215,255,0.35); }
   .cm-charname { position:absolute; bottom:58px; z-index:2; font-size:15px; font-weight:800; color:#fff; text-shadow:0 2px 8px rgba(0,0,0,0.75); pointer-events:none; }
@@ -5994,6 +6004,7 @@
       <div class="cm-sets" id="cm-sets"></div>
     </div>
     <div class="cm-tools" id="cm-tools"></div>
+    <div class="cm-slottabs" id="cm-slottabs"></div>
     <div class="cm-cols">
       <div class="cm-list" id="cm-list"></div>
       <div class="cm-detail" id="cm-detail"></div>
@@ -7172,9 +7183,42 @@
     for (const sk of GEAR_SET_KEYS) { const a = archs[sk]; if (a && keys.indexOf(a.sig) >= 0) return sk; }
     return GEAR_SET_KEYS[Math.floor(Math.random() * GEAR_SET_KEYS.length)];
   }
+  // 🔩 v760 — 장착은 캐릭터별이다.  equipped = { <charId>: { <slot>: itemId } }
+  //   진화 대상(R20 SR / R40 SSR)이 무작위라, 어느 캐릭이 걸려도 되게 캐릭터마다 로드아웃을 갖춰두게 한다.
+  //   ⚠ 배타 — 코어 하나는 한 캐릭터만 낀다. 장착 경로는 _gearEquipToggle 하나뿐이니
+  //     배타 해제도 거기서만 한다(규칙이 흩어지면 어긋난 상태가 만들어진다).
+  function _gearMigrateEquipped(g) {
+    const eq = g.equipped;
+    if (!eq || typeof eq !== 'object') { g.equipped = {}; return false; }
+    // 구형 판정: 값 중 하나라도 "객체가 아닌 것"(= itemId 또는 null)이 있으면 평면 구조다.
+    //   빈 {} 는 키가 없어 여기 걸리지 않는다 → 신형으로 통과.
+    const flat = Object.keys(eq).some(k => eq[k] === null || typeof eq[k] !== 'object');
+    if (!flat) return false;
+    g.equippedLegacy = eq;              // 🛟 원본 백업 — 마이그레이션이 틀렸을 때 되살릴 근거
+    g.equipped = { standard: eq };      // 공용 로드아웃은 기본 도트포대 것으로 이관
+    return true;
+  }
+  function _gearEq(charId) {
+    const g = _ensureGear(), c = charId || 'standard';
+    if (!g.equipped[c] || typeof g.equipped[c] !== 'object') g.equipped[c] = {};
+    return g.equipped[c];
+  }
+  // 이 코어를 지금 끼고 있는 캐릭터 — 배타 판정·UI 표시("다른 캐릭이 장착 중")에 쓴다.
+  function _gearOwnerOf(itemId, exceptChar) {
+    if (itemId == null) return null;
+    const g = _ensureGear();
+    for (const c in g.equipped) {
+      if (c === exceptChar) continue;
+      const m = g.equipped[c];
+      if (!m || typeof m !== 'object') continue;
+      for (const s in m) if (m[s] === itemId) return { charId: c, slot: s };
+    }
+    return null;
+  }
   function _ensureGear() {
     if (!META.gear || typeof META.gear !== 'object') META.gear = { equipped:{}, inv:[], nextId:1 };
     if (!META.gear.equipped) META.gear.equipped = {};
+    _gearMigrateEquipped(META.gear);
     if (!Array.isArray(META.gear.inv)) META.gear.inv = [];
     if (!META.gear.nextId) META.gear.nextId = 1;
     if (!Array.isArray(META.gear.removed)) META.gear.removed = [];   // 🪦 분해/합성 삭제 묘비 (기기간 부활 방지)
@@ -7349,30 +7393,38 @@
   //    ⚠️ 장착을 새 경로로 파지 말 것 — 장착은 전부 이 함수를 지나야 슬롯 배타 규칙이 한 곳에서 지켜진다.
   //    고유장비는 캐릭터 제한이 없다(타 캐릭터 장착 = 능력 이식, 단계 5). 그래서 charId 를 여기서 보지 않는다.
   //    반환: true = 상태 변경됨(저장·재렌더 필요) / false = 부적합으로 거부됨(상태 불변)
-  function _gearEquipToggle(it) {
+  //    🔩 v760 — charId 별 로드아웃. 배타 규칙(코어 1개 = 캐릭 1명)도 여기서만 처리한다.
+  function _gearEquipToggle(it, charId) {
     if (!it) return false;
-    const g = _ensureGear(), slot = it.slot;
-    if (g.equipped[slot] === it.id) { g.equipped[slot] = null; return true; }   // 🔓 해제는 항상 허용(오염분 빼내기용)
+    const c = charId || selectedCharacter || 'standard';
+    const eq = _gearEq(c), slot = it.slot;
+    if (eq[slot] === it.id) { eq[slot] = null; return true; }                   // 🔓 해제는 항상 허용(오염분 빼내기용)
     if (!_gearSlotFits(slot, it)) return false;                                 // 🔒 부적합 장착 차단(양방향)
-    g.equipped[slot] = it.id;
+    // ⚠ 배타 — 다른 캐릭이 끼고 있으면 그쪽에서 먼저 뺀다. 안 그러면 같은 코어가 두 곳에 물린다.
+    const own = _gearOwnerOf(it.id, c);
+    if (own) _gearEq(own.charId)[own.slot] = null;
+    eq[slot] = it.id;
     return true;
   }
   // 장착 코어의 세트별 착용 수 → { set: count }
-  function _gearSetCounts() {
+  function _gearSetCounts(charId) {
     const g = META.gear, out = {}; if (!g || !g.equipped) return out;
+    const eq = _gearEq(charId);   // 🔩 v760 — 세트는 그 캐릭터가 낀 것만 센다
     // ⚠️ GEAR_BASE_SLOTS(4슬롯)만 — 고유장비는 세트 카운트에서 완전히 제외(4피스 성립 조건 불변)
-    for (const slot of GEAR_BASE_SLOTS) { const id = g.equipped[slot]; if (id == null) continue; const it = g.inv.find(x => x.id === id); if (it && it.set) out[it.set] = (out[it.set] || 0) + 1; }
+    for (const slot of GEAR_BASE_SLOTS) { const id = eq[slot]; if (id == null) continue; const it = g.inv.find(x => x.id === id); if (it && it.set) out[it.set] = (out[it.set] || 0) + 1; }
     return out;
   }
   // 장착 코어의 라인을 metaMods에 합산 (주간모디파이어 apply와 동일 패턴). add=합산, mul=(1+합)배.
   // ⚠️ _outRaw 는 UI 전용 순수 출력 인자다(캡에 묻힌 세트 보너스 표시). 넘기지 않으면 동작이 예전과 완전히 동일하다 —
   //    게임 본체 호출부는 인자 1개로 부르므로 절대 이 분기를 타지 않는다. 여기서 로직을 분기시키지 말 것.
-  function applyGearEffects(mm, _outRaw) {
+  function applyGearEffects(mm, _outRaw, charId) {
     const g = META.gear; if (!g || !g.equipped) return;
     const add = {}, mul = {};
-    const curChar = selectedCharacter || 'standard';   // 🎯 동조 라인 소프트 판정용
+    // 🔩 v760 — 로드아웃도 동조 판정도 "이 캐릭터" 기준. 런 중 진화하면 호출부가 새 charId 로 다시 부른다.
+    const curChar = charId || selectedCharacter || 'standard';
+    const eq = _gearEq(curChar);
     for (const slot of GEAR_SLOTS) {
-      const id = g.equipped[slot]; if (id == null) continue;
+      const id = eq[slot]; if (id == null) continue;
       const item = g.inv.find(x => x.id === id); if (!item || !item.lines) continue;
       // ✨ 슬롯 ↔ 아이템 배타 재확인 — 장착은 _gearEquipToggle 가 이미 막지만, 기기간 병합·구세이브로
       //    어긋난 equipped 가 들어와도 효과에는 반영되지 않게 읽는 쪽에서 한 번 더 건다.
@@ -7392,7 +7444,7 @@
       }
     }
     // 🎽 세트 보너스 — 2피스(단순 스탯) + 4피스(큰 수치 + 메커니즘 플래그)
-    const sc = _gearSetCounts();
+    const sc = _gearSetCounts(curChar);
     for (const sk in sc) {
       const def = GEAR_SETS[sk]; if (!def) continue;
       if (sc[sk] >= 2 && def.b2) { const b = def.b2; if (b.op === 'add') add[b.key] = (add[b.key] || 0) + b.val; else mul[b.key] = (mul[b.key] || 0) + b.val; }
@@ -7417,14 +7469,17 @@
     return Math.max(0, (cap - Math.min(Math.max(0, tot - val), cap)) / val);    // 캡 잔여분 ÷ 보너스
   }
   // 🔩 게임 종료 시 코어 드랍 (하드코어: 25% · 등급은 도달 라운드+승천 가중 · 인벤 상한 60)
+  //  🔩 v760 — 캐릭터별 배타 장착으로 바뀌면서 필요 코어가 22캐릭 x 4슬롯 = 88개가 됐다.
+  //    상한 60 / 드롭 25% 로는 전 캐릭터를 갖추는 것이 구조적으로 불가능하다(352판).
+  //    상한 150(88 + 교체·합성 여유) / 드롭 60% 로 올려 약 147판이면 닿게 한다.
   function rollGearDrop() {
-    if (Math.random() >= 0.25) return null;
+    if (Math.random() >= 0.60) return null;
     const g = _ensureGear();
     // ✨ 상한 60 은 "드롭으로 모은 일반 코어"의 예산이다 — 고유장비는 세지 않는다.
     //    고유장비를 세면 가챠 20명 전원 해금 시 예산이 60→40 으로 줄고(실측), 게다가 고유장비는 분해가 막혀 있어
     //    이 상한의 탈출구("분해 유도")가 그 20칸에는 아예 적용되지 않는다 — 드롭이 영구히 좁아진다.
     //    ⚠️ 고유장비가 0개면 filter 결과 = inv.length → 예전과 완전히 동일하다.
-    if (g.inv.filter(x => !_gearIsUnique(x)).length >= 60) return null;   // 상한 초과 → 분해 유도
+    if (g.inv.filter(x => !_gearIsUnique(x)).length >= 150) return null;   // 상한 초과 → 분해 유도
     const slot = GEAR_BASE_SLOTS[Math.floor(Math.random() * GEAR_BASE_SLOTS.length)];   // ⚠️ signature 는 드롭 대상 아님
     const tierScore = ((state && state.round) || 1) + ((state && state.ascension) || 0) * 10;
     const legendChance = Math.min(0.003 + tierScore * 0.0004, 0.02);   // 극악 (0.3%~2%)
@@ -22244,6 +22299,55 @@
 
   // ===== 게임 상태 =====
   let state, paused;
+  // 🔩 v760 — metaMods 를 "항상 기본값부터 다시" 쌓는다.
+  //   applyGearEffects 는 누적 함수(mm[k] = (mm[k]||0)+d)라 두 번 부르면 이중 적용된다.
+  //   그래서 런 중 캐릭터가 바뀌면 부분 갱신하지 말고 이 함수로 통째로 다시 만든다.
+  //   순서: 메타강화 → 캐릭터 패시브 → 승천 → 주간 모디파이어 → 장비(캐릭터별 로드아웃)
+  function _buildMetaMods(charId, asc) {
+    const mods = getMetaMods();
+    const char = CHARACTERS[charId] || CHARACTERS.standard;
+    const cp = char.passive || {};
+    asc = asc || getAscensionMods((state && state.ascension) || 0);
+      const mm = {
+        goldMul:    mods.goldMul,
+        scoreMul:   mods.scoreMul,
+        enhanceMul: mods.enhanceMul * (cp.enhanceMul || 1) * asc.enhanceMul,
+        bossDmgMul: mods.bossDmgMul * (cp.bossDmgMul || 1),
+        dmgMul:     cp.dmgMul || 1,
+        dmgBoost:   mods.dmgBoost || 0,
+        bossGoldMul: mods.bossGoldMul || 0,
+        slowMul:    cp.slowMul || 1,
+        levelUpMul: cp.levelUpMul || 1,
+        levelUpFast: mods.levelUpFast || 0,
+        slotMod:    cp.slotMod || 0,
+        freeRolls:  mods.freeRolls,
+        // 신규 메타 강화
+        luckyChanceBonus:      mods.luckyChanceBonus || 0,
+        superLuckyChanceBonus: mods.superLuckyChanceBonus || 0,
+        comboPowerBonus:       mods.comboPowerBonus || 0,
+        maxAliveBonus:         mods.maxAliveBonus || 0,
+        startReroll:           mods.startReroll || 0,
+        roundTimeBonus:        mods.roundTimeBonus || 0,
+        relicRarityBoost:      mods.relicRarityBoost || 0,  // 유물 등급 가중치 (0~15)
+        // 🏰 디펜스 모드 전용
+        towerRegenLv:          mods.towerRegenLv || 0,
+        towerArmor:            mods.towerArmor || 0,
+        defenseSlowBonus:      mods.defenseSlowBonus || 0,
+        defenseRevive:         mods.defenseRevive || 0,
+      };
+    // 🌀 주간 모디파이어 → 🔩 장비 순으로 얹는다. 장비가 체인의 마지막(설계 문서 원칙).
+    try { const _wm = getActiveWeeklyModifier(); if (_wm && _wm.apply) _wm.apply(mm); } catch (e) {}
+    try { applyGearEffects(mm, null, charId); } catch (e) {}   // 🔩 그 캐릭터의 로드아웃
+    return mm;
+  }
+  // 런 중 진화로 캐릭터가 바뀌었을 때 호출 — 그 캐릭터의 로드아웃/패시브로 갈아끼운다.
+  //   ⚠ 슬롯 수(slotMod)·레벨업 속도(levelUpMul)처럼 이미 굳은 진행에 영향을 주는 값도 함께 바뀐다.
+  //     설계 문서의 "런 시작 시점 고정" 원칙과 어긋나지만, 캐릭터별 로드아웃을 도입한 이상
+  //     진화 후에도 옛 캐릭터의 장비가 남아 있는 쪽이 더 이상하다.
+  function _refreshMetaModsForChar(charId) {
+    if (!state || !state.metaMods) return;
+    try { state.metaMods = _buildMetaMods(charId); } catch (e) { console.warn('[장비] metaMods 재구축 실패:', e); }
+  }
   function reset() {
     // 🏰 게임 모드 — 메뉴 → 모드 선택에서 결정
     // 'standard': 기존 — 적 한계 초과 시 패배
@@ -22390,36 +22494,9 @@
     }
     initBackground();   // 🌌 단계별 우주 배경 재구성 (기본/승천/초월 팔레트 반영)
     state.gold = Math.floor(mods.startGold * asc.startGoldMul);
-    state.metaMods = {
-      goldMul:    mods.goldMul,
-      scoreMul:   mods.scoreMul,
-      enhanceMul: mods.enhanceMul * (cp.enhanceMul || 1) * asc.enhanceMul,
-      bossDmgMul: mods.bossDmgMul * (cp.bossDmgMul || 1),
-      dmgMul:     cp.dmgMul || 1,
-      dmgBoost:   mods.dmgBoost || 0,
-      bossGoldMul: mods.bossGoldMul || 0,
-      slowMul:    cp.slowMul || 1,
-      levelUpMul: cp.levelUpMul || 1,
-      levelUpFast: mods.levelUpFast || 0,
-      slotMod:    cp.slotMod || 0,
-      freeRolls:  mods.freeRolls,
-      // 신규 메타 강화
-      luckyChanceBonus:      mods.luckyChanceBonus || 0,
-      superLuckyChanceBonus: mods.superLuckyChanceBonus || 0,
-      comboPowerBonus:       mods.comboPowerBonus || 0,
-      maxAliveBonus:         mods.maxAliveBonus || 0,
-      startReroll:           mods.startReroll || 0,
-      roundTimeBonus:        mods.roundTimeBonus || 0,
-      relicRarityBoost:      mods.relicRarityBoost || 0,  // 유물 등급 가중치 (0~15)
-      // 🏰 디펜스 모드 전용
-      towerRegenLv:          mods.towerRegenLv || 0,
-      towerArmor:            mods.towerArmor || 0,
-      defenseSlowBonus:      mods.defenseSlowBonus || 0,
-      defenseRevive:         mods.defenseRevive || 0,
-    };
-    // 🌀 v614 — 주간 모디파이어 적용 (게임 규칙만, 랭킹 태그 없음)
-    try { const _wm = getActiveWeeklyModifier(); if (_wm && _wm.apply) _wm.apply(state.metaMods); state.weeklyModifierId = _wm.id; } catch (e) {}
-    try { applyGearEffects(state.metaMods); } catch (e) {}   // 🔩 장비 효과 주입 (metaMods에 합산)
+    state.metaMods = _buildMetaMods(selectedCharacter, asc);
+    // 🌀 v614 — 주간 모디파이어 id 기록 (효과 자체는 _buildMetaMods 안에서 적용)
+    try { state.weeklyModifierId = getActiveWeeklyModifier().id; } catch (e) {}
     // 📊 v677 — 능력 stats 오버라이드 테이블 (능력id → {statName: value}).
     //   고유장비 옵션이 나중 단계에서 이 객체를 채우면 _S(ab) 가 능력 정의의 stats 위에 병합한다.
     //   이번 단계에서는 초기화만 하고 아무도 채우지 않는다 (런마다 새로 만들어져야 함).
@@ -23719,6 +23796,9 @@
         // ⚠️ equipped 는 반드시 _gearMergeInv 가 id 를 유지한 쪽(= localNewer 쪽)에서 가져올 것 — 어긋나면 장착이 깨진다
         const equipped = localNewer ? ((META.gear && META.gear.equipped) || {}) : ((server.gear && server.gear.equipped) || {});
         merged.gear = { equipped, inv: gm.inv, nextId: gm.nextId, removed: gm.removed };
+        // 🔩 v760 — 상대 기기가 아직 구버전(평면 equipped)일 수 있다. 병합 결과에 한 번 더 태워
+        //   { <charId>: { <slot>: id } } 형태를 보장한다. 신형이면 아무것도 안 한다.
+        try { _gearMigrateEquipped(merged.gear); } catch (e) {}
       }
 
       // 📋 v615 — 일일 임무: 기본 규칙({...server,...META})이면 로컬이 무조건 이김 → 기기 전환마다
@@ -35740,18 +35820,8 @@
     }
     // 🌳 본체 패시브 적용 — 진화한 캐릭터(SR/SSR)의 패시브를 입힘 (옛 캐릭 선택과 동일). R타워는 캐릭터가 아니라 패시브 없음.
     try {
-      const ch = CHARACTERS[id];
-      if (ch && ch.passive && state.metaMods) {
-        const cp = ch.passive;
-        const mods = (typeof getMetaMods === 'function') ? getMetaMods() : {};
-        const asc = state.asc || {};
-        state.metaMods.dmgMul = cp.dmgMul || 1;
-        state.metaMods.bossDmgMul = (mods.bossDmgMul || 1) * (cp.bossDmgMul || 1);
-        state.metaMods.slowMul = cp.slowMul || 1;
-        state.metaMods.levelUpMul = cp.levelUpMul || 1;
-        state.metaMods.slotMod = cp.slotMod || 0;
-        state.metaMods.enhanceMul = (mods.enhanceMul || 1) * (cp.enhanceMul || 1) * (asc.enhanceMul || 1);
-      }
+      // 🔩 v760 — 패시브 덮어쓰기는 _refreshMetaModsForChar 가 통째로 재구축하며 처리한다.
+      //   여기서 부분 갱신하면 장비 효과가 두 번 얹히거나 옛 캐릭 장비가 남는다.
     } catch (e) {}
     // 🎭 v725 — 캐릭터 전환을 패시브 적용에서 분리.
     //   기존엔 state.character = id 가 위 `if (ch && ch.passive && state.metaMods)` 안에 있어서,
@@ -35761,7 +35831,11 @@
       const _prevChar = state.character;
       state.character = id;
       state.evoChibi = null;   // 🎴 실제 캐릭터로 승격(R20/R40) → R타워 치비 해제
-      if (_prevChar !== id) { try { _charSwapFx(id); } catch (e) {} }   // ✨ 교체 연출
+      if (_prevChar !== id) {
+        try { _charSwapFx(id); } catch (e) {}                    // ✨ 교체 연출
+        // 🔩 v760 — 로드아웃도 이 캐릭터 것으로 갈아끼운다. 부분 갱신하면 이중 적용되므로 통째로 재구축.
+        try { _refreshMetaModsForChar(id); } catch (e) {}
+      }
     } else if (typeof R_TOWERS !== 'undefined' && R_TOWERS[id]) {
       // 🎴 v741 — R타워(타로 13종)는 CHARACTERS 에 없다. state.character 를 건드리면
       //   점수제출(character 컬럼)·패시브·모티프가 깨지므로 인게임 치비만 교체한다.
@@ -38060,7 +38134,7 @@
       const slot = GEAR_BASE_SLOTS.includes(m[1]) ? m[1] : 'offense';       // ⚠️ signature 금지 — createGear 는 4슬롯 전용(옵션 풀/세트 필요)
       const rarity = GEAR_BASE_RARITY.includes(m[2]) ? m[2] : 'epic';       // ⚠️ unique 금지 — 고유장비는 createUniqueGear 로만 생성
       const item = createGear(slot, rarity);
-      const g = _ensureGear(); g.inv.push(item); g.equipped[slot] = item.id;
+      const g = _ensureGear(); g.inv.push(item); _gearEq(selectedCharacter)[slot] = item.id;
       saveMeta();
       cheatFeedback(`🔩 ${GEAR_RARITY_LABEL[rarity]} ${GEAR_SLOT_LABEL[slot]} 코어 장착: ` + item.lines.map(l => `${l.label} +${l.flat ? l.val : Math.round(l.val*100)+'%'}(T${l.tier})`).join(', '));
       return;
@@ -39567,7 +39641,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 759;
+  const APP_VERSION = 760;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
@@ -40203,8 +40277,8 @@
   })();
   // 🔩 v733 — 캐릭터 상세용 "장착 현황" 요약 (읽기 전용).
   //   조작은 전용 '전술 코어 관리' 화면에서만 한다 — 여기선 무엇이 끼워져 있는지 확인만.
-  //   ⚠ 장착은 캐릭터별이 아니라 계정 공용(g.equipped)이다. 고유 슬롯만 그 캐릭 전용이라
-  //     charId 로 조회하고, 나머지 4슬롯은 어느 캐릭 상세에서 보든 같은 값이 나오는 게 정상.
+  //   🔩 v760 — 장착이 캐릭터별로 바뀌었다. 4슬롯도 그 캐릭터의 로드아웃을 보여준다
+  //     (예전엔 계정 공용이라 어느 캐릭 상세에서 보든 같은 값이 나왔다).
   function _evoGearSummaryHtml(charId) {
     const g = (typeof META !== 'undefined' && META.gear) ? META.gear : null;
     if (!g || !Array.isArray(g.inv)) return '';
@@ -40218,12 +40292,12 @@
     };
     let html = `<div class="evo-d-sec-title">장착 현황</div><div class="egs-grid">`;
     for (const slot of GEAR_BASE_SLOTS) {
-      const id = g.equipped ? g.equipped[slot] : null;
+      const id = _gearEq(charId)[slot];
       html += cell(slot, id != null ? g.inv.find(x => x.id === id) : null);
     }
     // ✨ 고유 슬롯 — 이 캐릭터 전용. 보유했으면 고유명까지 같이 보여준다.
     const sig = (typeof _findUniqueGear === 'function') ? _findUniqueGear(charId) : null;
-    const sigOn = !!(sig && g.equipped && g.equipped.signature === sig.id);
+    const sigOn = !!(sig && _gearEq(charId).signature === sig.id);
     const sname = (typeof SIGNATURE_GEAR !== 'undefined' && SIGNATURE_GEAR[charId]) ? SIGNATURE_GEAR[charId].name : '';
     const scol = _GEAR_RARCOL.unique;
     html += `<div class="egs-cell sig${sig ? '' : ' empty'}" style="border-color:${sig ? scol : '#3a4256'}">`
@@ -40255,6 +40329,10 @@
   function _gearLineRow(l) { if (l.uniq) return _gearUniqRow(l, ''); return `<div class="gcm-line${l.aff ? ' aff' : ''}"><span class="gcm-tier t${l.tier}">T${l.tier}</span><span class="gcm-lbl">${l.label}${_gearAffBadge(l)}</span><b>${l.flat ? '+' + l.val + 's' : '+' + Math.round(l.val * 100) + '%'}</b></div>`; }
   // ===== 🔩 전용 "코어 관리" 화면 (좌:리스트 / 중:캐릭터 / 우:옵션) =====
   let _cmSel = null, _gearLocks = new Set();   // _gearLocks = 잠긴 라인 인덱스
+  // 🔩 v760 — 코어 관리에서 "지금 보고 있는 캐릭터". null 이면 출격 캐릭(standard).
+  let _cmChar = null;
+  let _cmSlotTab = 'offense';   // 🔩 v760 — 리스트에 보여줄 슬롯
+  function _cmCharId() { return _cmChar || selectedCharacter || 'standard'; }
   let _cmFuseMode = false, _cmFuseSel = new Set(), _cmBulkArm = false;   // 🔧 합성 모드 / 🧹 일괄분해 확인
   function openCoreMgr() {
     const g = _ensureGear();
@@ -40272,7 +40350,7 @@
   }
   // 🎽 세트 현황 — 장착 세트별 (N/4) + 2/4피스 활성/비활성
   function _cmSetsHtml() {
-    const sc = _gearSetCounts();
+    const sc = _gearSetCounts(_cmCharId());
     const shown = GEAR_SET_KEYS.filter(sk => (sc[sk] || 0) > 0);
     if (!shown.length) return `<div class="cm-sets-hint">코어를 같은 세트로 맞춰 장착하면 세트 효과가 발동합니다</div>`;
     // 📊 캡 소진 표시 — 세트 수치는 라인 롤과 같은 GEAR_CAP 예산을 공유해서 "활성"인데도 실질 0일 수 있다.
@@ -40304,7 +40382,7 @@
   //    ⚠️ 이 슬롯은 세트 카운트와 무관하다(_gearSetCounts 는 GEAR_BASE_SLOTS 4개만 순회 — N/4 표기 불변).
   //    ⚠️ GEAR_SLOTS(5개)를 여기서 순회하지 말 것 — 그러면 기존 4슬롯 박스가 재생성되어 모양이 바뀐다.
   function _cmSigSlotHtml(g) {
-    const id = (g.equipped && g.equipped.signature != null) ? g.equipped.signature : null;
+    const id = _gearEq(_cmCharId()).signature != null ? _gearEq(_cmCharId()).signature : null;
     const it = (id != null) ? g.inv.find(x => x.id === id) : null;
     const col = _GEAR_RARCOL.unique;   // #ff9de2 — 고유 등급색
     const ch = it ? CHARACTERS[it.charId] : null;
@@ -40316,13 +40394,13 @@
   function _renderCoreMgr() {
     const g = _ensureGear();
     const charEl = document.getElementById('cm-char');
-    if (charEl) { charEl.className = 'cm-char'; charEl.innerHTML = _cmCharIllust(selectedCharacter); _hydrateIllusts(charEl); }
+    if (charEl) { charEl.className = 'cm-char'; charEl.innerHTML = _cmCharIllust(_cmCharId()); _hydrateIllusts(charEl); }
     const nameEl = document.getElementById('cm-charname');
-    if (nameEl) { const ch = CHARACTERS[selectedCharacter] || {}; nameEl.textContent = ch.name || '기본 도트 타워'; }
+    if (nameEl) { const ch = CHARACTERS[_cmCharId()] || {}; nameEl.textContent = ch.name || '기본 도트 타워'; }
     const slotsEl = document.getElementById('cm-slots');
     if (slotsEl) {
       slotsEl.innerHTML = GEAR_BASE_SLOTS.map(slot => {   // ⚠️ 기존 4슬롯 — GEAR_BASE_SLOTS 유지(모양·동작 불변)
-        const id = g.equipped[slot]; const it = id != null ? g.inv.find(x => x.id === id) : null;
+        const id = _gearEq(_cmCharId())[slot]; const it = id != null ? g.inv.find(x => x.id === id) : null;
         const col = it ? (_GEAR_RARCOL[it.rarity] || '#9aa3b3') : '#3a4256';
         // 🔩 v733 — 빈 슬롯엔 슬롯명을 넣어 5칸이 있다는 걸 바로 알아보게 한다(채워지면 CSS 로 숨김)
         return `<div class="cm-slot ${it ? 'filled' : 'empty'}" data-id="${it ? it.id : ''}" title="${GEAR_SLOT_LABEL[slot] || slot}" style="border-color:${col}">${it ? _gearCoreImg(it, 40) : `<span class="cm-slot-lbl">${GEAR_SLOT_LABEL[slot] || slot}</span>`}</div>`;
@@ -40333,25 +40411,40 @@
     if (setsEl) setsEl.innerHTML = _cmSetsHtml();
     const toolsEl = document.getElementById('cm-tools');
     if (toolsEl) { toolsEl.innerHTML = _cmToolsHtml(); toolsEl.querySelectorAll('[data-tool]').forEach(b => b.onclick = () => _cmTool(b.dataset.tool)); }
+    // 🔩 v760 — 슬롯 탭. 한 번에 한 슬롯만 보여준다.
+    const tabsEl = document.getElementById('cm-slottabs');
+    if (tabsEl) {
+      tabsEl.innerHTML = GEAR_SLOTS.map(s => {
+        const n = g.inv.filter(x => x.slot === s).length;
+        return `<button class="cm-stab${s === _cmSlotTab ? ' on' : ''}" data-slot="${s}">${GEAR_SLOT_LABEL[s] || s}<span class="cm-stab-n">${n}</span></button>`;
+      }).join('');
+      tabsEl.querySelectorAll('.cm-stab').forEach(b => b.onclick = () => {
+        _cmSlotTab = b.dataset.slot; _cmSel = null; _gearRerollPending = null; _gearLocks.clear(); _renderCoreMgr();
+      });
+    }
     const listEl = document.getElementById('cm-list');
     if (listEl) {
-      if (!g.inv.length) listEl.innerHTML = `<div class="cm-empty">보유 코어 없음<br>플레이로 획득</div>`;
+      const _slotInv = g.inv.filter(x => x.slot === _cmSlotTab);
+      if (!_slotInv.length) listEl.innerHTML = `<div class="cm-empty">${GEAR_SLOT_LABEL[_cmSlotTab] || ''} 코어 없음<br>${g.inv.length ? '다른 슬롯 탭을 확인하세요' : '플레이로 획득'}</div>`;
       else {
         const rOrd = { legend:0, epic:1, rare:2, common:3 };
-        const inv = g.inv.slice().sort((a, b) => GEAR_SLOTS.indexOf(a.slot) - GEAR_SLOTS.indexOf(b.slot) || ((rOrd[a.rarity] != null ? rOrd[a.rarity] : 9) - (rOrd[b.rarity] != null ? rOrd[b.rarity] : 9)));
+        const inv = _slotInv.slice().sort((a, b) => (rOrd[a.rarity] != null ? rOrd[a.rarity] : 9) - (rOrd[b.rarity] != null ? rOrd[b.rarity] : 9));
         const fFirst = _cmFuseSel.size ? g.inv.find(x => x.id === [..._cmFuseSel][0]) : null;
         listEl.innerHTML = inv.map(it => {
           const col = _GEAR_RARCOL[it.rarity] || '#9aa3b3';
-          const on = g.equipped[it.slot] === it.id, sel = it.id === _cmSel, fsel = _cmFuseSel.has(it.id);
+          const on = _gearEq(_cmCharId())[it.slot] === it.id, sel = it.id === _cmSel, fsel = _cmFuseSel.has(it.id);
           const _sic = GEAR_SETS[it.set] ? GEAR_SETS[it.set].icon : '';
           // ✨ 고유장비는 세트·기종이 없어 이름이 전부 "고유" 로 겹친다 → 어느 캐릭터 것인지 이름으로 구분한다.
           //    (등급색은 _GEAR_RARCOL.unique = #ff9de2 로 이미 col 에 잡혀 있다 — 좌측 바·등급 라벨에 적용됨)
           const _nm = _gearIsUnique(it)
             ? `<span class="cm-li-uq">${_gearSigName(it) || (CHARACTERS[it.charId] && CHARACTERS[it.charId].name) || _gearArchName(it)}</span>`
             : `${_sic}${_gearArchName(it)}`;
+          // 🔩 v760 — 배타. 다른 캐릭이 끼고 있으면 알려준다(누르면 뺏어온다).
+          const _ow = _gearOwnerOf(it.id, _cmCharId());
+          const _otherTag = _ow ? `<span class="cm-li-other">${(CHARACTERS[_ow.charId] && CHARACTERS[_ow.charId].name) || _ow.charId}</span>` : '';
           let dim = false;
           if (_cmFuseMode && !fsel) dim = it.locked || on || it.rarity === 'legend' || it.rarity === 'unique' || (fFirst && (fFirst.slot !== it.slot || fFirst.rarity !== it.rarity));
-          return `<div class="cm-litem${sel && !_cmFuseMode ? ' sel' : ''}${fsel ? ' fusesel' : ''}${dim ? ' dim' : ''}" data-id="${it.id}" style="--rc:${col}"><span class="cm-li-ico">${_gearCoreImg(it, 26) || _gearSigIcon(it) || _GEAR_SLOTICO[it.slot]}</span><span class="cm-li-info"><b style="color:${col}">${GEAR_RARITY_LABEL[it.rarity]}</b> ${_nm}</span>${it.locked ? '<span class="cm-li-lock">🔒</span>' : ''}${on ? '<span class="cm-li-on">E</span>' : ''}${fsel ? '<span class="cm-li-fnum">✓</span>' : ''}</div>`;
+          return `<div class="cm-litem${sel && !_cmFuseMode ? ' sel' : ''}${fsel ? ' fusesel' : ''}${dim ? ' dim' : ''}" data-id="${it.id}" style="--rc:${col}"><span class="cm-li-ico">${_gearCoreImg(it, 26) || _gearSigIcon(it) || _GEAR_SLOTICO[it.slot]}</span><span class="cm-li-info"><b style="color:${col}">${GEAR_RARITY_LABEL[it.rarity]}</b> ${_nm}</span>${_otherTag}${it.locked ? '<span class="cm-li-lock">🔒</span>' : ''}${on ? '<span class="cm-li-on">E</span>' : ''}${fsel ? '<span class="cm-li-fnum">✓</span>' : ''}</div>`;
         }).join('');
         listEl.querySelectorAll('.cm-litem').forEach(el => el.onclick = () => { const id = +el.dataset.id; if (_cmFuseMode) { _cmFusePick(id); return; } _cmSel = id; _gearRerollPending = null; _gearLocks.clear(); _renderCoreMgr(); });
       }
@@ -40371,7 +40464,7 @@
     const sdef = GEAR_SETS[it.set] || null;
     const uq = _gearIsUnique(it);                              // ✨ 고유장비 — 분해·합성만 막고 강화·재설정은 그대로 허용
     const uqch = uq ? (CHARACTERS[it.charId] || null) : null;   // 소유 캐릭터(표시용). 장착 자체엔 캐릭터 제한 없음
-    const equipped = g.equipped[it.slot] === it.id;
+    const equipped = _gearEq(_cmCharId())[it.slot] === it.id;
     const refund = GEAR_DISM_REFUND[it.rarity] || 1;
     const lockN = [..._gearLocks].filter(i => i < it.lines.length).length;
     const cost = Math.round((GEAR_REROLL_COST[it.rarity] || 10) * (1 + lockN * GEAR_LOCK_MULT));   // 잠금 할증
@@ -40406,12 +40499,17 @@
   function _cmAction(act) {
     const g = _ensureGear();
     const it = g.inv.find(x => x.id === _cmSel); if (!it) return;
-    if (act === 'equip') { if (!_gearEquipToggle(it)) { toast('이 슬롯에 장착할 수 없는 코어입니다'); return; } saveMeta(); _renderCoreMgr(); SFX.click && SFX.click(); }   // ✨ 고유장비는 it.slot='signature' → equipped.signature 에 장착. 슬롯 배타는 _gearSlotFits 가 판정
+    // 🔩 v760 — 반드시 "지금 보고 있는 캐릭터"에 장착한다. charId 를 빼먹으면 기본값(standard)으로 가서
+    //   다른 캐릭 화면에서 눌러도 standard 것만 토글된다(실제로 그 버그를 냈다).
+    if (act === 'equip') { const _tgt = _cmCharId(); const _prevOwner = _gearOwnerOf(it.id, _tgt);
+      if (!_gearEquipToggle(it, _tgt)) { toast('이 슬롯에 장착할 수 없는 코어입니다'); return; }
+      if (_prevOwner) toast(`🔩 ${(CHARACTERS[_prevOwner.charId] && CHARACTERS[_prevOwner.charId].name) || _prevOwner.charId} 에서 옮겨왔습니다`);
+      saveMeta(); _renderCoreMgr(); SFX.click && SFX.click(); }   // ✨ 고유장비는 it.slot='signature' → equipped.signature 에 장착. 슬롯 배타는 _gearSlotFits 가 판정
     else if (act === 'levelup') { if ((it.level || 0) >= GEAR_LEVEL_MAX) return; const c = gearLevelCost(it); if (!spendGearGold(c)) { toast('💰 장비 강화재화가 부족합니다'); return; } it.level = (it.level || 0) + 1; it.v = (it.v || 1) + 1; saveMeta(); _renderCoreMgr(); SFX.click && SFX.click(); toast(`⬆ ${GEAR_SLOT_LABEL[it.slot]} 코어 Lv.${it.level}`); }
     else if (act === 'reroll') { const lockN = [..._gearLocks].filter(i => i < it.lines.length).length; const cost = Math.round((GEAR_REROLL_COST[it.rarity] || 10) * (1 + lockN * GEAR_LOCK_MULT)); if (!spendGearGold(cost)) { toast('💰 장비재화가 부족합니다'); return; } const _arch = _gearArch(it.slot, it.set); _gearRerollPending = it.lines.map((l, i) => _gearLocks.has(i) ? l : _gearRerollLine(it, l, i, _arch)); SFX.click && SFX.click(); _renderCoreMgr(); }   // ✨ 고유장비는 _gearRerollLine 이 통합 풀 일반 라인으로만 굴린다(동조·고유 라인 원천 차단)
     else if (act === 'applyRoll') { if (_gearRerollPending) { it.lines = _gearRerollPending; it.v = (it.v || 1) + 1; _gearRerollPending = null; saveMeta(); _renderCoreMgr(); toast('✅ 잠재능력 교체됨'); } }
     else if (act === 'keepRoll') { _gearRerollPending = null; _renderCoreMgr(); }
-    else if (act === 'dismantle') { if (it.rarity === 'unique' || it.slot === 'signature') { toast('✨ 고유장비는 분해할 수 없습니다'); return; } if (it.locked) { toast('🔒 잠금 코어 — 해제 후 분해'); return; } if (g.equipped[it.slot] === it.id) g.equipped[it.slot] = null; const refund = GEAR_DISM_REFUND[it.rarity] || 1; g.inv = g.inv.filter(x => x.id !== it.id); _gearTombstone([it.id]); grantShards(refund); _cmSel = g.inv.length ? g.inv[0].id : null; _gearRerollPending = null; _gearLocks.clear(); saveMeta(); _renderCoreMgr(); toast(`🔨 분해 → 💠${refund} 별조각`); }
+    else if (act === 'dismantle') { if (it.rarity === 'unique' || it.slot === 'signature') { toast('✨ 고유장비는 분해할 수 없습니다'); return; } if (it.locked) { toast('🔒 잠금 코어 — 해제 후 분해'); return; } { const _o = _gearOwnerOf(it.id); if (_o) _gearEq(_o.charId)[_o.slot] = null; } const refund = GEAR_DISM_REFUND[it.rarity] || 1; g.inv = g.inv.filter(x => x.id !== it.id); _gearTombstone([it.id]); grantShards(refund); _cmSel = g.inv.length ? g.inv[0].id : null; _gearRerollPending = null; _gearLocks.clear(); saveMeta(); _renderCoreMgr(); toast(`🔨 분해 → 💠${refund} 별조각`); }
     else if (act === 'lock') { it.locked = !it.locked; it.v = (it.v || 1) + 1; saveMeta(); _renderCoreMgr(); SFX.click && SFX.click(); toast(it.locked ? '🔒 잠금' : '🔓 잠금 해제'); }
   }
   // 🧹 일괄 분해 대상 — 미장착·미잠금·레어 이하
@@ -40421,7 +40519,7 @@
   //    ⚠️ 일반 코어는 _gearIsUnique 가 항상 false → 대상 목록이 예전과 완전히 동일하다(실측 확인).
   function _cmBulkTargets() {
     const g = _ensureGear(); const ord = { common:0, rare:1, epic:2, legend:3 };
-    return g.inv.filter(it => !_gearIsUnique(it) && !it.locked && g.equipped[it.slot] !== it.id && (ord[it.rarity] != null ? ord[it.rarity] : 9) <= 1);
+    return g.inv.filter(it => !_gearIsUnique(it) && !it.locked && !_gearOwnerOf(it.id) && (ord[it.rarity] != null ? ord[it.rarity] : 9) <= 1);
   }
   function _cmBulkDismantle() {
     const g = _ensureGear(); const t = _cmBulkTargets();
@@ -40438,7 +40536,7 @@
     const g = _ensureGear(); const it = g.inv.find(x => x.id === id); if (!it) return;
     if (_cmFuseSel.has(id)) { _cmFuseSel.delete(id); _renderCoreMgr(); return; }
     if (it.rarity === 'unique' || it.slot === 'signature') { toast('✨ 고유장비는 합성 불가'); return; }   // ⚠️ 막지 않으면 order.indexOf('unique')=-1 → common 으로 강등 합성됨
-    if (it.locked || g.equipped[it.slot] === it.id) { toast('장착/잠금 코어는 합성 불가'); return; }
+    if (it.locked || _gearOwnerOf(it.id)) { toast('장착/잠금 코어는 합성 불가'); return; }
     if (it.rarity === 'legend') { toast('레전드는 최상위 — 합성 불가'); return; }
     if (_cmFuseSel.size) { const f = g.inv.find(x => x.id === [..._cmFuseSel][0]); if (f && (f.slot !== it.slot || f.rarity !== it.rarity)) { toast('같은 슬롯·같은 등급만'); return; } }
     if (_cmFuseSel.size >= 3) { toast('3개까지만'); return; }
@@ -40484,8 +40582,8 @@
   function _cmOpenCharPop() {
     const pop = document.getElementById('cm-charpop'); if (!pop) return;
     const ids = ['standard'].concat(Object.keys(CHARACTERS).filter(id => id !== 'standard' && (typeof isCharUnlocked !== 'function' || isCharUnlocked(id))));
-    pop.innerHTML = `<div class="cm-pop-inner"><div class="cm-pop-head">캐릭터 변경 <button class="gcm-x" id="cm-pop-x">✕</button></div><div class="cm-pop-grid">` + ids.map(id => {
-      const ch = CHARACTERS[id] || {}; const on = id === selectedCharacter;
+    pop.innerHTML = `<div class="cm-pop-inner"><div class="cm-pop-head">코어를 장착할 캐릭터 <button class="gcm-x" id="cm-pop-x">✕</button></div><div class="cm-pop-grid">` + ids.map(id => {
+      const ch = CHARACTERS[id] || {}; const on = id === _cmCharId();
       const thumb = (id === 'standard') ? '🔰' : `<img data-illust="${id}" data-emoji="⭐" data-illust-fb="self" alt="">`;
       return `<div class="cm-pop-c${on ? ' on' : ''}" data-char="${id}"><div class="cm-pop-thumb">${thumb}</div><div class="cm-pop-name">${ch.name || '기본 타워'}</div></div>`;
     }).join('') + `</div></div>`;
@@ -40494,7 +40592,10 @@
     pop.onclick = (e) => { if (e.target === pop) pop.classList.remove('show'); };
     const x = document.getElementById('cm-pop-x'); if (x) x.onclick = () => pop.classList.remove('show');
     pop.querySelectorAll('.cm-pop-c').forEach(el => el.onclick = () => {
-      selectedCharacter = el.dataset.char; META.selectedCharacter = el.dataset.char; saveMeta();
+      // 🔩 v760 — 출격 캐릭(selectedCharacter)이 아니라 "코어를 편집할 캐릭터"를 고르는 자리다.
+      //   런은 항상 standard 로 시작하고 진화로 바뀌므로 출격 캐릭을 여기서 바꾸는 건 의미가 없다.
+      _cmChar = el.dataset.char;
+      _cmSel = null; _gearRerollPending = null; _gearLocks.clear();
       pop.classList.remove('show'); _renderCoreMgr(); SFX.click && SFX.click();
     });
   }
