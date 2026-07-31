@@ -25754,8 +25754,6 @@
     // === 🎴 빌드 / 카드 ===
     { id: 'freeRolls',   category: 'build',   name: '시작 레벨업',       desc: 'lv당 무료 레벨업 +1',     maxLv: 5,  cost: lv => 250 * (lv + 1), apply: lv => lv },
     { id: 'levelUpFast', category: 'build',   name: '빠른 성장',         desc: 'lv당 레벨업 처치 -1',    maxLv: 5,  cost: lv => 80 * (lv + 1),  apply: lv => lv },
-    { id: 'enhance',     category: 'build',   name: '강화 비용 절감',    desc: 'lv당 -5%',              maxLv: 6,  cost: lv => 100 * (lv + 1), apply: lv => 0.05 * lv },
-    { id: 'enhance2',    category: 'build',   name: '강화 비용 절감 II', desc: 'lv당 -3% (enhance와 누적)', maxLv: 8, cost: lv => 180 * (lv + 1), apply: lv => 0.03 * lv },
     { id: 'reroll',      category: 'build',   name: '카드 리롤',         desc: '카드 선택 시 3장 다시 뽑기 1회', maxLv: 1, cost: lv => 800, apply: lv => lv },
     { id: 'startReroll', category: 'build',   name: '시작 리롤',         desc: '게임 시작 시 무료 리롤 +1', maxLv: 3, cost: lv => 500 * (lv + 1), apply: lv => lv },
     { id: 'luckyChance', category: 'build',   name: '🍀 럭키 카드 확률',  desc: 'lv당 +2%',                maxLv: 8, cost: lv => 200 * (lv + 1), apply: lv => 0.02 * lv },
@@ -25796,7 +25794,9 @@
       startGold:   v('startGold'),
       goldMul:     1 + v('goldGain'),
       freeRolls:   metaLv('freeRolls'),
-      enhanceMul:  (1 - v('enhance')) * (1 - v('enhance2')),  // 두 강화 누적
+      // 🗑 v764 — 강화 비용 절감 2종 제거. 능력 강화(actEnhance)가 이미 폐지돼
+      //   enhanceMul 을 소비하던 enhanceCost 자체가 사라졌다. 값은 1 로 고정.
+      enhanceMul:  1,
       extraSlot:   metaLv('extraSlot'),
       bossDmgMul:  1 + v('bossDmg'),
       scoreMul:    1 + v('killScore'),
@@ -28424,96 +28424,9 @@
     return (px-cx)*(px-cx) + (py-cy)*(py-cy);
   }
 
-  function enhanceCost(ability) {
-    const def = ABILITY_DEFS[ability.id];
-    const mm = state.metaMods || { enhanceMul: 1 };
-    // 📚 scholar / scholarSnipe 패시브 실시간 계산
-    let scholarMul = 1;
-    if (state.tower && state.tower.abilities) {
-      const sa = state.tower.abilities.find(a => a.id === 'scholar');
-      if (sa) scholarMul = Math.min(scholarMul, 1 - sa.level * 0.04);
-      const ss = state.tower.abilities.find(a => a.id === 'scholarSnipe');
-      if (ss) scholarMul = Math.min(scholarMul, 1 - ss.level * 0.05);
-    }
-    // 🛡 누적 할인 최저 한도 — 최대 -55% 누적 할인
-    const totalMul = Math.max(0.45, mm.enhanceMul * scholarMul);
-    // 능력 레벨 스케일 — 후반 비싸지는 곡선
-    const lvScale = (ability.level + 1) + ability.level * 0.10;
-    // 🎴 v207 — 능력 획득 시점 라운드별 비용 가산
-    //   R1 획득(기본 캐릭터 능력) = 1.0x, R10 = 1.45x, R25 = 2.2x, R50 = 3.45x, R100 = 5.95x
-    //   후반에 새로 뽑은 능력 = 후반 골드 스케일에 맞춰 비싸짐
-    const acqRound = ability.acquiredRound || 1;
-    const roundMul = 1 + (acqRound - 1) * 0.05;
-    return Math.ceil(def.baseCost * lvScale * roundMul * totalMul);
-  }
 
-  // 랜덤 능력 획득 비용: 0, 25, 60, 110, 180, 270, ...
-  // 첫 획득은 0G, 누적 횟수에 따라 점점 비싸짐
-  function randomAcquireCost() {
-    const n = state.tower.acquireCount;
-    if (n === 0) return 0;
-    return 25 + (n - 1) * 25 + (n - 1) * (n - 1) * 10;
-  }
 
-  // ===== 액션 =====
-  function actRandomAcquire() {
-    return;  // 🔩 Phase 3 — 골드 랜덤카드 구매 폐지: 무료 이벤트 카드로 대체. #randomBtn 숨김, 잔여 경로 차단.
-    if (state.gameOver) return;
-    if (state.levelUpChoices) return;  // 이미 카드 모달 활성
-    const cost = randomAcquireCost();
-    if (state.gold < cost) return toast('골드 부족');
-    const aSlotsFree = activeCount() < maxActiveSlots();
-    const pSlotsFree = passiveCount() < maxPassiveSlots();
-    const hasCombo = findAvailableCombos().length > 0;
-    const hasUpgradable = state.tower.abilities.some(a => !isAtMax(a));
-    // 슬롯/조합/강화 전부 불가 → 보너스 카드 (점수/스타더스트) 만 제공
-    const bonusOnly = !aSlotsFree && !pSlotsFree && !hasCombo && !hasUpgradable;
-    // 카드 생성 — bonusOnly 면 어센던트 3장 (엔드리스), 아니면 정상 풀
-    let choices;
-    if (bonusOnly) {
-      // 🌟 v241 — 어센던트 3장 (정체 해소). 단 스타더스트 1장은 유지 (영구 통화 획득 경로 보존)
-      choices = generateAscendantChoices();
-      // 마지막 슬롯을 스타더스트로 교체 (1/3 확률로 골고루 분배)
-      const dustAmount = Math.max(1, Math.floor(state.round / 3));
-      choices[2] = { action: 'bonusStardust', amount: dustAmount };
-    } else {
-      choices = generateLevelUpChoices();
-    }
-    if (choices.length === 0) return toast('새 능력 없음');
-    // 즉시 골드 차감 (카드 모달 떠있는 동안 강화로 골드 빠지는 버그 방지)
-    state.gold -= cost;
-    state.levelUpChoices = choices;
-    state.cardCost = cost;            // 표시용 (모달 제목에 사용)
-    state.cardCostPaid = cost;        // 취소 시 환불용
-    state.cardCancelable = true;
-    state.rerollAvailable = metaLv('reroll') > 0;
-    SFX.click();
-    renderPanel();
-  }
 
-  function actEnhance(idx) {
-    return;  // 🔩 Phase 3 — 인게임 골드 강화 폐지: 능력 성장은 카드/이벤트로만. up버튼은 이미 숨김, 잔여 호출 경로도 차단.
-    if (state.gameOver) return;
-    if (state.levelUpChoices) return toast('카드 선택 후 가능');  // 카드 모달 중 강화 차단 (꼼수 방지)
-    const a = state.tower.abilities[idx];
-    if (!a) return;
-    if (isAtMax(a)) return toast('이미 MAX — 조합 카드 대기');
-    const cost = enhanceCost(a);
-    if (state.gold < cost) return toast('골드 부족');
-    state.gold -= cost;
-    a.level += 1;
-    // 💎 복제기 (cloneEngine) — 강화 시 추가 +1 레벨 (충전 소진형, 총 5회)
-    let cloneApplied = false;
-    const re = state.relicEffects;
-    if (re && re.doubleEnhance && (re.doubleEnhanceCharges || 0) > 0 && !isAtMax(a)) {
-      a.level += 1;
-      re.doubleEnhanceCharges--;
-      cloneApplied = true;
-    }
-    const chargeTxt = cloneApplied ? ` (🧬+1 / 잔여 ${re.doubleEnhanceCharges})` : '';
-    toast(`${ABILITY_DEFS[a.id].name} Lv${a.level}${chargeTxt}${isAtMax(a) ? ' MAX!' : ''}`);
-    renderPanel();
-  }
 
   // 🗑 v260 — 삭제 버튼 무장 (첫 클릭) — 2초 내 재클릭해야 실제 삭제
   function armDeleteButton(btnEl, a) {
@@ -28535,54 +28448,6 @@
         }
       }
     }, 2050);
-  }
-  function actDelete(idx, btnEl) {
-    if (state.gameOver) return;
-    if (state.levelUpChoices) return toast('카드 선택 후 가능');  // 카드 모달 중 삭제 차단
-    const a = state.tower.abilities[idx];
-    if (!a) return;
-    // 🗑 v260 — 2단계 삭제: 첫 클릭은 "무장"만, 2초 내 재클릭해야 실제 삭제 (실수 방지)
-    const now = performance.now();
-    if (!a._deleteArmedUntil || now > a._deleteArmedUntil) {
-      a._deleteArmedUntil = now + 2000;
-      armDeleteButton(btnEl, a);
-      return;
-    }
-    // 무장 상태 + 2초 이내 재클릭 → 실제 삭제 진행
-    a._deleteArmedUntil = 0;
-    if (a._deleteArmTimer) { clearTimeout(a._deleteArmTimer); a._deleteArmTimer = null; }
-    // 🎬 v243 — 자연스러운 삭제 애니메이션
-    // DOM 행을 찾아 접힘 → 완료 후 실제 데이터 삭제 + 재렌더
-    // 현재 탭(액티브/패시브)에서의 visualIdx 계산 (filtered 배열 인덱스)
-    const isPassive = ABILITY_DEFS[a.id].isPassive;
-    const isPassiveTab = (typeof currentAbTab !== 'undefined' && currentAbTab === 'passive');
-    let rowEl = null;
-    if (isPassiveTab === isPassive) {
-      const visualIdx = state.tower.abilities
-        .slice(0, idx)
-        .filter(x => ABILITY_DEFS[x.id].isPassive === isPassive).length;
-      const rows = elAb ? elAb.querySelectorAll('.ability-row') : null;
-      if (rows && rows[visualIdx]) rowEl = rows[visualIdx];
-    }
-    const commit = () => {
-      // 🛡 v243 — 동시 삭제 시 인덱스 드리프트 방지: 참조로 현재 인덱스 재계산
-      const curIdx = state.tower.abilities.indexOf(a);
-      if (curIdx < 0) return; // 이미 삭제됨
-      // 강화에 들인 골드의 40% 환불 (랜덤 획득 비용은 환불 없음)
-      let refund = 0;
-      for (let lv = 1; lv < a.level; lv++) {
-        refund += Math.ceil(enhanceCost({id:a.id, level:lv}) * 0.4);
-      }
-      state.gold += refund;
-      state.tower.abilities.splice(curIdx, 1);
-      toast(refund > 0 ? `삭제 · ${refund}G 환불` : `삭제됨`);
-      renderPanel();
-    };
-    if (rowEl) {
-      collapseElementThen(rowEl, commit);
-    } else {
-      commit();
-    }
   }
 
   // ===== 적 스폰 =====
@@ -33653,7 +33518,6 @@
   const ABILITY_DOCK = true;   // 🛸 v598 — 능력 도크 프로토타입(가로): 풀행→아이콘 칩 그리드. false면 기존 풀행 리스트로 복귀
   const elToast  = $('toast');
 
-  elRandom.onclick = actRandomAcquire;
   // 🏰 TD 타워 뽑기 버튼 클릭 — 카드 없으면 뽑기, 카드 들고있으면 버리기
   const _tdDrawBtn = document.getElementById('tdDrawBtn');
   if (_tdDrawBtn) {
@@ -33794,23 +33658,8 @@
     _setStyle(bar, 'width', (pct*100) + '%');
     _toggleClass(bar.parentElement, 'danger', pct > 0.75);
     _toggleClass(bar.parentElement, 'warn',   pct > 0.5 && pct <= 0.75);
-    // 🛡 v214 — 랜덤 버튼 상태 — _setDisabled 캐시가 refreshAbilityAffordability 의 직접 .disabled=true 설정과
-    //   충돌해서 모달 닫혀도 캐시가 stale인 채로 남는 버그 발생. 직접 set 으로 변경.
-    const acqCost = randomAcquireCost();
-    const modalOpenForRandom = !!state.levelUpChoices;
-    elRandom.disabled = state.gold < acqCost || modalOpenForRandom;
-    // 슬롯 가득이면 보너스 카드 모드임을 명시
-    const aFull = activeCount() >= maxActiveSlots();
-    const pFull = passiveCount() >= maxPassiveSlots();
-    const hasCombo = findAvailableCombos().length > 0;
-    const hasUpgradable = state.tower.abilities.some(a => !isAtMax(a));
-    const bonusOnly = aFull && pFull && !hasCombo && !hasUpgradable;
-    const costLabel = acqCost === 0 ? '무료' : `${acqCost}G`;
-    const newText = bonusOnly
-      ? `✨ 어센던트 카드 (${costLabel})`
-      : `🎲 랜덤 능력 획득 (${costLabel})`;
-    // 텍스트만 캐시 (성능) — 안전한 비교
-    if (elRandom._lastText !== newText) { elRandom.textContent = newText; elRandom._lastText = newText; }
+    // 🗑 v764 — 랜덤 능력 획득 버튼 라벨 갱신 블록 제거.
+    //   버튼 자체가 숨김(display:none)이고 actRandomAcquire/randomAcquireCost 도 폐지됐다.
     // 능력 강화 버튼 어포더블 상태 매 프레임 갱신
     refreshAbilityAffordability();
   }
@@ -33828,24 +33677,6 @@
     const _sig = state.gold + '|' + modalOpen + '|' + _affGen + '|' + state.tower.abilities.length;
     if (_sig === _affSig) return;
     _affSig = _sig;
-    // 강화 버튼 — 직접 처리 (캐시 없음)
-    const upBtns = elAb.querySelectorAll('button[data-act="up"]');
-    for (let i = 0; i < upBtns.length; i++) {
-      const btn = upBtns[i];
-      const idx = +btn.dataset.i;
-      const a = state.tower.abilities[idx];
-      if (!a) continue;
-      if (isAtMax(a)) continue;
-      const cost = enhanceCost(a);
-      const canAfford = state.gold >= cost;
-      const enabled = canAfford && !modalOpen;
-      btn.disabled = !enabled;
-      btn.style.opacity = enabled ? '' : '0.55';
-      const row = btn.closest('.ability-row');
-      if (row) row.classList.toggle('affordable', enabled);
-      const costSpan = btn.querySelector('span');
-      if (costSpan) costSpan.style.color = enabled ? '#ffd479' : '#5a5f6a';
-    }
     // 삭제 버튼도 모달 중엔 비활성
     const rmBtns = elAb.querySelectorAll('button[data-act="rm"]');
     for (let i = 0; i < rmBtns.length; i++) {
@@ -34003,15 +33834,9 @@
         comboHint = hints.join('');
       }
       const max = isAtMax(a);
-      const cost = max ? 0 : enhanceCost(a);
-      const canAfford = !max && state.gold >= cost;
       const lvLabel = max
         ? `<span style="color:#52e07a">MAX</span>`
         : `<span style="color:#9bb3ff">Lv${a.level}/${maxLvFor(a.id)}</span>`;
-      const costColor = canAfford ? '#ffd479' : '#5a5f6a';
-      const upBtn = max
-        ? `<button disabled style="opacity:0.4; color:#52e07a; border-color:#2a4a30">MAX</button>`
-        : `<button data-act="up" data-i="${origIdx[i]}"${canAfford ? '' : ' disabled style="opacity:0.55"'}>강화<br/><span style="color:${costColor}">${cost}G</span></button>`;
       row.className = 'ability-row';
       if (max) row.classList.add('maxed');
       if (isNewRow) row.classList.add('row-fade-in');
@@ -34044,14 +33869,6 @@
       `;
       elAb.appendChild(row);
     }
-    elAb.querySelectorAll('button').forEach(btn => {
-      btn.onclick = (ev) => {
-        if (ev && ev.stopPropagation) ev.stopPropagation();   // 🛸 v598 — 칩 펼침 토글로 버블링 방지
-        const i = +btn.dataset.i;
-        if (btn.dataset.act === 'up') actEnhance(i);
-        else actDelete(i, btn);   // 🗑 v260 — 버튼 참조 전달 (2단계 삭제 무장 표시용)
-      };
-    });
     // 🛸 v598 — 칩 탭 → 그 칩만 전폭 펼침(단일 오픈 아코디언). 빈 슬롯 제외. (도크 모드만)
     if (ABILITY_DOCK) {
       elAb.querySelectorAll('.ability-row:not(.empty)').forEach(row => {
@@ -34592,16 +34409,6 @@
     if (owned.length) { const i = Math.floor(Math.random() * owned.length); const _lid = owned[i].id; lost = (ABILITY_DEFS[_lid] || {}).name || '능력'; _evIconPush(_lid, 'lost'); owned.splice(i, 1); }
     const a = _evGainAbility(1), b = _evGainAbility(1);
     return lost ? `💀 ${lost} 희생 → ${a} · ${b}` : `✨ ${a} · ${b}`;
-  }
-  // 🆕 등가교환(캡) — 골드를 _evUnit×30 까지만 소모, 데미지 최대 +18% 비례 (스노볼 방지)
-  function _evGoldToDamage() {
-    const capCost = _evUnit() * 30;
-    const spent = Math.min(state.gold, capCost);
-    if (spent < 1) return '바칠 골드가 없었다.';
-    state.gold -= spent; _evClampGold();
-    const bonus = 0.18 * (spent / capCost) * (_eventBuffScale || 1);
-    state.metaMods.dmgMul *= (1 + bonus);
-    return `⚗ -${spent}G → 데미지 +${Math.round(bonus * 100)}% 영구!`;
   }
   // 🆕 공명(유물) — 보유 유물 수 × 골드 (최대 8)
   function _evResonanceRelics() {
@@ -39615,7 +39422,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 763;
+  const APP_VERSION = 764;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
