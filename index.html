@@ -5352,6 +5352,7 @@
   .cm-d-col { flex:1; min-width:0; background:#141a26; border:1px solid #232c3c; border-radius:10px; padding:10px; }
   .cm-d-col.new { border-color:#7ad7ff; box-shadow:0 0 12px rgba(122,215,255,0.2); }
   .cm-d-colt { font-size:9.5px; font-weight:800; color:#8aa0c0; margin-bottom:8px; letter-spacing:.4px; }
+  .cm-d-applied { font-size:9.5px; font-weight:800; color:#0b0e16; background:#52e07a; border-radius:4px; padding:1px 5px; margin-left:4px; vertical-align:middle; }
   .cm-d-arrow { display:flex; align-items:center; color:#7ad7ff; font-size:18px; font-weight:800; }
   .cm-d-acts { display:flex; gap:7px; flex-wrap:wrap; }
   .cm-d-lv { display:flex; align-items:center; gap:10px; margin-bottom:12px; padding:8px 11px; background:linear-gradient(90deg,rgba(255,212,121,0.08),#141a26); border:1px solid #3a3524; border-radius:9px; }
@@ -39418,7 +39419,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 765;
+  const APP_VERSION = 766;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
@@ -40253,18 +40254,19 @@
       ? ' (라인 전부 고정값 — 수치 상승 없음)'
       : ` (+${(lvl + 1) * 10}%${_lvFix ? ` · 고정 ${_lvFix}줄 제외` : ''})`;
     const levelRow = _gearRerollPending ? '' : `<div class="cm-d-lv"><span class="cm-d-lvtxt">⚡ 강화 Lv.${lvl}${atMax ? ' · MAX' : ` → ${lvl + 1}${_lvNext}`}</span>${atMax ? '' : `<button class="gcm-btn lv" data-act="levelup"${gg < lvCost ? ' disabled' : ''}>⬆ 레벨업 <span class="gcm-cost">💰${lvCost}</span></button>`}</div>`;
-    // 현재 라인 — 프리뷰 중엔 잠금토글 없음, 평소엔 각 줄에 🔒 토글
+    // 라인 표시 — 재설정 직후엔 왼쪽이 "직전" 라인(비교용, 잠금토글 없음), 평소엔 현재 라인 + 🔒 토글
     const curLines = _gearRerollPending
-      ? it.lines.map(_gearLineRow).join('')
+      ? _gearRerollPending.map(_gearLineRow).join('')
       : it.lines.map((l, i) => {
           const lockBtn = `<button class="gcm-lock" data-lock="${i}" title="잠금 — 재설정 시 이 줄은 유지(비용↑)">${_gearLocks.has(i) ? '🔒' : '🔓'}</button>`;
           if (l.uniq) return _gearUniqRow(l, lockBtn);
           return `<div class="gcm-line${_gearLocks.has(i) ? ' locked' : ''}${i === 0 && sdef ? ' sig' : ''}${l.aff ? ' aff' : ''}">${lockBtn}<span class="gcm-tier t${l.tier}">T${l.tier}</span><span class="gcm-lbl">${l.label}${i === 0 && sdef ? ' <span class="gcm-sig">시그니처</span>' : ''}${_gearAffBadge(l)}</span><b>${l.flat ? '+' + l.val + 's' : '+' + Math.round(l.val * 100) + '%'}</b></div>`;
         }).join('');
-    let h = `<div class="cm-d-head" style="border-color:${col}"><span class="cm-d-ico">${_gearCoreImg(it, 34) || _gearSigIcon(it) || _GEAR_SLOTICO[it.slot]}</span><div><div class="cm-d-name">${uq ? (_gearSigName(it) || (uqch ? uqch.name + ' 고유장비' : '고유장비')) : _gearArchName(it) + ' 코어'}</div><div class="cm-d-rar" style="color:${col}">${GEAR_RARITY_LABEL[it.rarity]}${equipped ? ' · 장착중' : ''}${sdef ? ` · <span style="color:${sdef.color}">${sdef.icon}${sdef.name}</span>` : ''}${uq ? ` · <span style="color:${col}">✨${uqch ? uqch.name : '고유장비'}</span>` : ''}${it.locked ? ' · <span style="color:#ffd479">🔒</span>' : ''}</div></div></div>${uq && _gearSigDesc(it) ? `<div class="cm-d-sigflavor">“${_gearSigDesc(it)}”</div>` : ''}${levelRow}<div class="cm-d-cols"><div class="cm-d-col"><div class="cm-d-colt">현재 잠재능력${lockN ? ` · 🔒${lockN}` : ''}</div>${curLines}</div>`;
-    if (_gearRerollPending) h += `<div class="cm-d-arrow">→</div><div class="cm-d-col new"><div class="cm-d-colt">새 잠재능력</div>${_gearRerollPending.map(_gearLineRow).join('')}</div>`;
+    let h = `<div class="cm-d-head" style="border-color:${col}"><span class="cm-d-ico">${_gearCoreImg(it, 34) || _gearSigIcon(it) || _GEAR_SLOTICO[it.slot]}</span><div><div class="cm-d-name">${uq ? (_gearSigName(it) || (uqch ? uqch.name + ' 고유장비' : '고유장비')) : _gearArchName(it) + ' 코어'}</div><div class="cm-d-rar" style="color:${col}">${GEAR_RARITY_LABEL[it.rarity]}${equipped ? ' · 장착중' : ''}${sdef ? ` · <span style="color:${sdef.color}">${sdef.icon}${sdef.name}</span>` : ''}${uq ? ` · <span style="color:${col}">✨${uqch ? uqch.name : '고유장비'}</span>` : ''}${it.locked ? ' · <span style="color:#ffd479">🔒</span>' : ''}</div></div></div>${uq && _gearSigDesc(it) ? `<div class="cm-d-sigflavor">“${_gearSigDesc(it)}”</div>` : ''}${levelRow}<div class="cm-d-cols"><div class="cm-d-col"><div class="cm-d-colt">${_gearRerollPending ? '직전 잠재능력' : `현재 잠재능력${lockN ? ` · 🔒${lockN}` : ''}`}</div>${curLines}</div>`;
+    if (_gearRerollPending) h += `<div class="cm-d-arrow">→</div><div class="cm-d-col new"><div class="cm-d-colt">새 잠재능력 <span class="cm-d-applied">적용됨</span></div>${it.lines.map(_gearLineRow).join('')}</div>`;
     h += `</div>`;
-    if (_gearRerollPending) h += `<div class="cm-d-acts"><button class="gcm-btn apply" data-act="applyRoll">✅ 교체 적용</button><button class="gcm-btn" data-act="keepRoll">유지 (되돌리기)</button></div>`;
+    // 재설정 직후: 확인(비교 닫기) + 바로 한 번 더 굴리기. 되돌리기는 없다.
+    if (_gearRerollPending) h += `<div class="cm-d-acts"><button class="gcm-btn apply" data-act="doneRoll">✅ 확인</button><button class="gcm-btn roll" data-act="reroll"${gg < cost ? ' disabled' : ''}>🎲 재리롤 <span class="gcm-cost">💰${cost.toLocaleString()}${lockN ? ' 🔒' + lockN : ''}</span></button></div>`;
     else h += `<div class="cm-d-acts"><button class="gcm-btn eq" data-act="equip">${equipped ? '🔓 해제' : '🔩 장착'}</button><button class="gcm-btn roll" data-act="reroll"${gg < cost ? ' disabled' : ''}>🎲 재설정 <span class="gcm-cost">💰${cost.toLocaleString()}${lockN ? ' 🔒' + lockN : ''}</span></button><button class="gcm-btn lock${it.locked ? ' on' : ''}" data-act="lock" title="잠금 — 일괄분해·합성에서 보호">${it.locked ? '🔒' : '🔓'}</button>${uq
       // ✨ 고유장비 = 분해 불가(_cmAction 이 이미 차단). data-act 를 아예 안 달아 클릭 배선 자체가 없다 + 이유 표기.
       ? `<button class="gcm-btn dism uqno" disabled title="고유장비는 분해·합성할 수 없습니다">🔨 분해</button><span class="cm-d-note">✨ 고유장비는 분해·합성 불가</span>`
@@ -40281,9 +40283,24 @@
       if (_prevOwner) toast(`🔩 ${(CHARACTERS[_prevOwner.charId] && CHARACTERS[_prevOwner.charId].name) || _prevOwner.charId} 에서 옮겨왔습니다`);
       saveMeta(); _renderCoreMgr(); SFX.click && SFX.click(); }   // ✨ 고유장비는 it.slot='signature' → equipped.signature 에 장착. 슬롯 배타는 _gearSlotFits 가 판정
     else if (act === 'levelup') { if ((it.level || 0) >= GEAR_LEVEL_MAX) return; const c = gearLevelCost(it); if (!spendGearGold(c)) { toast('💰 장비 강화재화가 부족합니다'); return; } it.level = (it.level || 0) + 1; it.v = (it.v || 1) + 1; saveMeta(); _renderCoreMgr(); SFX.click && SFX.click(); toast(`⬆ ${GEAR_SLOT_LABEL[it.slot]} 코어 Lv.${it.level}`); }
-    else if (act === 'reroll') { const lockN = [..._gearLocks].filter(i => i < it.lines.length).length; const cost = Math.round((GEAR_REROLL_COST[it.rarity] || 10) * (1 + lockN * GEAR_LOCK_MULT)); if (!spendGearGold(cost)) { toast('💰 장비재화가 부족합니다'); return; } const _arch = _gearArch(it.slot, it.set); _gearRerollPending = it.lines.map((l, i) => _gearLocks.has(i) ? l : _gearRerollLine(it, l, i, _arch)); SFX.click && SFX.click(); _renderCoreMgr(); }   // ✨ 고유장비는 _gearRerollLine 이 통합 풀 일반 라인으로만 굴린다(동조·고유 라인 원천 차단)
-    else if (act === 'applyRoll') { if (_gearRerollPending) { it.lines = _gearRerollPending; it.v = (it.v || 1) + 1; _gearRerollPending = null; saveMeta(); _renderCoreMgr(); toast('✅ 잠재능력 교체됨'); } }
-    else if (act === 'keepRoll') { _gearRerollPending = null; _renderCoreMgr(); }
+    // 🎲 v766 — 재설정은 "즉시 확정"이다. 예전엔 미리보기 후 [유지 (되돌리기)] 로 옛 라인을 지킬 수 있어
+    //   비용을 내고도 손해를 안 보는 무위험 리롤이었다. 이제 굴리는 순간 적용된다.
+    //   _gearRerollPending 은 이제 "직전 라인"을 담는다 — 되돌리기용이 아니라 before→after 비교 표시 전용.
+    //   ✨ 고유장비는 _gearRerollLine 이 통합 풀 일반 라인으로만 굴린다(동조·고유 라인 원천 차단)
+    else if (act === 'reroll') {
+      const lockN = [..._gearLocks].filter(i => i < it.lines.length).length;
+      const cost = Math.round((GEAR_REROLL_COST[it.rarity] || 10) * (1 + lockN * GEAR_LOCK_MULT));
+      if (!spendGearGold(cost)) { toast('💰 장비재화가 부족합니다'); return; }
+      const _arch = _gearArch(it.slot, it.set);
+      const _before = it.lines;
+      it.lines = it.lines.map((l, i) => _gearLocks.has(i) ? l : _gearRerollLine(it, l, i, _arch));
+      it.v = (it.v || 1) + 1;
+      _gearRerollPending = _before;   // 비교 표시용(직전 라인). 되돌릴 수는 없다.
+      saveMeta();
+      SFX.click && SFX.click();
+      _renderCoreMgr();
+    }
+    else if (act === 'doneRoll') { _gearRerollPending = null; _renderCoreMgr(); }   // 비교 표시만 닫는다(이미 적용돼 있다)
     else if (act === 'dismantle') { if (it.rarity === 'unique' || it.slot === 'signature') { toast('✨ 고유장비는 분해할 수 없습니다'); return; } if (it.locked) { toast('🔒 잠금 코어 — 해제 후 분해'); return; } { const _o = _gearOwnerOf(it.id); if (_o) _gearEq(_o.charId)[_o.slot] = null; } const refund = GEAR_DISM_REFUND[it.rarity] || 1; g.inv = g.inv.filter(x => x.id !== it.id); _gearTombstone([it.id]); grantShards(refund); _cmSel = g.inv.length ? g.inv[0].id : null; _gearRerollPending = null; _gearLocks.clear(); saveMeta(); _renderCoreMgr(); toast(`🔨 분해 → 💠${refund} 별조각`); }
     else if (act === 'lock') { it.locked = !it.locked; it.v = (it.v || 1) + 1; saveMeta(); _renderCoreMgr(); SFX.click && SFX.click(); toast(it.locked ? '🔒 잠금' : '🔓 잠금 해제'); }
   }
