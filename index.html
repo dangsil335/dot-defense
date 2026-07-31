@@ -6262,13 +6262,9 @@
   /* 🛒 모바일 상점 — 나가기 버튼이 스크롤 없이 항상 하단에 떠 있도록 (그리드는 그 위에서 스크롤) */
   #shopScene .npc-panel-foot { position: sticky; bottom: 0; background: linear-gradient(0deg, #0e1119 72%, rgba(14,17,25,0)); padding-top: 8px; z-index: 3; }
   /* 🛒 상점 구매 확인 팝업 */
-  .shop-confirm { position: absolute; inset: 0; z-index: 6; display: flex; align-items: center; justify-content: center; background: rgba(4,6,12,0.55); padding: 16px; }
   .shop-confirm .sc-box { background: linear-gradient(180deg,#1c2434,#10141f); border: 1px solid #3a4660; border-radius: 14px; padding: 18px 20px; min-width: 220px; max-width: 86%; text-align: center; box-shadow: 0 14px 44px rgba(0,0,0,0.6); animation: rewardIn .2s ease; }
-  .shop-confirm .sc-q { font-size: 15px; color: #e8eaf0; line-height: 1.5; }
   .shop-confirm .sc-cost { font-size: 21px; font-weight: bold; color: #ffd479; margin: 8px 0 14px; }
-  .shop-confirm .sc-btns { display: flex; gap: 10px; }
   .shop-confirm .sc-btns .npc-btn { flex: 1; padding: 11px; }
-  .shop-confirm .sc-no { background: linear-gradient(180deg,#3a3f4c,#262a36); border-color: #555c6e; box-shadow: none; }
   .npc-btn { width: 100%; padding: 12px; font-family: inherit; font-size: 15px; font-weight: bold; cursor: pointer; border-radius: 11px; background: linear-gradient(180deg,#44598a,#2a3550); color:#fff; border:1px solid #6a82b8; box-shadow: 0 0 14px rgba(122,215,255,0.18); transition: transform .08s, box-shadow .12s; touch-action: manipulation; }
   .npc-btn:hover { box-shadow: 0 0 20px rgba(122,215,255,0.3); }
   .npc-btn:active { transform: scale(.985); }
@@ -6289,11 +6285,8 @@
   .eo-badge { position: absolute; top: -8px; right: -8px; width: 20px; height: 20px; border-radius: 50%; color: #0b0e14; font-weight: 900; font-size: 11px; line-height: 20px; text-align: center; box-shadow: 0 1px 5px rgba(0,0,0,.6); z-index: 2; }
   .eo-name { font-size: 10px; color: #cfd6e3; font-weight: 600; letter-spacing: 0.02em; max-width: 66px; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   /* ⬆ 상점 강화 결과 팝업 행 */
-  .shop-confirm .sc-up-row { display: flex; align-items: center; justify-content: center; gap: 12px; margin: 10px 0 4px; }
   .shop-confirm .sc-up-row img { width: 48px; height: 48px; image-rendering: auto; border-radius: 8px; border: 2px solid #ffaa55; }
-  .shop-confirm .sc-up-info { text-align: left; }
   .shop-confirm .sc-up-name { font-weight: bold; font-size: 15px; }
-  .shop-confirm .sc-up-lv { font-size: 13px; color: #ffd479; margin-top: 2px; }
   /* 🔮 유물 획득 피드백 */
   .relic-reveal { display: flex; align-items: center; gap: 14px; padding: 15px 16px; border-radius: 14px; background: linear-gradient(180deg,#1a2132,#10141f); border: 2px solid var(--rc,#888); box-shadow: 0 0 24px var(--rg,rgba(255,255,255,.25)), inset 0 0 18px rgba(0,0,0,.4); animation: rewardIn .3s cubic-bezier(.2,1.4,.5,1); }
   .relic-reveal .rr-icon { flex: 0 0 64px; width: 64px; height: 64px; display: flex; align-items: center; justify-content: center; font-size: 44px; filter: drop-shadow(0 0 10px var(--rg,rgba(255,255,255,.3))); }
@@ -6466,7 +6459,7 @@
     <div class="npc-panel">
       <div class="npc-panel-head">
         <span class="npc-panel-title">🛒 떠돌이 상점</span>
-        <span class="npc-panel-gold">💰 <span id="shopGold">0</span> G</span>
+        
       </div>
       <div class="shop-grid" id="shopGrid"></div>
       <div class="npc-panel-foot">
@@ -6483,7 +6476,7 @@
     <div class="npc-panel">
       <div class="npc-panel-head">
         <span class="npc-panel-title" id="eventTitle">✦ 사건</span>
-        <span class="npc-panel-gold">CREDIT <span id="eventGold">0</span> G</span>
+        
       </div>
       <div class="event-text" id="eventText"></div>
       <div class="event-choices" id="eventChoices"></div>
@@ -34185,7 +34178,6 @@
     return stock;
   }
   function buildShopUI() {
-    const ge = document.getElementById('shopGold'); if (ge) ge.textContent = String(Math.floor(state.gold));
     const grid = document.getElementById('shopGrid'); if (!grid) return;
     grid.innerHTML = '';
     (state._shopStock || []).forEach((it, i) => {
@@ -34247,27 +34239,6 @@
     dlg.onclick = (e) => { if (e.target === dlg) close(); };
     const ok = document.getElementById('shopUpOk'); if (ok) ok.onclick = close;
   }
-  // 🛒 구매 확인 팝업 — 클릭 즉시 구매 방지 (오구매 방지)
-  function _shopConfirm(i) {
-    const it = (state._shopStock || [])[i];
-    if (!it || it.bought || state.gold < it.cost) return;
-    const sc = document.getElementById('shopScene');
-    if (!sc) { buyShopItem(i); return; }
-    const old = document.getElementById('shopConfirm'); if (old) old.remove();
-    const rr = (typeof RELIC_RARITY !== 'undefined' && RELIC_RARITY[it.rarity]) || {};
-    const dlg = document.createElement('div'); dlg.id = 'shopConfirm'; dlg.className = 'shop-confirm';
-    dlg.innerHTML =
-      '<div class="sc-box">'
-      + '<div class="sc-q">「<b style="color:' + (rr.color || '#ffd479') + '">' + it.name + '</b>」 구매할까요?</div>'
-      + '<div class="sc-cost">💰 ' + it.cost + ' G</div>'
-      + '<div class="sc-btns"><button class="npc-btn sc-no" id="shopConfNo">취소</button><button class="npc-btn" id="shopConfYes">구매 ▶</button></div>'
-      + '</div>';
-    sc.appendChild(dlg);
-    const close = () => { const d = document.getElementById('shopConfirm'); if (d) d.remove(); };
-    dlg.onclick = (e) => { if (e.target === dlg) close(); };   // 바깥 탭 → 취소
-    const noB = document.getElementById('shopConfNo'); if (noB) noB.onclick = () => { if (SFX && SFX.click) try { SFX.click(); } catch (e) {} close(); };
-    const yesB = document.getElementById('shopConfYes'); if (yesB) yesB.onclick = () => { close(); buyShopItem(i); };
-  }
   function openShop() {
     if (state.mode === 'defense' || !state.tower || state.gameOver) return;
     paused = true;
@@ -34287,7 +34258,6 @@
     const sc = document.getElementById('shopScene'); if (sc) sc.classList.add('show');
   }
   function closeShop() {
-    const _cf = document.getElementById('shopConfirm'); if (_cf) _cf.remove();
     const sc = document.getElementById('shopScene'); if (sc) sc.classList.remove('show');
     paused = false;
     const pb = document.getElementById('pauseBtn'); if (pb) pb.textContent = '⏸ 일시정지';
@@ -34730,7 +34700,6 @@
       }).join('') + '</div>';
     }
     if (choicesEl) choicesEl.innerHTML = iconRow + `<div class="event-outcome"${isCurse ? ' style="color:#ff8a8a;background:#1a1012;border-color:#4a2030;"' : ''}>${out}</div>`;
-    const ge = document.getElementById('eventGold'); if (ge) ge.textContent = String(Math.floor(state.gold));
     const foot = document.getElementById('eventFoot'); if (foot) foot.style.display = '';
     const _cb = document.getElementById('eventCloseBtn'); if (_cb) _cb.textContent = '[ CONTINUE ]';
     try { for (let k = 0; k < 10; k++) spawnParticles(CX, CY, isCurse ? '#ff6b6b' : '#ffd479', 1); } catch (e) {}
@@ -34881,7 +34850,6 @@
     ] };
     try { _setEventPortrait(rtKey); } catch (e) {}
     const te = document.getElementById('eventTitle'); if (te) te.textContent = _evTitle('진화 // ' + (t.title || rtKey));
-    const ge = document.getElementById('eventGold'); if (ge) ge.textContent = String(Math.floor(state.gold));
     const tx = document.getElementById('eventText'); if (tx) tx.textContent = '"' + (EVO_LINES[rtKey] || ((npc.name || '운명') + ' — 내 힘을 받아라. 너의 포탑이 [' + (t.title || rtKey) + ']로 깨어난다.')) + '"';
     const choicesEl = document.getElementById('eventChoices');
     if (choicesEl) {
@@ -34934,7 +34902,6 @@
     else if (_jp) { try { if (SFX && SFX.victory) SFX.victory(); } catch (e) {} }   // ✨ 대박 효과음
     _setEventPortrait(npcKey);
     const te = document.getElementById('eventTitle'); if (te) te.textContent = _evTitle(title);
-    const ge = document.getElementById('eventGold'); if (ge) ge.textContent = String(Math.floor(state.gold));
     const tx = document.getElementById('eventText'); if (tx) tx.textContent = _stripEvEmoji(text);
     const choicesEl = document.getElementById('eventChoices'); if (choicesEl) choicesEl.innerHTML = '';
     const foot = document.getElementById('eventFoot'); if (foot) foot.style.display = 'none';
@@ -35063,7 +35030,6 @@
     _setEventPortrait(npcKey);
     const _scnR = document.getElementById('eventScene'); if (_scnR) { _scnR.classList.toggle('jackpot', !!jackpot); _scnR.classList.remove('curse'); }
     const te = document.getElementById('eventTitle'); if (te) te.textContent = isStack ? '유물 강화' : '유물 획득';   // 대박은 금테 글로우 + 고등급 유물(자체 광채)로만 표현
-    const ge = document.getElementById('eventGold'); if (ge) ge.textContent = String(Math.floor(state.gold));
     const tx = document.getElementById('eventText');
     const choicesEl = document.getElementById('eventChoices');
     if (grantId) {
@@ -35513,7 +35479,6 @@
       }
     } catch (e) {}
     const te = document.getElementById('eventTitle'); if (te) te.textContent = '공명 // ' + d.name;
-    const ge = document.getElementById('eventGold'); if (ge) ge.textContent = String(Math.floor(state.gold));
     // 대사 — 화자별 캐릭터 색 (다중 NPC 명확화)
     const tx = document.getElementById('eventText');
     if (tx) {
@@ -36967,7 +36932,6 @@
     }
     const te = document.getElementById('eventTitle'); if (te) te.textContent = _evTitle(ev.title);   // 기습 — 이모지 스트립(시스템 텍스트만)
     const tx = document.getElementById('eventText'); if (tx) tx.textContent = _stripEvEmoji(ev.text);
-    const ge = document.getElementById('eventGold'); if (ge) ge.textContent = String(Math.floor(state.gold));
     const choicesEl = document.getElementById('eventChoices');
     if (choicesEl) {
       choicesEl.innerHTML = '';
@@ -39651,7 +39615,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 762;
+  const APP_VERSION = 763;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
