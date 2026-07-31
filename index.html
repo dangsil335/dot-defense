@@ -5467,6 +5467,10 @@
   body.play-modal #panel,
   body.play-modal #abilities,
   body.play-modal #topHud { opacity:0.16 !important; filter:grayscale(0.6); transition:opacity .12s; }
+  /* ⏸ v770 — 일시정지 계열. #playCtl 은 제외 — 재개(⏸)가 거기 있어서 어둡게/차단하면 모바일에서 갇힌다. */
+  body.play-paused #panel,
+  body.play-paused #abilities,
+  body.play-paused #topHud { opacity:0.16 !important; filter:grayscale(0.6); transition:opacity .12s; }
   /* 🎯 플레이 UI 입력 차단 — 게임 위에 무언가 떠 있는 동안 뒤쪽 DOM 이 클릭을 먹지 않게 한다.
      ⚠️ 클릭 차단은 반드시 자손(`*`)까지 내려야 한다.
      가로모드엔 위쪽에 `#wrap:not(.portrait) #panel > * { pointer-events:auto }` 가 있어서
@@ -5480,7 +5484,13 @@
         `*` 없이 컨테이너만 막고 있어서 점수 표시 화면 뒤가 계속 눌렸다(실측: game-over 중
         #stats·#relicViewBtn·.ab-tabs·#abilities 전부 pointer-events:auto).
         같은 실수가 두 번 난 이유가 규칙이 두 군데로 갈라져 있어서다 — 새 모달을 추가할 땐
-        여기 셀렉터 목록에 클래스를 한 줄 더하는 것으로 끝내고, 저쪽에 따로 만들지 말 것. */
+        여기 셀렉터 목록에 클래스를 한 줄 더하는 것으로 끝내고, 저쪽에 따로 만들지 말 것.
+
+     ⏸ v770 — 세 번째로 샌 곳: 일시정지(paused). 일시정지 화면은 캔버스에 PAUSED·라운드·점수를 그리는
+        엄연한 "점수 표시 화면"인데 body 클래스를 아무것도 안 걸고 있었다(유물 제단·엔드리스 오퍼도 같음).
+        그래서 클래스 부착을 renderStats() 의 상태 기반 토글로 옮겼다 — 오버레이 상태가 곧 클래스다.
+        ⚠ play-paused 는 #playCtl 을 건드리지 않는다. 재개 버튼(⏸)이 거기 있어서 막으면 탈출로가 사라진다
+           (Space 는 데스크톱 전용이라 모바일에서 완전히 갇힌다). */
   body.play-modal #playCtl,   body.play-modal #playCtl *,
   body.play-modal #panel,     body.play-modal #panel *,
   body.play-modal #abilities, body.play-modal #abilities *,
@@ -5488,7 +5498,10 @@
   body.game-over  #playCtl,   body.game-over  #playCtl *,
   body.game-over  #panel,     body.game-over  #panel *,
   body.game-over  #abilities, body.game-over  #abilities *,
-  body.game-over  #topHud,    body.game-over  #topHud * { pointer-events:none !important; }
+  body.game-over  #topHud,    body.game-over  #topHud *,
+  body.play-paused #panel,     body.play-paused #panel *,
+  body.play-paused #abilities, body.play-paused #abilities *,
+  body.play-paused #topHud,    body.play-paused #topHud * { pointer-events:none !important; }
   /* 🃏 능력 설명 말풍선 (탭 팝업 — 리스트 변형 없음) */
   #abTip { position:fixed; z-index:80; display:none; max-width:230px; background:#0e1524; border:1px solid #3a5570; border-radius:10px; padding:9px 12px; box-shadow:0 8px 24px rgba(0,0,0,0.65); font-size:11.5px; line-height:1.55; color:#cdd5e3; }
   #abTip.show { display:block; }
@@ -33661,6 +33674,14 @@
   function renderStats() {
     // 🎬 카드 선택·이벤트 모달 활성 시 플레이 오버레이 버튼 dim/차단 (모달은 캔버스라 DOM 버튼이 위로 뜨는 문제 해결)
     try { document.body.classList.toggle('play-modal', !!(state && (state.levelUpChoices || state.tdDrawCards))); } catch (e) {}
+    // ⏸ v770 — 일시정지·유물 제단·엔드리스 오퍼도 캔버스 오버레이다. 여태 아무 클래스도 안 걸려 있어
+    //   뒤의 능력 목록·ACTIVE/PASSIVE 탭이 그대로 눌렸다(일시정지 화면은 라운드·점수를 띄운다).
+    //   renderStats() 는 currentScreen==='game' 인 동안 매 프레임 돈다(loop 말미) → 상태가 곧 클래스다.
+    //   ⚠ 이 클래스는 #playCtl 을 막지 않는다 — 재개(⏸)가 거기 있다.
+    try {
+      document.body.classList.toggle('play-paused', !!paused
+        || !!(state && ((state.relicOffering && state.relicOffering.length) || state.endlessOfferPending)));
+    } catch (e) {}
     try { _autoResolveScenes(); } catch (e) {}   // 🤖 AUTO: 이벤트/드래프트 자동 선택
     // 라운드 + 승천 뱃지 + 엔드리스 표시
     const ascSuffix = (state.ascension && state.ascension > 0) ? ` ⚡${state.ascension}` : '';
@@ -37474,6 +37495,7 @@
     if (name !== 'game') {
       const _rs = document.getElementById('rewardSummary'); if (_rs) _rs.classList.remove('show');
       try { document.body.classList.remove('game-over'); } catch (e) {}   // 💀 v725 — 게임 밖으로 나가면 HUD 차단 해제
+      try { document.body.classList.remove('play-paused'); } catch (e) {}  // ⏸ v770 — 루프가 멈추면 토글도 멈추므로 여기서 확실히 턴다
     }
     menuEl.classList.toggle('show', name === 'menu');
     codexEl.classList.toggle('show', name === 'codex');
@@ -39491,7 +39513,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 769;
+  const APP_VERSION = 770;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
