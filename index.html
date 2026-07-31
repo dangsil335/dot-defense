@@ -5300,39 +5300,47 @@
   /* ===== 🔩 전술 코어 관리 화면 ===== */
   #coreMgrScreen .codex-header { position:relative; }
   .cm-shardhud { position:absolute; right:14px; top:50%; transform:translateY(-50%); font-size:13px; font-weight:800; color:#ffd479; }
-  .cm-wrap { flex:1; display:flex; flex-direction:column; min-height:0; padding:8px 12px calc(14px + env(safe-area-inset-bottom)); gap:10px; max-width:640px; width:100%; margin:0 auto; box-sizing:border-box; }
-  .cm-hero { position:relative; flex:0 0 auto; height:26vh; min-height:188px; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; border-radius:16px; overflow:hidden; background:radial-gradient(circle at 50% 34%, rgba(122,215,255,0.18), rgba(11,13,18,0) 66%), linear-gradient(180deg,#0e1524,#0a0d14); border:1px solid #232c3c; }
-  .cm-char { position:absolute; inset:0; display:flex; align-items:flex-end; justify-content:center; }
-  .cm-char img { height:100%; object-fit:contain; object-position:bottom center; filter:drop-shadow(0 6px 20px rgba(0,0,0,.5)); }
-  .cm-char.noimg::after { content:attr(data-emoji); font-size:88px; align-self:center; }
-  .cm-char-ph { font-size:82px; align-self:center; }
-  /* 🔩 v760 — 슬롯 탭. 전 코어를 한 리스트에 쏟으면 어느 게 어느 슬롯인지 안 보인다 → 한 슬롯씩. */
-  .cm-slottabs { display:flex; gap:5px; padding:0 10px 8px; overflow-x:auto; scrollbar-width:none; }
-  .cm-slottabs::-webkit-scrollbar { display:none; }
-  .cm-stab { flex:1 0 auto; min-width:60px; padding:8px 10px; font:inherit; font-size:12px; font-weight:700;
-             color:#8f9bb0; background:#141a28; border:1px solid #2a3346; border-radius:9px; cursor:pointer; white-space:nowrap; }
-  .cm-stab.on { color:#0b0e16; background:#7ad7ff; border-color:#7ad7ff; }
-  .cm-stab .cm-stab-n { opacity:.7; font-size:11px; margin-left:3px; }
+  /* 🕸 v767 — 성도가 들어오며 세로 총량이 뷰포트를 넘는다(실측 720px 화면에서 970px).
+     예전엔 .cm-hero 가 26vh 로 고정 + overflow:hidden 이라 세트 패널이 잘려 안 보였던 것뿐이다.
+     이제 화면 전체를 스크롤시키고, 작업영역(목록+상세)만 확정 높이를 줘 내부 스크롤을 유지한다. */
+  .cm-wrap { flex:1; display:flex; flex-direction:column; min-height:0; overflow-y:auto; -webkit-overflow-scrolling:touch;
+    padding:8px 12px calc(14px + env(safe-area-inset-bottom)); gap:10px; max-width:640px; width:100%; margin:0 auto; box-sizing:border-box; }
+  /* ⚰️ 삭제됨(v767): .cm-hero / .cm-char* / .cm-charbtn / .cm-charname / .cm-slot* / .cm-slottabs / .cm-stab* / .cm-pop* — 캐릭터 히어로·슬롯 5칸·슬롯탭·캐릭터 선택 팝업이 전부 코어 성도(.cmap)로 대체됐다. */
   /* 다른 캐릭터가 끼고 있는 코어 — 배타라 뺏어와야 한다는 걸 알린다 */
   .cm-li-other { margin-left:auto; font-size:9.5px; font-weight:800; color:#ffb066; background:rgba(255,176,102,.14);
                  border:1px solid rgba(255,176,102,.4); border-radius:5px; padding:1px 4px; white-space:nowrap; }
-  .cm-charbtn { position:absolute; top:10px; right:10px; z-index:3; padding:7px 12px; font-size:11.5px; font-weight:700; font-family:inherit; color:#aef0ff; background:rgba(10,16,26,0.7); border:1px solid #3a5570; border-radius:20px; cursor:pointer; backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px); transition:all .15s; }
-  .cm-charbtn:hover { border-color:#7ad7ff; box-shadow:0 0 12px rgba(122,215,255,0.35); }
-  .cm-charname { position:absolute; bottom:58px; z-index:2; font-size:15px; font-weight:800; color:#fff; text-shadow:0 2px 8px rgba(0,0,0,0.75); pointer-events:none; }
-  .cm-slots { position:absolute; bottom:10px; z-index:2; display:flex; gap:8px; }
-  .cm-slot { width:42px; height:42px; border:1.5px solid #3a4256; border-radius:11px; background:rgba(10,13,20,0.8); display:flex; align-items:center; justify-content:center; font-size:19px; cursor:pointer; transition:transform .12s; }
-  .cm-slot.filled:hover { transform:scale(1.1); }
-  /* 🔩 v733 — 빈 슬롯 가시성 개선. 기존 opacity:0.45 + 점선이라 어두운 배경에서 거의 안 보여
-     "슬롯이 하나뿐"으로 보였다. 대비를 올리고 슬롯명을 안에 박아 5칸이 한눈에 읽히게 한다. */
-  .cm-slot.empty { opacity:0.85; border-style:dashed; border-color:#55627d !important; background:rgba(18,24,36,0.85); }
-  .cm-slot-lbl { font-size:9px; font-weight:800; letter-spacing:0.3px; color:#7e8ca6; line-height:1; }
-  .cm-slot.filled .cm-slot-lbl { display:none; }
-  /* ✨ 5번째 고유 슬롯 — 기존 4슬롯(.cm-slot) 규칙은 한 글자도 건드리지 않고, 구분선 + 고유 등급색만 덧입힌다 */
-  .cm-slots-sep { flex:0 0 auto; align-self:stretch; width:1px; margin:3px 0; background:linear-gradient(180deg,rgba(255,157,226,0),rgba(255,157,226,0.6),rgba(255,157,226,0)); }
-  .cm-slot.sig { box-shadow:0 0 10px rgba(255,157,226,0.35); }
-  .cm-slot.sig.empty { opacity:0.85; border-style:dashed; box-shadow:none; }   /* 🔩 v733 — 나머지 4칸과 가시성 통일 */
-  .cm-slot-sigico { font-size:18px; line-height:1; filter:drop-shadow(0 0 4px rgba(255,157,226,0.55)); }
-  .cm-cols { flex:1; min-height:0; display:flex; gap:10px; }
+  /* 🕸 v767 — 코어 성도. 장착 규칙이 "일반 4슬롯 = 계정 공용 / 고유 = 캐릭터별" 로 갈렸는데
+     목록과 탭만으로는 그 경계가 안 보였다. 뻗어나가는 선 자체가 규칙 설명이다.
+     ⚠️ .cmap-hub / .cmap-ring 은 position:static 을 유지할 것 — 노드 좌표를 host 기준으로 재야 한다. */
+  .cmap { position:relative; flex:0 0 auto; border-radius:16px; overflow:hidden; border:1px solid #241a3a; padding:10px 8px 12px; box-sizing:border-box;
+    background:
+      radial-gradient(ellipse 62% 42% at 50% 4%, rgba(122,215,255,0.20), transparent 62%),
+      radial-gradient(ellipse 74% 46% at 50% 96%, rgba(255,157,226,0.15), transparent 62%),
+      linear-gradient(160deg,#0a0a1e,#0c0a22 55%,#080a1a); }
+  .cmap-edges { position:absolute; top:0; left:0; pointer-events:none; z-index:1; }
+  .cmap-edge { fill:none; stroke:#7ad7ff; stroke-width:1.1; opacity:.15; transition:opacity .2s, stroke-width .2s, stroke .2s; }
+  .cmap-edge.lit { stroke:#ff9de2; opacity:.92; stroke-width:2; }
+  .cmap-lab { position:relative; z-index:2; text-align:center; font-size:9.5px; font-weight:800; letter-spacing:1.4px; opacity:.85; }
+  .cmap-lab.hub { color:#7ad7ff; margin:0 0 7px; }
+  .cmap-lab.sig { color:#ff9de2; margin:13px 0 7px; }
+  .cmap-hub { display:flex; flex-wrap:wrap; justify-content:center; gap:8px; }
+  .cmap-ring { display:flex; flex-wrap:wrap; justify-content:center; gap:8px 4px; }
+  .cmap-node { position:relative; z-index:2; width:50px; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:3px; transition:transform .15s; }
+  .cmap-node:hover { transform:translateY(-2px); }
+  .cmap-core { position:relative; width:40px; height:40px; border-radius:12px; border:1.5px solid var(--gc,#3a4256); background:rgba(10,13,20,0.82);
+    display:flex; align-items:center; justify-content:center; font-size:19px; overflow:hidden; transition:box-shadow .2s, border-color .2s, transform .15s; }
+  .cmap-core img { width:100%; height:100%; object-fit:cover; object-position:top center; }
+  .cmap-node.ch .cmap-core { border-radius:50%; }
+  .cmap-node.empty .cmap-core { border-style:dashed; }
+  .cmap-node.empty .cmap-ph { opacity:.45; }
+  .cmap-node.on .cmap-core { box-shadow:0 0 9px var(--gc), 0 0 20px var(--gc); }
+  .cmap-node.sel .cmap-core { border-color:#fff; box-shadow:0 0 12px var(--gc), 0 0 26px var(--gc); transform:scale(1.07); }
+  .cmap-nm { font-size:9px; font-weight:700; color:#dfe6f5; text-shadow:0 1px 3px #000; line-height:1.15; text-align:center;
+    max-width:50px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; opacity:.9; }
+  .cmap-node.sel .cmap-nm { color:#fff; opacity:1; }
+  .cmap-badge { position:absolute; right:-2px; bottom:-2px; font-size:11px; line-height:1; filter:drop-shadow(0 0 3px rgba(255,157,226,.9)); }
+  .cmap-empty { position:relative; z-index:2; font-size:11px; color:#7e8ca6; padding:8px 4px; text-align:center; line-height:1.5; }
+  .cm-cols { flex:0 0 auto; height:min(46vh,300px); display:flex; gap:10px; }
   .cm-list { flex:0 0 118px; overflow-y:auto; display:flex; flex-direction:column; gap:6px; padding-right:2px; }
   .cm-litem { display:flex; align-items:center; gap:6px; padding:8px; border-radius:9px; background:#11151e; border:1px solid #232c3c; border-left:3px solid var(--rc,#3a4256); cursor:pointer; transition:filter .12s, border-color .12s; }
   .cm-litem:hover { filter:brightness(1.2); }
@@ -5359,18 +5367,6 @@
   .cm-d-lvtxt { font-size:12px; font-weight:800; color:#ffd479; }
   .cm-d-lv .gcm-btn { flex:0 0 auto; margin-left:auto; padding:8px 12px; }
   .gcm-btn.lv { border-color:#ffd479; color:#ffe6a0; }
-  .cm-pop { display:none; position:fixed; inset:0; z-index:210; background:rgba(4,6,12,0.75); backdrop-filter:blur(5px); -webkit-backdrop-filter:blur(5px); align-items:center; justify-content:center; padding:18px; }
-  .cm-pop.show { display:flex; }
-  .cm-pop-inner { width:100%; max-width:440px; max-height:76vh; display:flex; flex-direction:column; background:#0e131e; border:1.5px solid #3a5570; border-radius:16px; padding:16px; }
-  .cm-pop-head { display:flex; align-items:center; font-size:15px; font-weight:800; color:#e8eef7; margin-bottom:14px; }
-  .cm-pop-head .gcm-x { margin-left:auto; }
-  .cm-pop-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(84px,1fr)); gap:10px; overflow-y:auto; }
-  .cm-pop-c { border-radius:12px; border:1.5px solid #232c3c; background:#141a26; padding:8px 6px; cursor:pointer; text-align:center; transition:all .15s; }
-  .cm-pop-c:hover { border-color:#5a7590; }
-  .cm-pop-c.on { border-color:#7ad7ff; box-shadow:0 0 12px rgba(122,215,255,0.3); }
-  .cm-pop-thumb { height:64px; display:flex; align-items:center; justify-content:center; font-size:38px; overflow:hidden; }
-  .cm-pop-thumb img { height:100%; object-fit:contain; }
-  .cm-pop-name { font-size:10px; color:#c3cbd8; margin-top:5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   /* 🎽 세트 현황 패널 */
   .cm-sets { margin-top:10px; }
   .cm-sets-hint { font-size:11px; color:#7a8496; text-align:center; padding:8px 6px; line-height:1.5; }
@@ -5997,21 +5993,21 @@
     <span class="cm-shardhud" id="cm-shardhud"></span>
   </div>
   <div class="cm-wrap">
-    <div class="cm-hero">
-      <button class="cm-charbtn" id="cm-charbtn">🔄 캐릭터 변경</button>
-      <div class="cm-char" id="cm-char"></div>
-      <div class="cm-charname" id="cm-charname"></div>
-      <div class="cm-slots" id="cm-slots"></div>
-      <div class="cm-sets" id="cm-sets"></div>
+    <!-- 🕸 코어 성도 — 중앙 공용 4슬롯에서 캐릭터별 고유 슬롯으로 선이 뻗는다.
+         연결선 SVG 는 JS 가 만들고 좌표는 _cmapLayoutEdges 가 실제 DOM 위치를 재서 넣는다. -->
+    <div class="cmap" id="cm-map">
+      <div class="cmap-lab hub">◈ 공용 코어 · 전 캐릭터 적용</div>
+      <div class="cmap-hub" id="cmap-hub"></div>
+      <div class="cmap-lab sig">✨ 고유 코어 · 캐릭터별</div>
+      <div class="cmap-ring" id="cmap-ring"></div>
     </div>
     <div class="cm-tools" id="cm-tools"></div>
-    <div class="cm-slottabs" id="cm-slottabs"></div>
     <div class="cm-cols">
       <div class="cm-list" id="cm-list"></div>
       <div class="cm-detail" id="cm-detail"></div>
     </div>
+    <div class="cm-sets" id="cm-sets"></div>
   </div>
-  <div class="cm-pop" id="cm-charpop"></div>
 </div>
 
 <!-- ===== 🎰 가챠 화면 ===== -->
@@ -7182,35 +7178,80 @@
   //   ⚠ 배타 — 코어 하나는 한 캐릭터만 낀다. 장착 경로는 _gearEquipToggle 하나뿐이니
   //     배타 해제도 거기서만 한다(규칙이 흩어지면 어긋난 상태가 만들어진다).
   function _gearMigrateEquipped(g) {
-    const eq = g.equipped;
-    if (!eq || typeof eq !== 'object') { g.equipped = {}; return false; }
-    // 구형 판정: 값 중 하나라도 "객체가 아닌 것"(= itemId 또는 null)이 있으면 평면 구조다.
-    //   빈 {} 는 키가 없어 여기 걸리지 않는다 → 신형으로 통과.
-    const flat = Object.keys(eq).some(k => eq[k] === null || typeof eq[k] !== 'object');
-    if (!flat) return false;
-    g.equippedLegacy = eq;              // 🛟 원본 백업 — 마이그레이션이 틀렸을 때 되살릴 근거
-    g.equipped = { standard: eq };      // 공용 로드아웃은 기본 도트포대 것으로 이관
-    return true;
+    let changed = false;
+    if (!g.equipped || typeof g.equipped !== 'object') { g.equipped = {}; changed = true; }
+    // ① 평면 { slot: id } (v759 이전) → 일단 standard 로드아웃으로 감싼다. ②가 이어서 공용으로 승격시킨다.
+    //    빈 {} 는 키가 없어 여기 걸리지 않는다 → 그대로 통과.
+    //    ⚠️ 판정 기준은 "값이 itemId(원시값)인가" 다. null 은 근거가 못 된다 —
+    //       구버전은 값이 null 이면 평면으로 봤는데, 캐릭터별 맵에 손상된 { standard: null } 이 하나만 섞여도
+    //       전체를 평면으로 오판해 맵 통째를 슬롯 값에 처넣었다(실측: sh.lara = {offense:8,...}).
+    if (Object.keys(g.equipped).some(k => g.equipped[k] != null && typeof g.equipped[k] !== 'object')) {
+      g.equippedLegacy = g.equipped;        // 🛟 원본 백업 — 마이그레이션이 틀렸을 때 되살릴 근거
+      g.equipped = { standard: g.equipped };
+      changed = true;
+    }
+    // ② 캐릭터별 4슬롯 (v760~v766) → 공용 1벌로 병합.
+    //    standard 를 먼저 보고, 비어 있는 슬롯만 다른 캐릭이 낀 걸 주워 온다.
+    //    v760 은 배타라 한 코어가 한 곳에만 있었으니 슬롯당 후보는 사실상 유일하다.
+    //    ⚠️ GEAR_BASE_SLOTS 를 쓰지 않는다 — _ensureGear 는 그 const 보다 이른 시점에도 불릴 수 있어(TDZ) 던진다.
+    //       대신 데이터에 실제로 있는 키에서 signature 만 빼면 그게 곧 4슬롯이다.
+    if (!g.equippedShared || typeof g.equippedShared !== 'object') {
+      const sh = {}, eq = g.equipped;
+      const order = ['standard'].concat(Object.keys(eq).filter(c => c !== 'standard'));
+      for (const c of order) {
+        const m = eq[c];
+        if (!m || typeof m !== 'object') continue;
+        // typeof 검사 — 슬롯 값은 itemId(원시값)여야 한다. 손상된 중첩 객체가 슬롯에 눌러앉는 걸 막는다.
+        for (const k in m) { if (k !== 'signature' && sh[k] == null && m[k] != null && typeof m[k] !== 'object') sh[k] = m[k]; }
+      }
+      g.equippedShared = sh;
+      changed = true;
+    }
+    // ③ 캐릭터별 맵에는 signature 만 남긴다. 4슬롯이 남아 있으면 공용과 두 값이 생겨 어느 쪽이 진짜인지 알 수 없다.
+    for (const c in g.equipped) {
+      const m = g.equipped[c];
+      if (!m || typeof m !== 'object') { delete g.equipped[c]; changed = true; continue; }
+      if (!Object.keys(m).some(k => k !== 'signature')) continue;
+      g.equipped[c] = (m.signature != null) ? { signature: m.signature } : {};
+      changed = true;
+    }
+    return changed;
   }
-  function _gearEq(charId) {
+  // 🔩 v767 — 장착 읽기. 공용 4슬롯 + 이 캐릭터의 고유 1슬롯을 합친 "사본"을 돌려준다.
+  //   ⚠️ 반환값에 대입해도 아무 데도 저장되지 않는다. 장착 변경은 반드시 _gearEquipSet 를 쓸 것.
+  //      (구 _gearEq 는 실체 객체를 돌려줘 아무 데서나 쓸 수 있었다 — 그래서 이름을 바꿔 전 호출부를 강제로 훑었다.)
+  function _gearLoadout(charId) {
     const g = _ensureGear(), c = charId || 'standard';
-    if (!g.equipped[c] || typeof g.equipped[c] !== 'object') g.equipped[c] = {};
-    return g.equipped[c];
+    const out = {}, sh = g.equippedShared, per = g.equipped[c];
+    for (const k in sh) out[k] = sh[k];
+    out.signature = (per && per.signature != null) ? per.signature : null;
+    return out;
   }
-  // 이 코어를 지금 끼고 있는 캐릭터 — 배타 판정·UI 표시("다른 캐릭이 장착 중")에 쓴다.
+  // 🔩 v767 — 장착 기록의 유일한 쓰기 경로. 슬롯 종류에 따라 저장 위치가 갈린다.
+  function _gearEquipSet(charId, slot, id) {
+    const g = _ensureGear();
+    if (slot === 'signature') {
+      const c = charId || 'standard';
+      if (!g.equipped[c] || typeof g.equipped[c] !== 'object') g.equipped[c] = {};
+      g.equipped[c].signature = id;
+    } else {
+      g.equippedShared[slot] = id;   // 공용 — 어느 캐릭터 화면에서 끼우든 전원에게 그대로 적용된다
+    }
+  }
+  // 이 고유장비를 지금 끼고 있는 캐릭터 — 배타 판정·UI 표시("다른 캐릭이 장착 중")에 쓴다.
+  // 🔩 v767 — 일반 코어는 공용 1벌이라 소유자를 다툴 일이 없다(항상 null). 고유장비만 캐릭터를 다툰다.
   function _gearOwnerOf(itemId, exceptChar) {
     if (itemId == null) return null;
     const g = _ensureGear();
     for (const c in g.equipped) {
       if (c === exceptChar) continue;
       const m = g.equipped[c];
-      if (!m || typeof m !== 'object') continue;
-      for (const s in m) if (m[s] === itemId) return { charId: c, slot: s };
+      if (m && typeof m === 'object' && m.signature === itemId) return { charId: c, slot: 'signature' };
     }
     return null;
   }
   function _ensureGear() {
-    if (!META.gear || typeof META.gear !== 'object') META.gear = { equipped:{}, inv:[], nextId:1 };
+    if (!META.gear || typeof META.gear !== 'object') META.gear = { equipped:{}, equippedShared:{}, inv:[], nextId:1 };
     if (!META.gear.equipped) META.gear.equipped = {};
     _gearMigrateEquipped(META.gear);
     if (!Array.isArray(META.gear.inv)) META.gear.inv = [];
@@ -7391,19 +7432,19 @@
   function _gearEquipToggle(it, charId) {
     if (!it) return false;
     const c = charId || selectedCharacter || 'standard';
-    const eq = _gearEq(c), slot = it.slot;
-    if (eq[slot] === it.id) { eq[slot] = null; return true; }                   // 🔓 해제는 항상 허용(오염분 빼내기용)
-    if (!_gearSlotFits(slot, it)) return false;                                 // 🔒 부적합 장착 차단(양방향)
-    // ⚠ 배타 — 다른 캐릭이 끼고 있으면 그쪽에서 먼저 뺀다. 안 그러면 같은 코어가 두 곳에 물린다.
+    const slot = it.slot;
+    if (_gearLoadout(c)[slot] === it.id) { _gearEquipSet(c, slot, null); return true; }   // 🔓 해제는 항상 허용(오염분 빼내기용)
+    if (!_gearSlotFits(slot, it)) return false;                                           // 🔒 부적합 장착 차단(양방향)
+    // ⚠ 배타 — 고유장비를 다른 캐릭이 끼고 있으면 그쪽에서 먼저 뺀다(일반 코어는 공용이라 해당 없음).
     const own = _gearOwnerOf(it.id, c);
-    if (own) _gearEq(own.charId)[own.slot] = null;
-    eq[slot] = it.id;
+    if (own) _gearEquipSet(own.charId, own.slot, null);
+    _gearEquipSet(c, slot, it.id);
     return true;
   }
   // 장착 코어의 세트별 착용 수 → { set: count }
   function _gearSetCounts(charId) {
     const g = META.gear, out = {}; if (!g || !g.equipped) return out;
-    const eq = _gearEq(charId);   // 🔩 v760 — 세트는 그 캐릭터가 낀 것만 센다
+    const eq = _gearLoadout(charId);   // 🔩 v767 — 세트는 공용 4슬롯 기준(= 전 캐릭터 동일)
     // ⚠️ GEAR_BASE_SLOTS(4슬롯)만 — 고유장비는 세트 카운트에서 완전히 제외(4피스 성립 조건 불변)
     for (const slot of GEAR_BASE_SLOTS) { const id = eq[slot]; if (id == null) continue; const it = g.inv.find(x => x.id === id); if (it && it.set) out[it.set] = (out[it.set] || 0) + 1; }
     return out;
@@ -7416,7 +7457,7 @@
     const add = {}, mul = {};
     // 🔩 v760 — 로드아웃도 동조 판정도 "이 캐릭터" 기준. 런 중 진화하면 호출부가 새 charId 로 다시 부른다.
     const curChar = charId || selectedCharacter || 'standard';
-    const eq = _gearEq(curChar);
+    const eq = _gearLoadout(curChar);   // 공용 4 + 이 캐릭터의 고유 1
     for (const slot of GEAR_SLOTS) {
       const id = eq[slot]; if (id == null) continue;
       const item = g.inv.find(x => x.id === id); if (!item || !item.lines) continue;
@@ -23791,10 +23832,14 @@
         const localNewer = (META.metaUpdatedAt || 0) >= (server.metaUpdatedAt || 0);
         const gm = _gearMergeInv(META.gear, server.gear, localNewer);   // 🪦 묘비 반영·새 id 발급까지 전부 안에서 처리
         // ⚠️ equipped 는 반드시 _gearMergeInv 가 id 를 유지한 쪽(= localNewer 쪽)에서 가져올 것 — 어긋나면 장착이 깨진다
-        const equipped = localNewer ? ((META.gear && META.gear.equipped) || {}) : ((server.gear && server.gear.equipped) || {});
-        merged.gear = { equipped, inv: gm.inv, nextId: gm.nextId, removed: gm.removed };
+        const _src = localNewer ? META.gear : server.gear;
+        const equipped = (_src && _src.equipped) || {};
+        // 🔩 v767 — 공용 4슬롯은 별도 맵이라 같이 가져와야 한다. 빠뜨리면 병합 후 4슬롯이 통째로 비어버린다.
+        const equippedShared = (_src && _src.equippedShared) || undefined;
+        merged.gear = { equipped, equippedShared, inv: gm.inv, nextId: gm.nextId, removed: gm.removed };
         // 🔩 v760 — 상대 기기가 아직 구버전(평면 equipped)일 수 있다. 병합 결과에 한 번 더 태워
-        //   { <charId>: { <slot>: id } } 형태를 보장한다. 신형이면 아무것도 안 한다.
+        //   { equippedShared:{4슬롯}, equipped:{ <charId>:{signature} } } 형태를 보장한다. 신형이면 아무것도 안 한다.
+        //   ⚠️ equippedShared 가 undefined 인 구기기 데이터는 여기서 equipped 로부터 복원된다.
         try { _gearMigrateEquipped(merged.gear); } catch (e) {}
       }
 
@@ -37912,7 +37957,7 @@
       const slot = GEAR_BASE_SLOTS.includes(m[1]) ? m[1] : 'offense';       // ⚠️ signature 금지 — createGear 는 4슬롯 전용(옵션 풀/세트 필요)
       const rarity = GEAR_BASE_RARITY.includes(m[2]) ? m[2] : 'epic';       // ⚠️ unique 금지 — 고유장비는 createUniqueGear 로만 생성
       const item = createGear(slot, rarity);
-      const g = _ensureGear(); g.inv.push(item); _gearEq(selectedCharacter)[slot] = item.id;
+      const g = _ensureGear(); g.inv.push(item); _gearEquipSet(selectedCharacter, slot, item.id);
       saveMeta();
       cheatFeedback(`🔩 ${GEAR_RARITY_LABEL[rarity]} ${GEAR_SLOT_LABEL[slot]} 코어 장착: ` + item.lines.map(l => `${l.label} +${l.flat ? l.val : Math.round(l.val*100)+'%'}(T${l.tier})`).join(', '));
       return;
@@ -38263,7 +38308,6 @@
   // 🔩 전술 코어 관리 화면 배선
   { const b = document.getElementById('coreMgrBtn'); if (b) b.onclick = () => openCoreMgr(); }
   { const b = document.getElementById('coreMgrBack'); if (b) b.onclick = () => showScreen('menu'); }
-  { const b = document.getElementById('cm-charbtn'); if (b) b.onclick = () => _cmOpenCharPop(); }
   document.getElementById('shopBack').onclick = () => showScreen('menu');
   // ⚙ 설정 모달 (v218)
   const _settingsBtn = document.getElementById('settingsBtn');
@@ -39390,6 +39434,20 @@
   { const _edb = document.getElementById('evoDetailBack'); if (_edb) _edb.onclick = () => { const t = _evoDetailFrom || 'evoTree'; showScreen(t); if (t === 'evoTree' && typeof _evoLayoutEdges === 'function') _evoLayoutEdges(); }; }
   { const _esd = document.getElementById('evo-sel-detail'); if (_esd) _esd.onclick = () => { if (_evoSel) _evoShowDetail(_evoSel.kind, _evoSel.id); }; }
   window.addEventListener('resize', () => { if (currentScreen === 'evoTree' && typeof _evoLayoutEdges === 'function') _evoLayoutEdges(); });
+  // 🕸 v767 — 코어 성도도 같은 이유로 재측정이 필요하다(wrap 이 바뀌면 노드 좌표가 통째로 달라진다).
+  //   ⚠️ resize 이벤트만으로는 부족하다 — 회전/뷰포트 변경 때 리플로우 전에 발화해서 옛 폭으로 재는 경우가 있다
+  //      (실측: 1280→375 전환 직후 viewBox 가 616 그대로, 21개 선이 전부 dx=3 어긋남. 한 번 더 부르면 0).
+  //      ResizeObserver 가 실제 크기 확정 후에 도므로 그쪽이 본선이고 resize 는 보조다.
+  //      그래서 즉시 + 다음 프레임 + 지연 폴백을 모두 건다. _cmapLayoutEdges 는 재실행이 싼 순수 측정이라 중복 호출이 안전하다.
+  function _cmapRelayout() {
+    if (currentScreen !== 'coreMgr' || typeof _cmapLayoutEdges !== 'function') return;
+    _cmapLayoutEdges();
+    requestAnimationFrame(_cmapLayoutEdges);
+    setTimeout(_cmapLayoutEdges, 140);
+  }
+  window.addEventListener('resize', _cmapRelayout);
+  window.addEventListener('orientationchange', _cmapRelayout);
+  if (typeof ResizeObserver !== 'undefined') { try { const _cro = new ResizeObserver(_cmapRelayout); const _cm = document.getElementById('cm-map'); if (_cm) _cro.observe(_cm); } catch (e) {} }
   if (typeof ResizeObserver !== 'undefined') { try { const _ro = new ResizeObserver(() => { if (currentScreen === 'evoTree' && typeof _evoLayoutEdges === 'function') _evoLayoutEdges(); }); const _et = document.getElementById('evo-tree-rows'); if (_et) _ro.observe(_et); } catch (e) {} }
   // 캐릭터 탭
   document.querySelectorAll('#char-tabs .codex-tab').forEach(btn => {
@@ -39419,7 +39477,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 766;
+  const APP_VERSION = 767;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
@@ -40068,12 +40126,12 @@
     };
     let html = `<div class="evo-d-sec-title">장착 현황</div><div class="egs-grid">`;
     for (const slot of GEAR_BASE_SLOTS) {
-      const id = _gearEq(charId)[slot];
+      const id = _gearLoadout(charId)[slot];
       html += cell(slot, id != null ? g.inv.find(x => x.id === id) : null);
     }
     // ✨ 고유 슬롯 — 이 캐릭터 전용. 보유했으면 고유명까지 같이 보여준다.
     const sig = (typeof _findUniqueGear === 'function') ? _findUniqueGear(charId) : null;
-    const sigOn = !!(sig && _gearEq(charId).signature === sig.id);
+    const sigOn = !!(sig && _gearLoadout(charId).signature === sig.id);
     const sname = (typeof SIGNATURE_GEAR !== 'undefined' && SIGNATURE_GEAR[charId]) ? SIGNATURE_GEAR[charId].name : '';
     const scol = _GEAR_RARCOL.unique;
     html += `<div class="egs-cell sig${sig ? '' : ' empty'}" style="border-color:${sig ? scol : '#3a4256'}">`
@@ -40119,11 +40177,6 @@
     showScreen('coreMgr');
     _renderCoreMgr();
   }
-  function _cmCharIllust(id) {
-    if (!id || id === 'standard') return `<div class="cm-char-ph">🔰</div>`;
-    const ch = CHARACTERS[id] || {}; const emoji = ch.name ? ch.name.split(' ')[0] : '⭐';
-    return `<img data-illust="${id}" data-emoji="${emoji}" data-illust-fb="hide" alt="">`;
-  }
   // 🎽 세트 현황 — 장착 세트별 (N/4) + 2/4피스 활성/비활성
   function _cmSetsHtml() {
     const sc = _gearSetCounts(_cmCharId());
@@ -40154,50 +40207,110 @@
       </div>`;
     }).join('') + `</div>`;
   }
-  // ✨ 5번째 고유 슬롯 HTML — 기존 4슬롯 마크업은 그대로 두고 구분선 뒤에 별도 구획으로 덧붙인다.
+  // 🕸 v767 — 코어 성도 렌더. 위=공용 4슬롯(허브), 아래=고유장비 대상 캐릭터들.
+  //   선택 상태는 새 변수를 만들지 않고 기존 두 개를 그대로 쓴다:
+  //     허브 노드 탭 → _cmSlotTab = 그 슬롯      (목록이 그 슬롯 일반 코어로 바뀐다)
+  //     캐릭 노드 탭 → _cmSlotTab = 'signature' + _cmChar = 그 캐릭 (목록이 고유장비로 바뀐다)
+  //   ⚠️ 바깥 노드는 _uqEligible 로 거른다 — 고유장비는 "해금된 가챠 캐릭터"만 받으므로
+  //      그 밖의 캐릭터에는 낄 장비 자체가 없어 노드를 두면 빈 껍데기가 된다.
+  function _cmapRender() {
+    const g = _ensureGear();
+    const host = document.getElementById('cm-map');
+    const hub = document.getElementById('cmap-hub');
+    const ring = document.getElementById('cmap-ring');
+    if (!host || !hub || !ring) return;
+    if (!document.getElementById('cmap-edges')) {
+      const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      svg.setAttribute('class', 'cmap-edges'); svg.id = 'cmap-edges';
+      host.insertBefore(svg, host.firstChild);
+    }
+    // ── 허브: 공용 4슬롯. 어느 캐릭터를 보고 있든 같은 값이다.
+    hub.innerHTML = GEAR_BASE_SLOTS.map(slot => {
+      const id = _gearLoadout(_cmCharId())[slot];
+      const it = id != null ? g.inv.find(x => x.id === id) : null;
+      const col = it ? (_GEAR_RARCOL[it.rarity] || '#9aa3b3') : '#3a4256';
+      const sel = _cmSlotTab === slot;
+      const lab = GEAR_SLOT_LABEL[slot] || slot;
+      const ico = _GEAR_SLOTICO[slot] || '🔩';
+      const inner = it ? (_gearCoreImg(it, 34) || ico) : `<span class="cmap-ph">${ico}</span>`;
+      return `<div class="cmap-node hub ${it ? 'on' : 'empty'}${sel ? ' sel' : ''}" data-kind="hub" data-id="${slot}" style="--gc:${col}" title="${lab} — 전 캐릭터 공용">`
+        + `<div class="cmap-core">${inner}</div><div class="cmap-nm">${lab}</div></div>`;
+    }).join('');
+    // ── 바깥: 고유 슬롯을 가진 캐릭터들
+    const ids = Object.keys(CHARACTERS).filter(id => { try { return _uqEligible(id); } catch (e) { return false; } });
+    if (!ids.length) {
+      ring.innerHTML = `<div class="cmap-empty">가챠로 캐릭터를 해금하면 고유 코어 슬롯이 열립니다<br>공용 코어는 지금도 전 캐릭터에 적용됩니다</div>`;
+    } else {
+      ring.innerHTML = ids.map(id => {
+        const sid = _gearLoadout(id).signature;
+        const it = sid != null ? g.inv.find(x => x.id === sid) : null;
+        const col = it ? _GEAR_RARCOL.unique : '#3a4256';
+        const sel = _cmSlotTab === 'signature' && _cmCharId() === id;
+        const ch = CHARACTERS[id] || {};
+        const nm = (ch.name || id).replace(/^\S+\s+/, '');   // 이름 앞 이모지 제거(노드가 좁다)
+        // 낀 고유장비가 이 캐릭 본인 것이 아니면 이식 상태다 — 배지로 구분한다.
+        const badge = it ? (it.charId === id ? '✨' : '🔁') : '';
+        const tip = it
+          ? `${_gearSigName(it) || ''}${it.charId === id ? '' : ' (이식)'}`.trim()
+          : `${nm} — 고유 슬롯 비어 있음`;
+        return `<div class="cmap-node ch ${it ? 'on' : 'empty'}${sel ? ' sel' : ''}" data-kind="char" data-id="${id}" style="--gc:${col}" title="${tip}">`
+          + `<div class="cmap-core"><img data-illust="${id}" data-emoji="⭐" data-illust-fb="self" alt="">`
+          + (badge ? `<span class="cmap-badge">${badge}</span>` : '') + `</div>`
+          + `<div class="cmap-nm">${nm}</div></div>`;
+      }).join('');
+      _hydrateIllusts(ring);   // 노드 썸네일 일러 webp→gif→png 체인
+    }
+    host.querySelectorAll('.cmap-node').forEach(el => el.onclick = () => {
+      if (el.dataset.kind === 'hub') _cmSlotTab = el.dataset.id;
+      else { _cmSlotTab = 'signature'; _cmChar = el.dataset.id; }
+      _cmSel = null; _gearRerollPending = null; _gearLocks.clear();
+      SFX.click && SFX.click();
+      _renderCoreMgr();
+    });
+    // 표시 직후 동기 측정 + 폴백 (일러 로드로 높이가 늦게 잡히는 경우 대비)
+    requestAnimationFrame(_cmapLayoutEdges);
+    setTimeout(_cmapLayoutEdges, 120);
+  }
+  // 🕸 연결선 좌표 — 허브 줄 아래 중앙(가상 지점)에서 각 캐릭 노드로 부채꼴.
+  //   getBoundingClientRect 로 host 기준 상대좌표를 쓴다 — offsetParent 가 무엇이든, 스크롤이 끼어도 어긋나지 않는다.
+  function _cmapLayoutEdges() {
+    const host = document.getElementById('cm-map');
+    const svg = document.getElementById('cmap-edges');
+    const hub = document.getElementById('cmap-hub');
+    if (!host || !svg || !hub) return;
+    const hr = host.getBoundingClientRect();
+    const W = hr.width, H = hr.height;
+    if (!W || !H) return;
+    svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+    svg.setAttribute('width', W); svg.setAttribute('height', H);
+    const br = hub.getBoundingClientRect();
+    const ax = br.left - hr.left + br.width / 2, ay = br.bottom - hr.top;
+    const NS = 'http://www.w3.org/2000/svg';
+    svg.innerHTML = '';
+    host.querySelectorAll('.cmap-node.ch').forEach(n => {
+      const core = n.querySelector('.cmap-core'); if (!core) return;
+      const cr = core.getBoundingClientRect();
+      const lit = _cmSlotTab === 'signature' && _cmCharId() === n.dataset.id;
+      const ln = document.createElementNS(NS, 'line');
+      ln.setAttribute('class', 'cmap-edge' + (lit ? ' lit' : ''));
+      ln.setAttribute('x1', ax); ln.setAttribute('y1', ay);
+      ln.setAttribute('x2', cr.left - hr.left + cr.width / 2); ln.setAttribute('y2', cr.top - hr.top);
+      svg.appendChild(ln);
+    });
+  }
+  // ⚰️ 삭제됨(v767): _cmSigSlotHtml / _cmCharIllust / _cmOpenCharPop 와 cm-hero·cm-slottabs·cm-charpop 마크업.
+  //    고유 슬롯은 성도의 캐릭 노드가, 캐릭터 선택은 그 노드 탭이, 슬롯 전환은 허브 노드가 대신한다.
+  //    ⚠️ 코어 화면의 두 번째 진입 경로를 다시 만들지 말 것 — openCoreMgr 하나뿐이다.
+  // ✨ (구) 5번째 고유 슬롯 HTML — 기존 4슬롯 마크업은 그대로 두고 구분선 뒤에 별도 구획으로 덧붙인다.
   //    ⚠️ 이 슬롯은 세트 카운트와 무관하다(_gearSetCounts 는 GEAR_BASE_SLOTS 4개만 순회 — N/4 표기 불변).
   //    ⚠️ GEAR_SLOTS(5개)를 여기서 순회하지 말 것 — 그러면 기존 4슬롯 박스가 재생성되어 모양이 바뀐다.
-  function _cmSigSlotHtml(g) {
-    const id = _gearEq(_cmCharId()).signature != null ? _gearEq(_cmCharId()).signature : null;
-    const it = (id != null) ? g.inv.find(x => x.id === id) : null;
-    const col = _GEAR_RARCOL.unique;   // #ff9de2 — 고유 등급색
-    const ch = it ? CHARACTERS[it.charId] : null;
-    const sig = it ? _gearSigName(it) : null;
-    const tip = it ? (sig ? `${sig}${ch ? ' · ' + ch.name : ''}` : `${ch ? ch.name + ' ' : ''}고유장비`) : '고유 슬롯 — 캐릭터 고유장비 전용';
-    // 고유장비는 set 이 없어 _gearCoreImg 가 '' 를 돌려준다 → ✨ 아이콘으로 폴백(빈칸 방지)
-    return `<span class="cm-slots-sep"></span><div class="cm-slot sig ${it ? 'filled' : 'empty'}" data-id="${it ? it.id : ''}" style="border-color:${col}" title="${tip}"><span class="cm-slot-sigico">${(it && _gearCoreImg(it, 40)) || (it && _gearSigIcon(it)) || _GEAR_SLOTICO.signature}</span><span class="cm-slot-lbl">고유</span></div>`;
-  }
   function _renderCoreMgr() {
     const g = _ensureGear();
-    const charEl = document.getElementById('cm-char');
-    if (charEl) { charEl.className = 'cm-char'; charEl.innerHTML = _cmCharIllust(_cmCharId()); _hydrateIllusts(charEl); }
-    const nameEl = document.getElementById('cm-charname');
-    if (nameEl) { const ch = CHARACTERS[_cmCharId()] || {}; nameEl.textContent = ch.name || '기본 도트 타워'; }
-    const slotsEl = document.getElementById('cm-slots');
-    if (slotsEl) {
-      slotsEl.innerHTML = GEAR_BASE_SLOTS.map(slot => {   // ⚠️ 기존 4슬롯 — GEAR_BASE_SLOTS 유지(모양·동작 불변)
-        const id = _gearEq(_cmCharId())[slot]; const it = id != null ? g.inv.find(x => x.id === id) : null;
-        const col = it ? (_GEAR_RARCOL[it.rarity] || '#9aa3b3') : '#3a4256';
-        // 🔩 v733 — 빈 슬롯엔 슬롯명을 넣어 5칸이 있다는 걸 바로 알아보게 한다(채워지면 CSS 로 숨김)
-        return `<div class="cm-slot ${it ? 'filled' : 'empty'}" data-id="${it ? it.id : ''}" title="${GEAR_SLOT_LABEL[slot] || slot}" style="border-color:${col}">${it ? _gearCoreImg(it, 40) : `<span class="cm-slot-lbl">${GEAR_SLOT_LABEL[slot] || slot}</span>`}</div>`;
-      }).join('') + _cmSigSlotHtml(g);   // ✨ 5번째 고유 슬롯을 구분선과 함께 뒤에 붙인다
-      slotsEl.querySelectorAll('.cm-slot.filled').forEach(el => el.onclick = () => { _cmSel = +el.dataset.id; _gearRerollPending = null; _gearLocks.clear(); _renderCoreMgr(); });
-    }
+    _cmapRender();   // 🕸 v767 — 성도가 캐릭터 히어로 + 4슬롯 + 슬롯탭을 통째로 대신한다
     const setsEl = document.getElementById('cm-sets');
     if (setsEl) setsEl.innerHTML = _cmSetsHtml();
     const toolsEl = document.getElementById('cm-tools');
     if (toolsEl) { toolsEl.innerHTML = _cmToolsHtml(); toolsEl.querySelectorAll('[data-tool]').forEach(b => b.onclick = () => _cmTool(b.dataset.tool)); }
-    // 🔩 v760 — 슬롯 탭. 한 번에 한 슬롯만 보여준다.
-    const tabsEl = document.getElementById('cm-slottabs');
-    if (tabsEl) {
-      tabsEl.innerHTML = GEAR_SLOTS.map(s => {
-        const n = g.inv.filter(x => x.slot === s).length;
-        return `<button class="cm-stab${s === _cmSlotTab ? ' on' : ''}" data-slot="${s}">${GEAR_SLOT_LABEL[s] || s}<span class="cm-stab-n">${n}</span></button>`;
-      }).join('');
-      tabsEl.querySelectorAll('.cm-stab').forEach(b => b.onclick = () => {
-        _cmSlotTab = b.dataset.slot; _cmSel = null; _gearRerollPending = null; _gearLocks.clear(); _renderCoreMgr();
-      });
-    }
     const listEl = document.getElementById('cm-list');
     if (listEl) {
       const _slotInv = g.inv.filter(x => x.slot === _cmSlotTab);
@@ -40208,7 +40321,7 @@
         const fFirst = _cmFuseSel.size ? g.inv.find(x => x.id === [..._cmFuseSel][0]) : null;
         listEl.innerHTML = inv.map(it => {
           const col = _GEAR_RARCOL[it.rarity] || '#9aa3b3';
-          const on = _gearEq(_cmCharId())[it.slot] === it.id, sel = it.id === _cmSel, fsel = _cmFuseSel.has(it.id);
+          const on = _gearLoadout(_cmCharId())[it.slot] === it.id, sel = it.id === _cmSel, fsel = _cmFuseSel.has(it.id);
           const _sic = GEAR_SETS[it.set] ? GEAR_SETS[it.set].icon : '';
           // ✨ 고유장비는 세트·기종이 없어 이름이 전부 "고유" 로 겹친다 → 어느 캐릭터 것인지 이름으로 구분한다.
           //    (등급색은 _GEAR_RARCOL.unique = #ff9de2 로 이미 col 에 잡혀 있다 — 좌측 바·등급 라벨에 적용됨)
@@ -40240,7 +40353,7 @@
     const sdef = GEAR_SETS[it.set] || null;
     const uq = _gearIsUnique(it);                              // ✨ 고유장비 — 분해·합성만 막고 강화·재설정은 그대로 허용
     const uqch = uq ? (CHARACTERS[it.charId] || null) : null;   // 소유 캐릭터(표시용). 장착 자체엔 캐릭터 제한 없음
-    const equipped = _gearEq(_cmCharId())[it.slot] === it.id;
+    const equipped = _gearLoadout(_cmCharId())[it.slot] === it.id;
     const refund = GEAR_DISM_REFUND[it.rarity] || 1;
     const lockN = [..._gearLocks].filter(i => i < it.lines.length).length;
     const cost = Math.round((GEAR_REROLL_COST[it.rarity] || 10) * (1 + lockN * GEAR_LOCK_MULT));   // 잠금 할증
@@ -40301,7 +40414,7 @@
       _renderCoreMgr();
     }
     else if (act === 'doneRoll') { _gearRerollPending = null; _renderCoreMgr(); }   // 비교 표시만 닫는다(이미 적용돼 있다)
-    else if (act === 'dismantle') { if (it.rarity === 'unique' || it.slot === 'signature') { toast('✨ 고유장비는 분해할 수 없습니다'); return; } if (it.locked) { toast('🔒 잠금 코어 — 해제 후 분해'); return; } { const _o = _gearOwnerOf(it.id); if (_o) _gearEq(_o.charId)[_o.slot] = null; } const refund = GEAR_DISM_REFUND[it.rarity] || 1; g.inv = g.inv.filter(x => x.id !== it.id); _gearTombstone([it.id]); grantShards(refund); _cmSel = g.inv.length ? g.inv[0].id : null; _gearRerollPending = null; _gearLocks.clear(); saveMeta(); _renderCoreMgr(); toast(`🔨 분해 → 💠${refund} 별조각`); }
+    else if (act === 'dismantle') { if (it.rarity === 'unique' || it.slot === 'signature') { toast('✨ 고유장비는 분해할 수 없습니다'); return; } if (it.locked) { toast('🔒 잠금 코어 — 해제 후 분해'); return; } { const _o = _gearOwnerOf(it.id); if (_o) _gearLoadout(_o.charId)[_o.slot] = null; } const refund = GEAR_DISM_REFUND[it.rarity] || 1; g.inv = g.inv.filter(x => x.id !== it.id); _gearTombstone([it.id]); grantShards(refund); _cmSel = g.inv.length ? g.inv[0].id : null; _gearRerollPending = null; _gearLocks.clear(); saveMeta(); _renderCoreMgr(); toast(`🔨 분해 → 💠${refund} 별조각`); }
     else if (act === 'lock') { it.locked = !it.locked; it.v = (it.v || 1) + 1; saveMeta(); _renderCoreMgr(); SFX.click && SFX.click(); toast(it.locked ? '🔒 잠금' : '🔓 잠금 해제'); }
   }
   // 🧹 일괄 분해 대상 — 미장착·미잠금·레어 이하
@@ -40370,26 +40483,6 @@
     else if (t === 'bulk') { _cmBulkArm = true; _renderCoreMgr(); }
     else if (t === 'bulkyes') _cmBulkDismantle();
     else if (t === 'bulkno') { _cmBulkArm = false; _renderCoreMgr(); }
-  }
-  function _cmOpenCharPop() {
-    const pop = document.getElementById('cm-charpop'); if (!pop) return;
-    const ids = ['standard'].concat(Object.keys(CHARACTERS).filter(id => id !== 'standard' && (typeof isCharUnlocked !== 'function' || isCharUnlocked(id))));
-    pop.innerHTML = `<div class="cm-pop-inner"><div class="cm-pop-head">코어를 장착할 캐릭터 <button class="gcm-x" id="cm-pop-x">✕</button></div><div class="cm-pop-grid">` + ids.map(id => {
-      const ch = CHARACTERS[id] || {}; const on = id === _cmCharId();
-      const thumb = (id === 'standard') ? '🔰' : `<img data-illust="${id}" data-emoji="⭐" data-illust-fb="self" alt="">`;
-      return `<div class="cm-pop-c${on ? ' on' : ''}" data-char="${id}"><div class="cm-pop-thumb">${thumb}</div><div class="cm-pop-name">${ch.name || '기본 타워'}</div></div>`;
-    }).join('') + `</div></div>`;
-    _hydrateIllusts(pop);   // 팝업 썸네일 일러 webp→gif→png 체인
-    pop.classList.add('show');
-    pop.onclick = (e) => { if (e.target === pop) pop.classList.remove('show'); };
-    const x = document.getElementById('cm-pop-x'); if (x) x.onclick = () => pop.classList.remove('show');
-    pop.querySelectorAll('.cm-pop-c').forEach(el => el.onclick = () => {
-      // 🔩 v760 — 출격 캐릭(selectedCharacter)이 아니라 "코어를 편집할 캐릭터"를 고르는 자리다.
-      //   런은 항상 standard 로 시작하고 진화로 바뀌므로 출격 캐릭을 여기서 바꾸는 건 의미가 없다.
-      _cmChar = el.dataset.char;
-      _cmSel = null; _gearRerollPending = null; _gearLocks.clear();
-      pop.classList.remove('show'); _renderCoreMgr(); SFX.click && SFX.click();
-    });
   }
   function _evoShowDetail(kind, id) {
     const illustEl = document.getElementById('evo-ds-illust');
