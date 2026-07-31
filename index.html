@@ -12364,17 +12364,21 @@
       },
     },
     scholar: {
+      // 🔬 v765 — 원래 효과는 "강화 비용 -4%/lv" 였는데 능력 강화 자체가 폐지되면서
+      //   아무 일도 안 하는 카드가 됐다. 조합 위력으로 갈아끼운다.
+      //   ⚠ 데미지 패시브가 이미 11종이라 또 데미지 +%를 붙이면 묻힌다.
+      //     "연구 = 조합 연구" 로 이름과도 맞고, 게임 정체성(능력 조합 빌더)에 직결된다.
+      //   수치: cpb 는 조합 배율 3.00 / 트리플 6.00 에 "더해지는" 값이다.
+      //     0.24/lv → 조합 기준 +8%/lv (0.24/3.00), 트리플 +6.7%/lv (0.24*1.67/6.00).
+      //     패시브 최대 8렙 → 조합 +64%. 정확(+10%/lv, 전체)보다 약하되 조합에 집중.
       name: '연구', isPassive: true, baseCost: 60, color: '#bb99cc',
-      desc: lv => `강화 비용 -${lv*4}%`,
+      desc: lv => `조합 데미지 +${lv*8}% · 트리플 +${Math.round(lv*6.7)}%`,
       init() {},
       tick(ab) {
         if (!state.metaMods) return;
-        const perma = 1 + getAbilityPermaBonus('scholar');   // 🌟 영구강화 (할인 +%)
-        const discount = ab.level * 0.04 * perma;
-        // 🛡 v256 — multiplicative stacking (scholar + scholarSnipe 곱연산 — 둘 다 효과 발휘)
-        //   scholarMul (1=full cost) → 각 source 의 (1-discount) 를 곱해서 누적
-        //   최종 cap 은 enhanceCost 에서 Math.max(0.45, ...) 로 처리됨
-        state.metaMods.scholarMul *= (1 - Math.min(0.55, discount));
+        const perma = 1 + getAbilityPermaBonus('scholar');   // 🌟 영구강화
+        // 🛡 additive stacking — precision/ironwill 과 같은 패턴(프레임 리셋 슬롯에 +=)
+        state.metaMods.scholarCombo += ab.level * 0.24 * perma;
       },
     },
     ironwill: {
@@ -13729,13 +13733,13 @@
     },
     scholarSnipe: {
       name: '학자저격', isCombo: true, baseCost: 130, color: '#bb99cc',
-      desc: lv => `최강 적 저격 · DMG ${12+lv*7} · 처치 시 쿨다운 -15% · 강화 비용 -${lv*5}%`,
+      desc: lv => `최강 적 저격 · DMG ${12+lv*7} · 처치 시 쿨다운 -15% · 조합 데미지 +${Math.round(lv*6.7)}%`,
       init(ab) { ab.cooldown = 50; },
       tick(ab) {
-        // 📚 연구 패시브 계승 — 강화 비용 -5%/lv
+        // 📚 v765 — 연구 패시브 계승. 원본이 조합 위력으로 바뀌었으니 여기도 같은 축.
+        //   조합이라 최대 5렙 → 0.20/lv × 5 = 1.00 (조합 +33%)
         if (state.metaMods) {
-          const own = 1 - ab.level * 0.05;
-          state.metaMods.scholarMul *= own;  // 🛡 v256 — multiplicative stacking
+          state.metaMods.scholarCombo += ab.level * 0.20;
         }
         if (--ab.cooldown > 0) return;
         let target = null, best = -1;
@@ -20733,8 +20737,8 @@
       desc: '광역 공격(여러 적 동시 타격) 데미지 +25%. 깃발 아래 모여라.',
       apply: (st) => { st.relicEffects.aoeDmgMul *= 1.25; }, unlockBy: null },
     forgeHammer: { name: '강화의 망치', icon: '🔨', rarity: 'common',
-      desc: '강화 비용 -10%',
-      apply: (st) => { st.metaMods.enhanceMul *= 0.90; }, unlockBy: null },
+      desc: '조합 위력 +10%',
+      apply: (st) => { st.metaMods.comboPowerBonus = (st.metaMods.comboPowerBonus || 0) + 0.30; }, unlockBy: null },
     vitalCharm: { name: '활력의 부적', icon: '💚', rarity: 'common',
       desc: '한계 적 +5마리',
       apply: (st) => { st.relicEffects.maxAliveAdd += 5; }, unlockBy: null },
@@ -22112,8 +22116,8 @@
       enemyHpMul: 1.30, apply(mm) { mm.goldMul = (mm.goldMul || 1) * 1.25; } },
     { id: 'gold',   name: '황금 궤도',     desc: '골드 획득 +50% · 점수 -15%',
       enemyHpMul: 1.0,  apply(mm) { mm.goldMul = (mm.goldMul || 1) * 1.50; mm.scoreMul = (mm.scoreMul || 1) * 0.85; } },
-    { id: 'fusion', name: '융합 공명',     desc: '조합 위력 +25% · 강화 비용 +20%',
-      enemyHpMul: 1.0,  apply(mm) { mm.comboPowerBonus = (mm.comboPowerBonus || 0) + 0.25; mm.enhanceMul = (mm.enhanceMul || 1) * 1.20; } },
+    { id: 'fusion', name: '융합 공명',     desc: '조합 위력 +25% · 획득 점수 -10%',
+      enemyHpMul: 1.0,  apply(mm) { mm.comboPowerBonus = (mm.comboPowerBonus || 0) + 0.25; mm.scoreMul = (mm.scoreMul || 1) * 0.90; } },
     { id: 'purge',  name: '처단 프로토콜', desc: '보스 데미지 +30% · 일반 데미지 -10%',
       enemyHpMul: 1.0,  apply(mm) { mm.bossDmgMul = (mm.bossDmgMul || 1) * 1.30; mm.dmgMul = (mm.dmgMul || 1) * 0.90; } },
   ];
@@ -22304,7 +22308,6 @@
       const mm = {
         goldMul:    mods.goldMul,
         scoreMul:   mods.scoreMul,
-        enhanceMul: mods.enhanceMul * (cp.enhanceMul || 1) * asc.enhanceMul,
         bossDmgMul: mods.bossDmgMul * (cp.bossDmgMul || 1),
         dmgMul:     cp.dmgMul || 1,
         dmgBoost:   mods.dmgBoost || 0,
@@ -22921,7 +22924,7 @@
     enemyHpMul: 0.45, bossHpMul: 0.5, maxAliveAdd: 40, scoreReward: 0.05,
     stardustMul: 0.05, enemySpeedMul: 0.75, extraBossCount: 0, eliteEscorts: 0,
     extraBossRounds: false, bossDmgMul: 0.4, enemyCountAdd: 0, roundTimeMul: 0.7,
-    enhanceMul: 1, startGoldMul: 1, startScoreMul: 1
+    startGoldMul: 1, startScoreMul: 1
   };
   // 🎓 솜니아 컷인 시퀀스 — char-cutin 재활용, 대사 배열을 순차 재생 후 onEnd. 인트로/아웃트로 공용.
   function _tutPlayCutins(lines, onEnd) {
@@ -25215,7 +25218,6 @@
         bossDmgMul:    1 + Math.max(0, asc - 2) * 0.20,
         enemyCountAdd: 0,
         roundTimeMul:  1,
-        enhanceMul:    1,
         startGoldMul:  1,
         startScoreMul: 1,
       };
@@ -25242,7 +25244,6 @@
       bossDmgMul:    base.bossDmgMul + h * 0.10,
       enemyCountAdd: h * 4,                                 // 한 라운드 적 +4/h
       roundTimeMul:  Math.max(0.5, 1 - h * 0.025),         // 시간 단축 (h15: -37.5%)
-      enhanceMul:    1 + h * 0.08,                          // 강화 비용 ↑ (h15: +120%)
       startGoldMul:  Math.max(0.3, 1 - h * 0.04),          // 시작 골드 ↓
       startScoreMul: 1,
     };
@@ -25629,7 +25630,6 @@
       if (isHell) {
         if (m.enemyCountAdd > 0) extras.push(`👹 적 수 +${m.enemyCountAdd}`);
         if (m.roundTimeMul < 1) extras.push(`⏱ 시간 -${Math.round((1-m.roundTimeMul)*100)}%`);
-        if (m.enhanceMul > 1)   extras.push(`💸 강화비 +${Math.round((m.enhanceMul-1)*100)}%`);
         if (m.startGoldMul < 1) extras.push(`💰 시작골드 -${Math.round((1-m.startGoldMul)*100)}%`);
       }
       const extraStr = extras.length > 0 ? ` · ${extras.join(' · ')}` : '';
@@ -25794,9 +25794,6 @@
       startGold:   v('startGold'),
       goldMul:     1 + v('goldGain'),
       freeRolls:   metaLv('freeRolls'),
-      // 🗑 v764 — 강화 비용 절감 2종 제거. 능력 강화(actEnhance)가 이미 폐지돼
-      //   enhanceMul 을 소비하던 enhanceCost 자체가 사라졌다. 값은 1 로 고정.
-      enhanceMul:  1,
       extraSlot:   metaLv('extraSlot'),
       bossDmgMul:  1 + v('bossDmg'),
       scoreMul:    1 + v('killScore'),
@@ -25929,9 +25926,9 @@
     },
     researcher: {
       name: '연구자', color: '#bb99cc',
-      desc: '연구 패시브 시작. 강화 비용 -15%.',
+      desc: '연구 패시브 시작. 조합 위력 +15%.',
       startAbilities: ['scholar'],
-      passive: { dmgMul: 1, bossDmgMul: 1, slotMod: 0, levelUpMul: 1, slowMul: 1, enhanceMul: 0.85 },
+      passive: { dmgMul: 1, bossDmgMul: 1, slotMod: 0, levelUpMul: 1, slowMul: 1 },
       unlockBy: 'score100k',
     },
     agent: {
@@ -26594,7 +26591,7 @@
       name: '🌟 아리아', color: '#ffe070',
       desc: '[SSR] 별의노래로 시작. 데미지 +60% / 보스 데미지 +80% / 레벨업 -30% / 강화 -25%. 별의노래 + 노바 = 우주합창.',
       startAbilities: ['starSong'],
-      passive: { dmgMul: 1.60, bossDmgMul: 1.80, slotMod: 0, levelUpMul: 0.70, slowMul: 1, enhanceMul: 0.75 },
+      passive: { dmgMul: 1.60, bossDmgMul: 1.80, slotMod: 0, levelUpMul: 0.70, slowMul: 1 },
       unlockBy: 'gacha:aria',
       isGacha: true, rarity: 'SSR',
       story: [
@@ -27595,7 +27592,7 @@
       // 조합/트리플 위계 보너스 — 메타 강화 적용 (comboPower)
       // 사용자 요청: 기본 능력 2개 max 합친 거니까 조합 = 기본max × 2 이상,
       //              트리플 = 기본max × 3 이상의 위력이어야 함
-      const cpb = mm.comboPowerBonus || 0;
+      const cpb = (mm.comboPowerBonus || 0) + (mm.scholarCombo || 0);   // 🔬 v765 — 메타 강화 + 연구 패시브
       if (state.currentAbilityTier === 'combo') mul *= (3.00 + cpb);        // 1.40 → 3.00
       else if (state.currentAbilityTier === 'triple') mul *= (6.00 + cpb * 1.67); // 2.20 → 6.00
       dmg = dmg * mul;
@@ -28846,8 +28843,7 @@
     mm.pressBonus      = 0;   // 🛸 v607 — 쇄도(적 수)
     mm.awakenBonus     = 0;   // 🛸 v607 — 각성(라운드)
     mm.vampiricFlat    = 0;   // 💉 v276 — 흡혈 처치당 고정 골드 (%→+N 전환)
-    // 1 로 리셋되는 슬롯들 (기본값 1, min 머지 — scholarMul 은 할인이라 작을수록 좋음)
-    mm.scholarMul      = 1;
+    mm.scholarCombo    = 0;   // 🔬 v765 — 연구/학자저격의 조합 위력 (cpb 에 더해짐)
   }
   function update() {
     // 자동 카드 선택 타이머 — 실시간 deadline 방식 (게임 속도 배율 영향 X)
@@ -39422,7 +39418,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 764;
+  const APP_VERSION = 765;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
@@ -39745,7 +39741,6 @@
     if (p.slotMod) parts.push(`슬롯 ${p.slotMod > 0 ? '+' : ''}${p.slotMod}`);
     if (p.levelUpMul && p.levelUpMul !== 1) parts.push(`레벨업 ${pct((p.levelUpMul - 1) * 100)}`);
     if (p.slowMul && p.slowMul !== 1) parts.push(`슬로우 ${pct((p.slowMul - 1) * 100)}`);
-    if (p.enhanceMul && p.enhanceMul !== 1) parts.push(`강화비용 ${pct((p.enhanceMul - 1) * 100)}`);
     return parts.join(' · ');
   }
   // ===== 🌳 캐릭터 · 진화 트리 도감 (캐릭터 버튼) =====
@@ -39770,7 +39765,6 @@
     if (p.slowMul && p.slowMul !== 1) parts.push(`슬로우 +${Math.round((p.slowMul - 1) * 100)}%`);
     if (p.slotMod) parts.push(`슬롯 ${p.slotMod > 0 ? '+' : ''}${p.slotMod}`);
     if (p.levelUpMul && p.levelUpMul !== 1) parts.push(`레벨업 ${Math.round((p.levelUpMul - 1) * 100)}%`);
-    if (p.enhanceMul && p.enhanceMul !== 1) parts.push(`강화비용 ${Math.round((p.enhanceMul - 1) * 100)}%`);
     return parts.length ? ('🌀 패시브: ' + parts.join(' · ')) : '';
   }
   function _evoUnlockText(kind, id, unlocked) {
