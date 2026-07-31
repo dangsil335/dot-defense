@@ -34866,8 +34866,18 @@
     const info = _evoInfo('R', rtKey);
     paused = true;
     _activeEvent = { _curse: false, _resolved: false, _evolve: rtKey, choices: [
-      { label: '힘을 받는다', desc: '[R] ' + (t.title || rtKey) + ' — ' + info.abName,
-        resolve() { applyEvolution('R', rtKey, info.abId); return '✦ ' + (t.title || rtKey) + '의 힘이 깃들었다!'; } },
+      // 🌳 v762 — 무슨 능력을 얻는지 보여준다. 예전엔 능력 이름만 버튼에 있었고
+      //   결과창엔 '✦ …의 힘이 깃들었다!' 뿐이라 뭘 받았는지 알 수 없었다.
+      //   _evoInfo 는 abDesc 를 이미 주고 있었는데 아무도 쓰지 않았다.
+      { label: '힘을 받는다',
+        desc: '[R] ' + (t.title || rtKey) + ' — ' + info.abName + (info.abDesc ? ' / ' + info.abDesc : ''),
+        resolve() {
+          applyEvolution('R', rtKey, info.abId);
+          try { _evIconPush(info.abId, 'gained'); } catch (e) {}   // 결과창 아이콘 행 — 장치는 있었는데 호출부가 없었다
+          return '✦ ' + (t.title || rtKey) + '의 힘이 깃들었다!' + '\n\n'
+               + '획득 능력 — ' + info.abName
+               + (info.abDesc ? '\n' + info.abDesc : '');
+        } },
     ] };
     try { _setEventPortrait(rtKey); } catch (e) {}
     const te = document.getElementById('eventTitle'); if (te) te.textContent = _evTitle('진화 // ' + (t.title || rtKey));
@@ -39641,7 +39651,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 761;
+  const APP_VERSION = 762;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
