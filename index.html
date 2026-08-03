@@ -8611,7 +8611,7 @@
     },
     // 🔨 조합: 부싯돌 사격 + 저격 — 공이가 떨어진 자리에 불티가 터진다(착탄 광역)
     hammerFall: {
-      name: '공이 낙하', isGachaUnique: true, baseCost: 190, color: '#ff8a3d',
+      name: '공이 낙하', isGachaUnique: true, isCombo: true, baseCost: 190, color: '#ff8a3d',
       desc: lv => `사격 착탄점에 불티 폭발 · 반경 ${70 + lv * 4} · DMG ${10 + lv * 5} · 마지막 한 발이면 반경·피해 2배`,
       stats: { radius: 70, fireCd: 18, range: 360 },
       init(ab) { ab.cooldown = 0; ab.sparks = []; },
@@ -8640,7 +8640,7 @@
     },
     // ⚡ ★4 속사 — 재장전을 건너뛰고 다음 탄창을 달군다
     quickdraw: {
-      name: '속사', isGachaUnique: true, baseCost: 170, color: '#ffb15c',
+      name: '속사', isGachaUnique: true, isStarUnlock: true, baseCost: 170, color: '#ffb15c',
       desc: lv => `${Math.round((300 - lv * 12) / 60 * 10) / 10}s마다 즉시 재장전 + ${2 + lv}초간 사격 위력 +35%`,
       stats: { cd: 300, hot: 120 },
       init(ab) { ab.cooldown = 60; },
@@ -8655,7 +8655,7 @@
     },
     // 🎯 ★8 데드아이 — 짧은 시간 전탄이 "마지막 한 발"
     deadeye: {
-      name: '데드아이', isGachaUnique: true, baseCost: 240, color: '#b0324a',
+      name: '데드아이', isGachaUnique: true, isStarUnlock: true, baseCost: 240, color: '#b0324a',
       desc: lv => `${Math.round((480 - lv * 18) / 60 * 10) / 10}s마다 ${Math.round((150 + lv * 12) / 60 * 10) / 10}초간 전탄이 마지막 한 발 취급(×3·관통)`,
       stats: { cd: 480, dur: 150 },
       init(ab) { ab.cooldown = 180; },
@@ -39921,7 +39921,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 783;
+  const APP_VERSION = 784;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
