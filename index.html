@@ -24939,21 +24939,30 @@
       podium.className = 'rank-podium';
       // 가운데가 1위가 되도록 2-1-3 순서로 배치 (인원이 3 미만이면 있는 만큼만)
       const order = top3.length >= 3 ? [1, 0, 2] : (top3.length === 2 ? [1, 0] : [0]);
+      // 🛡 v779 — 카드 하나가 던져도 목록 전체가 사라지면 안 된다.
+      //   renderRankings 는 맨 처음 top10El.innerHTML='' 로 비우고 시작한다. 그래서 채우는 도중
+      //   예외가 나면 "헤더만 남고 목록이 텅 빈 화면"이 된다(제보 그대로).
+      //   서버 행은 남의 데이터다 — 모르는 칭호·닉네임 null·깨진 showcase 가 언제든 섞일 수 있다.
+      //   그 한 줄만 버리고 나머지는 보여준다.
       order.forEach(idx => {
         const r = top3[idx];
         if (!r) return;
-        podium.appendChild(renderPodiumCard(idx + 1, r, !!(data.myRow && r.user_id === data.userId)));
+        try { podium.appendChild(renderPodiumCard(idx + 1, r, !!(data.myRow && r.user_id === data.userId))); }
+        catch (e) { console.warn('[랭킹] 시상대 카드 렌더 실패 — 이 행만 건너뜀:', r && r.nickname, e); }
       });
       top10El.appendChild(podium);
     }
     for (let i = 3; i < data.top10.length; i++) {
       const r = data.top10[i];
       const isMe = data.myRow && r.user_id === data.userId;
-      top10El.appendChild(renderRankRow(i + 1, r, isMe));
+      try { top10El.appendChild(renderRankRow(i + 1, r, isMe)); }
+      catch (e) { console.warn('[랭킹] ' + (i + 1) + '위 행 렌더 실패 — 이 행만 건너뜀:', r && r.nickname, e); }
     }
     if (data.myRow && data.myRank > 10) {
-      dividerEl.style.display = '';
-      meEl.appendChild(renderRankRow(data.myRank, data.myRow, true));
+      try {
+        meEl.appendChild(renderRankRow(data.myRank, data.myRow, true));
+        dividerEl.style.display = '';
+      } catch (e) { console.warn('[랭킹] 내 순위 행 렌더 실패:', e); }
     }
   }
 
@@ -25192,10 +25201,11 @@
     const cached = _rankingCache[mode];
     const isFresh = cached && (Date.now() - cached.timestamp < RANKING_CACHE_TTL);
     if (isFresh) {
-      renderRankings(cached.data, true);
+      // 🛡 v779 — 이 두 renderRankings 는 try 블록 밖이다. 던지면 목록이 비워진 채로 끝난다.
+      try { renderRankings(cached.data, true); } catch (e) { console.warn('[랭킹] 캐시 렌더 실패:', e); }
       fetchRankingsData(mode).then(data => {
         _rankingCache[mode] = { timestamp: Date.now(), data };
-        renderRankings(data, false);
+        try { renderRankings(data, false); } catch (e) { console.warn('[랭킹] 갱신 렌더 실패:', e); }
       }).catch(e => {
         console.warn('백그라운드 갱신 실패:', e);
         const banner = document.getElementById('stale-banner');
@@ -33685,6 +33695,18 @@
     // 🤖 v726 — 백그라운드에선 연출을 보여줄 대상이 없으니 대기 없이 즉시 처리한다.
     //   (레벨업 카드가 이미 `document.hidden ? 0 : 600` 으로 동작하는 것과 결을 맞춤)
     const _d = document.hidden ? 0 : 1;
+    // 🌳 v779 — 진화 게이트는 AUTO 에서 "무조건 수락". 거절은 사다리를 끊는 선택이라
+    //   자동진행이 굴릴 만한 주사위가 아니다(R5 를 거절하면 R20·R40 이 영원히 안 열린다).
+    //   ⚠ 다른 씬보다 먼저 본다 — 진화 컷인이 떠 있는 동안은 이게 유일한 할 일이다.
+    const _eg = document.getElementById('evoGate');
+    if (_eg && getComputedStyle(_eg).display !== 'none') {
+      const _yes = document.getElementById('evoYes');
+      if (_yes) {
+        if (!_eg._autoAt) _eg._autoAt = performance.now() + 1100 * _d;   // 컷인을 한 번은 보여준다
+        else if (performance.now() >= _eg._autoAt) { _eg._autoAt = 0; _yes.click(); }
+      }
+      return;
+    } else if (_eg) _eg._autoAt = 0;
     const draft = document.getElementById('cardDraftScene');
     if (draft && draft.classList.contains('show')) {
       const cards = [...draft.querySelectorAll('.draft-card:not(.dim):not(.revealed)')];
@@ -39627,7 +39649,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 778;
+  const APP_VERSION = 779;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
