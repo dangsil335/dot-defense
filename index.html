@@ -5872,7 +5872,7 @@
     <div style="margin-top:12px;">
       <div style="color:#9aa3b3; font-size:11px; margin-bottom:6px;">커스텀 명령어 (Enter):</div>
       <div style="display:flex; gap:6px;">
-        <input id="cheatInput" type="text" placeholder="예: crystal 50" style="flex:1; background:#0f1219; border:1px solid #2a2f3a; color:#fff; padding:8px 10px; border-radius:6px; font-family:inherit; font-size:14px;" />
+        <input id="cheatInput" type="text" placeholder="예: crystal 50 / evo" style="flex:1; background:#0f1219; border:1px solid #2a2f3a; color:#fff; padding:8px 10px; border-radius:6px; font-family:inherit; font-size:14px;" />
         <button id="cheatSubmit" style="background:#ffd479; color:#000; border:none; padding:8px 16px; border-radius:6px; font-weight:bold; cursor:pointer;">적용</button>
       </div>
       <div style="color:#7a8090; font-size:10px; margin-top:6px; line-height:1.4;">
@@ -35574,6 +35574,27 @@
     if (r === 40 && state.evoTier === 'SR' && state.evoNode) { return { kind: 'SSR', list: _ssrOf(state.evoNode).filter(ssr => _evoTowerUnlocked(ssr, 'SSR')) }; }
     return { kind: null, list: [] };
   }
+  // 🌳 v771 — 진화가 막힌 이유. _evoCandidates 의 세 분기와 1:1로 대응한다.
+  //   ⚠ 저기 조건을 고치면 여기도 같이 고칠 것 — 안 그러면 엉뚱한 이유를 말한다.
+  function _evoBlockReason(roundNum) {
+    if (!state) return '게임 상태 없음';
+    const r = roundNum || state.round;
+    const tier = state.evoTier || '?';
+    if (r === 5) {
+      if (tier !== 'base') return '이미 진화한 단계(' + tier + ')';
+      return 'R타워 해금 업적이 하나도 없음 (업적 화면 확인)';
+    }
+    if (r === 20) {
+      if (tier !== 'R') return 'R5 진화를 안 해서 (현재 단계: ' + tier + ')';
+      if (!state.evoNode || !R_TOWERS[state.evoNode]) return '진화 노드가 비었음 (evoNode=' + state.evoNode + ')';
+      return '이어질 SR 이 하나도 해금 안 됨';
+    }
+    if (r === 40) {
+      if (tier !== 'SR') return 'R20 진화를 안 해서 (현재 단계: ' + tier + ')';
+      return '이어질 SSR 이 하나도 해금 안 됨 (가챠 필요)';
+    }
+    return '진화 라운드가 아님 (R' + r + ')';
+  }
   function maybeTriggerEvolutionGate(roundNum) {
     // 🎓 튜토리얼: R5 도달 시 정상 base→R 게이트를 가로채 솜니아 SSR 게이트를 강제(거절 불가).
     //    applyEvolution 은 state.character 만 세팅하고 META.gachaUnlocked 는 안 건드림 → 격리 보장(뽑아야 소유).
@@ -35582,7 +35603,13 @@
       return true;
     }
     const c = _evoCandidates(roundNum);
-    if (!c.kind || !c.list.length) return false;
+    if (!c.kind || !c.list.length) {
+      // 🌳 v771 — 예전엔 여기서 조용히 false 만 돌려줬다. 그래서 진화 라운드에 도달했는데
+      //   아무 일도 안 일어나면 플레이어는 이유를 알 길이 없었다(제보: "R20에 진화를 안 한다").
+      //   진화가 막히는 경우는 아래 네 가지뿐이다 — 어느 쪽인지 화면에 밝힌다.
+      try { toast('🌳 R' + (roundNum || state.round) + ' 진화 불가 — ' + _evoBlockReason(roundNum)); } catch (e) {}
+      return false;
+    }
     if (c.kind === 'R') { openCardDraft('evolve', c.list); return true; }                        // R: 타로 NPC 카드 드래프트 → 진화 이벤트(무조건 승낙)
     showEvoGate(c.kind, c.list[Math.floor(Math.random() * c.list.length)]);                     // SR/SSR: 캐릭터 일러 컷인 + 진화/거절
     return true;
@@ -38021,6 +38048,18 @@
       return;
     }
     // unlock all — 모든 가챠 캐릭터 해금
+    // 🌳 v771 — 진화 상태 즉시 확인. 게이트가 왜 안 열리는지 런 도중에 바로 본다.
+    if (cmd === 'evo') {
+      if (!state) { cheatFeedback('❌ 게임 중이 아님', true); return; }
+      const r = state.round;
+      const c = (typeof _evoCandidates === 'function') ? _evoCandidates(r) : { kind: null, list: [] };
+      const next = r < 5 ? 5 : (r < 20 ? 20 : (r < 40 ? 40 : 0));
+      const nx = next ? _evoCandidates(next) : { kind: null, list: [] };
+      cheatFeedback('🌳 R' + r + ' · 단계=' + state.evoTier + ' · 노드=' + (state.evoNode || '-')
+        + ' / 지금: ' + (c.list.length ? c.kind + '×' + c.list.length : '없음(' + _evoBlockReason(r) + ')')
+        + (next ? ' / 다음 R' + next + ': ' + (nx.list.length ? nx.kind + '×' + nx.list.length + ' [' + nx.list.join(',') + ']' : '없음(' + _evoBlockReason(next) + ')') : ''));
+      return;
+    }
     if (cmd === 'unlock all') {
       META.gachaUnlocked = META.gachaUnlocked || {};
       const allIds = [...GACHA_POOL.R, ...GACHA_POOL.SR, ...GACHA_POOL.SSR];
@@ -39513,7 +39552,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 770;
+  const APP_VERSION = 771;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
