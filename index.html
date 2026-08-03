@@ -21148,6 +21148,14 @@
       unlockBy: 'ancient:kairaFang',
     },
     // 🧲 Feria 전용 — 자력·견인·관통 능력 각성
+    flintCylinder: {
+      name: '부싯돌 실린더', icon: '🔫', rarity: 'ancient',
+      isAncient: true, characterId: 'flinta',
+      triggerAbilities: ['flintShot', 'hammerFall', 'quickdraw', 'deadeye'],
+      desc: '🔫 Flinta 전용 · ★별마다 강해짐.\n[기본] 실린더 +1칸 · 데미지 +18% (Flinta 시너지 +2칸 · +38%)\n[★4 각성 1] 사격 능력 max 도달 시 — 데미지 +50%\n[★8 각성 2] 사격 능력 2개 이상 max — 마지막 한 발 위력 추가 상승',
+      apply: (st) => { applyAncientRelic(st, 'flintCylinder'); },
+      unlockBy: 'ancient:flintCylinder',
+    },
     ferroCore: {
       name: '자기 코어', icon: '🧲', rarity: 'ancient',
       isAncient: true, characterId: 'feria',
@@ -21167,8 +21175,8 @@
     },
   };
   // 🌌 v245 — ANCIENT 매핑 & 헬퍼
-  const ANCIENT_RELIC_IDS = ['ariaHarp', 'misakiHourglass', 'elementiaSeal', 'sumikaBrush', 'blanchePrism', 'kairaFang', 'ferroCore', 'somniaPillow'];
-  const ANCIENT_RELIC_BY_CHAR = { aria: 'ariaHarp', misaki: 'misakiHourglass', elementia: 'elementiaSeal', sumika: 'sumikaBrush', blanche: 'blanchePrism', kaira: 'kairaFang', feria: 'ferroCore', somnia: 'somniaPillow' };
+  const ANCIENT_RELIC_IDS = ['ariaHarp', 'misakiHourglass', 'elementiaSeal', 'sumikaBrush', 'blanchePrism', 'kairaFang', 'ferroCore', 'somniaPillow', 'flintCylinder'];
+  const ANCIENT_RELIC_BY_CHAR = { aria: 'ariaHarp', misaki: 'misakiHourglass', elementia: 'elementiaSeal', sumika: 'sumikaBrush', blanche: 'blanchePrism', kaira: 'kairaFang', feria: 'ferroCore', somnia: 'somniaPillow', flinta: 'flintCylinder' };
   const ANCIENT_MAX_STARS = 8;
   function getAncientRelicStars(rid) {
     return (META.ancientRelics && META.ancientRelics[rid] && META.ancientRelics[rid].stars) || 0;
@@ -21218,6 +21226,17 @@
       const baseDmg = synergy ? (1.34 + stars * 0.08) : (1.15 + stars * 0.05);
       st.metaMods.dmgMul = (st.metaMods.dmgMul || 1) * baseDmg;
       st.metaMods.luckyChanceBonus = (st.metaMods.luckyChanceBonus || 0) + (synergy ? 0.08 : 0.04);
+    } else if (rid === 'flintCylinder') {
+      // 🔫 부싯돌 실린더 — 탄창 축 전용. 실린더 칸수를 직접 늘린다.
+      //   _flintCyl() 은 state.abilityStatOverrides.flintShot.cylinder 를 먼저 읽으므로 여기로 개입한다.
+      //   ⚠ 칸수를 늘리면 "마지막 한 발"까지 가는 길이 길어진다 — 그래서 데미지도 같이 준다.
+      const baseDmg = synergy ? (1.38 + stars * 0.08) : (1.18 + stars * 0.05);
+      st.metaMods.dmgMul = (st.metaMods.dmgMul || 1) * baseDmg;
+      const add = synergy ? 2 : 1;
+      const ov = st.abilityStatOverrides || (st.abilityStatOverrides = {});
+      const cur = (ov.flintShot && ov.flintShot.cylinder) ||
+                  ((ABILITY_DEFS.flintShot && ABILITY_DEFS.flintShot.stats && ABILITY_DEFS.flintShot.stats.cylinder) || 6);
+      ov.flintShot = Object.assign({}, ov.flintShot, { cylinder: cur + add });
     } else if (rid === 'ferroCore') {
       const baseDmg = synergy ? (1.36 + stars * 0.08) : (1.16 + stars * 0.05);
       st.metaMods.dmgMul = (st.metaMods.dmgMul || 1) * baseDmg;
@@ -35396,6 +35415,7 @@
     const relic = RELICS[rid]; const rn = relic ? relic.name : '고유 유물';
     const lore = {
       aria:   { title: '🌌 천공의 하프', text: '"이 하프… 너라면 제대로 울려줄 수 있겠지. 받아."' },
+      flinta: { title: '🌌 부싯돌 실린더', text: '"…한 칸 더 있어. 착각하진 마, 네가 오래 버텨서 주는 거야."' },
       misaki: { title: '🌌 시간의 모래시계', text: '"이 모래시계, 네 시간에 맞춰 돌아갈 거야. 가져."' },
       elementia: { title: '🌌 정령왕의 인장', text: '"정령들이 너를 인정했어. 이 인장, 받아줘."' },
       sumika:    { title: '🌌 먹의 인장',     text: '"…이 붓에 네 이름을 새긴다. 받아."' },
@@ -35421,7 +35441,8 @@
     galatea:  [ { make: () => _charEv('🗿 갈라테아의 시선',   '"넓게 굳혀둘까, 아니면 한 놈을 완전히 부숴버릴까?"',       'dmg',  20, 'petrifyGaze') } ],
     blanche:  [ { make: () => _charEv('🌈 블랑슈의 분광',      '"빛을 더 넓게 흩뿌릴까, 아니면 한 점으로 모아 태울까?"',   'dmg',  22, 'prismBolt') },
                 { avail: () => _ancientAvail('blanche'), make: () => _charRelicEv('blanche') } ],
-    flinta:   [ { make: () => _charEv('🐈 플린타의 실린더',    '"탄을 더 채워둘까, 아니면 마지막 한 발만 더 벼릴까?"',      'dmg',  22, 'flintShot') } ],
+    flinta:   [ { make: () => _charEv('🐈 플린타의 실린더',    '"탄을 더 채워둘까, 아니면 마지막 한 발만 더 벼릴까?"',      'dmg',  22, 'flintShot') },
+                { avail: () => _ancientAvail('flinta'), make: () => _charRelicEv('flinta') } ],
     kaira:    [ { make: () => _charEv('🐾 카이라의 사냥',      '"인간형으로 사거리를 늘릴까, 야수형으로 물어뜯을까?"',     'dmg',  22, 'huntingClaw') },
                 { avail: () => _ancientAvail('kaira'), make: () => _charRelicEv('kaira') } ],
     feria:    [ { make: () => _charEv('🧲 페리아의 자장',      '"당겨서 뭉칠까, 밀어서 흩을까?"',                       'dmg',  22, 'polarField') },
@@ -36463,6 +36484,49 @@
           const prog = Math.min(1, dt / 1550); const x = s.x * W + (cx - s.x * W) * prog * 0.55; const y = (s.y0 + prog * 1.15) * H;
           if (y > H * 1.02) continue; const tw = 0.55 + 0.45 * Math.sin(s.tw + t * 0.02); const a = tw * post * (0.5 + 0.5 * prog); if (a <= 0) continue;
           spark(ctx, x, y, s.size * (0.7 + prog * 0.5), C(fx.glow, a));
+        }
+      } };
+    }
+
+    // ── 🐈 플린타 — 부싯돌. 실린더 여섯 칸이 차례로 점화되고, 마지막 칸에서 불티가 터진다 ──
+    if (style === 'flinta') {
+      const CYL = 6;
+      const EMB = [];   // 사방으로 튀는 불티
+      for (let i = 0; i < 44; i++) {
+        const a = Math.random() * Math.PI * 2, sp = 0.35 + Math.random() * 0.9;
+        EMB.push({ a, sp, delay: 260 + Math.random() * 1500, size: 1.2 + Math.random() * 2.4, tw: Math.random() * 6.2 });
+      }
+      return { draw: function (ctx, g, t, post) {
+        const cx = g.cx, cy = g.cy, W = g.W, H = g.H;
+        const R = Math.min(W, H) * 0.17;
+        // 실린더 — 여섯 칸이 순서대로 달아오른다
+        ctx.save();
+        ctx.translate(cx, cy);
+        ctx.rotate(t * 0.0009);
+        for (let i = 0; i < CYL; i++) {
+          const a = (i / CYL) * Math.PI * 2 - Math.PI / 2;
+          const px = Math.cos(a) * R, py = Math.sin(a) * R;
+          const lit = Math.max(0, Math.min(1, (t - 200 - i * 190) / 260));
+          const last = (i === CYL - 1);
+          ctx.beginPath(); ctx.arc(px, py, R * 0.26, 0, Math.PI * 2);
+          ctx.strokeStyle = C(fx.glow, (0.35 + 0.5 * lit) * post); ctx.lineWidth = 2; ctx.stroke();
+          if (lit > 0) {
+            ctx.fillStyle = C(last ? fx.flashMid : fx.dust, (last ? 0.9 : 0.55) * lit * post);
+            ctx.beginPath(); ctx.arc(px, py, R * 0.26 * (0.45 + 0.5 * lit), 0, Math.PI * 2); ctx.fill();
+          }
+        }
+        ctx.strokeStyle = C(fx.glow, 0.30 * post); ctx.lineWidth = 1.4;   // 실린더 외곽
+        ctx.beginPath(); ctx.arc(0, 0, R * 1.34, 0, Math.PI * 2); ctx.stroke();
+        ctx.restore();
+        // 불티 — 중앙에서 사방으로, 중력에 눌리며 사그라든다
+        for (let i = 0; i < EMB.length; i++) {
+          const e = EMB[i], dt = t - e.delay; if (dt < 0) continue;
+          const p = dt / 1500; if (p > 1) continue;
+          const d = R * 0.6 + p * Math.min(W, H) * 0.62 * e.sp;
+          const x = cx + Math.cos(e.a) * d;
+          const y = cy + Math.sin(e.a) * d + p * p * H * 0.16;   // 낙하
+          const a = (1 - p) * (0.5 + 0.5 * Math.sin(e.tw + t * 0.03)) * post; if (a <= 0.02) continue;
+          spark(ctx, x, y, e.size * (1 - p * 0.4), C(p < 0.5 ? fx.flashMid : (fx.ember || fx.dust), a));
         }
       } };
     }
@@ -39857,7 +39921,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 782;
+  const APP_VERSION = 783;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
