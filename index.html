@@ -4863,6 +4863,7 @@
   <div class="codex-tabs" id="rank-mode-tabs" style="display:none; margin:0 auto 8px; justify-content:center; max-width:520px;">
     <button class="codex-tab active" data-rankmode="standard">⚔️ 클래식</button>
   </div>
+  <div id="rank-syncing" style="display:none; text-align:center; color:#7ad7ff; font-size:11.5px; padding:6px 8px; background:rgba(122,215,255,0.08); border-bottom:1px solid rgba(122,215,255,0.18);">⬆ 방금 기록을 반영하는 중… 잠시 뒤 자동 갱신됩니다</div>
   <div id="globalRank-status" style="text-align:center; color:#9aa3b3; padding:30px; font-size:14px;">불러오는 중...</div>
   <div id="globalRank-top10" style="padding:0 12px;"></div>
   <div id="globalRank-divider" style="display:none; height:1px; background:#2a2f3a; margin:18px 12px 12px; position:relative;">
@@ -25133,21 +25134,30 @@
       return;
     }
 
-    // 진행 중인 점수 제출 대기 — 끝나면 캐시 무효화
-    if (_submitPromise) {
-      top10El.innerHTML = '';
-      statusEl.style.display = '';
-      statusEl.innerHTML = `
-        <div style="color:#7ad7ff;">⬆ 점수 제출 중...</div>
-        <div style="margin-top:6px; font-size:11px; color:#7a8090;">방금 게임 결과를 서버에 전송하고 있어요</div>`;
-      if (await _rankWait(_submitPromise.catch(() => {})) === RANK_TIMEOUT) console.warn('[랭킹] 점수 제출 대기 시간 초과 — 조회를 계속 진행');
+    // ⚡ v775 — 제출/프로필 동기화를 "기다리지 않는다".
+    //   예전엔 여기서 순차로 await 했다(각각 최대 7초). 조회 자체는 실측 0.2초인데,
+    //   판을 마치고 들어오면 제출이 아직 날아가는 중이라 최대 14초를 조회도 시작 못 하고 서 있었다
+    //   ("예전엔 로딩이 거의 없었다"는 제보 — 게임을 안 하고 들어가면 둘 다 없어서 빨랐던 것).
+    //   이제 조회를 즉시 시작하고, 제출이 끝나면 그때 한 번 더 받아 덮어쓴다.
+    //   ⚠ 내 새 점수는 제출이 끝나야 서버에 있다 → 아래 후속 갱신을 지우지 말 것. 지우면 방금 기록이 안 보인다.
+    if (_submitPromise || _updateProfilePromise) {
+      const _pending = [];
+      if (_submitPromise) _pending.push(_submitPromise.catch(() => {}));
+      if (_updateProfilePromise) _pending.push(_updateProfilePromise.catch(() => {}));
       _submitPromise = null;
-      invalidateRankingCache(); // 새 점수 제출됐으니 캐시 폐기
-    }
-    // 진행 중인 프로필 갱신 대기 (닉네임/칭호/대표일러 변경 직후 진입한 경우)
-    if (_updateProfilePromise) {
-      if (await _rankWait(_updateProfilePromise.catch(() => {})) === RANK_TIMEOUT) console.warn('[랭킹] 프로필 동기화 대기 시간 초과 — 조회를 계속 진행');
       _updateProfilePromise = null;
+      const _syncBanner = document.getElementById('rank-syncing');
+      if (_syncBanner) _syncBanner.style.display = '';
+      Promise.all(_pending).then(() => {
+        if (_syncBanner) _syncBanner.style.display = 'none';
+        invalidateRankingCache();                       // 새 점수가 올라갔으니 캐시 폐기
+        if (currentScreen !== 'globalRank') return;     // 화면을 떠났으면 조용히 끝낸다
+        const m2 = _selectedRankMode || 'standard';
+        fetchRankingsData(m2).then(d2 => {
+          _rankingCache[m2] = { timestamp: Date.now(), data: d2 };
+          if (currentScreen === 'globalRank' && (_selectedRankMode || 'standard') === m2) renderRankings(d2, false);
+        }).catch(e2 => console.warn('[랭킹] 제출 후 갱신 실패:', e2));
+      });
     }
 
     // === 캐시 활용 (D: Stale-while-revalidate) — 모드별 분리 ===
@@ -39566,7 +39576,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 774;
+  const APP_VERSION = 775;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
