@@ -8609,6 +8609,63 @@
       },
       draw(ab) { _flintDrawSparks(ab); },
     },
+    // 🔥 tier3 히든 — 공이 낙하 + 광폭. 서부극 fanning: 공이를 손바닥으로 연타해 잔탄을 쏟아붓는다.
+    fanTheHammer: {
+      name: '연속 격발', isGachaUnique: true, isCombo: true, isTriple: true, baseCost: 260, color: '#ff8a3d',
+      desc: lv => `실린더 잔탄을 한 번에 전부 발사 · 발당 DMG ${9 + lv * 5} · 마지막 탄은 ×3 · 발사 후 즉시 재장전`,
+      stats: { cd: 210, range: 380 },
+      init(ab) { ab.cooldown = 90; ab.sparks = []; },
+      tick(ab) {
+        const S = _S(ab);
+        for (const s of ab.sparks) { s.x += s.vx; s.y += s.vy; s.vx *= 0.90; s.vy = s.vy * 0.90 + 0.06; s.life--; }
+        compactInPlace(ab.sparks, _alivePredLife);
+        if (--ab.cooldown > 0) return;
+        const st = _flintSt();
+        const shots = Math.max(1, st.reload > 0 ? 1 : st.ammo);   // 재장전 중이면 1발만 (빈 실린더를 쏟을 순 없다)
+        const target = findNearestEnemy(tdCappedRange(S.range * permaRangeMul('fanTheHammer')));
+        if (!target) return;
+        const [tx, ty] = enemyXY(target);
+        const base = 9 + ab.level * 5;
+        for (let i = 0; i < shots; i++) {
+          const last = (i === shots - 1);
+          damageEnemy(target, base * (last ? _flintLastMul() : 1));
+        }
+        _flintSparks(ab, tx, ty, '#ff8a3d', 6 + shots * 2, 3.0);
+        st.ammo = 0; st.reload = _flintReloadT();   // 다 쏟았으니 바로 재장전
+        ab.cooldown = Math.max(90, S.cd - ab.level * 8);
+      },
+      draw(ab) { _flintDrawSparks(ab); },
+    },
+    // 💥 tier4 히든 — 연속 격발 + 노바. 재장전 직후 첫 발에 실린더 전체가 실린다.
+    finalChamber: {
+      name: '최후의 약실', isGachaUnique: true, isCombo: true, isTriple: true, baseCost: 320, color: '#b0324a',
+      desc: lv => `재장전 직후 첫 발이 실린더 전탄분 위력 · DMG ${14 + lv * 7} × 실린더 칸수 · 착탄 반경 ${90 + lv * 5} 폭발`,
+      stats: { radius: 90, range: 380 },
+      init(ab) { ab.cooldown = 0; ab.armed = false; ab.sparks = []; },
+      tick(ab) {
+        const S = _S(ab);
+        for (const s of ab.sparks) { s.x += s.vx; s.y += s.vy; s.vx *= 0.90; s.vy = s.vy * 0.90 + 0.06; s.life--; }
+        compactInPlace(ab.sparks, _alivePredLife);
+        const st = _flintSt();
+        if (st.reload > 0) { ab.armed = true; return; }   // 재장전이 끝나는 순간을 노린다
+        if (!ab.armed) return;
+        const target = findNearestEnemy(tdCappedRange(S.range * permaRangeMul('finalChamber')));
+        if (!target) return;
+        ab.armed = false;
+        const [tx, ty] = enemyXY(target);
+        const r = S.radius + ab.level * 5;
+        const dmg = (14 + ab.level * 7) * _flintCyl();
+        for (const e of state.enemies) {
+          if (e.hp <= 0) continue;
+          const [ex, ey] = enemyXY(e);
+          if ((ex - tx) * (ex - tx) + (ey - ty) * (ey - ty) <= r * r) damageEnemy(e, dmg);
+        }
+        _flintSparks(ab, tx, ty, '#ffd9a0', 22, 4.2);
+        st.ammo = Math.max(0, st.ammo - 1);
+        if (st.ammo <= 0) st.reload = _flintReloadT();
+      },
+      draw(ab) { _flintDrawSparks(ab); },
+    },
     // 🔨 조합: 부싯돌 사격 + 저격 — 공이가 떨어진 자리에 불티가 터진다(착탄 광역)
     hammerFall: {
       name: '공이 낙하', isGachaUnique: true, isCombo: true, baseCost: 190, color: '#ff8a3d',
@@ -22250,6 +22307,8 @@
     { parts: ['royalFlush', 'magnet'],   combo: 'grandSlam',   tier: 4 },
     { parts: ['inkSlash',        'sniper'],      combo: 'silentExecution', tier: 2 },
     { parts: ['flintShot',       'sniper'],      combo: 'hammerFall',      tier: 2 },
+    { parts: ['hammerFall',      'frenzy'],      combo: 'fanTheHammer',    tier: 3 },
+    { parts: ['fanTheHammer',    'nova'],        combo: 'finalChamber',    tier: 4 },
     { parts: ['silentExecution', 'executioner'], combo: 'sumiReaper',       tier: 3 },
     { parts: ['sumiReaper',      'reaper'],       combo: 'inkReaper',        tier: 4 },
     { parts: ['spritling',      'tornado'], combo: 'windWolfSpirit' },
@@ -35488,7 +35547,7 @@
     sakura:   ['sakuraSlash', 'sakuraStorm', 'sakuraInferno', 'sakuraApocalypse'],
     luna:     ['moonShot', 'moonFrostArrow', 'moonBombardment', 'lunarApocalypse'],
     aria:     ['starSong', 'cosmicChorus', 'celestialSymphony', 'stellarOpera'],
-    flinta:   ['flintShot', 'hammerFall', 'quickdraw', 'deadeye'],
+    flinta:   ['flintShot', 'hammerFall', 'fanTheHammer', 'finalChamber'],
     misaki:   ['timeButterfly', 'timePrison', 'eternalMoment', 'eternalPrison'],
     levina:   ['stormBrand', 'levinLash', 'tempestVeil', 'stormSovereign'],
     cardista: ['cardThrow', 'riggedDeck', 'royalFlush', 'grandSlam'],
@@ -35699,6 +35758,15 @@
                             lines:['솔라: 내가 불을 붙인다 — 네 클라이맥스에!', '아리아: 마지막 음에, 초신성을!'] },
     rocketSwarm_aria:     { sr:'solar',    ssr:'aria',      axis:'blast', name:'포화 협주곡',
                             lines:['솔라: 탄막 다발, 박자 맞춰 쏟아부을게!', '아리아: 그럼 화력의 협주곡이야 — 가자!'] },
+    // ── 🐈 플린타 (부싯돌·실린더) ──
+    missile_flinta:       { sr:'cardista', ssr:'flinta',    axis:'blast',  name:'속임수 일제사격',
+                            lines:['카르타: 패는 내가 돌릴게 — 넌 방아쇠만 당겨.', '플린타: …좋아. 여섯 발, 전부 네 신호에.'] },
+    boomerang_flinta:     { sr:'cardista', ssr:'flinta',    axis:'pierce', name:'되돌아오는 탄피',
+                            lines:['카르타: 던진 건 반드시 돌아와. 도박도, 총알도.', '플린타: 그럼 빗나가도 한 번 더라는 거네. …나쁘지 않아.'] },
+    beam_flinta:          { sr:'iris',     ssr:'flinta',    axis:'pierce', name:'장노출 조준선',
+                            lines:['아이리스: 셔터를 열어둘게. 궤적이 전부 남을 거야.', '플린타: 잔상 위로 쏘라고? …재밌겠네.'] },
+    orbital_flinta:       { sr:'iris',     ssr:'flinta',    axis:'echo',   name:'회전 약실',
+                            lines:['아이리스: 여섯 칸이 도는 걸 한 프레임씩 찍어뒀어.', '플린타: 그럼 어느 칸이 마지막인지도 알겠네. …쏜다.'] },
     // ── 🦋 미사키 (시공·나비) ──
     thunder_misaki:       { sr:'gravitas', ssr:'misaki',    axis:'shock', name:'뇌전 태엽',
                             lines:['그라비타스: 전하를 시간에 감아둘게.', '미사키: 멈춘 순간에 — 벼락을.'] },
@@ -39921,7 +39989,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 784;
+  const APP_VERSION = 785;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
