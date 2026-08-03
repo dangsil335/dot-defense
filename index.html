@@ -7266,6 +7266,20 @@
       g.equippedShared[slot] = id;   // 공용 — 어느 캐릭터 화면에서 끼우든 전원에게 그대로 적용된다
     }
   }
+  // 🔩 v780 — 이 코어가 "어디든" 장착돼 있는가. 공용 4슬롯 + 모든 캐릭터의 고유 슬롯을 전부 본다.
+  //   ⚠ 이 판정에 _gearOwnerOf 를 쓰면 안 된다. 그건 v767 이후 signature 만 보므로
+  //     일반 코어에는 항상 null 을 준다 → 분해·합성의 "미장착" 검사가 통째로 뚫린다
+  //     (실제로 v767~v779 동안 일괄분해·합성이 공용 4슬롯에 낀 코어를 대상으로 잡고 있었다).
+  function _gearIsEquipped(itemId) {
+    if (itemId == null) return false;
+    const g = _ensureGear();
+    for (const k in g.equippedShared) if (g.equippedShared[k] === itemId) return true;
+    for (const c in g.equipped) {
+      const m = g.equipped[c];
+      if (m && typeof m === 'object' && m.signature === itemId) return true;
+    }
+    return false;
+  }
   // 이 고유장비를 지금 끼고 있는 캐릭터 — 배타 판정·UI 표시("다른 캐릭이 장착 중")에 쓴다.
   // 🔩 v767 — 일반 코어는 공용 1벌이라 소유자를 다툴 일이 없다(항상 null). 고유장비만 캐릭터를 다툰다.
   function _gearOwnerOf(itemId, exceptChar) {
@@ -39649,7 +39663,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 779;
+  const APP_VERSION = 780;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
@@ -40555,7 +40569,7 @@
     else h += `<div class="cm-d-acts"><button class="gcm-btn eq" data-act="equip">${equipped ? '🔓 해제' : '🔩 장착'}</button><button class="gcm-btn roll" data-act="reroll"${gg < cost ? ' disabled' : ''}>🎲 재설정 <span class="gcm-cost">💰${cost.toLocaleString()}${lockN ? ' 🔒' + lockN : ''}</span></button><button class="gcm-btn lock${it.locked ? ' on' : ''}" data-act="lock" title="잠금 — 일괄분해·합성에서 보호">${it.locked ? '🔒' : '🔓'}</button>${uq
       // ✨ 고유장비 = 분해 불가(_cmAction 이 이미 차단). data-act 를 아예 안 달아 클릭 배선 자체가 없다 + 이유 표기.
       ? `<button class="gcm-btn dism uqno" disabled title="고유장비는 분해·합성할 수 없습니다">🔨 분해</button><span class="cm-d-note">✨ 고유장비는 분해·합성 불가</span>`
-      : `<button class="gcm-btn dism" data-act="dismantle"${it.locked ? ' disabled' : ''}>🔨 분해 <span class="gcm-cost">→💠${refund}</span></button>`}</div>`;
+      : `<button class="gcm-btn dism" data-act="dismantle"${(it.locked || _gearIsEquipped(it.id)) ? ' disabled' : ''} title="${_gearIsEquipped(it.id) ? '장착 중 — 해제 후 분해' : (it.locked ? '잠금 해제 후 분해' : '')}">🔨 분해 <span class="gcm-cost">→💠${refund}</span></button>`}</div>`;
     return h;
   }
   function _cmAction(act) {
@@ -40586,7 +40600,12 @@
       _renderCoreMgr();
     }
     else if (act === 'doneRoll') { _gearRerollPending = null; _renderCoreMgr(); }   // 비교 표시만 닫는다(이미 적용돼 있다)
-    else if (act === 'dismantle') { if (it.rarity === 'unique' || it.slot === 'signature') { toast('✨ 고유장비는 분해할 수 없습니다'); return; } if (it.locked) { toast('🔒 잠금 코어 — 해제 후 분해'); return; } { const _o = _gearOwnerOf(it.id); if (_o) _gearLoadout(_o.charId)[_o.slot] = null; } const refund = GEAR_DISM_REFUND[it.rarity] || 1; g.inv = g.inv.filter(x => x.id !== it.id); _gearTombstone([it.id]); grantShards(refund); _cmSel = g.inv.length ? g.inv[0].id : null; _gearRerollPending = null; _gearLocks.clear(); saveMeta(); _renderCoreMgr(); toast(`🔨 분해 → 💠${refund} 별조각`); }
+    else if (act === 'dismantle') { if (it.rarity === 'unique' || it.slot === 'signature') { toast('✨ 고유장비는 분해할 수 없습니다'); return; } if (it.locked) { toast('🔒 잠금 코어 — 해제 후 분해'); return; }
+      // 🔩 v780 — 장착 중인 코어는 분해하지 않는다(함장 요청). 예전엔 몰래 빼고 분해했는데,
+      //   그 코드(`_gearLoadout(...)[slot] = null`)는 v767 이후 사본에 쓰는 무효 대입이라
+      //   실제로는 장착 기록을 남긴 채 아이템만 사라뜨렸다 — 유령 장착이 됐다.
+      if (_gearIsEquipped(it.id)) { toast('🔩 장착 중인 코어 — 해제 후 분해'); return; }
+      const refund = GEAR_DISM_REFUND[it.rarity] || 1; g.inv = g.inv.filter(x => x.id !== it.id); _gearTombstone([it.id]); grantShards(refund); _cmSel = g.inv.length ? g.inv[0].id : null; _gearRerollPending = null; _gearLocks.clear(); saveMeta(); _renderCoreMgr(); toast(`🔨 분해 → 💠${refund} 별조각`); }
     else if (act === 'lock') { it.locked = !it.locked; it.v = (it.v || 1) + 1; saveMeta(); _renderCoreMgr(); SFX.click && SFX.click(); toast(it.locked ? '🔒 잠금' : '🔓 잠금 해제'); }
   }
   // 🧹 일괄 분해 대상 — 미장착·미잠금·레어 이하
@@ -40596,7 +40615,7 @@
   //    ⚠️ 일반 코어는 _gearIsUnique 가 항상 false → 대상 목록이 예전과 완전히 동일하다(실측 확인).
   function _cmBulkTargets() {
     const g = _ensureGear(); const ord = { common:0, rare:1, epic:2, legend:3 };
-    return g.inv.filter(it => !_gearIsUnique(it) && !it.locked && !_gearOwnerOf(it.id) && (ord[it.rarity] != null ? ord[it.rarity] : 9) <= 1);
+    return g.inv.filter(it => !_gearIsUnique(it) && !it.locked && !_gearIsEquipped(it.id) && (ord[it.rarity] != null ? ord[it.rarity] : 9) <= 1);
   }
   function _cmBulkDismantle() {
     const g = _ensureGear(); const t = _cmBulkTargets();
@@ -40613,7 +40632,7 @@
     const g = _ensureGear(); const it = g.inv.find(x => x.id === id); if (!it) return;
     if (_cmFuseSel.has(id)) { _cmFuseSel.delete(id); _renderCoreMgr(); return; }
     if (it.rarity === 'unique' || it.slot === 'signature') { toast('✨ 고유장비는 합성 불가'); return; }   // ⚠️ 막지 않으면 order.indexOf('unique')=-1 → common 으로 강등 합성됨
-    if (it.locked || _gearOwnerOf(it.id)) { toast('장착/잠금 코어는 합성 불가'); return; }
+    if (it.locked || _gearIsEquipped(it.id)) { toast('장착/잠금 코어는 합성 불가'); return; }
     if (it.rarity === 'legend') { toast('레전드는 최상위 — 합성 불가'); return; }
     if (_cmFuseSel.size) { const f = g.inv.find(x => x.id === [..._cmFuseSel][0]); if (f && (f.slot !== it.slot || f.rarity !== it.rarity)) { toast('같은 슬롯·같은 등급만'); return; } }
     if (_cmFuseSel.size >= 3) { toast('3개까지만'); return; }
