@@ -27910,8 +27910,22 @@
           // 🎁 일반보스는 50%만 유물 이벤트 등장 (유물 과다 지급 완화). 특수보스 강화 이벤트는 항상.
           const _giveReward = _bossSpecial || (Math.random() < 0.5);
           if (_isEvoRound || _giveReward) {
+            // 🌳 v774 — 진화 라운드는 "포기"가 없다. 재시도한다.
+            //   예전엔 420ms 뒤에 열리는 이 함수가 _activeEvent/relicOffering 을 만나면 그냥 return 했다.
+            //   그런데 보스가 마지막 적이면 처치 즉시 라운드가 넘어가고(advanceRound → planRound),
+            //   거기서 특별상점 2% + 기습 이벤트 9% 가 굴러 이 420ms 창에 _activeEvent 가 설 수 있다.
+            //   레벨업 카드는 재시도했는데 이벤트만 재시도 없이 버려서, 그 라운드의 진화가 통째로 증발했다
+            //   (R5/R20/R40 각각 약 11%). 진화가 사라지면 다음 게이트 조건(evoTier)도 영원히 안 맞는다 —
+            //   R5 를 놓치면 R20 도, R40 도 못 연다. 한 번의 우연이 런 전체를 망친다.
+            //   ⚠ 일반 보스 보상(유물/강화 이벤트)은 예전대로 포기한다. 그건 놓쳐도 사다리가 끊기지 않는다.
+            let _evoRetry = 0;
             const _openBossReward = () => {
-              if (!state || state.gameOver || _activeEvent || state.relicOffering) return;
+              if (!state || state.gameOver) return;
+              if (_activeEvent || state.relicOffering) {
+                if (!_isEvoRound) return;                       // 일반 보상은 예전대로 포기
+                if (++_evoRetry > 40) return;                   // 12초(40×300ms) 넘게 안 비면 포기 — 무한 루프 방지
+                setTimeout(_openBossReward, 300); return;       // 진화는 이벤트가 끝날 때까지 기다린다
+              }
               // 🃏 레벨업/무료 카드(게임화면 선택)가 떠 있으면 먼저 고르게 두고, 끝난 뒤 보스 카드 드래프트 → 화면 겹침 방지
               if (state.levelUpChoices) { setTimeout(_openBossReward, 300); return; }
               // 🌳 진화 게이트 우선 — 굴릴 수 있는 타워 있으면 진화 모달, 없으면 폴백
@@ -39552,7 +39566,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 773;
+  const APP_VERSION = 774;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
