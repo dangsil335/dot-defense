@@ -35426,6 +35426,9 @@
     'feria__zerog':             { evo: '중력도 극이야. …방향을 잃게 해줄게.',           amb: '무중력이야. 발 디딜 곳 없어.' },
     'feria__cataclysm':         { evo: '극을 지웠어. …끌 것도, 밀 것도 없어.',          amb: '폴라리티 소멸. 도망칠 방향 자체가 없어.' },
     'feria__polaritylancet':    { evo: '극을 한 점으로 세웠어. …찌를 곳만 남겨둘게.',    amb: '자기력선을 날 하나로 벼렸어. 스치면 베여.' },
+    'flinta__phantomcat':       { evo: '그림자에서 쏠게. …어디서 왔는지도 모를걸.',      amb: '발소리 안 내는 건 자신 있어. 고양이니까.' },
+    'flinta__noblemarksman':    { evo: '예의는 갖췄어. 그러니까 한 발만 쓸게.',          amb: '초대장은 없지만… 뭐, 들어가서 쏘면 되지.' },
+    'flinta__beachracing':      { evo: '엔진도 실린더도 여섯이야. …우연이겠지.',         amb: '모래 위에선 미끄러져. 그러니까 한 방에 끝낼게.' },
     'galatea__whitesand':       { evo: '움직이지 마. …모래까지 굳혀줄게.',             amb: '가만히 있어봐. 모래성처럼 예쁘게 굳혀줄게.' },
     'galatea__rosegarden':      { evo: '움직이지 마. …장미 사이에 세워둘게.',           amb: '정원에 자리 하나 비었어. 가시 조심하고.' },
     'gravitas__onsen':          { evo: '…탕에 잠기면 더 무겁지. 전부, 한 점으로.',      amb: '…물속에선 더 깊이 가라앉지.' },
@@ -36267,6 +36270,7 @@
     cardista:  [{ id: 'casino',       name: '비치 카지노 갬블러' }, { id: 'bloodmoon',  name: '블러드문 카지노' }],
     chloe:     [{ id: 'waterpark',    name: '애시드 워터파크 연구원' }, { id: 'madtea',  name: '매드 티파티 연금술사' }],
     elementia: [{ id: 'monarch',      name: '정령왕의 해변' }, { id: 'idol',        name: '정령 아이돌' }],
+    flinta:    [{ id: 'phantomcat',   name: '팬텀 캣' }, { id: 'noblemarksman', name: '고귀한 사격수' }, { id: 'beachracing',   name: '비치 레이싱' }],
     feria:     [{ id: 'zerog',        name: '제로그래비티 마그넷' }, { id: 'cataclysm', name: '제로 폴라리티 카타클리즘' }, { id: 'polaritylancet', name: '폴라리티 랜싯' }],
     galatea:   [{ id: 'whitesand',    name: '백사장 석화 퀸' }, { id: 'rosegarden',    name: '장미 석화 정원' }],
     gravitas:  [{ id: 'onsen',        name: '온천 타월' }, { id: 'academygravity', name: '첫 각성' }],
@@ -40015,7 +40019,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 786;
+  const APP_VERSION = 787;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
