@@ -185,6 +185,29 @@ missile_flinta: { sr:'cardista', ssr:'flinta', axis:'blast', name:'…', lines:[
 
 ---
 
+## 4-B. 능력 쪽 부속 — **캐릭터 id 스캔에 안 잡힌다**
+
+능력 id 로 등록되는 곳들이다. 캐릭터 id 만 훑으면 전부 놓친다(실제로 6곳을 놓쳤다).
+
+| 레지스트리 | 무엇 | grep 앵커 |
+|---|---|---|
+| `ABILITY_TAGS` | 능력별 태그(`단일`/`광역`/`연사`/`폭발`/`버프`…) | `const ABILITY_TAGS` |
+| `ABILITY_ICON_ORDER` | 능력 아이콘 표시 순서 | `const ABILITY_ICON_ORDER` |
+| `COMBO_CUTIN_LINES` | **조합 형성 시 컷인 대사** — 조합 3종 전부 | `const COMBO_CUTIN_LINES` |
+| `activateAncientAwaken` | 고대 유물 **★4/★8 각성 효과 분기** | `function activateAncientAwaken` |
+| `ACHIEVEMENTS` (8돌파) | `char8_<id>` 업적 | `char8_aria` |
+| `MENU_HERO_IDS` | 메인 메뉴 배경 로테이션 | `const MENU_HERO_IDS` |
+
+⚠ **`activateAncientAwaken` 이 제일 위험하다.** 유물 `desc` 에는 「★4 각성 1 / ★8 각성 2」를 써두는데
+여기 분기가 없으면 **글만 있고 효과가 0** 이다. 크래시도 경고도 없다.
+
+## 4-C. 기획 판단이 필요한 것 (코드 누락 아님)
+
+| 항목 | 상황 |
+|---|---|
+| `GACHA_BANNERS` | 배너가 SSR 을 **2명씩 짝지어** 구성한다(elemSumi·ariaMisa·prismBeast·feriaSomnia). 홀수 번째 캐릭은 짝이 필요하다. |
+| `SKINS` | 스킨을 안 만들었으면 비어 있는 게 정상. 감사에서 계속 잡히는 게 싫으면 `<id>: []` 로 명시. |
+
 ## 5. 연출
 
 ### `SSR_REVEAL_FX` (SSR 전용)
@@ -271,3 +294,63 @@ for k, v in sorted(hits.items(), key=lambda kv: -len(kv[1])):
 
 **최종 점검은 스캔이 아니라 도감 카운트로 한다.** 추가 전후 `액티브/조합/히든` 숫자가
 의도한 만큼 움직였는지 보면 플래그 누락이 바로 드러난다.
+
+---
+
+## 부록 C — 차분 감사 (이게 제일 확실하다)
+
+위 목록을 아무리 손으로 유지해도 샌다. **기존 SSR 8종과 전면 차분**을 뜨는 게 확실하다.
+캐릭터 id 뿐 아니라 **그 캐릭의 능력 id · ★해금 id · 유물 id** 까지 토큰으로 묶어서,
+"SSR 8종 전부에 있는데 새 캐릭에는 없는 구조"를 찾는다.
+
+이 스크립트가 실제로 9건을 찾아냈다 — 손으로 만든 체크리스트가 놓친 것들이다.
+
+```python
+import io, os, re, sys
+os.chdir(r'<repo>')
+h = io.open('index.html', encoding='utf-8').read(); L = h.split('\n')
+decl = re.compile(r'^\s*(?:const|let|var)\s+([A-Za-z_$][\w$]*)\s*=\s*[\{\[]')
+fn   = re.compile(r'^\s*(?:async\s+)?function\s+([A-Za-z_$][\w$]*)')
+def owner(i):
+    for j in range(i, max(-1, i-500), -1):
+        m = decl.match(L[j]);  m2 = fn.match(L[j])
+        if m: return m.group(1)
+        if m2: return 'fn:' + m2.group(1)
+    return '(?)'
+def blk(name):
+    m = re.search(r'const %s\s*=' % name, h); st = h.index('{', m.start()); d = 0
+    for k in range(st, len(h)):
+        if h[k] == '{': d += 1
+        elif h[k] == '}':
+            d -= 1
+            if d == 0: return h[st:k+1]
+sig, star, relic = {}, {}, {}
+for mm in re.finditer(r"(\w+):\s*\[([^\]]*)\]", blk('CHAR_SIG_ABILITIES')):
+    sig[mm.group(1)] = [x.strip().strip("'") for x in mm.group(2).split(',') if x.strip()]
+for mm in re.finditer(r"(\w+):\s*\{\s*4:\s*\['([^']*)'\][^}]*8:\s*\['([^']*)'\]", blk('CHAR_STAR_UNLOCKS')):
+    star[mm.group(1)] = [mm.group(2), mm.group(3)]
+for mm in re.finditer(r"(\w+):\s*'(\w+)'", blk('ANCIENT_RELIC_BY_CHAR')):
+    relic[mm.group(1)] = mm.group(2)
+SSR = ['aria','misaki','elementia','sumika','blanche','kaira','feria','somnia']
+NEW = 'flinta'          # ← 새 캐릭 id
+def toks(c):
+    t = {c} | set(sig.get(c, [])) | set(star.get(c, []))
+    if relic.get(c): t.add(relic[c])
+    return t
+places = {}
+for c in SSR + [NEW]:
+    s = set()
+    for i, l in enumerate(L):
+        for tk in toks(c):
+            if re.search(r"(?<![\w$])%s(?![\w$])" % re.escape(tk), l): s.add(owner(i)); break
+    places[c] = s
+for m in sorted(set.intersection(*[places[c] for c in SSR]) - places[NEW]):
+    print('❌', m)
+print('등장구조:', {c: len(places[c]) for c in SSR + [NEW]})
+```
+
+**읽는 법**
+- `❌` 로 나온 것이 후보다. 전부가 진짜 누락은 아니다 — 오탐도 섞인다.
+- **등장구조 수**를 같이 본다. 새 캐릭이 기존 8종 범위(32~41)에 들면 대체로 채워진 것이다.
+- 오탐 판별: 그 구조 안에서 기존 캐릭 토큰이 실제로 몇 줄 잡히는지 세어본다.
+  0줄이면 `owner()` 역추적이 범위를 잘못 잡은 것이다(`drawDefenseTowers` 가 그랬다).

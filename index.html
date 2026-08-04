@@ -21409,6 +21409,19 @@
         state.metaMods.dmgMul *= 1.20;
         toast(`🧲🌟 자기 코어 · 단극 각성!`);
       }
+    } else if (relic.id === 'flintCylinder') {
+      if (level === 1) {
+        state.metaMods.dmgMul *= 1.50;
+        toast(`🔫✨ 부싯돌 실린더 · 격발 각성!`);
+      } else if (level === 2) {
+        // 마지막 한 발 위력 상승 — lastMul 을 직접 올린다(단일 출처 override 경유)
+        const ov = state.abilityStatOverrides || (state.abilityStatOverrides = {});
+        const cur = (ov.flintShot && ov.flintShot.lastMul) ||
+                    ((ABILITY_DEFS.flintShot && ABILITY_DEFS.flintShot.stats && ABILITY_DEFS.flintShot.stats.lastMul) || 3.0);
+        ov.flintShot = Object.assign({}, ov.flintShot, { lastMul: cur + 1.5 });
+        state.metaMods.dmgMul *= 1.20;
+        toast(`🔫🌟 부싯돌 실린더 · 최후 각성!`);
+      }
     } else if (relic.id === 'somniaPillow') {
       if (level === 1) {
         state.metaMods.dmgMul *= 1.50;
@@ -21787,6 +21800,12 @@
     sakuraSlash:     ['회전', '광역'],
     moonShot:        ['관통', '유도'],
     starSong:        ['광역', '다중공격'],
+    flintShot:       ['단일', '연사'],
+    hammerFall:      ['광역', '폭발'],
+    fanTheHammer:    ['단일', '연사', '폭발'],
+    finalChamber:    ['광역', '폭발'],
+    quickdraw:       ['버프'],
+    deadeye:         ['버프'],
     timeButterfly:   ['유도', '슬로우', '정지'],
     // 가챠 SR 조합
     sakuraStorm:     ['회전', '광역', '다중공격'],
@@ -21946,6 +21965,7 @@
   // 능력 ID ↔ 번호 매핑 (1번부터 순서대로)
   const ABILITY_ICON_ORDER = [
     'shot', 'multi', 'nova', 'laser', 'chain',
+    'flintShot', 'hammerFall', 'fanTheHammer', 'finalChamber', 'quickdraw', 'deadeye',
     'orbital', 'scatter', 'mortar', 'thunder', 'turret',
     'boomerang', 'tornado', 'beam', 'sniper', 'frost',
     'missile', 'fire', 'iceLance', 'mine', 'drone',
@@ -27181,6 +27201,8 @@
     // SSR 캐릭터 8★
     { id: 'char8_aria',     name: '🌟 천공의 노래꾼',  desc: '🌟 아리아 8★ 달성',   reward: 1500,
       check: () => ((META.charStars || {}).aria     || 0) >= 8 },
+    { id: 'char8_flinta',   name: '🐈 여섯 번째 방아쇠', desc: '🐈 플린타 8★ 달성',   reward: 1500,
+      check: () => ((META.charStars || {}).flinta   || 0) >= 8 },
     { id: 'char8_misaki',   name: '🦋 시공의 여행자',  desc: '🦋 미사키 8★ 달성',   reward: 1500,
       check: () => ((META.charStars || {}).misaki   || 0) >= 8 },
     { id: 'char8_elementia',name: '🔮 정령들의 여왕',  desc: '🔮 엘레미아 8★ 달성', reward: 1500,
@@ -36130,6 +36152,10 @@
   for (const _cid in CHAR_SIG_ABILITIES) for (const _a of CHAR_SIG_ABILITIES[_cid]) _charBySigAbility[_a] = _cid;
   // 🆕 조합별 컷인 대사 — 캐릭터 말투·컨셉 유지 (없으면 능력 이름으로 폴백)
   const COMBO_CUTIN_LINES = {
+    // 🐈 플린타 (도도한 총잡이)
+    hammerFall:       '공이 떨어졌어. …피할 시간은 줬잖아.',
+    fanTheHammer:     '여섯 발, 전부 지금. 세어보든가.',
+    finalChamber:     '마지막 약실이야. …이건 못 피해.',
     // 🌊 마린 (밝은 항해사)
     frozenTorpedo:    '꽁꽁 얼려서 바다 밑으로 가라앉혀 줄게!',
     deepSeaBarrage:   '심해의 포문, 전부 개방—!',
@@ -38086,7 +38112,7 @@
 
   // 🛰️ v461 — 메인 메뉴 로테이션 간판 캐릭터 백드롭 (메뉴 진입마다 순환)
   // ⚠️ refreshMenuButtons가 아니라 showScreen('menu') 진입에서만 호출 — refreshMenuButtons는 서버 pull 후에도 재호출돼 중복 회전/캐시-onload 버그 유발.
-  const MENU_HERO_IDS = ['aria','misaki','elementia','sumika','blanche','kaira','feria','somnia','solar','marine','gravitas','luna','sakura','cardista','levina','amy','chloe','lara','galatea','trina','iris'];
+  const MENU_HERO_IDS = ['aria','misaki','elementia','sumika','blanche','kaira','feria','somnia','flinta','solar','marine','gravitas','luna','sakura','cardista','levina','amy','chloe','lara','galatea','trina','iris'];
   let _menuHeroIdx = -1;
   function refreshMenuHero() {
     const el = document.getElementById('menu-hero-bg');
@@ -39989,7 +40015,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 785;
+  const APP_VERSION = 786;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
