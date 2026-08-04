@@ -1,8 +1,8 @@
-# 아크 제로 — SSR 소라 아트 생성 프롬프트
+# 아크 제로 — SSR 알바 아트 생성 프롬프트
 
-- 저장 위치: 일러 `icons/illust/sora.png` / 치비 `icons/characters/sora.png`
+- 저장 위치: 일러 `icons/illust/alba.png` / 치비 `icons/characters/alba.png`
 - 규격: **433 × 577**, RGBA **투명 배경**
-- 원본은 `icons/illust/_orig/sora.png` 에 보관. 리사이즈는 `thumbnail((433,577), LANCZOS)`.
+- 원본은 `icons/illust/_orig/alba.png` 에 보관. 리사이즈는 `thumbnail((433,577), LANCZOS)`.
 - ⚠ 배경 투명 처리는 함장 담당. 크로마키 초록 금지.
 
 ---
@@ -11,8 +11,8 @@
 
 | 항목 | 값 |
 |---|---|
-| id | `sora` (충돌 0건 확인) |
-| 표시명 | ⚔️ 소라 |
+| id | `alba` (충돌 0건 확인) |
+| 표시명 | ⚔️ 알바 |
 | 등급 | SSR |
 | 컨셉 | 기사 — 참았다가 한 번에 내려친다 |
 | 능력 축 | **적 밀도 충전 → 단일 초대형 일격** |
@@ -20,6 +20,7 @@
 | 성격 | 과묵·절제. 웃지 않는다. |
 | 테마색 | 은백 `#d5dbe6` + 은청 광휘 `#7fa8d4` |
 | 배너 짝 | 🐈 플린타 (와인레드·리볼버) |
+| 이름 어원 | `alba` = 새벽·흰빛 — 은백 테마 직결 + 「밤새 참고 기다린 끝에 오는 것」 |
 
 **왜 이 축인가** — 이 게임엔 HP 가 없다(towerHP 는 폐기된 디펜스 전용).
 클래식 패배는 오직 `state.enemies.length >= maxAlive` — **화면에 적이 쌓이는 것**뿐이다.
@@ -38,11 +39,11 @@
 **색**: 금(아리아)·보라(미사키)·청록(엘레미아)·먹(스미카)·연보라(블랑슈)·주황(카이라)·
 강청(페리아)·하늘(솜니아)·와인레드(플린타). **은백은 비어 있다.**
 
-**머리색**: 플린타가 플래티넘 블론드 → 소라는 **짙은 남흑발**. 나란히 놓았을 때 대비가 서야 한다.
+**머리색**: 플린타가 플래티넘 블론드 → 알바는 **짙은 남흑발**. 나란히 놓았을 때 대비가 서야 한다.
 
 ---
 
-## 2. 일러스트 (`icons/illust/sora.png`)
+## 2. 일러스트 (`icons/illust/alba.png`)
 
 ```
 anime style character illustration, single female knight, vertical portrait composition,
@@ -103,7 +104,7 @@ background scenery, floor, wall, sky, watermark, text, multiple characters, chib
 
 ---
 
-## 3. 치비 (`icons/characters/sora.png`)
+## 3. 치비 (`icons/characters/alba.png`)
 
 인게임에서 **한 변 약 44px**. 그 크기에 남아야 하는 3요소:
 **① 몸통보다 큰 직선 대검 실루엣 ② 은백 색면 ③ 날의 청색 게이지선**
@@ -147,7 +148,7 @@ busy small details, background, ground shadow, text, multiple characters, smilin
 
 배너에 둘이 같이 뜬다. 대비가 서야 짝지은 의미가 있다.
 
-| | 🐈 플린타 | ⚔️ 소라 |
+| | 🐈 플린타 | ⚔️ 알바 |
 |---|---|---|
 | 실루엣 | 짧은 총, 흐트러진 자세 | **몸통보다 큰 직선 대검**, 곧은 정자세 |
 | 색 | 와인레드 + 주황 불티 | 은백 + 은청 |
