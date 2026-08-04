@@ -16,9 +16,11 @@
 | 등급 | SSR |
 | 컨셉 | 기사 — 참았다가 한 번에 내려친다 |
 | 능력 축 | **적 밀도 충전 → 단일 초대형 일격** |
-| 무기 | **양손 대검(츠바이핸더)** |
+| 무기 | **양손 대검** — 옆으로 늘어뜨려 든다 |
+| 복장 | **경장 판금** — 흉갑·견갑·건틀릿·정강이만, 나머지는 천 |
+| 머리 | **완전 무채색 은백**, 단발~어깨 + 사이드 땋기 |
 | 성격 | 과묵·절제. 웃지 않는다. |
-| 테마색 | 은백 `#d5dbe6` + 은청 광휘 `#7fa8d4` |
+| 테마색 | **순백·은 (무채색)** 주조 + 은청 게이지 악센트 · `CHARACTERS.color` = `#e8edf2` |
 | 배너 짝 | 🐈 플린타 (와인레드·리볼버) |
 | 이름 어원 | `alba` = 새벽·흰빛 — 은백 테마 직결 + 「밤새 참고 기다린 끝에 오는 것」 |
 
@@ -32,14 +34,16 @@
 
 | 피할 것 | 이유 | 대체 |
 |---|---|---|
-| **판금 갑옷 전신** | 페리아가 이미 「부유 갑주」 | 예복 + **한쪽 견갑만** |
+| ~~판금 갑옷~~ | **겹치지 않는다.** 페리아는 「몸이 아닌 **허공을 맴도는** 강철 파편」이라 부유물이지 착용 판금이 아니다 — 처음에 과하게 피했다 | **경장 판금** 착용 OK |
 | **카타나·곡도** | 스미카(먹빛 도)·사쿠라(벚꽃도)가 둘 다 도 | **서양식 양손 대검** — 폭 넓은 직선 날 + 십자 가드로 실루엣이 완전히 갈린다 |
 | **방사형 빛 폭발** | 솔라(12갈래 광선)·블랑슈(분광) | 날 중앙 홈을 따라 **아래에서 위로 차오르는 선형 게이지** |
 
 **색**: 금(아리아)·보라(미사키)·청록(엘레미아)·먹(스미카)·연보라(블랑슈)·주황(카이라)·
 강청(페리아)·하늘(솜니아)·와인레드(플린타). **은백은 비어 있다.**
 
-**머리색**: 플린타가 플래티넘 블론드 → 알바는 **짙은 남흑발**. 나란히 놓았을 때 대비가 서야 한다.
+**머리색**: 플린타가 플래티넘 **블론드**(노란 기미)라면 알바는 **완전 무채색 은백**이다.
+머리만 보면 가깝지만 화면을 지배하는 색이 와인레드 ↔ 순백으로 정반대라 실루엣 인상은 확실히 갈린다.
+프롬프트에 `no yellow, no gold, no platinum-blonde tint` 를 박아 노란 기미가 섞이는 걸 막았다.
 
 ---
 
@@ -49,26 +53,35 @@
 anime style character illustration, single female knight, vertical portrait composition,
 transparent background, no background elements
 
-FACE — HIGHEST PRIORITY:
+AGE & FACE — HIGHEST PRIORITY:
+a YOUNG girl, looks about 16-17 years old, youthful and delicate
+small rounded face with a soft jawline and small chin, smooth cheeks
+LARGE round anime eyes (not narrow, not sharp), clear pale blue-grey irises, long lashes
 face fully visible and completely unobstructed
 NO helmet, NO visor, NO mask, NO hood — nothing covering or shadowing the face
-calm expressionless stare directly at the viewer, silver-blue eyes, composed and severe
-long straight dark blue-black hair, neatly tied back at the nape
-a slim silver circlet resting on the forehead — the only headwear, sitting above the eyebrows,
-it must not cross or cover any part of the face
+quiet reserved expression, lips closed in a small neutral line, looking straight at the viewer
+— she is calm and self-contained, NOT stern, NOT angry, NOT a mature adult woman
 
-OUTFIT — ceremonial, not battle plate:
-long silver-white ceremonial coat with a high collar and dark navy underlayer,
-fine silver-blue embroidery along the hem,
-a single ornate pauldron on ONE shoulder only, with a heavy silver-white half-cape falling from it,
-dark navy gloves and thigh-high boots
-NOT full plate armor — refined ceremonial dress with exactly one armored piece
+HAIR:
+pure achromatic silver-white hair (no yellow, no gold, no platinum-blonde tint — desaturated silver),
+short to shoulder length, slightly tousled, with a small braid running along one side above the ear
+a slim silver circlet on the forehead sitting above the eyebrows — must not cross the face
+
+OUTFIT — LIGHT armor, white and silver:
+polished silver-white plate on the key points ONLY: a fitted breastplate, both pauldrons,
+gauntlets, and greaves. everything else is cloth — keep it light and mobile
+flowing white tabard / surcoat over a pale grey underlayer, soft cloth sleeves and skirt,
+a long white half-cape with a faint silver lining, thin leather belt
+minimal gold filigree on the breastplate edge only — sparse, not ornate
+NOT full plate armor, NOT heavy knight-in-shining-armor bulk, NOT a long formal coat
+the overall read is WHITE AND SILVER — desaturated, almost monochrome
 
 WEAPON — oversized two-handed greatsword (zweihander):
 a very large straight double-edged greatsword, nearly as tall as she is,
 broad flat blade, long cross-shaped guard, wrapped leather grip, heavy pommel
 NOT a katana, NOT curved, NOT a halberd — a western straight greatsword
-held point-down with the tip planted on the ground, both hands stacked on the pommel
+held loosely in ONE hand, arm relaxed at her side, blade angled down toward the ground
+(not planted, not raised, not swinging) — the other hand hangs free
 
 STORED-POWER GAUGE (signature motif):
 a narrow fuller (center groove) runs the length of the blade,
@@ -77,10 +90,17 @@ filled from the guard upward to about two-thirds of the blade — a LINEAR charg
 faint silver-blue light bleeds only from the filled portion; the unfilled upper third stays dull steel
 NOT a radial burst, NOT rays, NOT an aura
 
+BODY & FRAMING:
+petite slender build, youthful proportions — roughly 6.5 heads tall (anime proportions,
+head slightly large relative to the body), NOT a tall realistic 8-head figure
+CROP: full body is fine — but the character must FILL the frame vertically,
+head near the top edge and feet near the bottom. no empty margin, no distant framing.
+(youth comes from the face and proportions, not from cropping)
+
 POSE:
-standing perfectly straight, weight evenly on both feet, shoulders square,
-chin level, both hands stacked on the pommel — a formal at-attention stance
-she is waiting, not swinging
+standing at ease, weight settled evenly, shoulders relaxed but square, chin level,
+sword hanging from one hand at her side — quiet and unhurried
+she is waiting, not fighting
 
 LIGHTING & RENDER:
 cool silver-blue rim light from behind, restrained shading,
@@ -96,8 +116,12 @@ no text, no logos, no signature, no extra characters, no ground shadow baked in
 **네거티브**
 ```
 helmet, visor, face mask, hood, covered face, obscured face, hidden eyes, shadowed face,
-full plate armor, katana, curved blade, halberd, polearm, spear, axe,
+full plate armor, heavy bulky armor, long formal coat, katana, curved blade, halberd, polearm, spear, axe,
+blonde hair, golden hair, warm-toned hair, dark hair, black hair,
 radial light burst, sun rays, prism, rainbow, glowing aura around body,
+mature adult woman, older woman, 20s, 30s, sharp angular jawline, long narrow face,
+narrow slanted eyes, hooded eyes, stern glare, severe expression, tall realistic proportions,
+full body shot at small scale, distant framing,
 smiling, smirking, cheerful, relaxed slouching pose, dynamic action pose,
 background scenery, floor, wall, sky, watermark, text, multiple characters, chibi proportions
 ```
@@ -150,9 +174,9 @@ busy small details, background, ground shadow, text, multiple characters, smilin
 
 | | 🐈 플린타 | ⚔️ 알바 |
 |---|---|---|
-| 실루엣 | 짧은 총, 흐트러진 자세 | **몸통보다 큰 직선 대검**, 곧은 정자세 |
+| 실루엣 | 짧은 총, 흐트러진 자세 | **긴 대검을 옆으로 늘어뜨린** 편히 선 자세 |
 | 색 | 와인레드 + 주황 불티 | 은백 + 은청 |
-| 머리 | 플래티넘 블론드 | 짙은 남흑 |
+| 머리 | 플래티넘 블론드(노란 기미) | **무채색 은백** |
 | 표정 | 반쯤 감은 눈, 비웃음 | 무표정, 정면 응시 |
 | 자원 | 6발 갖고 시작 → **줄어듦** | 0에서 → **차오름** |
 | 감각 | 아껴 쓴다 | 참는다 |
