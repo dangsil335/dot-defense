@@ -8694,7 +8694,7 @@
           const spread = f.r * (0.28 + p * 1.35);                      // 위아래로 번지는 두께
           const gr = ctx.createLinearGradient(0, f.y - spread, 0, f.y + spread);
           gr.addColorStop(0,   'rgba(238,243,250,0)');
-          gr.addColorStop(0.5, 'rgba(255,255,255,' + (k * 0.42).toFixed(3) + ')');
+          gr.addColorStop(0.5, 'rgba(255,255,255,' + _bigFlash(k * 0.42).toFixed(3) + ')');
           gr.addColorStop(1,   'rgba(238,243,250,0)');
           ctx.fillStyle = gr;
           ctx.fillRect(0, f.y - spread, W, spread * 2);
@@ -18425,11 +18425,11 @@
         const a = ab.fx / 30, t = 1 - a, R = (ARENA_R || 300) * (0.4 + t);
         ctx.save(); ctx.globalCompositeOperation = 'lighter';
         const g = ctx.createRadialGradient(CX, CY, 0, CX, CY, R);
-        g.addColorStop(0, `rgba(255,255,255,${a * 0.85})`); g.addColorStop(0.5, `rgba(190,240,255,${a * 0.4})`); g.addColorStop(1, 'rgba(200,180,255,0)');
+        g.addColorStop(0, `rgba(255,255,255,${_bigFlash(a * 0.85)})`); g.addColorStop(0.5, `rgba(190,240,255,${a * 0.4})`); g.addColorStop(1, 'rgba(200,180,255,0)');
         ctx.fillStyle = g; ctx.beginPath(); ctx.arc(CX, CY, R, 0, Math.PI * 2); ctx.fill();
-        ctx.globalAlpha = a * 0.8; ctx.strokeStyle = '#eaffff'; ctx.lineWidth = 2.5;
+        ctx.globalAlpha = a * 0.50; ctx.strokeStyle = '#eaffff'; ctx.lineWidth = 2.5;
         for (let ring = 0; ring < 3; ring++) { const rr = R * (0.35 + ring * 0.3), rot = state.t * 0.04 * (ring % 2 ? -1 : 1); _crystalPath(CX, CY, rr, rot, 6); ctx.stroke(); }
-        ctx.globalAlpha = a * 0.65; ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 2;
+        ctx.globalAlpha = a * 0.42; ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 2;
         for (let k = 0; k < 12; k++) { const ang = state.t * 0.02 + k * Math.PI / 6; ctx.beginPath(); ctx.moveTo(CX + Math.cos(ang) * R * 0.2, CY + Math.sin(ang) * R * 0.2); ctx.lineTo(CX + Math.cos(ang) * R, CY + Math.sin(ang) * R); ctx.stroke(); }
         ctx.restore(); ctx.globalAlpha = 1;
       },
@@ -19759,9 +19759,18 @@
         ctx.globalAlpha = 0.28; ctx.strokeStyle = '#d8d8d8'; ctx.lineWidth = 1.5;
         ctx.strokeRect(CX - 150, CY - 150, 300, 300);
         if (ab.flash > 0) {
+          // 📷 셔터 — 예전엔 300x300 통짜 순백을 가산으로 얹어 눈이 아팠다.
+          //   중심에서 부드럽게 떨어지는 빛 + "뷰파인더 테두리가 터지는" 신호로 바꾼다.
+          //   셔터가 터졌다는 건 테두리만으로 충분히 읽힌다.
+          const fa = ab.flash / 12;
           ctx.globalCompositeOperation = 'lighter';
-          ctx.globalAlpha = ab.flash / 12 * 0.55; ctx.fillStyle = '#ffffff';
+          const fg = ctx.createRadialGradient(CX, CY, 18, CX, CY, 195);
+          fg.addColorStop(0, `rgba(255,255,255,${_bigFlash(fa * 0.34)})`);
+          fg.addColorStop(1, 'rgba(255,255,255,0)');
+          ctx.fillStyle = fg;
           ctx.fillRect(CX - 150, CY - 150, 300, 300);
+          ctx.globalAlpha = fa * 0.75; ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 3;
+          ctx.strokeRect(CX - 150, CY - 150, 300, 300);
         }
         ctx.restore(); ctx.globalAlpha = 1;
       },
@@ -20441,9 +20450,9 @@
         const a = ab.fx / 14, R = 190 + ab.level * 6;
         ctx.save(); ctx.globalCompositeOperation = 'lighter';
         const g = ctx.createRadialGradient(CX, CY, 0, CX, CY, R);
-        g.addColorStop(0, `rgba(255,255,255,${a * 0.5})`); g.addColorStop(0.6, `rgba(240,220,215,${a * 0.16})`); g.addColorStop(1, 'rgba(192,57,43,0)');
+        g.addColorStop(0, `rgba(255,255,255,${_bigFlash(a * 0.5)})`); g.addColorStop(0.6, `rgba(240,220,215,${a * 0.16})`); g.addColorStop(1, 'rgba(192,57,43,0)');
         ctx.fillStyle = g; ctx.beginPath(); ctx.arc(CX, CY, R, 0, Math.PI * 2); ctx.fill();
-        ctx.globalAlpha = a * 0.8; ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 2.5;
+        ctx.globalAlpha = a * 0.45; ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 2.5;
         ctx.beginPath(); ctx.arc(CX, CY, (1 - a) * R, 0, Math.PI * 2); ctx.stroke();
         ctx.restore(); ctx.globalAlpha = 1;
       },
@@ -28391,6 +28400,15 @@
     if (!ab.flash) ab.flash = [];
     for (let i = 0; i < (n || 1); i++) ab.flash.push({ x, y, r: r * (0.5 + i * 0.35), life: 22 + i * 6, max: 22 + i * 6 });
   }
+  // 🔆 광역 섬광 상한 — 가산합성(lighter)으로 "넓은 면적"에 흰빛을 칠할 때 반드시 통과시킬 것.
+  //   가산은 어두운 배경 위에서 α0.5 만 돼도 순백으로 타버리고, 3초 주기로 반복되면 스트로브가 된다.
+  //   ⚠ 얇은 선(lineWidth ≤ 6)·작은 점(r ≤ 20)은 통과시키지 말 것 — 그건 하이라이트라 밝아야 예쁘다.
+  //     실제로 전 능력을 재보니 대부분은 lw 1~6 / r 1~15 라 문제가 없었고,
+  //     면적이 큰 셋(longExposure 300x300 통짜 · flashbulb R190 · whiteEclipse R420)만 눈이 아팠다.
+  //   여기 숫자 하나만 고치면 광역 섬광 전체 밝기가 함께 움직인다.
+  const BIG_FLASH_CAP = 0.30;
+  function _bigFlash(a) { return Math.min(BIG_FLASH_CAP, Math.max(0, a || 0)); }
+
   // ⚔️ 알바 저수준 프리미티브 — "날" 한 자루(가운데가 두껍고 양끝이 뾰족한 렌즈꼴).
   //   ⚠ 이건 arc()/lineTo() 급 부품이다. 능력별 개성은 이걸 "어떻게 배치·변형하느냐"에서 나온다.
   //     (v789 이전엔 네 능력이 "확장하는 원" 하나를 통째로 공유해서 전부 똑같아 보였다)
@@ -40742,7 +40760,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 790;
+  const APP_VERSION = 791;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
