@@ -8590,7 +8590,26 @@
         ab.cooldown = S.fireCd;
         return spent;
       },
-      draw(ab) { _albaDrawFlash(ab); },
+      // ⚔️ 내려베기 — 타워→대상 방향에 직교하는 날이 한 번 지나간다. 충전 링으로 타이밍이 읽힌다.
+      draw(ab) {
+        _albaChargeRing('#dfe6f2');
+        if (!ab.flash || !ab.flash.length) return;
+        ctx.save();
+        ctx.globalCompositeOperation = 'lighter';
+        for (const f of ab.flash) {
+          const p = 1 - f.life / f.max, k = 1 - p;
+          const ang = Math.atan2(f.y - CY, f.x - CX) + Math.PI / 2;   // 진행방향에 직교 = 베는 선
+          const len = f.r * (0.7 + p * 1.5);
+          _albaBlade(f.x, f.y, ang, len, f.r * 0.30 * k, '#dfe6f2', k * 0.55);
+          ctx.globalAlpha = k * 0.9;                                  // 밝은 심 — 실제로 베인 한 줄
+          ctx.strokeStyle = '#ffffff'; ctx.lineWidth = Math.max(1, 2.4 * k); ctx.lineCap = 'round';
+          ctx.beginPath();
+          ctx.moveTo(f.x - Math.cos(ang) * len, f.y - Math.sin(ang) * len);
+          ctx.lineTo(f.x + Math.cos(ang) * len, f.y + Math.sin(ang) * len);
+          ctx.stroke();
+        }
+        ctx.lineCap = 'butt'; ctx.globalAlpha = 1; ctx.restore();
+      },
     },
     // 🌄 tier2 조합: 여명의 칼날 + 회전검 — 일격이 전방 호를 그리며 광역이 된다
     risingArc: {
@@ -8619,12 +8638,36 @@
         _albaFlash(ab, tx, ty, r * 0.5, 3);
         ab.cooldown = S.fireCd;
       },
-      draw(ab) { _albaDrawFlash(ab); },
+      // 🌄 솟아오르는 호 — 아래에서 시작해 위로 열린다. 호 양 끝에 빛이 맺힌다.
+      draw(ab) {
+        if (!ab.flash || !ab.flash.length) return;
+        ctx.save();
+        ctx.globalCompositeOperation = 'lighter';
+        ctx.lineCap = 'round';
+        for (const f of ab.flash) {
+          const p = 1 - f.life / f.max, k = 1 - p;
+          const R = f.r * (0.55 + p * 1.25);
+          const span = (Math.PI * 0.30) + (Math.PI * 0.72) * p;       // 점점 크게 열린다
+          const mid = Math.PI / 2;                                    // 아래에서 출발
+          ctx.strokeStyle = '#c8d8ea'; ctx.globalAlpha = k * 0.75;
+          ctx.lineWidth = Math.max(1.2, f.r * 0.20 * k);
+          ctx.beginPath(); ctx.arc(f.x, f.y, R, mid - span, mid + span); ctx.stroke();
+          ctx.strokeStyle = '#ffffff'; ctx.globalAlpha = k * 0.55;     // 안쪽 밝은 심
+          ctx.lineWidth = Math.max(0.8, f.r * 0.07 * k);
+          ctx.beginPath(); ctx.arc(f.x, f.y, R * 0.93, mid - span * 0.9, mid + span * 0.9); ctx.stroke();
+          for (const s of [-1, 1]) {                                   // 호 양 끝에 맺힌 빛
+            const a = mid + span * s;
+            ctx.globalAlpha = k * 0.8; ctx.fillStyle = '#eef3fa';
+            ctx.beginPath(); ctx.arc(f.x + Math.cos(a) * R, f.y + Math.sin(a) * R, Math.max(1, 2.6 * k), 0, Math.PI * 2); ctx.fill();
+          }
+        }
+        ctx.lineCap = 'butt'; ctx.globalAlpha = 1; ctx.restore();
+      },
     },
-    // ☀ tier3 히든: 떠오르는 호 + 노바 — 화면 전체가 한 번 하얘진다
+    // ☀ tier3 히든: 떠오르는 호 + 노바 — 지평선에서 첫 빛이 번진다(풀스크린 섬광 아님)
     firstLight: {
       name: '첫 빛', isGachaUnique: true, isCombo: true, isTriple: true, baseCost: 270, color: '#eef3fa',
-      desc: lv => `만충 시 화면 전체 섬광 · 전체 DMG ${9 + lv * 5} × 충전량 · 적이 많을수록 총 피해가 폭증`,
+      desc: lv => `만충 시 지평선 빛이 번지며 전체 타격 · 전체 DMG ${9 + lv * 5} × 충전량 · 적이 많을수록 총 피해가 폭증`,
       stats: { fireCd: 50 },
       init(ab) { ab.cooldown = 30; ab.flash = []; },
       tick(ab) {
@@ -8641,7 +8684,26 @@
         state.comboFlash = 24; state.comboFlashColor = '#dfe6f2';
         ab.cooldown = S.fireCd;
       },
-      draw(ab) { _albaDrawFlash(ab); },
+      // ☀️ 첫 빛 — 지평선. 화면을 하얗게 덮지 않고 가로 띠가 번졌다 사그라든다(눈 부담 ↓).
+      draw(ab) {
+        if (!ab.flash || !ab.flash.length) return;
+        ctx.save();
+        ctx.globalCompositeOperation = 'lighter';
+        for (const f of ab.flash) {
+          const p = 1 - f.life / f.max, k = 1 - p;
+          const spread = f.r * (0.28 + p * 1.35);                      // 위아래로 번지는 두께
+          const gr = ctx.createLinearGradient(0, f.y - spread, 0, f.y + spread);
+          gr.addColorStop(0,   'rgba(238,243,250,0)');
+          gr.addColorStop(0.5, 'rgba(255,255,255,' + (k * 0.42).toFixed(3) + ')');
+          gr.addColorStop(1,   'rgba(238,243,250,0)');
+          ctx.fillStyle = gr;
+          ctx.fillRect(0, f.y - spread, W, spread * 2);
+          ctx.globalAlpha = k * 0.75;                                  // 지평선 심 — 가늘고 밝은 한 줄
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(0, f.y - Math.max(0.6, 1.5 * k), W, Math.max(1.2, 3 * k));
+        }
+        ctx.globalAlpha = 1; ctx.restore();
+      },
     },
     // 🌅 tier4 히든: 첫 빛 + 처형 — 밤이 끝난다. 최대 위력의 단일 처형 + 여파.
     daybreak: {
@@ -8673,7 +8735,28 @@
         shake(8, 10);
         ab.cooldown = S.fireCd;
       },
-      draw(ab) { _albaDrawFlash(ab); },
+      // 🌅 일출 — 두 참격이 X 로 교차하고, 교차점에서 빛기둥이 솟는다(처형타의 무게).
+      draw(ab) {
+        _albaChargeRing('#ffffff');
+        if (!ab.flash || !ab.flash.length) return;
+        ctx.save();
+        ctx.globalCompositeOperation = 'lighter';
+        for (const f of ab.flash) {
+          const p = 1 - f.life / f.max, k = 1 - p;
+          const len = f.r * (0.8 + p * 1.6);
+          for (const s of [-1, 1]) {                                   // 교차하는 두 날
+            _albaBlade(f.x, f.y, s * Math.PI / 4, len, f.r * 0.26 * k, '#ffffff', k * 0.5);
+          }
+          const ph = f.r * (1.1 + p * 2.4), pw = Math.max(1.5, f.r * 0.20 * k);
+          const pg = ctx.createLinearGradient(0, f.y - ph, 0, f.y + ph * 0.25);   // 빛기둥
+          pg.addColorStop(0, 'rgba(255,255,255,0)');
+          pg.addColorStop(0.55, 'rgba(255,255,255,' + (k * 0.40).toFixed(3) + ')');
+          pg.addColorStop(1, 'rgba(255,255,255,0)');
+          ctx.fillStyle = pg;
+          ctx.fillRect(f.x - pw, f.y - ph, pw * 2, ph * 1.25);
+        }
+        ctx.globalAlpha = 1; ctx.restore();
+      },
     },
     // 🕯 ★4 불침번 — 충전 속도를 끌어올린다
     nightWatch: {
@@ -8755,7 +8838,32 @@
         if (st.ammo <= 0) st.reload = _flintReloadT();
         ab.cooldown = S.fireCd;
       },
-      draw(ab) { _flintDrawSparks(ab); },
+      // 🔫 사격 — 총구에서 짧은 화염, 착탄점까지 예광 한 줄. 실린더로 잔탄이 보인다.
+      draw(ab) {
+        _flintCylinderHUD('#ffb15c');
+        const aim = _flintAim(ab);
+        if (aim) {
+          const ang = Math.atan2(aim.y - CY, aim.x - CX);
+          const k = Math.max(0, Math.min(1, (aim.life - 14) / 12));   // 갓 터진 불티일수록 강하게
+          if (k > 0.02) {
+            ctx.save();
+            ctx.globalCompositeOperation = 'lighter';
+            ctx.globalAlpha = k * 0.5; ctx.strokeStyle = '#ffd9a0';    // 예광
+            ctx.lineWidth = Math.max(0.8, 1.8 * k); ctx.lineCap = 'round';
+            ctx.beginPath();
+            ctx.moveTo(CX + Math.cos(ang) * 26, CY + Math.sin(ang) * 26);
+            ctx.lineTo(aim.x, aim.y); ctx.stroke();
+            ctx.translate(CX, CY); ctx.rotate(ang);                    // 총구 화염
+            ctx.globalAlpha = k * 0.8; ctx.fillStyle = '#ffb15c';
+            ctx.beginPath();
+            ctx.moveTo(20, 0); ctx.lineTo(20 + 22 * k, -7 * k);
+            ctx.lineTo(20 + 30 * k, 0); ctx.lineTo(20 + 22 * k, 7 * k);
+            ctx.closePath(); ctx.fill();
+            ctx.lineCap = 'butt'; ctx.globalAlpha = 1; ctx.restore();
+          }
+        }
+        _flintDrawSparks(ab);
+      },
     },
     // 🔥 tier3 히든 — 공이 낙하 + 광폭. 서부극 fanning: 공이를 손바닥으로 연타해 잔탄을 쏟아붓는다.
     fanTheHammer: {
@@ -8782,7 +8890,31 @@
         st.ammo = 0; st.reload = _flintReloadT();   // 다 쏟았으니 바로 재장전
         ab.cooldown = Math.max(90, S.cd - ab.level * 8);
       },
-      draw(ab) { _flintDrawSparks(ab); },
+      // 🔥 팬 더 해머 — 공이를 손바닥으로 훑는다. 예광이 부채꼴로 다섯 갈래.
+      draw(ab) {
+        _flintCylinderHUD('#ff8a3d');
+        const aim = _flintAim(ab);
+        if (aim) {
+          const ang = Math.atan2(aim.y - CY, aim.x - CX);
+          const k = Math.max(0, Math.min(1, (aim.life - 12) / 14));
+          if (k > 0.02) {
+            ctx.save();
+            ctx.globalCompositeOperation = 'lighter'; ctx.lineCap = 'round';
+            for (let i = -2; i <= 2; i++) {
+              const a = ang + i * 0.16, L = 60 + 120 * k;
+              ctx.globalAlpha = k * 0.42 * (1 - Math.abs(i) * 0.22);
+              ctx.strokeStyle = (i === 0) ? '#ffd9a0' : '#ff8a3d';
+              ctx.lineWidth = Math.max(0.8, (i === 0 ? 2.4 : 1.5) * k);
+              ctx.beginPath();
+              ctx.moveTo(CX + Math.cos(a) * 24, CY + Math.sin(a) * 24);
+              ctx.lineTo(CX + Math.cos(a) * L, CY + Math.sin(a) * L);
+              ctx.stroke();
+            }
+            ctx.lineCap = 'butt'; ctx.globalAlpha = 1; ctx.restore();
+          }
+        }
+        _flintDrawSparks(ab);
+      },
     },
     // 💥 tier4 히든 — 연속 격발 + 노바. 재장전 직후 첫 발에 실린더 전체가 실린다.
     finalChamber: {
@@ -8812,7 +8944,33 @@
         st.ammo = Math.max(0, st.ammo - 1);
         if (st.ammo <= 0) st.reload = _flintReloadT();
       },
-      draw(ab) { _flintDrawSparks(ab); },
+      // 💥 마지막 약실 — 화면을 가로지르는 굵은 관통선 + 착탄 링.
+      draw(ab) {
+        _flintCylinderHUD('#ff5a3d');
+        const aim = _flintAim(ab);
+        if (aim) {
+          const ang = Math.atan2(aim.y - CY, aim.x - CX);
+          const k = Math.max(0, Math.min(1, (aim.life - 10) / 16));
+          if (k > 0.02) {
+            ctx.save();
+            ctx.globalCompositeOperation = 'lighter';
+            const far = Math.max(W, H);
+            const g = ctx.createLinearGradient(CX, CY, CX + Math.cos(ang) * far, CY + Math.sin(ang) * far);
+            g.addColorStop(0, 'rgba(255,210,150,' + (k * 0.55).toFixed(3) + ')');
+            g.addColorStop(1, 'rgba(255,90,61,0)');
+            ctx.strokeStyle = g; ctx.lineWidth = Math.max(1.5, 7 * k); ctx.lineCap = 'round';
+            ctx.beginPath();
+            ctx.moveTo(CX + Math.cos(ang) * 22, CY + Math.sin(ang) * 22);
+            ctx.lineTo(CX + Math.cos(ang) * far, CY + Math.sin(ang) * far);
+            ctx.stroke();
+            ctx.globalAlpha = k * 0.5; ctx.strokeStyle = '#ffd9a0';    // 착탄 링
+            ctx.lineWidth = Math.max(1, 2.5 * (1 - k) + 1);
+            ctx.beginPath(); ctx.arc(aim.x, aim.y, 26 * (1.2 - k), 0, Math.PI * 2); ctx.stroke();
+            ctx.lineCap = 'butt'; ctx.globalAlpha = 1; ctx.restore();
+          }
+        }
+        _flintDrawSparks(ab);
+      },
     },
     // 🔨 조합: 부싯돌 사격 + 저격 — 공이가 떨어진 자리에 불티가 터진다(착탄 광역)
     hammerFall: {
@@ -8841,7 +8999,32 @@
         _flintSparks(ab, tx, ty, '#ff8a3d', isLast ? 18 : 8, isLast ? 4.0 : 2.4);
         ab.cooldown = S.fireCd;
       },
-      draw(ab) { _flintDrawSparks(ab); },
+      // 🔨 해머 폴 — 공이가 떨어진 자리에서 충격 링과 방사 균열이 퍼진다.
+      draw(ab) {
+        const aim = _flintAim(ab);
+        if (aim) {
+          const k = Math.max(0, Math.min(1, (aim.life - 8) / 18));
+          if (k > 0.02) {
+            ctx.save();
+            ctx.globalCompositeOperation = 'lighter'; ctx.lineCap = 'round';
+            ctx.globalAlpha = k * 0.55; ctx.strokeStyle = '#ffb15c';
+            ctx.lineWidth = Math.max(1, 3 * k);
+            ctx.beginPath(); ctx.arc(aim.x, aim.y, 30 * (1.35 - k), 0, Math.PI * 2); ctx.stroke();
+            for (let i = 0; i < 7; i++) {                               // 방사 균열
+              const a = (i / 7) * Math.PI * 2 + aim.x * 0.01;
+              const L = 14 + 34 * (1 - k);
+              ctx.globalAlpha = k * 0.42; ctx.strokeStyle = '#ff8a3d';
+              ctx.lineWidth = Math.max(0.7, 1.8 * k);
+              ctx.beginPath();
+              ctx.moveTo(aim.x + Math.cos(a) * 10, aim.y + Math.sin(a) * 10);
+              ctx.lineTo(aim.x + Math.cos(a) * L, aim.y + Math.sin(a) * L);
+              ctx.stroke();
+            }
+            ctx.lineCap = 'butt'; ctx.globalAlpha = 1; ctx.restore();
+          }
+        }
+        _flintDrawSparks(ab);
+      },
     },
     // ⚡ ★4 속사 — 재장전을 건너뛰고 다음 탄창을 달군다
     quickdraw: {
@@ -8873,7 +9056,28 @@
         _flintSparks(ab, CX, CY, '#ff8a3d', 16, 3.0);
         ab.cooldown = Math.max(180, S.cd - ab.level * 18);
       },
-      draw(ab) { _flintDrawSparks(ab); },
+      // 🎯 데드아이 — 발동 중엔 타워에 점선 조준환과 십자선이 걸린다(전탄이 마지막 한 발 취급).
+      draw(ab) {
+        const st = _flintSt();
+        if (state && st.deadeyeT > state.t) {
+          const k = 0.5 + 0.5 * Math.sin(state.t * 0.2);
+          ctx.save();
+          ctx.globalCompositeOperation = 'lighter';
+          ctx.globalAlpha = 0.30 + 0.25 * k;
+          ctx.strokeStyle = '#ff5a3d'; ctx.lineWidth = 1.2;
+          ctx.setLineDash([5, 6]);
+          ctx.beginPath(); ctx.arc(CX, CY, 44, 0, Math.PI * 2); ctx.stroke();
+          ctx.setLineDash([]);
+          ctx.beginPath();
+          ctx.moveTo(CX - 54, CY); ctx.lineTo(CX - 34, CY);
+          ctx.moveTo(CX + 34, CY); ctx.lineTo(CX + 54, CY);
+          ctx.moveTo(CX, CY - 54); ctx.lineTo(CX, CY - 34);
+          ctx.moveTo(CX, CY + 34); ctx.lineTo(CX, CY + 54);
+          ctx.stroke();
+          ctx.globalAlpha = 1; ctx.restore();
+        }
+        _flintDrawSparks(ab);
+      },
     },
     inkSlash: {
       name: '먹빛 도', isGachaUnique: true, single: true, baseCost: 130, color: '#3a3a3a',
@@ -28080,16 +28284,52 @@
       ab.sparks.push({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v - 0.6, life: 14 + Math.random() * 12, col });
     }
   }
+  // 🐈 플린타 저수준 프리미티브 — 불티 하나(꼬리 + 달아오른 심).
+  //   ⚠ arc()/lineTo() 급 부품이다. 능력별 개성은 이 위에 무엇을 얹느냐로 갈린다.
+  //     (v789 이전엔 다섯 능력이 이 함수 하나만 호출해서 전부 똑같아 보였다)
   function _flintDrawSparks(ab) {
     if (!ab.sparks || !ab.sparks.length) return;
     ctx.save();
     ctx.globalCompositeOperation = 'lighter';
+    ctx.lineCap = 'round';
     for (const s of ab.sparks) {
       const a = Math.max(0, Math.min(1, s.life / 20));
-      ctx.strokeStyle = s.col; ctx.globalAlpha = a; ctx.lineWidth = 1.6; ctx.lineCap = 'round';
-      ctx.beginPath(); ctx.moveTo(s.x, s.y); ctx.lineTo(s.x - s.vx * 1.8, s.y - s.vy * 1.8); ctx.stroke();
+      ctx.strokeStyle = s.col; ctx.globalAlpha = a * 0.85; ctx.lineWidth = 1.6;
+      ctx.beginPath(); ctx.moveTo(s.x, s.y); ctx.lineTo(s.x - s.vx * 2.2, s.y - s.vy * 2.2); ctx.stroke();
+      ctx.globalAlpha = a; ctx.fillStyle = '#fff2d6';                       // 달아오른 심
+      ctx.beginPath(); ctx.arc(s.x, s.y, Math.max(0.6, 1.3 * a), 0, Math.PI * 2); ctx.fill();
     }
     ctx.lineCap = 'butt'; ctx.globalAlpha = 1; ctx.restore();
+  }
+  // 🔫 실린더 잔탄 — 타워를 감는 여섯 칸. 재장전 중엔 회전한다.
+  //   잔탄이 이 캐릭의 리듬 자체라 "보이는 것"이 곧 개성이자 정보다.
+  function _flintCylinderHUD(col) {
+    const st = _flintSt(), cyl = _flintCyl();
+    const R = 30, r0 = 4.2;
+    const rt = Math.max(1, _flintReloadT());
+    const spin = st.reload > 0 ? (1 - st.reload / rt) * Math.PI * 2 : 0;
+    ctx.save();
+    ctx.translate(CX, CY); ctx.rotate(-Math.PI / 2 + spin);
+    for (let i = 0; i < cyl; i++) {
+      const a = (i / cyl) * Math.PI * 2;
+      const x = Math.cos(a) * R, y = Math.sin(a) * R;
+      const loaded = i < st.ammo;
+      ctx.globalAlpha = loaded ? 0.70 : 0.20;
+      ctx.strokeStyle = col; ctx.lineWidth = 1.2;
+      ctx.beginPath(); ctx.arc(x, y, r0, 0, Math.PI * 2); ctx.stroke();
+      if (loaded) {
+        ctx.globalAlpha = 0.48; ctx.fillStyle = col;
+        ctx.beginPath(); ctx.arc(x, y, r0 * 0.55, 0, Math.PI * 2); ctx.fill();
+      }
+    }
+    ctx.globalAlpha = 1; ctx.restore();
+  }
+  // 가장 최근에 튄 불티 = 방금 맞힌 자리. 조준 방향을 tick 수정 없이 여기서 되읽는다.
+  function _flintAim(ab) {
+    if (!ab.sparks || !ab.sparks.length) return null;
+    let best = null;
+    for (const s of ab.sparks) if (!best || s.life > best.life) best = s;
+    return best;
   }
   // ═══ ⚔️ 알바 공용 헬퍼 ═════════════════════════════════════════════════
   //  충전은 "화면의 적 밀도" 로 쌓인다. 이 게임엔 HP 가 없고 패배는 오직
@@ -28145,23 +28385,42 @@
     }
     return best;
   }
-  // 여명 섬광 — 흰빛 링. 능력 인스턴스의 ab.flash 에 쌓고 draw 에서 그린다.
+  // 여명 타격 기록 — 위치·크기·수명만 쌓는다. "어떻게 보일지"는 능력별 draw 가 각자 해석한다
+  //   (내려베기 / 솟는 호 / 지평선 띠 / 교차 참격 — 같은 기록, 전혀 다른 그림).
   function _albaFlash(ab, x, y, r, n) {
     if (!ab.flash) ab.flash = [];
     for (let i = 0; i < (n || 1); i++) ab.flash.push({ x, y, r: r * (0.5 + i * 0.35), life: 22 + i * 6, max: 22 + i * 6 });
   }
-  function _albaDrawFlash(ab) {
-    if (!ab.flash || !ab.flash.length) return;
+  // ⚔️ 알바 저수준 프리미티브 — "날" 한 자루(가운데가 두껍고 양끝이 뾰족한 렌즈꼴).
+  //   ⚠ 이건 arc()/lineTo() 급 부품이다. 능력별 개성은 이걸 "어떻게 배치·변형하느냐"에서 나온다.
+  //     (v789 이전엔 네 능력이 "확장하는 원" 하나를 통째로 공유해서 전부 똑같아 보였다)
+  function _albaBlade(x, y, ang, len, wid, col, a) {
+    if (a <= 0.02) return;
+    ctx.save();
+    ctx.translate(x, y); ctx.rotate(ang);
+    ctx.globalAlpha = a; ctx.fillStyle = col;
+    ctx.beginPath();
+    ctx.moveTo(-len, 0);
+    ctx.quadraticCurveTo(0, -wid, len, 0);
+    ctx.quadraticCurveTo(0, wid, -len, 0);
+    ctx.fill();
+    ctx.restore();
+  }
+  // 충전 게이지 — 타워를 감는 얇은 호. 만충이면 밝게 맥동한다(언제 터질지 읽히도록).
+  function _albaChargeRing(col) {
+    const r = _albaRatio();
+    if (r <= 0.01) return;
+    const R = 34, full = r >= 1;
     ctx.save();
     ctx.globalCompositeOperation = 'lighter';
-    for (const f of ab.flash) {
-      const p = 1 - f.life / f.max;
-      ctx.strokeStyle = '#dfe6f2';
-      ctx.globalAlpha = Math.max(0, 1 - p) * 0.8;
-      ctx.lineWidth = Math.max(1, 4 * (1 - p));
-      ctx.beginPath(); ctx.arc(f.x, f.y, f.r * (0.4 + p * 1.5), 0, Math.PI * 2); ctx.stroke();
-    }
-    ctx.globalAlpha = 1; ctx.restore();
+    ctx.lineCap = 'round';
+    ctx.strokeStyle = col;
+    ctx.globalAlpha = full ? (0.55 + 0.35 * Math.sin(state.t * 0.16)) : 0.34;
+    ctx.lineWidth = full ? 2.6 : 1.7;
+    ctx.beginPath();
+    ctx.arc(CX, CY, R, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * r);
+    ctx.stroke();
+    ctx.lineCap = 'butt'; ctx.globalAlpha = 1; ctx.restore();
   }
   function _S(ab) {
     if (!ab._stats) {
@@ -36911,55 +37170,139 @@
       } };
     }
 
-    // ── ⚔️ 알바 — 여명. 세로 눈금이 아래에서 위로 차오르다, 만충 순간 흰빛으로 터진다 ──
+    // ── ⚔️ 알바 — 여명의 대검. 어둠 속에 선 대검을 담금질 빛이 자루에서 칼끝으로 훑고 올라가다,
+    //    칼끝에 닿는 순간 가로로 일섬이 터진다. (게이지가 아니라 "검"으로 읽혀야 한다 — 눈금·칸 금지)
     if (style === 'alba') {
-      const TICKS = 14;
-      const RAYS = [];
-      for (let i = 0; i < 26; i++) RAYS.push({ a: Math.random() * Math.PI * 2, len: 0.5 + Math.random() * 0.6, w: 1 + Math.random() * 2.2, delay: 1500 + Math.random() * 500 });
+      const MOTE = [];   // 날 주변을 타고 오르는 빛 티끌
+      for (let i = 0; i < 22; i++) MOTE.push({ s: Math.random(), off: (Math.random() * 2 - 1), sp: 0.6 + Math.random() * 0.7, sz: 0.8 + Math.random() * 1.6, ph: Math.random() * 6.28 });
+      const RAY = [];    // 일섬 이후 흩어지는 빛살
+      for (let i = 0; i < 18; i++) RAY.push({ a: (Math.random() * 0.5 - 0.25), len: 0.55 + Math.random() * 0.6, w: 1 + Math.random() * 2, dir: Math.random() < 0.5 ? -1 : 1, delay: 1780 + Math.random() * 260 });
       return { draw: function (ctx, g, t, post) {
         const cx = g.cx, cy = g.cy, W = g.W, H = g.H;
-        const barH = Math.min(H * 0.52, 320), barW = Math.max(7, Math.min(W, H) * 0.022);
-        const top = cy - barH / 2;
-        const fill = Math.max(0, Math.min(1, (t - 200) / 1500));   // 1.5초에 걸쳐 차오른다
-        // 게이지 홈 — 꺼진 부분은 짙게
+        const BL = Math.min(W, H) * 0.46;          // 검 전체 기준 길이
+        const tipY = cy - BL * 0.62;               // 칼끝
+        const shoY = tipY + BL * 0.15;             // 칼끝 삼각이 끝나는 어깨
+        const guardY = cy + BL * 0.24;             // 십자 가드
+        const gripY = cy + BL * 0.44;              // 자루 끝
+        const bw = BL * 0.055;                     // 날 반폭 (대검이라 두툼)
+
+        // 날 외곽 경로 — 양날 + 뾰족한 칼끝
+        const bladePath = () => {
+          ctx.beginPath();
+          ctx.moveTo(cx - bw, guardY);
+          ctx.lineTo(cx - bw, shoY);
+          ctx.lineTo(cx, tipY);
+          ctx.lineTo(cx + bw, shoY);
+          ctx.lineTo(cx + bw, guardY);
+          ctx.closePath();
+        };
+
+        // ① 날 바탕 — 아직 식어 있는 강철
         ctx.save();
-        ctx.fillStyle = C('#2a3240', 0.55 * post);
-        ctx.fillRect(cx - barW / 2, top, barW, barH);
-        // 눈금 — 아래에서 위로 점등
-        for (let i = 0; i < TICKS; i++) {
-          const p = i / (TICKS - 1);
-          const y = top + barH * (1 - p);
-          const lit = fill >= p ? 1 : 0;
-          if (!lit) continue;
-          ctx.fillStyle = C(fill >= 0.999 ? fx.flashMid : fx.dust, (0.55 + 0.45 * p) * post);
-          ctx.fillRect(cx - barW * 0.9, y - 1.6, barW * 1.8, 3.2);
-        }
-        // 채워진 기둥
-        const fh = barH * fill;
-        ctx.fillStyle = C(fx.glow, 0.5 * post);
-        ctx.fillRect(cx - barW / 2, top + barH - fh, barW, fh);
+        bladePath();
+        ctx.fillStyle = C('#39424f', 0.55 * post);
+        ctx.fill();
+        ctx.strokeStyle = C(fx.glow, 0.45 * post);
+        ctx.lineWidth = 1.4;
+        ctx.stroke();
         ctx.restore();
-        // 만충 이후 — 흰빛 폭발
-        if (t > 1700) {
-          const bp = Math.min(1, (t - 1700) / 900);
+
+        // ② 담금질 — 자루에서 칼끝으로 빛이 차오른다 (칸 없이 연속)
+        const fill = Math.max(0, Math.min(1, (t - 260) / 1480));
+        if (fill > 0) {
+          const frontY = guardY - (guardY - tipY) * fill;
+          ctx.save();
+          bladePath();
+          ctx.clip();                                    // 빛은 날 안쪽에만
+          const lg = ctx.createLinearGradient(0, guardY, 0, frontY);
+          lg.addColorStop(0, C(fx.glow, 0.30 * post));
+          lg.addColorStop(0.65, C(fx.dust, 0.55 * post));
+          lg.addColorStop(1, C(fx.flashMid, 0.85 * post));
+          ctx.fillStyle = lg;
+          ctx.fillRect(cx - bw, frontY, bw * 2, guardY - frontY);
+          // 빛의 선단 — 가로로 번지는 띠
+          ctx.globalCompositeOperation = 'lighter';
+          const fgrad = ctx.createLinearGradient(0, frontY - BL * 0.05, 0, frontY + BL * 0.05);
+          fgrad.addColorStop(0, C(fx.flashMid, 0));
+          fgrad.addColorStop(0.5, C(fx.flashMid, 0.75 * post));
+          fgrad.addColorStop(1, C(fx.flashMid, 0));
+          ctx.fillStyle = fgrad;
+          ctx.fillRect(cx - bw, frontY - BL * 0.05, bw * 2, BL * 0.10);
+          ctx.restore();
+        }
+
+        // ③ 홈(fuller) — 날 한복판을 지나는 가는 선. 담금질이 지나간 구간만 밝다
+        ctx.save();
+        const fY = guardY - (guardY - shoY) * Math.min(1, fill * 1.05);
+        ctx.strokeStyle = C('#20262f', 0.5 * post);
+        ctx.lineWidth = Math.max(1.2, bw * 0.34);
+        ctx.beginPath(); ctx.moveTo(cx, guardY - BL * 0.02); ctx.lineTo(cx, shoY); ctx.stroke();
+        if (fill > 0) {
+          ctx.strokeStyle = C(fx.flashMid, 0.7 * post);
+          ctx.lineWidth = Math.max(0.9, bw * 0.20);
+          ctx.beginPath(); ctx.moveTo(cx, guardY - BL * 0.02); ctx.lineTo(cx, Math.max(shoY, fY)); ctx.stroke();
+        }
+        ctx.restore();
+
+        // ④ 십자 가드 + 자루 + 폼멜 — "검"이라는 실루엣을 확정짓는 부분
+        ctx.save();
+        const gw = BL * 0.30, gh = BL * 0.030;
+        ctx.fillStyle = C(fx.glow, 0.72 * post);
+        ctx.fillRect(cx - gw, guardY, gw * 2, gh);                       // 가드 가로대
+        ctx.fillRect(cx - gw, guardY, gh * 0.9, gh * 2.1);               // 가드 좌측 끝 살짝 아래로
+        ctx.fillRect(cx + gw - gh * 0.9, guardY, gh * 0.9, gh * 2.1);    // 우측 끝
+        ctx.fillStyle = C('#4b5464', 0.85 * post);
+        ctx.fillRect(cx - bw * 0.60, guardY + gh, bw * 1.20, gripY - guardY - gh);   // 자루
+        ctx.fillStyle = C(fx.glow, 0.66 * post);
+        ctx.beginPath(); ctx.arc(cx, gripY, bw * 0.78, 0, Math.PI * 2); ctx.fill();  // 폼멜
+        ctx.restore();
+
+        // ⑤ 날을 타고 오르는 빛 티끌
+        ctx.save();
+        ctx.globalCompositeOperation = 'lighter';
+        for (let i = 0; i < MOTE.length; i++) {
+          const m = MOTE[i];
+          const p = ((t * 0.00042 * m.sp + m.s) % 1);
+          const y = guardY - (guardY - tipY) * p;
+          if (p > fill + 0.06) continue;                                  // 담금질 선단보다 앞서가지 않는다
+          const x = cx + m.off * bw * 1.5 + Math.sin(m.ph + t * 0.004) * bw * 0.4;
+          const a = Math.sin(p * Math.PI) * 0.85 * post;
+          if (a <= 0.02) continue;
+          if (typeof spark === 'function') spark(ctx, x, y, m.sz, C(fx.dust, a));
+          else { ctx.fillStyle = C(fx.dust, a); ctx.beginPath(); ctx.arc(x, y, m.sz, 0, Math.PI * 2); ctx.fill(); }
+        }
+        ctx.restore();
+
+        // ⑥ 일섬 — 담금질이 칼끝에 닿는 순간, 가로로 한 번 벤다
+        if (t > 1740) {
+          const bp = Math.min(1, (t - 1740) / 820);
+          const ease = 1 - Math.pow(1 - bp, 3);
           ctx.save();
           ctx.globalCompositeOperation = 'lighter';
-          for (let i = 0; i < RAYS.length; i++) {
-            const r = RAYS[i]; if (t < r.delay) continue;
-            const q = Math.min(1, (t - r.delay) / 800);
-            const L = Math.min(W, H) * 0.75 * r.len * q;
-            const a = (1 - q) * post; if (a <= 0.02) continue;
-            ctx.strokeStyle = C(fx.flashMid, a); ctx.lineWidth = r.w * (1 - q * 0.6); ctx.lineCap = 'round';
+          // 가로 참격 — 칼끝 높이에서 좌우로 뻗는다
+          const half = W * 0.62 * ease;
+          const sy = shoY + (tipY - shoY) * 0.35;
+          const sg = ctx.createLinearGradient(cx - half, 0, cx + half, 0);
+          sg.addColorStop(0, C(fx.flashMid, 0));
+          sg.addColorStop(0.5, C(fx.flashMid, (1 - bp) * 0.95 * post));
+          sg.addColorStop(1, C(fx.flashMid, 0));
+          ctx.fillStyle = sg;
+          const th = Math.max(1.5, BL * 0.045 * (1 - bp * 0.75));
+          ctx.fillRect(cx - half, sy - th / 2, half * 2, th);
+          // 흩어지는 빛살
+          for (let i = 0; i < RAY.length; i++) {
+            const r = RAY[i]; if (t < r.delay) continue;
+            const q = Math.min(1, (t - r.delay) / 760);
+            const a = (1 - q) * 0.8 * post; if (a <= 0.02) continue;
+            const L = W * 0.5 * r.len * q;
+            ctx.strokeStyle = C(fx.ember || fx.dust, a);
+            ctx.lineWidth = r.w * (1 - q * 0.6); ctx.lineCap = 'round';
             ctx.beginPath();
-            ctx.moveTo(cx + Math.cos(r.a) * barW, cy + Math.sin(r.a) * barW);
-            ctx.lineTo(cx + Math.cos(r.a) * L, cy + Math.sin(r.a) * L);
+            ctx.moveTo(cx + r.dir * BL * 0.06, sy + r.a * BL * 0.3);
+            ctx.lineTo(cx + r.dir * L, sy + r.a * BL * 0.3 + r.a * L * 0.22);
             ctx.stroke();
           }
           ctx.lineCap = 'butt';
-          // 확장 링
-          const rr = Math.min(W, H) * 0.55 * bp;
-          ctx.strokeStyle = C(fx.dust, (1 - bp) * 0.9 * post); ctx.lineWidth = 3 * (1 - bp) + 0.6;
-          ctx.beginPath(); ctx.arc(cx, cy, rr, 0, Math.PI * 2); ctx.stroke();
           ctx.restore();
         }
       } };
@@ -40399,7 +40742,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 788;
+  const APP_VERSION = 790;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
@@ -41502,14 +41845,26 @@
 
     illustEl.innerHTML = illustHTML + `<div class="evo-ds-nameplate"><div class="evo-ds-grade" style="background:${gc.color}26;color:${gc.color};border:1px solid ${gc.color}">${gradeLabel}</div><div class="evo-ds-name" style="color:${gc.color}">${displayName}</div></div>`;
     _hydrateIllusts(illustEl);   // 🖼 상세창 큰 일러 webp→gif→png 체인 (캐릭터 상세일 때만 마커 존재)
-    // 🖼 v735 — 스킨이 없는 캐릭터/기본 타워는 아래 캐러셀 블록을 안 타므로 여기서 기본 클릭을 달아둔다.
-    //   (스킨 있는 캐릭터는 캐러셀 쪽에서 _pidx 를 읽는 핸들러를 따로 달아 현재 미리보기 스킨을 연다)
-    if (kind !== 'R' && !(_skinsOf(id) || []).length) {
+    // 🖼 v789 — illustEl 은 #evo-ds-illust "단일 노드"를 매번 재사용한다.
+    //   ⚠ addEventListener 로 달면 상세를 열 때마다 핸들러가 쌓이고, 죽은 클로저가 이전 캐릭터 id 를
+    //     그대로 붙잡는다 → 스킨 화살표를 눌렀는데 직전에 본 캐릭터의 일러 뷰어가 열리는 버그.
+    //     innerHTML 교체는 자식(화살표)만 지울 뿐 노드 자신의 리스너는 안 지운다.
+    //   ✅ onclick 은 덮어쓰기라 누적되지 않는다. 스킨 캐러셀은 리스너를 새로 달지 말고
+    //     illustEl._ivHook 에 "지금 보고 있는 스킨을 여는 함수"를 꽂는다(아래 캐러셀 블록).
+    const _ivSkinned = (kind !== 'R' && kind !== 'base' && (_skinsOf(id) || []).length > 0);
+    const _ivPlain   = (kind !== 'R' && !(_skinsOf(id) || []).length);
+    illustEl._ivHook = null;
+    illustEl.onclick = null;
+    if (_ivPlain || _ivSkinned) {
       illustEl.classList.add('zoomable');
-      illustEl.addEventListener('click', () => {
+      illustEl.onclick = (ev) => {
+        if (ev.target && ev.target.closest && ev.target.closest('.skin-arrow')) return;
+        if (typeof illustEl._ivHook === 'function') { illustEl._ivHook(); return; }
         const chName = (CHARACTERS[id] && CHARACTERS[id].name) || id;
         openIllustViewer(id, _resolveIllustId(id), chName);
-      });
+      };
+    } else {
+      illustEl.classList.remove('zoomable');   // R타워 등 — 이전 캐릭터가 남긴 zoom-in 커서도 여기서 걷힌다
     }
     bodyEl.innerHTML = body;
     _hydrateIllusts(bodyEl);     // 🖼 본문 안의 진화대상 카드(et-illust)·계보 미니칩 일러도 체인 적용
@@ -41535,15 +41890,13 @@
       illustEl.insertAdjacentHTML('beforeend', '<button class="skin-arrow left" aria-label="이전 스킨">‹</button><button class="skin-arrow right" aria-label="다음 스킨">›</button>');
       const _arL = illustEl.querySelector('.skin-arrow.left'), _arR = illustEl.querySelector('.skin-arrow.right');
       const _pIll = i => { const s = _skList[i]; return s ? _skinKey(id, s.id) : id; };
-      // 🖼 v735 — 일러 클릭 시 전체화면 뷰어. 캐러셀로 넘긴 "지금 보고 있는" 스킨이 열려야 하므로
-      //   클릭 시점의 _pidx 를 읽는다. 화살표 버튼 클릭은 뷰어를 열지 않는다.
-      illustEl.classList.add('zoomable');
-      illustEl.addEventListener('click', (ev) => {
-        if (ev.target.closest && ev.target.closest('.skin-arrow')) return;
+      // 🖼 v789 — 리스너를 새로 달지 않는다(위 onclick 하나만 존재). 클릭 시점의 _pidx 를 읽어
+      //   "지금 미리보기 중인" 스킨을 여는 훅만 꽂는다. 화살표 클릭 제외는 위 onclick 이 담당.
+      illustEl._ivHook = () => {
         const cur = _skList[_pidx];
         const chName = (CHARACTERS[id] && CHARACTERS[id].name) || id;
         openIllustViewer(id, _pIll(_pidx), cur ? chName + ' · ' + cur.name : chName + ' · 기본');
-      });
+      };
       const _renderSkin = () => {
         const cur = _skList[_pidx];
         if (_dsImg) {
