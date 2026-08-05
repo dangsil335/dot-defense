@@ -3297,6 +3297,14 @@
   .top-hud .th-tb-track { flex: 1; height: 5px; background: rgba(11,22,38,0.9); border: 1px solid rgba(59,247,255,0.2); overflow: hidden; }
   .top-hud .th-tb-track > i { display: block; height: 100%; background: #ffd479; box-shadow: 0 0 6px rgba(255,206,90,0.5); }
   .top-hud #th-time { color: #9fb6cf; font-size: 11px; font-variant-numeric: tabular-nums; min-width: 44px; text-align: right; }
+  /* 🟢 v793 — 경험치 행. .th-timebar 와 같은 구조·높이, 색만 초록으로 구분한다
+     (청록 = 적 / 금색 = 시간 / 초록 = 경험치). 패널의 .bar 기본 채움색과도 같은 계열이다. */
+  .top-hud .th-xpbar { display: flex; align-items: center; gap: 8px; padding: 0 3px; }
+  .top-hud .th-xpbar .th-k { font-size: 10px; color: #7ef0a2; min-width: 30px; }
+  .top-hud .th-xp-track { flex: 1; height: 5px; background: rgba(11,22,38,0.9); border: 1px solid rgba(82,224,122,0.26); overflow: hidden; }
+  .top-hud .th-xp-track > i { display: block; height: 100%; width: 0%; background: #52e07a; box-shadow: 0 0 6px rgba(82,224,122,0.55); transition: width .15s; }
+  .top-hud #th-xp { color: #9fb6cf; font-size: 11px; font-variant-numeric: tabular-nums; min-width: 44px; text-align: right; }
+
   /* 🛸 v606 — 보조정보 ▾ 트레이 (점수·킬·레벨·강화버프). 평소 숨김, 탭하면 드롭다운 */
   .top-hud .th-tray-btn {
     flex: 0 0 auto; min-width: 26px; height: 22px; padding: 0 6px; cursor: pointer;
@@ -6647,6 +6655,12 @@
       <span id="th-time"></span>
       <button id="th-tray-btn" class="th-tray-btn" title="상세 정보 (점수·킬·레벨)" aria-label="상세 정보">▾</button>
     </div>
+    <!-- 🟢 경험치 — 예전엔 레벨이 ▾ 트레이 안에만 있어 플레이 중엔 안 보였다 -->
+    <div class="th-xpbar">
+      <span class="th-k" id="th-lv">Lv1</span>
+      <div class="th-xp-track" id="th-xp-track"><i></i></div>
+      <span id="th-xp">0/0</span>
+    </div>
     <div id="th-tray" class="th-tray"></div>
   </div>
   <div id="panel">
@@ -6672,6 +6686,9 @@
       <!-- ⚪ 보조 스탯 — 레벨 + 누적 처치 (작게) -->
       <div class="stats-tertiary-group">
         <div class="row tertiary"><span class="label">레벨</span><span id="s-plevel">Lv1 (0/8)</span></div>
+        <!-- 🟢 경험치 = 다음 레벨까지의 처치 진행도. 이 게임엔 XP 수치가 따로 없고
+             state.kills 가 killsToNextLevel 에 닿으면 레벨업한다(triggerLevelUp 에서 kills=0 리셋). -->
+        <div class="bar xp"><i id="s-xpbar" style="width:0%"></i></div>
         <div class="row tertiary"><span class="label">누적 처치</span><span id="s-totalkills">0</span></div>
       </div>
     </div>
@@ -34681,6 +34698,16 @@
     if (_bel) { if (_bp.length) { _bel.style.display = ''; _setText($('s-buffs-val'), _bp.join(' · ')); } else { _bel.style.display = 'none'; } }
     const pl = $('s-plevel');
     if (pl) _setText(pl, `Lv${state.playerLevel} (${state.kills}/${state.killsToNextLevel} kills)`);
+    // 🟢 경험치 바 — 가로는 패널(#s-xpbar), 세로는 상단 HUD(#th-xp-track). 레이아웃마다 표시처가 달라 둘 다 갱신한다.
+    {
+      const _need = Math.max(1, state.killsToNextLevel || 1);
+      const _pct = Math.max(0, Math.min(100, (state.kills || 0) / _need * 100));
+      _setStyle($('s-xpbar'), 'width', _pct.toFixed(1) + '%');
+      const _xt = $('th-xp-track');
+      if (_xt && _xt.firstElementChild) _setStyle(_xt.firstElementChild, 'width', _pct.toFixed(1) + '%');
+      const _lv = $('th-lv'); if (_lv) _setText(_lv, 'Lv' + (state.playerLevel || 1));
+      const _xn = $('th-xp'); if (_xn) _setText(_xn, (state.kills || 0) + '/' + _need);
+    }
     const tk = $('s-totalkills');
     if (tk) _setText(tk, (state.totalKills || 0).toLocaleString());
     // 🏰 디펜스 모드 (TD): 본진 HP만
@@ -40780,7 +40807,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 792;
+  const APP_VERSION = 793;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
