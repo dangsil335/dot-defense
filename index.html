@@ -5451,6 +5451,19 @@
   .gcm-uniq-ico { font-size:15px; margin-right:3px; line-height:1.2; }
   .gcm-uniq-lbl { color:#ffd479; font-size:12px; }
   .gcm-uniq-tag { font-size:8px; font-weight:800; color:#0a0d14; background:#ffd479; border-radius:4px; padding:1px 5px; vertical-align:middle; margin-left:2px; }
+  /* 🌟 고유 코어 주인 전용 라인 — 주인이면 켜짐(금빛), 남이면 꺼짐(회색+취소선 느낌) */
+  .gcm-line.own { border-radius:6px; padding:4px 6px; margin-top:2px; align-items:flex-start; }
+  .gcm-line.own.on  { background:linear-gradient(90deg, rgba(255,212,121,0.16), rgba(255,212,121,0.03)); border:1px solid rgba(255,212,121,0.45); }
+  .gcm-line.own.off { background:rgba(120,130,150,0.07); border:1px solid rgba(120,130,150,0.25); opacity:0.55; }
+  .gcm-line.own .gcm-lbl { white-space:normal; }
+  .gcm-line.own small { display:block; color:#c9bd92; font-size:10px; margin-top:2px; line-height:1.4; white-space:normal; }
+  .gcm-line.own.off small { color:#8892a4; }
+  .gcm-own { font-size:9px; font-weight:800; padding:1px 5px; border-radius:5px; flex-shrink:0;
+             background:#4a3f1a; color:#ffd479; white-space:nowrap; }
+  .gcm-line.own.off .gcm-own { background:#232c3c; color:#8892a4; }
+  /* 코어 ★ — 헤더 등급줄 옆 */
+  .cm-d-stars { color:#ffd479; letter-spacing:-1px; font-size:10px; }
+  .cm-d-stars i { font-style:normal; color:#9aa3b3; font-size:9px; margin-left:3px; letter-spacing:0; }
   .gcm-line.uniq small { display:block; color:#c9bd92; font-size:10px; margin-top:2px; line-height:1.45; white-space:normal; }
   .gear-core-img { object-fit:contain; display:inline-block; vertical-align:middle; }
   /* 🧰 코어 처리 툴바 (합성·일괄분해) */
@@ -7439,6 +7452,25 @@
     const d = SIG_CORE_OWN[charId];
     if (!d) return null;
     return { own: charId, key: d.key, op: d.op, label: d.label, val: d.base, sig: 1 };
+  }
+  // 주인 라인의 능력 강화를 사람이 읽을 문구로. stat 키는 SIG_CORE_OWN 의 ab.stat 과 1:1.
+  const SIG_CORE_STAT_LABEL = {
+    maxCharge:'만충 문턱', cylinder:'실린더', starLife:'별 지속', bossSlowMul:'보스 둔화',
+    spiritLife:'정령 지속', markCap:'표식 상한', shardDamageFactor:'파편 위력', waveLife:'참격 지속',
+    polarityCap:'극성 상한', drowseCap:'수면 문턱', maxSpeed:'어뢰 속도', pullStrength:'인력',
+    bulletMaxSpeed:'탄속', poolLife:'산성 지속', fireRange:'사격 거리', slowTail:'석화 여운',
+    petalCount:'꽃잎 수', maxBullets:'동시 탄환', chainRadius:'연쇄 범위', goldCritMul:'골드 치명',
+    chargeCap:'노출 상한', maxReps:'재현 횟수',
+  };
+  // ★ 반영된 실제 변화량을 문구로 — 상세창이 "지금 이 코어가 뭘 해주는지" 그대로 보여주게 한다.
+  function _sigCoreAbText(charId, it) {
+    const d = SIG_CORE_OWN[charId]; if (!d || !d.ab) return '';
+    const nm = (typeof ABILITY_DEFS !== 'undefined' && ABILITY_DEFS[d.ab.id] && ABILITY_DEFS[d.ab.id].name) || d.ab.id;
+    const st = SIG_CORE_STAT_LABEL[d.ab.stat] || d.ab.stat;
+    const sMul = _sigCoreStarMul(it);
+    if (d.ab.add != null) return `${nm} · ${st} +${Math.round(d.ab.add * sMul)}`;
+    const pct = Math.round((d.ab.mul - 1) * sMul * 100);
+    return `${nm} · ${st} ${pct >= 0 ? '+' : ''}${pct}%`;
   }
   // 코어 ★ → 수치 배율
   function _sigCoreStarMul(it) {
@@ -39649,38 +39681,45 @@
       const featName = featChar ? featChar.name : 'SSR';
       const _sdRate = Math.max(0, 1 - (r.SSR || 0) - (r.SR || 0));
       let infoText = `SSR ${(r.SSR*100).toFixed(1)}%  ·  SR ${(r.SR*100).toFixed(0)}%`;
-      if (banner.ancientRelic) {
-        const rate = ((banner.ancientRelicRate || 0) * 100).toFixed(2);
-        infoText += `  ·  전용유물 ${rate}%`;
+      if (banner.coreRate) {
+        infoText += `  ·  고유코어 ${(banner.coreRate * 100).toFixed(2)}%`;
       }
       infoEl.textContent = infoText;
     }
-    // 🌌 v249 — 고대 유물 픽업 칩 (우상단 부유) — 별도 시각 표시
-    const ancientChip = document.getElementById('gacha-banner-ancient-chip');
-    if (ancientChip) {
-      if (banner.ancientRelic) {
-        const rid = banner.ancientRelic;
-        const relic = RELICS[rid];
-        const ancientRate = ((banner.ancientRelicRate || 0) * 100).toFixed(2);
-        const curStars = getAncientRelicStars(rid);
-        const starsLabel = curStars >= 1 ? ` ${curStars}★/${ANCIENT_MAX_STARS}` : '';
+    // 🌟 v798 — 고유 코어 픽업 칩 (우상단 부유). 구 고대유물 칩의 DOM·CSS 를 그대로 물려받았다.
+    //    ⚠ id/class 의 'ancient' 는 과거 흔적이다. 고대유물 시스템은 v796 에서 제거됐다.
+    //    보유한 픽업 SSR 이 없으면 코어가 나올 수 없으므로 칩도 숨긴다(가챠 로직과 같은 조건).
+    const coreChip = document.getElementById('gacha-banner-ancient-chip');
+    if (coreChip) {
+      const _ownedPick = ((banner.pool && banner.pool.SSR) || []).filter(c => {
+        try { return _uqEligible(c); } catch (e) { return false; }
+      });
+      if (banner.coreRate && _ownedPick.length) {
+        // 대표 1명 — featured 가 보유분에 있으면 그걸, 아니면 보유분 첫 번째
+        const cid = (_ownedPick.indexOf(banner.featured) >= 0) ? banner.featured : _ownedPick[0];
+        const it = _findUniqueGear(cid);
+        const nm = (SIGNATURE_GEAR[cid] && SIGNATURE_GEAR[cid].name) || '고유 코어';
+        const ico = (typeof SIGNATURE_GEAR_ICON !== 'undefined' && SIGNATURE_GEAR_ICON[cid]) || '✨';
+        const stars = it ? (it.stars || 1) : 0;
+        const starsLabel = stars >= 1 ? ` ${stars}★/${SIG_CORE_MAX_STARS}` : '';
         const imgEl = document.getElementById('gacha-banner-ancient-img');
         const nmEl = document.getElementById('gacha-banner-ancient-name');
         const rtEl = document.getElementById('gacha-banner-ancient-rate');
+        const lbEl = coreChip.querySelector('.ancient-chip-label');
+        if (lbEl) lbEl.textContent = '🌟 고유 코어';
         if (imgEl) {
-          imgEl.src = `./icons/relics/${rid}.png`;
+          imgEl.src = `./icons/gear/sig-${cid}.png`;   // 정식 아트가 생기면 자동 적용
           imgEl.onerror = function() {
             this.style.display = 'none';
-            // emoji 폴백을 이미지 자리에 그대로
-            this.outerHTML = `<span style="font-size:36px; width:40px; height:40px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">${relic.icon}</span>`;
+            this.outerHTML = `<span style="font-size:36px; width:40px; height:40px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">${ico}</span>`;
           };
-          imgEl.style.display = '';   // 다시 보임 (이전 폴백 후 재방문 대비)
+          imgEl.style.display = '';
         }
-        if (nmEl) nmEl.textContent = relic.name + starsLabel;
-        if (rtEl) rtEl.textContent = `${ancientRate}% · 캐릭터 대신 등장`;
-        ancientChip.style.display = 'flex';
+        if (nmEl) nmEl.textContent = nm + starsLabel;
+        if (rtEl) rtEl.textContent = `${(banner.coreRate * 100).toFixed(2)}% · 캐릭터 대신 등장`;
+        coreChip.style.display = 'flex';
       } else {
-        ancientChip.style.display = 'none';
+        coreChip.style.display = 'none';
       }
     }
     // 픽업 캐릭터 미니 아이콘 (SSR + SR)
@@ -39714,27 +39753,6 @@
           <span style="font-size:13px;padding-left:4px;">🟧</span>
           <span style="color:#fff;font-size:10px;">${names}</span>
           <span class="gacha-pickup-rate">SR ${srRate}%</span>
-        `;
-        pickupEl.appendChild(chip);
-      }
-      // 🌌 v245 — 고대 유물 (별도 뽑기 결과 — 캐릭터와 동시 X)
-      if (banner.ancientRelic) {
-        const rid = banner.ancientRelic;
-        const relic = RELICS[rid];
-        const ancientRate = ((banner.ancientRelicRate || 0) * 100).toFixed(2);
-        const curStars = getAncientRelicStars(rid);
-        const starsLabel = curStars >= 1 ? ` · ${curStars}★/${ANCIENT_MAX_STARS}` : '';
-        const chip = document.createElement('div');
-        chip.className = 'gacha-pickup-icon';
-        chip.style.cssText = 'border-color:#ff88ff; box-shadow:0 0 10px rgba(255,136,255,0.6); animation: _ancient-pulse 1.6s ease-in-out infinite;';
-        chip.title = '캐릭터 대신 등장하는 별도 뽑기 결과';
-        // 유물 이미지 (있으면) / 없으면 이모지
-        const imgSrc = `./icons/relics/${rid}.png`;
-        chip.innerHTML = `
-          <img src="${imgSrc}" alt="${rid}" style="image-rendering:pixelated;"
-               onerror="this.style.display='none';this.insertAdjacentHTML('beforebegin','<span style=&quot;font-size:14px;padding-left:4px;&quot;>${relic.icon}</span>');" />
-          <span style="color:#fff;font-size:10px;">${relic.name}${starsLabel}</span>
-          <span class="gacha-pickup-rate" style="color:#ff88ff;font-weight:bold;">🌌 ANCIENT ${ancientRate}%</span>
         `;
         pickupEl.appendChild(chip);
       }
@@ -40538,7 +40556,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 797;
+  const APP_VERSION = 798;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
@@ -41434,9 +41452,20 @@
       : it.lines.map((l, i) => {
           const lockBtn = `<button class="gcm-lock" data-lock="${i}" title="잠금 — 재설정 시 이 줄은 유지(비용↑)">${_gearLocks.has(i) ? '🔒' : '🔓'}</button>`;
           if (l.uniq) return _gearUniqRow(l, lockBtn);
+          // 🌟 주인 전용 라인 — tier 가 없고 굴려지지도 않는다(잠금 토글도 무의미). 전용 행으로 그린다.
+          if (l.own) {
+            const mine = (l.own === (selectedCharacter || 'standard'));
+            const sm = _sigCoreStarMul(it);
+            const abT = _sigCoreAbText(l.own, it);
+            const ch = CHARACTERS[l.own];
+            return `<div class="gcm-line own${mine ? ' on' : ' off'}">`
+              + `<span class="gcm-own">${mine ? '🌟 주인' : '🔒 ' + ((ch && ch.name) || l.own)}</span>`
+              + `<span class="gcm-lbl">${l.label}${abT ? `<small>${abT}</small>` : ''}</span>`
+              + `<b>${l.flat ? '+' + l.val + 's' : '+' + Math.round(l.val * sm * 100) + '%'}</b></div>`;
+          }
           return `<div class="gcm-line${_gearLocks.has(i) ? ' locked' : ''}${i === 0 && sdef ? ' sig' : ''}${l.aff ? ' aff' : ''}">${lockBtn}<span class="gcm-tier t${l.tier}">T${l.tier}</span><span class="gcm-lbl">${l.label}${i === 0 && sdef ? ' <span class="gcm-sig">시그니처</span>' : ''}${_gearAffBadge(l)}</span><b>${l.flat ? '+' + l.val + 's' : '+' + Math.round(l.val * 100) + '%'}</b></div>`;
         }).join('');
-    let h = `<div class="cm-d-head" style="border-color:${col}"><span class="cm-d-ico">${_gearCoreImg(it, 34) || _gearSigIcon(it) || _GEAR_SLOTICO[it.slot]}</span><div><div class="cm-d-name">${uq ? (_gearSigName(it) || (uqch ? uqch.name + ' 고유장비' : '고유장비')) : _gearArchName(it) + ' 코어'}</div><div class="cm-d-rar" style="color:${col}">${GEAR_RARITY_LABEL[it.rarity]}${equipped ? ' · 장착중' : ''}${sdef ? ` · <span style="color:${sdef.color}">${sdef.icon}${sdef.name}</span>` : ''}${uq ? ` · <span style="color:${col}">✨${uqch ? uqch.name : '고유장비'}</span>` : ''}${it.locked ? ' · <span style="color:#ffd479">🔒</span>' : ''}</div></div></div>${uq && _gearSigDesc(it) ? `<div class="cm-d-sigflavor">“${_gearSigDesc(it)}”</div>` : ''}${levelRow}<div class="cm-d-cols"><div class="cm-d-col"><div class="cm-d-colt">${_gearRerollPending ? '직전 잠재능력' : `현재 잠재능력${lockN ? ` · 🔒${lockN}` : ''}`}</div>${curLines}</div>`;
+    let h = `<div class="cm-d-head" style="border-color:${col}"><span class="cm-d-ico">${_gearCoreImg(it, 34) || _gearSigIcon(it) || _GEAR_SLOTICO[it.slot]}</span><div><div class="cm-d-name">${uq ? (_gearSigName(it) || (uqch ? uqch.name + ' 고유장비' : '고유장비')) : _gearArchName(it) + ' 코어'}</div><div class="cm-d-rar" style="color:${col}">${GEAR_RARITY_LABEL[it.rarity]}${equipped ? ' · 장착중' : ''}${sdef ? ` · <span style="color:${sdef.color}">${sdef.icon}${sdef.name}</span>` : ''}${uq ? ` · <span style="color:${col}">✨${uqch ? uqch.name : '고유장비'}</span>` : ''}${uq ? ` · <span class="cm-d-stars">${'★'.repeat(Math.min(SIG_CORE_MAX_STARS, it.stars || 1))}<i>${it.stars || 1}/${SIG_CORE_MAX_STARS}</i></span>` : ''}${it.locked ? ' · <span style="color:#ffd479">🔒</span>' : ''}</div></div></div>${uq && _gearSigDesc(it) ? `<div class="cm-d-sigflavor">“${_gearSigDesc(it)}”</div>` : ''}${levelRow}<div class="cm-d-cols"><div class="cm-d-col"><div class="cm-d-colt">${_gearRerollPending ? '직전 잠재능력' : `현재 잠재능력${lockN ? ` · 🔒${lockN}` : ''}`}</div>${curLines}</div>`;
     if (_gearRerollPending) h += `<div class="cm-d-arrow">→</div><div class="cm-d-col new"><div class="cm-d-colt">새 잠재능력 <span class="cm-d-applied">적용됨</span></div>${it.lines.map(_gearLineRow).join('')}</div>`;
     h += `</div>`;
     // 재설정 직후: 확인(비교 닫기) + 바로 한 번 더 굴리기. 되돌리기는 없다.
