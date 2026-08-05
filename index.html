@@ -35882,6 +35882,7 @@
     'somnia__overtimenap':      { evo: '5분만… 아니, 지금 할게. 눈 감아.',         amb: '으음… 야근이 아직 안 끝났는데… 저쪽부터 재울게.' },
     'sumika__blackserpent':     { evo: '…물 위에도 한 획. 새겨 드리죠.',                  amb: '…파도 소리에 숨 섞으세요. 한 획이면 돼요.' },
     'sumika__officeassassin':   { evo: '…결재 끝. 이 힘, 당신께 새겨 드리죠.',            amb: '…조용히 처리할게요. 숨, 멈추지 마세요.' },
+    'sumika__blackcatcafe':     { evo: '…냐, 냐아. …이 대사는 빼 주세요.',                amb: '…고양이 흉내는 업무가 아닙니다. 한 획이면 끝나요.' },
     'trina__prism':             { evo: '자, 막을 올릴게 — 오늘은 세 겹으로 간다.',      amb: '분신 셋, 색이 다 달라. 맞춰볼래?' },
     'trina__primadonna':        { evo: '서곡이야 — 주연은 당연히 나고.',              amb: '대역 셋에 오케스트라까지 데려왔어.' },
     'trina__officeensemble':    { evo: '자, 회의 시작할게 — 오늘도 내가 주연이야.',     amb: '대역 셋한테 업무 분담했어. 누가 진짜게?' },
@@ -36691,7 +36692,7 @@
     sakura:    [{ id: 'blacklabel',   name: '블랙라벨 검객' }, { id: 'kendo',       name: '검도부' }],
     solar:     [{ id: 'sunbed',       name: '석양의 선베드' }, { id: 'cheer',       name: '치어리더' }],
     somnia:    [{ id: 'beachnap',     name: '해변 낮잠' }, { id: 'nightshift',  name: '야간 근무' }, { id: 'overtimenap',   name: '야근 쪽잠' }],
-    sumika:    [{ id: 'blackserpent', name: '흑사 라군 리조트' }, { id: 'officeassassin', name: '오피스 암살자' }],
+    sumika:    [{ id: 'blackserpent', name: '흑사 라군 리조트' }, { id: 'officeassassin', name: '오피스 암살자' }, { id: 'blackcatcafe', name: '흑묘 닌자 카페' }],
     trina:     [{ id: 'prism',        name: '프리즘 스테이지' }, { id: 'primadonna',   name: '프리마돈나 서곡' }, { id: 'officeensemble', name: '오피스 앙상블' }],
   };
   function _skinsOf(charId) { return SKINS[charId] || []; }
@@ -40560,7 +40561,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 799;
+  const APP_VERSION = 800;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
