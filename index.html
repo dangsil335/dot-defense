@@ -36062,6 +36062,9 @@
   //   키는 _resolveIllustId() 반환값과 같은 '<char>__<skin>' 형식.
   //   evo = 진화 게이트(R20/R40 컷인), amb = 매복 이벤트. 없으면 기본 캐릭 대사로 폴백.
   const SKIN_LINES = {
+    'alba__fallenoath':         { evo: '서약은 깨졌어. …벨 이유는 남았고.',              amb: '이 검은 이제 아무것도 지키지 않아. 그래서 잘 든다.' },
+    'alba__lifeguard':          { evo: '물에서 끌어내는 것도, 베는 것만큼 힘들어. …간다.', amb: '규칙 하나. 내 시야에서 벗어나지 마.' },
+    'alba__sleepyguard':        { evo: '…안 잤어. 눈만 감고 있었어.',                   amb: '교대는 아직이야. 그때까진 내가 본다.' },
     'amy__sunset':              { evo: '석양까지 관제 계속한다 — 하늘은 내가 맡을게!',    amb: '노을 편대 도착! 역광 조심하고.' },
     'amy__streettech':          { evo: '드론 튜닝 끝났어 — 이 골목은 내 구역이야!',      amb: '스프레이 자국 따라와. 화망은 깔아뒀어.' },
     'aria__siren':              { evo: '자—, 파도 위에서 한 곡. 별보다 바다가 어울리네요!', amb: '이 무대는 해변이에요. 노래, 파도에 맞춰드릴게요!' },
@@ -36933,6 +36936,7 @@
   //   · META.skins = { owned:{ '<charId>__<skinId>':1 }, applied:{ <charId>:<skinId> } } — JSON 블롭이라 서버 자동 동기화.
   const SKIN_COST = 400;
   const SKINS = {
+    alba:      [{ id: 'fallenoath',   name: '무너진 서약' }, { id: 'lifeguard',   name: '해변 인명구조대' }, { id: 'sleepyguard',   name: '졸린 불침번' }],
     amy:       [{ id: 'sunset',       name: '석양의 관제사' }, { id: 'streettech',  name: '스트리트 테크' }],
     aria:      [{ id: 'siren',        name: '바다 세이렌 아이돌' }, { id: 'abyssal',    name: '심연의 오페라' }],
     blanche:   [{ id: 'crystal',      name: '크리스탈 라군 리조트' }, { id: 'winterball', name: '윈터 볼' }, { id: 'orthodoxmage',  name: '정통 마도사' }],
@@ -40833,7 +40837,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 794;
+  const APP_VERSION = 795;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
