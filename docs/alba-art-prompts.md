@@ -16,11 +16,11 @@
 | 등급 | SSR |
 | 컨셉 | 기사 — 참았다가 한 번에 내려친다 |
 | 능력 축 | **적 밀도 충전 → 단일 초대형 일격** |
-| 무기 | **양손 대검** — 옆으로 늘어뜨려 든다 |
-| 복장 | **경장 판금** — 흉갑·견갑·건틀릿·정강이만, 나머지는 천 |
-| 머리 | **완전 무채색 은백**, 단발~어깨 + 사이드 땋기 |
+| 무기 | **양손 대검** — 한 손으로 **세워** 든다 (칼끝 아래) |
+| 복장 | **경장** — 한쪽 견갑 · 양팔 건틀릿 · 허리 파울드. 다리 판금 없음, 민소매 |
+| 머리 | **은백**, 어깨 길이 + 뒤로 땋아 올린 번(bun) |
 | 성격 | 과묵·절제. 웃지 않는다. |
-| 테마색 | **순백·은 (무채색)** 주조 + 은청 게이지 악센트 · `CHARACTERS.color` = `#e8edf2` |
+| 테마색 | **은백 + 감청 + 금** · 게이지는 청백 · `CHARACTERS.color` = `#dfe6f2` |
 | 배너 짝 | 🐈 플린타 (와인레드·리볼버) |
 | 이름 어원 | `alba` = 새벽·흰빛 — 은백 테마 직결 + 「밤새 참고 기다린 끝에 오는 것」 |
 
@@ -47,7 +47,19 @@
 
 ---
 
-## 2. 일러스트 (`icons/illust/alba.png`)
+## 2. 일러스트 — ✅ **확정·투입 완료** (`icons/illust/alba.png`, 433×577)
+
+아래 프롬프트는 **치비·스킨을 뽑을 때 톤을 맞추기 위한 기록**이다.
+실제 채택본은 프롬프트와 일부 다르며, **어긋나면 채택본이 기준**이다:
+
+| 항목 | 프롬프트 | **채택본(기준)** |
+|---|---|---|
+| 색 구성 | 순백·은 무채색, 금 최소 | **은백 + 감청 서코트 + 금 장식** |
+| 노출 | 언급 없음 | **민소매·어깨 노출**, 다리 판금 없음 |
+| 파지 | 옆으로 늘어뜨림 | **한 손으로 세워 듦** (칼끝 아래) |
+| 게이지 | 눈금(tick) | **날 중앙의 청백 룬 라인 + 화살촉 문양** |
+| 머리 | 단발~어깨 + 사이드 땋기 | **어깨 길이 + 뒤로 땋아 올린 번** |
+
 
 ```
 anime style character illustration, single female knight, vertical portrait composition,
@@ -137,19 +149,21 @@ background scenery, floor, wall, sky, watermark, text, multiple characters, chib
 chibi character sprite, single female knight, 2-3 head-tall super-deformed proportions,
 front-facing standing pose, transparent background
 
-face fully visible, NO helmet and NO visor, large silver-blue eyes, small flat mouth,
-completely neutral expression, dark blue-black hair tied back,
-thin silver circlet on the forehead that does not cover the face
+face fully visible, NO helmet and NO visor, large pale blue eyes, small flat mouth,
+completely neutral expression,
+silver-white hair, shoulder length, tied into a small braided bun at the back
 
-silver-white ceremonial coat as a bold flat color block (the coat is the color anchor),
-one silver pauldron on one shoulder, small silver-white half-cape, dark navy boots and gloves
+white corset-style bodice with gold trim over a DARK NAVY skirt and half-cape
+(white + navy is the color anchor — both must read as flat blocks at 44px)
+one large silver pauldron on one shoulder, dark navy gloves, silver forearm gauntlets,
+gold fleur-de-lis accent on the cape
 
-holding an oversized straight greatsword planted point-down beside her,
+holding an oversized straight greatsword UPRIGHT in one hand beside her, point down,
 the blade clearly taller than the character — this vertical blade is the silhouette read at 44px
-broad straight blade with a cross guard (NOT a katana, NOT curved)
-three or four silver-blue glowing tick marks along the blade's center groove — the charge gauge
+broad straight blade with an ornate cross guard (NOT a katana, NOT curved)
+a glowing pale blue-white line running down the center of the blade — the charge gauge
 
-pose: standing at attention, perfectly straight, both hands stacked on the pommel
+pose: standing straight, one hand gripping the sword upright, the other relaxed at her side
 
 STYLE:
 clean thick outlines, flat cel shading with one shadow tone, high color contrast,
@@ -175,12 +189,12 @@ busy small details, background, ground shadow, text, multiple characters, smilin
 | | 🐈 플린타 | ⚔️ 알바 |
 |---|---|---|
 | 실루엣 | 짧은 총, 흐트러진 자세 | **긴 대검을 옆으로 늘어뜨린** 편히 선 자세 |
-| 색 | 와인레드 + 주황 불티 | 은백 + 은청 |
+| 색 | 와인레드 + 주황 불티 | **은백 + 감청 + 금** |
 | 머리 | 플래티넘 블론드(노란 기미) | **무채색 은백** |
 | 표정 | 반쯤 감은 눈, 비웃음 | 무표정, 정면 응시 |
 | 자원 | 6발 갖고 시작 → **줄어듦** | 0에서 → **차오름** |
 | 감각 | 아껴 쓴다 | 참는다 |
-| 44px 식별 | 고양이 귀 · 와인 색면 · 주황 점 | 세로 대검 · 은백 색면 · 청 게이지선 |
+| 44px 식별 | 고양이 귀 · 와인 색면 · 주황 점 | **세로 대검** · 흰+감청 색면 · 청백 게이지선 |
 
 ---
 
