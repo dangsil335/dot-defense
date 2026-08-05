@@ -101,11 +101,23 @@ grep -n "const ABILITY_DEFS" index.html
 ```
 체인에 새 id 를 넣었으면 여기 정의도 만들어야 한다. 없으면 진화해도 능력이 안 붙는다.
 
-### 1-6. 에셋 2장
+### 1-6. 에셋 — 일러/치비 2장 + **능력 아이콘 6장**
 | 경로 | 규격 |
 |---|---|
-| `icons/illust/<id>.png` | `thumbnail((433,577), LANCZOS)` · RGBA 투명배경 |
+| `icons/illust/<id>.png` | `thumbnail((433,577), LANCZOS)` · RGBA **투명배경** |
 | `icons/characters/<id>.png` | 동일 규격(치비) |
+| `icons/abilities/<능력id>.png` × **6** | **256×256 · 불투명 액자형** (시그 체인 4 + ★해금 2) |
+
+⚠ **능력 아이콘은 파일 시스템에만 있어서 코드 스캔·차분 감사에 안 잡힌다.** 실제로 놓쳤다.
+- 파일명은 **능력 id 그대로**, 대소문자까지 일치해야 한다 (`flintShot.png`).
+- 배경은 **투명이 아니라 불투명 액자형**이다 — `drawAbilityIcon` 은 `ctx.drawImage` 한 번만 하고
+  배경판을 따로 깔지 않는다. 투명으로 뽑으면 어두운 UI 위에 아이콘이 허공에 뜬다.
+  (일러·치비는 반대로 투명이어야 한다. 헷갈리지 말 것.)
+- 없어도 크래시는 안 난다 — `drawIconPlaceholder` 가 티어별 색 사각형으로 대체한다. **그래서 더 놓치기 쉽다.**
+- 확인:
+  ```bash
+  for k in <능력id들>; do [ -f "icons/abilities/$k.png" ] || echo "❌ $k"; done
+  ```
 - 원본은 `icons/illust/_orig/<id>.png` · `icons/characters/_orig/<id>.png` 에 보관.
 - 애니 일러가 있으면 `.webp` / `.gif` 를 같은 이름으로 두면 자동으로 우선 적용된다(`_applyIllustChain`).
 - ⚠ **에셋만 바꿔도 `APP_VERSION` + `sw.js` 의 `CACHE` 를 올려야 한다.** sw 가 정적 에셋을 cache-first 로 다뤄서,
