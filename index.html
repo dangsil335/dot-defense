@@ -21567,326 +21567,14 @@
 
     // ============================== 🌌 ANCIENT (2개) — 가챠 전용 해금, 캐릭터 전용 ==============================
     // 🎵 Aria 전용 — 별·노래·벚꽃 계열 능력이 max 도달 시 각성
-    ariaHarp: {
-      name: '여신의 하프', icon: '🎵', rarity: 'ancient',
-      isAncient: true, characterId: 'aria',
-      // 관련 능력: starSong(시작) / celestialEcho(4★) / sirensSong(8★) / cosmicChorus(별의노래+노바 조합)
-      triggerAbilities: ['starSong', 'celestialEcho', 'sirensSong', 'cosmicChorus'],
-      desc: '🎵 Aria 전용 · ★별마다 강해짐.\n[기본] 데미지 +20% (Aria 시너지 +40%)\n[★4 각성 1] Aria 관련 능력 max 도달 시 — 데미지 +50%·적 슬로우 +10%\n[★8 각성 2] 관련 능력 2개 이상 max — 처치 시 음표 광역 폭발',
-      apply: (st) => { applyAncientRelic(st, 'ariaHarp'); },
-      unlockBy: 'ancient:ariaHarp',
-    },
     // ⌛ Misaki 전용 — 시간·동결·차원 계열 능력이 max 도달 시 각성
-    misakiHourglass: {
-      name: '차원의 모래시계', icon: '⌛', rarity: 'ancient',
-      isAncient: true, characterId: 'misaki',
-      // 관련 능력: timeButterfly(시작) / temporalLoop(4★) / paradoxFreeze(8★) / timePrison(시공나비+시간정지 조합)
-      triggerAbilities: ['timeButterfly', 'temporalLoop', 'paradoxFreeze', 'timePrison'],
-      desc: '⌛ Misaki 전용 · ★별마다 강해짐.\n[기본] 적 속도 -15% (Misaki 시너지 -30%)\n[★4 각성 1] Misaki 관련 능력 max 도달 시 — 데미지 +40%·적 속도 -10%\n[★8 각성 2] 관련 능력 2개 이상 max — 30초마다 모든 적 3초 정지',
-      apply: (st) => { applyAncientRelic(st, 'misakiHourglass'); },
-      unlockBy: 'ancient:misakiHourglass',
-    },
     // 🔮 Elementia 전용 — 정령·원소 소환 능력 각성
-    elementiaSeal: {
-      name: '정령왕의 인장', icon: '🔮', rarity: 'ancient',
-      isAncient: true, characterId: 'elementia',
-      triggerAbilities: ['spritling', 'windWolfSpirit', 'phoenixSpirit', 'leviathanSpirit'],
-      desc: '🔮 Elementia 전용 · ★별마다 강해짐.\n[기본] 데미지 +18% (Elementia 시너지 +38%)\n[★4 각성 1] 정령 능력 max 도달 시 — 데미지 +50%·광역 데미지 +20%\n[★8 각성 2] 정령 능력 2개 이상 max — 처치 시 원소 연쇄 폭발',
-      apply: (st) => { applyAncientRelic(st, 'elementiaSeal'); },
-      unlockBy: 'ancient:elementiaSeal',
-    },
     // 🖌️ Sumika 전용 — 먹·암살·처형 능력 각성
-    sumikaBrush: {
-      name: '먹의 인장', icon: '🖌️', rarity: 'ancient',
-      isAncient: true, characterId: 'sumika',
-      triggerAbilities: ['inkSlash', 'silentExecution', 'sumiReaper', 'inkReaper'],
-      desc: '🖌️ Sumika 전용 · ★별마다 강해짐.\n[기본] 보스 데미지 +25% (Sumika 시너지 +50%)\n[★4 각성 1] 암살 능력 max 도달 시 — 보스 데미지 +40%·저체력 즉살 강화\n[★8 각성 2] 암살 능력 2개 이상 max — 처형 임계 강화 + 데미지 +20%',
-      apply: (st) => { applyAncientRelic(st, 'sumikaBrush'); },
-      unlockBy: 'ancient:sumikaBrush',
-    },
     // 🌈 Blanche 전용 — 빛·분광·프리즘 능력 각성
-    blanchePrism: {
-      name: '분광의 프리즘', icon: '🌈', rarity: 'ancient',
-      isAncient: true, characterId: 'blanche',
-      triggerAbilities: ['prismBolt', 'spectrumBeam', 'chromaBurst', 'prismCataclysm'],
-      desc: '🌈 Blanche 전용 · ★별마다 강해짐.\n[기본] 데미지 +16% (Blanche 시너지 +36%)\n[★4 각성 1] 분광 능력 max 도달 시 — 데미지 +50%·광역 데미지 +20%\n[★8 각성 2] 분광 능력 2개 이상 max — 처치 시 무지개 광선 난반사',
-      apply: (st) => { applyAncientRelic(st, 'blanchePrism'); },
-      unlockBy: 'ancient:blanchePrism',
-    },
     // 🐾 Kaira 전용 — 야수·변신·강습 능력 각성
-    kairaFang: {
-      name: '야수왕의 송곳니', icon: '🐾', rarity: 'ancient',
-      isAncient: true, characterId: 'kaira',
-      triggerAbilities: ['huntingClaw', 'savageRend', 'beastCyclone', 'primalRampage'],
-      desc: '🐾 Kaira 전용 · ★별마다 강해짐.\n[기본] 데미지 +15%·럭키 +4% (Kaira 시너지 +34%·+8%)\n[★4 각성 1] 야수 능력 max 도달 시 — 데미지 +50%·강습 강화\n[★8 각성 2] 야수 능력 2개 이상 max — 처치 시 광포화 연쇄 강습',
-      apply: (st) => { applyAncientRelic(st, 'kairaFang'); },
-      unlockBy: 'ancient:kairaFang',
-    },
     // 🧲 Feria 전용 — 자력·견인·관통 능력 각성
-    albaOath: {
-      name: '여명의 서약', icon: '⚔️', rarity: 'ancient',
-      isAncient: true, characterId: 'alba',
-      triggerAbilities: ['dawnEdge', 'risingArc', 'firstLight', 'daybreak'],
-      desc: '⚔️ Alba 전용 · ★별마다 강해짐.\n[기본] 만충 문턱 -15% · 데미지 +16% (Alba 시너지 -28% · +36%)\n[★4 각성 1] 여명 능력 max 도달 시 — 데미지 +50%\n[★8 각성 2] 여명 능력 2개 이상 max — 일격의 최대 배율 상승',
-      apply: (st) => { applyAncientRelic(st, 'albaOath'); },
-      unlockBy: 'ancient:albaOath',
-    },
-    flintCylinder: {
-      name: '부싯돌 실린더', icon: '🔫', rarity: 'ancient',
-      isAncient: true, characterId: 'flinta',
-      triggerAbilities: ['flintShot', 'hammerFall', 'quickdraw', 'deadeye'],
-      desc: '🔫 Flinta 전용 · ★별마다 강해짐.\n[기본] 실린더 +1칸 · 데미지 +18% (Flinta 시너지 +2칸 · +38%)\n[★4 각성 1] 사격 능력 max 도달 시 — 데미지 +50%\n[★8 각성 2] 사격 능력 2개 이상 max — 마지막 한 발 위력 추가 상승',
-      apply: (st) => { applyAncientRelic(st, 'flintCylinder'); },
-      unlockBy: 'ancient:flintCylinder',
-    },
-    ferroCore: {
-      name: '자기 코어', icon: '🧲', rarity: 'ancient',
-      isAncient: true, characterId: 'feria',
-      triggerAbilities: ['polarField', 'reversePolarity', 'magRail', 'magnetStorm'],
-      desc: '🧲 Feria 전용 · ★별마다 강해짐.\n[기본] 데미지 +16%·둔화 +10% (Feria 시너지 +36%·+20%)\n[★4 각성 1] 자력 능력 max 도달 시 — 데미지 +50%·저체력 처형\n[★8 각성 2] 자력 능력 2개 이상 max — 연쇄 방전 + 데미지 +20%',
-      apply: (st) => { applyAncientRelic(st, 'ferroCore'); },
-      unlockBy: 'ancient:ferroCore',
-    },
     // 💤 Somnia 전용 — 졸음·수면·각성 능력 각성
-    somniaPillow: {
-      name: '꿈의 베개', icon: '💤', rarity: 'ancient',
-      isAncient: true, characterId: 'somnia',
-      triggerAbilities: ['lullaby', 'pillowThrow', 'dreamland', 'daydream'],
-      desc: '💤 Somnia 전용 · ★별마다 강해짐.\n[기본] 데미지 +15%·적 속도 -6% (Somnia 시너지 +35%·-12%)\n[★4 각성 1] 꿈 능력 max 도달 시 — 데미지 +50%·광역 데미지 +20%\n[★8 각성 2] 꿈 능력 2개 이상 max — 깨어난 적이 옆을 깨움(연쇄) + 데미지 +20%',
-      apply: (st) => { applyAncientRelic(st, 'somniaPillow'); },
-      unlockBy: 'ancient:somniaPillow',
-    },
   };
-  // 🌌 v245 — ANCIENT 매핑 & 헬퍼
-  const ANCIENT_RELIC_IDS = ['ariaHarp', 'misakiHourglass', 'elementiaSeal', 'sumikaBrush', 'blanchePrism', 'kairaFang', 'ferroCore', 'somniaPillow', 'flintCylinder', 'albaOath'];
-  const ANCIENT_RELIC_BY_CHAR = { aria: 'ariaHarp', misaki: 'misakiHourglass', elementia: 'elementiaSeal', sumika: 'sumikaBrush', blanche: 'blanchePrism', kaira: 'kairaFang', feria: 'ferroCore', somnia: 'somniaPillow', flinta: 'flintCylinder', alba: 'albaOath' };
-  const ANCIENT_MAX_STARS = 8;
-  function getAncientRelicStars(rid) {
-    return (META.ancientRelics && META.ancientRelics[rid] && META.ancientRelics[rid].stars) || 0;
-  }
-  function setAncientRelicStars(rid, n) {
-    META.ancientRelics = META.ancientRelics || {};
-    META.ancientRelics[rid] = META.ancientRelics[rid] || { stars: 0 };
-    META.ancientRelics[rid].stars = Math.min(ANCIENT_MAX_STARS, Math.max(0, n));
-  }
-  function isAncientUnlocked(rid) {
-    return getAncientRelicStars(rid) >= 1;
-  }
-  // 고대 유물 적용 함수 — apply 에서 호출됨. 별 단계 + 캐릭터 시너지 자동 반영
-  function applyAncientRelic(st, rid) {
-    const stars = getAncientRelicStars(rid);
-    const charId = st && st.selectedCharacter;
-    const synergy = (ANCIENT_RELIC_BY_CHAR[charId] === rid);
-    st.relicEffects.ancientStars = st.relicEffects.ancientStars || {};
-    st.relicEffects.ancientStars[rid] = stars;
-    st.relicEffects.ancientSynergy = st.relicEffects.ancientSynergy || {};
-    st.relicEffects.ancientSynergy[rid] = synergy;
-    st.relicEffects.ancientAwakened = st.relicEffects.ancientAwakened || {};
-    if (rid === 'ariaHarp') {
-      // 기본: 데미지 +20%/+40% (별마다 +5%/+8% 추가)
-      const baseDmg = synergy ? (1.40 + stars * 0.08) : (1.20 + stars * 0.05);
-      st.metaMods.dmgMul = (st.metaMods.dmgMul || 1) * baseDmg;
-      // 각성 1단계 ready 표시 (실제 발동은 능력 max 시)
-      st.relicEffects.ariaHarpReady1 = stars >= 4;
-      st.relicEffects.ariaHarpReady2 = stars >= 8;
-    } else if (rid === 'misakiHourglass') {
-      // 기본: 적 속도 감소 (별마다 추가)
-      const baseSpeedMul = synergy ? (0.70 - stars * 0.02) : (0.85 - stars * 0.01);
-      st.relicEffects.enemySpeedMul *= Math.max(0.40, baseSpeedMul);
-      st.relicEffects.misakiHourglassReady1 = stars >= 4;
-      st.relicEffects.misakiHourglassReady2 = stars >= 8;
-    } else if (rid === 'elementiaSeal') {
-      const baseDmg = synergy ? (1.38 + stars * 0.08) : (1.18 + stars * 0.05);
-      st.metaMods.dmgMul = (st.metaMods.dmgMul || 1) * baseDmg;
-    } else if (rid === 'sumikaBrush') {
-      const baseBoss = synergy ? (1.50 + stars * 0.08) : (1.25 + stars * 0.05);
-      st.metaMods.bossDmgMul = (st.metaMods.bossDmgMul || 1) * baseBoss;
-    } else if (rid === 'blanchePrism') {
-      const baseDmg = synergy ? (1.36 + stars * 0.08) : (1.16 + stars * 0.05);
-      st.metaMods.dmgMul = (st.metaMods.dmgMul || 1) * baseDmg;
-      st.relicEffects.aoeDmgMul *= synergy ? 1.15 : 1.08;
-    } else if (rid === 'kairaFang') {
-      const baseDmg = synergy ? (1.34 + stars * 0.08) : (1.15 + stars * 0.05);
-      st.metaMods.dmgMul = (st.metaMods.dmgMul || 1) * baseDmg;
-      st.metaMods.luckyChanceBonus = (st.metaMods.luckyChanceBonus || 0) + (synergy ? 0.08 : 0.04);
-    } else if (rid === 'albaOath') {
-      // ⚔️ 여명의 서약 — 충전 축 전용. 최대 충전량을 낮춰 "더 자주" 터지게 한다.
-      //   ⚠ 충전 속도를 올리는 게 아니라 문턱을 낮추는 방향이다 — ★4 불침번(속도)과 역할이 겹치지 않는다.
-      const baseDmg = synergy ? (1.36 + stars * 0.08) : (1.16 + stars * 0.05);
-      st.metaMods.dmgMul = (st.metaMods.dmgMul || 1) * baseDmg;
-      const cut = synergy ? 0.72 : 0.85;
-      const ov = st.abilityStatOverrides || (st.abilityStatOverrides = {});
-      const base = (ABILITY_DEFS.dawnEdge && ABILITY_DEFS.dawnEdge.stats && ABILITY_DEFS.dawnEdge.stats.maxCharge) || 100;
-      const cur = (ov.dawnEdge && ov.dawnEdge.maxCharge) || base;
-      ov.dawnEdge = Object.assign({}, ov.dawnEdge, { maxCharge: Math.max(40, Math.round(cur * cut)) });
-    } else if (rid === 'flintCylinder') {
-      // 🔫 부싯돌 실린더 — 탄창 축 전용. 실린더 칸수를 직접 늘린다.
-      //   _flintCyl() 은 state.abilityStatOverrides.flintShot.cylinder 를 먼저 읽으므로 여기로 개입한다.
-      //   ⚠ 칸수를 늘리면 "마지막 한 발"까지 가는 길이 길어진다 — 그래서 데미지도 같이 준다.
-      const baseDmg = synergy ? (1.38 + stars * 0.08) : (1.18 + stars * 0.05);
-      st.metaMods.dmgMul = (st.metaMods.dmgMul || 1) * baseDmg;
-      const add = synergy ? 2 : 1;
-      const ov = st.abilityStatOverrides || (st.abilityStatOverrides = {});
-      const cur = (ov.flintShot && ov.flintShot.cylinder) ||
-                  ((ABILITY_DEFS.flintShot && ABILITY_DEFS.flintShot.stats && ABILITY_DEFS.flintShot.stats.cylinder) || 6);
-      ov.flintShot = Object.assign({}, ov.flintShot, { cylinder: cur + add });
-    } else if (rid === 'ferroCore') {
-      const baseDmg = synergy ? (1.36 + stars * 0.08) : (1.16 + stars * 0.05);
-      st.metaMods.dmgMul = (st.metaMods.dmgMul || 1) * baseDmg;
-      st.metaMods.slowMul = (st.metaMods.slowMul || 1) * (synergy ? 1.20 : 1.10);
-    } else if (rid === 'somniaPillow') {
-      // 💤 졸음 = 적이 느려진다. slowMul 이 아니라 enemySpeedMul 을 쓴다 —
-      //    slowMul 소비식 max(0.10, 1-0.65x) 는 x>1.3846 이 전부 하한(死값)이라 이미 6명이 포화 상태.
-      const baseDmg = synergy ? (1.35 + stars * 0.08) : (1.15 + stars * 0.05);
-      st.metaMods.dmgMul = (st.metaMods.dmgMul || 1) * baseDmg;
-      st.relicEffects.enemySpeedMul *= synergy ? 0.88 : 0.94;
-    }
-  }
-  // 각성 효과 발동 — 능력 max 도달 시 체크
-  function checkAncientAwakening(maxedAbilityId) {
-    if (!state || !state.activeRelics) return;
-    for (const r of state.activeRelics) {
-      if (!r.isAncient) continue;
-      const trig = RELICS[r.id] && RELICS[r.id].triggerAbilities;
-      if (!trig || !trig.includes(maxedAbilityId)) continue;
-      // 카운트 (이번 게임에서 이 유물 관련 max 도달한 능력 개수)
-      state.ancientMaxedCount = state.ancientMaxedCount || {};
-      state.ancientMaxedCount[r.id] = state.ancientMaxedCount[r.id] || new Set();
-      if (state.ancientMaxedCount[r.id].has(maxedAbilityId)) continue;
-      state.ancientMaxedCount[r.id].add(maxedAbilityId);
-      const count = state.ancientMaxedCount[r.id].size;
-      const aw = state.relicEffects.ancientAwakened[r.id] || 0;
-      // ★4 각성 1단계 — 첫 max 도달 시
-      const ready1 = getAncientRelicStars(r.id) >= 4;   // 🆕 별 기준 일반화 (유물 4종+ 대응)
-      const ready2 = getAncientRelicStars(r.id) >= 8;
-      if (count >= 1 && ready1 && aw < 1) {
-        activateAncientAwaken(r, 1);
-        state.relicEffects.ancientAwakened[r.id] = 1;
-      }
-      // ★8 각성 2단계 — 두 개 이상 max
-      if (count >= 2 && ready2 && aw < 2) {
-        activateAncientAwaken(r, 2);
-        state.relicEffects.ancientAwakened[r.id] = 2;
-      }
-    }
-  }
-  function activateAncientAwaken(relic, level) {
-    if (relic.id === 'ariaHarp') {
-      if (level === 1) {
-        // 데미지 +50% + 적 속도 -10%
-        state.metaMods.dmgMul *= 1.50;
-        state.relicEffects.enemySpeedMul *= 0.90;
-        toast(`🎵✨ 여신의 하프 · 천상의 화음 각성!`);
-      } else if (level === 2) {
-        // 처치 시 음표 폭발 (chainLightning + aoeDmgMul 추가)
-        state.relicEffects.chainLightning = true;
-        state.relicEffects.aoeDmgMul *= 1.30;
-        toast(`🎵🌟 여신의 하프 · 영원한 합창 각성!`);
-      }
-    } else if (relic.id === 'misakiHourglass') {
-      if (level === 1) {
-        // 데미지 +40% + 적 속도 추가 감소
-        state.metaMods.dmgMul *= 1.40;
-        state.relicEffects.enemySpeedMul *= 0.85;
-        toast(`⌛✨ 차원의 모래시계 · 시간의 정원 각성!`);
-      } else if (level === 2) {
-        // 30초마다 모든 적 3초 정지 (roundStartTimeStop 와 별개로 주기 작동)
-        state.relicEffects.ancientPeriodicStop = true;
-        state.relicEffects.ancientPeriodicStopTimer = 1800; // 60fps * 30s
-        toast(`⌛🌟 차원의 모래시계 · 종말의 모래 각성!`);
-      }
-    } else if (relic.id === 'elementiaSeal') {
-      if (level === 1) {
-        state.metaMods.dmgMul *= 1.50;
-        state.relicEffects.aoeDmgMul *= 1.20;
-        toast(`🔮✨ 정령왕의 인장 · 원소 군림 각성!`);
-      } else if (level === 2) {
-        state.relicEffects.chainLightning = true;
-        state.relicEffects.aoeDmgMul *= 1.30;
-        toast(`🔮🌟 정령왕의 인장 · 만상 강림 각성!`);
-      }
-    } else if (relic.id === 'sumikaBrush') {
-      if (level === 1) {
-        state.metaMods.bossDmgMul *= 1.40;
-        state.relicEffects.executeBelow = Math.max(state.relicEffects.executeBelow || 0, 0.12);
-        toast(`🖌️✨ 먹의 인장 · 적묵 각성!`);
-      } else if (level === 2) {
-        state.relicEffects.executeBelow = Math.max(state.relicEffects.executeBelow || 0, 0.20);
-        state.metaMods.dmgMul *= 1.20;
-        toast(`🖌️🌟 먹의 인장 · 묵사신 각성!`);
-      }
-    } else if (relic.id === 'blanchePrism') {
-      if (level === 1) {
-        state.metaMods.dmgMul *= 1.50;
-        state.relicEffects.aoeDmgMul *= 1.20;
-        toast(`🌈✨ 분광의 프리즘 · 굴절 각성!`);
-      } else if (level === 2) {
-        state.relicEffects.chainLightning = true;
-        state.relicEffects.aoeDmgMul *= 1.30;
-        toast(`🌈🌟 분광의 프리즘 · 백광 각성!`);
-      }
-    } else if (relic.id === 'kairaFang') {
-      if (level === 1) {
-        state.metaMods.dmgMul *= 1.50;
-        state.relicEffects.executeBelow = Math.max(state.relicEffects.executeBelow || 0, 0.10);
-        toast(`🐾✨ 야수왕의 송곳니 · 광포 각성!`);
-      } else if (level === 2) {
-        state.relicEffects.chainLightning = true;
-        state.metaMods.dmgMul *= 1.20;
-        toast(`🐾🌟 야수왕의 송곳니 · 포식 각성!`);
-      }
-    } else if (relic.id === 'ferroCore') {
-      if (level === 1) {
-        state.metaMods.dmgMul *= 1.50;
-        state.relicEffects.executeBelow = Math.max(state.relicEffects.executeBelow || 0, 0.10);
-        toast(`🧲✨ 자기 코어 · 자극 각성!`);
-      } else if (level === 2) {
-        state.relicEffects.chainLightning = true;
-        state.metaMods.dmgMul *= 1.20;
-        toast(`🧲🌟 자기 코어 · 단극 각성!`);
-      }
-    } else if (relic.id === 'albaOath') {
-      if (level === 1) {
-        state.metaMods.dmgMul *= 1.50;
-        toast(`⚔️✨ 여명의 서약 · 박명 각성!`);
-      } else if (level === 2) {
-        // 일격의 최대 배율을 올린다 — 이 캐릭의 축(한 번의 무게)을 그대로 강화
-        const ov = state.abilityStatOverrides || (state.abilityStatOverrides = {});
-        const base = (ABILITY_DEFS.dawnEdge && ABILITY_DEFS.dawnEdge.stats && ABILITY_DEFS.dawnEdge.stats.peakMul) || 3.0;
-        const cur = (ov.dawnEdge && ov.dawnEdge.peakMul) || base;
-        ov.dawnEdge = Object.assign({}, ov.dawnEdge, { peakMul: cur + 1.5 });
-        state.metaMods.dmgMul *= 1.20;
-        toast(`⚔️🌟 여명의 서약 · 백야 각성!`);
-      }
-    } else if (relic.id === 'flintCylinder') {
-      if (level === 1) {
-        state.metaMods.dmgMul *= 1.50;
-        toast(`🔫✨ 부싯돌 실린더 · 격발 각성!`);
-      } else if (level === 2) {
-        // 마지막 한 발 위력 상승 — lastMul 을 직접 올린다(단일 출처 override 경유)
-        const ov = state.abilityStatOverrides || (state.abilityStatOverrides = {});
-        const cur = (ov.flintShot && ov.flintShot.lastMul) ||
-                    ((ABILITY_DEFS.flintShot && ABILITY_DEFS.flintShot.stats && ABILITY_DEFS.flintShot.stats.lastMul) || 3.0);
-        ov.flintShot = Object.assign({}, ov.flintShot, { lastMul: cur + 1.5 });
-        state.metaMods.dmgMul *= 1.20;
-        toast(`🔫🌟 부싯돌 실린더 · 최후 각성!`);
-      }
-    } else if (relic.id === 'somniaPillow') {
-      if (level === 1) {
-        state.metaMods.dmgMul *= 1.50;
-        state.relicEffects.aoeDmgMul *= 1.20;   // 깨울 때의 폭발은 광역/영역 — 베개던지기·꿈나라·백일몽에 실제로 곱해진다
-        toast(`💤✨ 꿈의 베개 · 선잠 각성!`);
-      } else if (level === 2) {
-        state.relicEffects.chainLightning = true;   // 하나가 깨면 옆도 깬다
-        state.metaMods.dmgMul *= 1.20;
-        toast(`💤🌟 꿈의 베개 · 숙면 각성!`);
-      }
-    }
-    state.comboFlash = 60;
-    state.comboFlashColor = '#ff88ff';
-    if (typeof shake === 'function') shake(18, 24);
-    if (typeof SFX !== 'undefined' && SFX.combo) SFX.combo();
-  }
   const RELIC_IDS = Object.keys(RELICS);
 
   // 🖼 v247 — 유물 이미지 로더 (lazy preload + emoji 폴백)
@@ -21950,16 +21638,10 @@
       const have = getUnlockedAchievements();
       return have.has(achId);
     }
-    // 🌌 v245 — 고대 유물: 가챠로 별 1+ 모은 경우 해금
-    if (r.unlockBy.startsWith('ancient:')) {
-      const ancientId = r.unlockBy.slice('ancient:'.length);
-      return isAncientUnlocked(ancientId);
-    }
     return false;
   }
   function getDiscoveredRelics() {
-    // 일반 유물 풀 — ancient 는 별도 시스템에서 처리되므로 항상 제외
-    return RELIC_IDS.filter(id => !RELICS[id].isAncient && isRelicUnlocked(id));
+    return RELIC_IDS.filter(id => isRelicUnlocked(id));
   }
 
   // 보스 처치 시 호출 — 확률적으로 3개 유물 제안
@@ -22003,20 +21685,6 @@
         break;
       }
       if (pick) offering.push(pick);
-    }
-    // 🌌 v245 — 고대 유물 주입 (극저 확률, 현재 캐릭터의 매칭 유물만)
-    if (offering.length > 0) {
-      const charId = state.selectedCharacter;
-      const ancientId = ANCIENT_RELIC_BY_CHAR[charId];
-      if (ancientId && isAncientUnlocked(ancientId) && !ownedSet.has(ancientId)) {
-        // 기본 0.3% + 라운드 보너스 (최대 0.5% 추가)
-        const roundBonus = Math.min(0.005, (state.round || 1) * 0.0001);
-        if (Math.random() < (0.003 + roundBonus)) {
-          // 3장 중 무작위 1장 교체 (운 좋으면 선택지에 등장)
-          const slot = Math.floor(Math.random() * offering.length);
-          offering[slot] = ancientId;
-        }
-      }
     }
     return offering.length > 0 ? offering : null;
   }
@@ -24622,17 +24290,6 @@
       merged.abilityPerma   = mergeMaxObject(META.abilityPerma,   server.abilityPerma);    // 능력 영구
       merged.charStars      = mergeMaxObject(META.charStars,      server.charStars);       // 캐릭터 별
       merged.gachaUnlocked  = mergeMaxObject(META.gachaUnlocked,  server.gachaUnlocked);   // 가챠 누적
-      // 🌌 v245 — 고대 유물 별 동기화 (중첩 객체 구조 { rid: { stars: N } })
-      merged.ancientRelics = (() => {
-        const out = { ...(server.ancientRelics || {}) };
-        const loc = META.ancientRelics || {};
-        for (const k of new Set([...Object.keys(out), ...Object.keys(loc)])) {
-          const oS = (out[k] && out[k].stars) || 0;
-          const lS = (loc[k] && loc[k].stars) || 0;
-          out[k] = { stars: Math.max(oS, lS) };
-        }
-        return out;
-      })();
       merged.charUsage      = mergeMaxObject(META.charUsage,      server.charUsage);       // 캐릭터 사용 기록 (구)
       merged.charactersUsed = mergeMaxObject(META.charactersUsed, server.charactersUsed);  // 캐릭터 사용 기록 (신)
       merged.repeatCounts   = mergeMaxObject(META.repeatCounts,   server.repeatCounts);    // 반복 업적 카운트
@@ -26093,9 +25750,6 @@
       },
       rates: { SR: 0.05, SSR: 0.01 },               // 나머지(0.94) = 스타더스트
       featured: 'elementia',
-      ancientRelic: 'elementiaSeal',                // UI 대표 표시용
-      ancientRelicPool: ['elementiaSeal', 'sumikaBrush'],   // 가챠 유물 풀 (적중 시 랜덤)
-      ancientRelicRate: 0.005,
     },
     {
       id: 'ariaMisa',
@@ -26109,9 +25763,6 @@
       },
       rates: { SR: 0.05, SSR: 0.01 },
       featured: 'aria',
-      ancientRelic: 'ariaHarp',                     // UI 대표 표시용
-      ancientRelicPool: ['ariaHarp', 'misakiHourglass'],   // 가챠 유물 풀 (적중 시 랜덤)
-      ancientRelicRate: 0.005,
     },
     {
       id: 'prismBeast',
@@ -26125,9 +25776,6 @@
       },
       rates: { SR: 0.05, SSR: 0.01 },
       featured: 'blanche',
-      ancientRelic: 'blanchePrism',
-      ancientRelicPool: ['blanchePrism', 'kairaFang'],
-      ancientRelicRate: 0.005,
     },
     {
       id: 'feriaSomnia',
@@ -26141,9 +25789,6 @@
       },
       rates: { SR: 0.05, SSR: 0.01 },
       featured: 'feria',
-      ancientRelic: 'ferroCore',
-      ancientRelicPool: ['ferroCore', 'somniaPillow'],
-      ancientRelicRate: 0.005,
     },
   ];
   // 현재 선택된 배너 인덱스 (META 에 저장)
@@ -26320,48 +25965,9 @@
   function permaAoeMul(abilityId)   { const p = getCharStarPerks(abilityId); return p ? p.aoeMul : 1; }
   // 🌌 v245 — 고대 유물 가챠 처리 (캐릭터 별 시스템과 동일 패턴)
   // 새로 획득 시 ★1 해금, 중복 시 ★+1 (최대 ★8), 만렙 후 중복은 스타더스트 환산
-  const ANCIENT_RELIC_REFUND = 50000; // (구) 미사용 — v612부터 별조각으로 전환
-  const ANCIENT_RELIC_SHARD = 100;    // 🛸 v612 — 고대유물 만렙 중복 → 별조각 (초희귀 보상, 조정 가능)
-  function pullAncientRelic(rid) {
-    META.ancientRelics = META.ancientRelics || {};
-    META.ancientRelics[rid] = META.ancientRelics[rid] || { stars: 0 };
-    const oldStars = META.ancientRelics[rid].stars || 0;
-    const isNew = oldStars === 0;
-    let refund = 0;
-    let starUp = false;
-    let shardGain = 0;
-    if (isNew) {
-      META.ancientRelics[rid].stars = 1;
-    } else if (oldStars < ANCIENT_MAX_STARS) {
-      META.ancientRelics[rid].stars = oldStars + 1;
-      starUp = true;
-    } else {
-      // 🛸 v612 — 만렙 후 중복 → 별조각 (스타더스트 폐지, 가챠 출력 통일)
-      shardGain = ANCIENT_RELIC_SHARD;
-      META.starShards = (META.starShards || 0) + shardGain;
-      META.starShardsEarned = (META.starShardsEarned || 0) + shardGain;
-    }
-    saveMeta();
-    return {
-      rarity: 'ancient',
-      isAncient: true,
-      ancientId: rid,
-      relicName: RELICS[rid].name,
-      relicIcon: RELICS[rid].icon,
-      isNew, starUp, refund, shardGain,
-      newStars: META.ancientRelics[rid].stars,
-    };
-  }
   // 한 번 뽑기 — 현재 선택된 배너의 풀/확률 사용
   function gachaPullOne() {
     const banner = getCurrentBanner();
-    // 🌌 v245 — 고대 유물 별도 결과 (캐릭터와 동시 X)
-    // 0.5% 적중 → 유물만 반환하고 종료 (캐릭터 풀 진입 X)
-    // 빗나가면 → 캐릭터 풀로 진입 (R/SR/SSR 추첨)
-    const _relicPool = (banner.ancientRelicPool && banner.ancientRelicPool.length) ? banner.ancientRelicPool : (banner.ancientRelic ? [banner.ancientRelic] : []);
-    if (_relicPool.length && Math.random() < (banner.ancientRelicRate || 0)) {
-      return pullAncientRelic(_relicPool[Math.floor(Math.random() * _relicPool.length)]);
-    }
     const rates = banner.rates;
     const r = Math.random();
     let rarity;
@@ -29381,8 +28987,7 @@
         const increment = 1 + (c.lucky || 0);
         a.level = Math.min(a.level + increment, maxLvFor(a.id));
         // 🌌 v245 — 능력 max 도달 시 고대 유물 각성 트리거 체크
-        if (a.level >= maxLvFor(a.id)) checkAncientAwakening(a.id);
-        // 럭키 효과 표시
+                // 럭키 효과 표시
         if (c.lucky > 0) state.luckyCount = (state.luckyCount || 0) + 1; // 업적 추적
         if (c.lucky === 1) {
           toast(`🍀 LUCKY! ${ABILITY_DEFS[a.id].name} +2 레벨!`);
@@ -30259,23 +29864,6 @@
       }
     }
     // 🌌 v245 — 종말의 모래 (Misaki 모래시계 ★8 각성 2단계) — 30초마다 모든 적 3초 정지
-    if (state.relicEffects && state.relicEffects.ancientPeriodicStop) {
-      state.relicEffects.ancientPeriodicStopTimer = (state.relicEffects.ancientPeriodicStopTimer || 0) - 1;
-      if (state.relicEffects.ancientPeriodicStopTimer <= 0) {
-        state.relicEffects.ancientPeriodicStopTimer = 1800; // 30초
-        // 모든 적 3초 정지 (기존 자비의 망토 패턴 동일)
-        const fr = 180;
-        for (const en of state.enemies) {
-          if (en.hp <= 0) continue;
-          en.slowFrames = Math.max(en.slowFrames || 0, fr);
-          if (!en.isBoss) en.timeStopped = state.t + fr;
-        }
-        toast('⌛✨ 종말의 모래');
-        state.comboFlash = 30;
-        state.comboFlashColor = '#ff88ff';
-        shake(8, 12);
-      }
-    }
     // 번개 줄기 life 관리
     if (state.thunderStrikes) {
       for (const t of state.thunderStrikes) t.life--;
@@ -35012,7 +34600,7 @@
     if (!ABILITY_DEFS[id]) return;
     const existing = state.tower.abilities.find(a => a.id === id);
     if (existing) {
-      if (!isAtMax(existing)) { existing.level = Math.min(existing.level + 1, maxLvFor(id)); if (existing.level >= maxLvFor(id)) checkAncientAwakening(id); }
+      if (!isAtMax(existing)) { existing.level = Math.min(existing.level + 1, maxLvFor(id)); }
       return;
     }
     const def = ABILITY_DEFS[id];
@@ -35032,8 +34620,7 @@
     const a = pool[Math.floor(Math.random() * pool.length)];
     const _before = a.level;
     a.level = Math.min(a.level + n, maxLvFor(a.id));
-    if (a.level >= maxLvFor(a.id)) checkAncientAwakening(a.id);
-    _lastUpgraded = { id: a.id, level: a.level, delta: a.level - _before };
+        _lastUpgraded = { id: a.id, level: a.level, delta: a.level - _before };
     return ABILITY_DEFS[a.id].name;
   }
   // 영구 버프 (어센던트) 적용
@@ -35379,7 +34966,7 @@
               const pool = state.tower.abilities.filter(a => !isAtMax(a));
               if (!pool.length) return '엮을 능력이 없었다.';
               const picks = pool.slice().sort(() => Math.random() - 0.5).slice(0, Math.min(2, pool.length));
-              const names = picks.map(a => { a.level = Math.min(a.level + 1, maxLvFor(a.id)); if (a.level >= maxLvFor(a.id)) checkAncientAwakening(a.id); _evIconPush(a.id, 'up'); return ABILITY_DEFS[a.id].name; });
+              const names = picks.map(a => { a.level = Math.min(a.level + 1, maxLvFor(a.id)); _evIconPush(a.id, 'up'); return ABILITY_DEFS[a.id].name; });
               return `💞 ${names.join(' · ')} — 한 쌍으로 강화!`;
             } },
           { label: '사양한다', desc: '다음에', resolve() { return '큐피드가 윙크한다.'; } },
@@ -35543,7 +35130,7 @@
     const pool = (state.tower.abilities || []).filter(a => !isAtMax(a));
     if (!pool.length) return [];
     pool.sort((a, b) => a.level - b.level);
-    return pool.slice(0, Math.min(n, pool.length)).map(a => { a.level = Math.min(a.level + 1, maxLvFor(a.id)); if (a.level >= maxLvFor(a.id)) checkAncientAwakening(a.id); _evIconPush(a.id, 'up'); return ABILITY_DEFS[a.id].name; });
+    return pool.slice(0, Math.min(n, pool.length)).map(a => { a.level = Math.min(a.level + 1, maxLvFor(a.id)); _evIconPush(a.id, 'up'); return ABILITY_DEFS[a.id].name; });
   }
   // (구 평면 EVENT_DEFS 제거됨 — 이벤트는 EVENT_NPCS[key].events 사용)
   // 💀 저주 — 낮은 확률로 강제 발동 (선택 없이 디버프). apply()가 결과 문구 반환.
@@ -36143,33 +35730,6 @@
     const ability = { label: `🔧 ${nm} 강화`, desc: `${nm} +1 레벨`, resolve() { return _evBoostAbility(abId); } };
     return { title, text, choices: [buff, ability] };
   }
-  // 🆕 아리아/미사키 고유 유물(ariaHarp/misakiHourglass) 획득 — 별도 기습 이벤트(여러 이벤트 중 랜덤). 가챠 해금 + 미보유일 때만 풀에 포함.
-  function _ancientAvail(charId) {
-    const rid = (typeof ANCIENT_RELIC_BY_CHAR !== 'undefined') ? ANCIENT_RELIC_BY_CHAR[charId] : null;
-    if (!rid || typeof isAncientUnlocked !== 'function' || !isAncientUnlocked(rid)) return false;   // 가챠로 해금된 경우만
-    return !(state.activeRelics || []).some(r => r.id === rid);   // 이미 보유 중이면 풀에서 제외
-  }
-  function _charRelicEv(charId) {
-    const rid = ANCIENT_RELIC_BY_CHAR[charId];
-    const relic = RELICS[rid]; const rn = relic ? relic.name : '고유 유물';
-    const lore = {
-      aria:   { title: '🌌 천공의 하프', text: '"이 하프… 너라면 제대로 울려줄 수 있겠지. 받아."' },
-      flinta: { title: '🌌 부싯돌 실린더', text: '"…한 칸 더 있어. 착각하진 마, 네가 오래 버텨서 주는 거야."' },
-      alba:   { title: '🌌 여명의 서약', text: '"이건 밤을 견딘 값이야. …너도 견뎠으니, 받아."' },
-      misaki: { title: '🌌 시간의 모래시계', text: '"이 모래시계, 네 시간에 맞춰 돌아갈 거야. 가져."' },
-      elementia: { title: '🌌 정령왕의 인장', text: '"정령들이 너를 인정했어. 이 인장, 받아줘."' },
-      sumika:    { title: '🌌 먹의 인장',     text: '"…이 붓에 네 이름을 새긴다. 받아."' },
-      blanche:   { title: '🌌 분광의 프리즘',   text: '"이 프리즘, 네 빛으로 채워봐. 일곱 색이 널 따를 거야."' },
-      kaira:     { title: '🌌 야수왕의 송곳니', text: '"이 송곳니… 네 안의 야수가 반응하고 있어. 가져."' },
-      feria:     { title: '🌌 자기 코어',       text: '"이 코어… 네 극에 맞춰 돌기 시작했어. 가져."' },
-      somnia:    { title: '🌌 꿈의 베개',       text: '"이거 베고 자면 좋은 꿈 꿔. …줄게. 난 아무 데서나 잘 자니까."' },
-    };
-    const lo = lore[charId] || { title: `🌌 ${rn}`, text: '"이 유물, 너에게 어울려."' };
-    return { title: lo.title, text: lo.text, choices: [
-      { label: `🌌 ${rn} 획득`, desc: '고유 유물 획득 — 능력 각성', resolve() { try { acquireRelic(rid); } catch (e) {} return `🌌 ${rn}! 고유 능력이 각성한다.`; } },
-      { label: '사양한다', desc: '다음에', resolve() { return '유물이 빛을 거둔다.'; } },
-    ] };
-  }
   // 캐릭터별 기습 이벤트 풀 — { avail?, make } 배열. openCharEvent에서 가능한 것 중 랜덤 하나.
   const CHAR_AMBUSH = {
     marine:   [ { make: () => _charEv('🌊 마린의 한류',     '"내 어뢰에 한기를 더 실을까, 아니면 어뢰 자체를 키울까?"',   'dmg',  20, 'torpedo') } ],
@@ -36179,28 +35739,18 @@
     chloe:    [ { make: () => _charEv('⚗ 클로에의 배합',      '"부식을 더 넓게 퍼뜨릴까, 아니면 한 곳을 진하게 녹일까?"', 'dmg',  20, 'acidFlask') } ],
     lara:     [ { make: () => _charEv('🎭 라라의 무대',       '"인형을 더 풀어놓을까, 아니면 실을 더 날카롭게 벼릴까?"',   'dmg',  20, 'marionette') } ],
     galatea:  [ { make: () => _charEv('🗿 갈라테아의 시선',   '"넓게 굳혀둘까, 아니면 한 놈을 완전히 부숴버릴까?"',       'dmg',  20, 'petrifyGaze') } ],
-    blanche:  [ { make: () => _charEv('🌈 블랑슈의 분광',      '"빛을 더 넓게 흩뿌릴까, 아니면 한 점으로 모아 태울까?"',   'dmg',  22, 'prismBolt') },
-                { avail: () => _ancientAvail('blanche'), make: () => _charRelicEv('blanche') } ],
-    alba:     [ { make: () => _charEv('⚔️ 알바의 검날',       '"더 빨리 차오르게 할까, 아니면 한 번의 무게를 늘릴까?"',    'dmg',  22, 'dawnEdge') },
-                { avail: () => _ancientAvail('alba'), make: () => _charRelicEv('alba') } ],
-    flinta:   [ { make: () => _charEv('🐈 플린타의 실린더',    '"탄을 더 채워둘까, 아니면 마지막 한 발만 더 벼릴까?"',      'dmg',  22, 'flintShot') },
-                { avail: () => _ancientAvail('flinta'), make: () => _charRelicEv('flinta') } ],
-    kaira:    [ { make: () => _charEv('🐾 카이라의 사냥',      '"인간형으로 사거리를 늘릴까, 야수형으로 물어뜯을까?"',     'dmg',  22, 'huntingClaw') },
-                { avail: () => _ancientAvail('kaira'), make: () => _charRelicEv('kaira') } ],
-    feria:    [ { make: () => _charEv('🧲 페리아의 자장',      '"당겨서 뭉칠까, 밀어서 흩을까?"',                       'dmg',  22, 'polarField') },
-                { avail: () => _ancientAvail('feria'), make: () => _charRelicEv('feria') } ],
-    somnia:   [ { make: () => _charEv('💤 솜니아의 자장가',    '"더 세게 재울까… 아니면, 깰 때 더 아프게 해줄까?"',       'dmg',  22, 'lullaby') },
-                { avail: () => _ancientAvail('somnia'), make: () => _charRelicEv('somnia') } ],
+    blanche:  [ { make: () => _charEv('🌈 블랑슈의 분광',      '"빛을 더 넓게 흩뿌릴까, 아니면 한 점으로 모아 태울까?"',   'dmg',  22, 'prismBolt') } ],
+    alba:     [ { make: () => _charEv('⚔️ 알바의 검날',       '"더 빨리 차오르게 할까, 아니면 한 번의 무게를 늘릴까?"',    'dmg',  22, 'dawnEdge') } ],
+    flinta:   [ { make: () => _charEv('🐈 플린타의 실린더',    '"탄을 더 채워둘까, 아니면 마지막 한 발만 더 벼릴까?"',      'dmg',  22, 'flintShot') } ],
+    kaira:    [ { make: () => _charEv('🐾 카이라의 사냥',      '"인간형으로 사거리를 늘릴까, 야수형으로 물어뜯을까?"',     'dmg',  22, 'huntingClaw') } ],
+    feria:    [ { make: () => _charEv('🧲 페리아의 자장',      '"당겨서 뭉칠까, 밀어서 흩을까?"',                       'dmg',  22, 'polarField') } ],
+    somnia:   [ { make: () => _charEv('💤 솜니아의 자장가',    '"더 세게 재울까… 아니면, 깰 때 더 아프게 해줄까?"',       'dmg',  22, 'lullaby') } ],
     sakura:   [ { make: () => _charEv('🌸 사쿠라의 만개',     '"꽃잎처럼 흩날리는 칼날, 더 날카롭게 해줄까?"',             'dmg',  22, 'sakuraSlash') } ],
     luna:     [ { make: () => _charEv('🌙 루나의 월광',       '"달빛을 더 퍼뜨릴까, 월광탄을 더 키울까?"',                 'dmg',  18, 'moonShot') } ],
-    aria:     [ { make: () => _charEv('🌟 아리아의 합창',     '"이 별의 노래, 너한테 맞춰 부를게. 어느 쪽이 좋아?"',       'dmg',  24, 'starSong') },
-                { avail: () => _ancientAvail('aria'),   make: () => _charRelicEv('aria') } ],
-    misaki:   [ { make: () => _charEv('🦋 미사키의 시간',     '"시간을 멈춰 급소를 열까, 시공나비를 키울까?"',             'boss', 22, 'timeButterfly') },
-                { avail: () => _ancientAvail('misaki'), make: () => _charRelicEv('misaki') } ],
-    elementia:[ { make: () => _charEv('🔮 엘레미아의 정령',   '"정령에게 힘을 더 실을까, 아니면 꼬마정령 자체를 키울까?"', 'dmg',  24, 'spritling') },
-                { avail: () => _ancientAvail('elementia'), make: () => _charRelicEv('elementia') } ],
-    sumika:   [ { make: () => _charEv('🖌️ 스미카의 먹',      '"급소를 노릴까, 아니면 먹의 한 획을 더 깊게 새길까?"',       'boss', 24, 'inkSlash') },
-                { avail: () => _ancientAvail('sumika'), make: () => _charRelicEv('sumika') } ],
+    aria:     [ { make: () => _charEv('🌟 아리아의 합창',     '"이 별의 노래, 너한테 맞춰 부를게. 어느 쪽이 좋아?"',       'dmg',  24, 'starSong') } ],
+    misaki:   [ { make: () => _charEv('🦋 미사키의 시간',     '"시간을 멈춰 급소를 열까, 시공나비를 키울까?"',             'boss', 22, 'timeButterfly') } ],
+    elementia:[ { make: () => _charEv('🔮 엘레미아의 정령',   '"정령에게 힘을 더 실을까, 아니면 꼬마정령 자체를 키울까?"', 'dmg',  24, 'spritling') } ],
+    sumika:   [ { make: () => _charEv('🖌️ 스미카의 먹',      '"급소를 노릴까, 아니면 먹의 한 획을 더 깊게 새길까?"',       'boss', 24, 'inkSlash') } ],
     cardista: [ { make: () => _charEv('🎴 카르타의 패',       '"이번 패, 골드로 받을래 아니면 카드를 더 키울래?"',         'gold', 22, 'cardThrow') } ],
     levina:   [ { make: () => _charEv('⚡ 레비나의 뇌격',      '"번개를 더 키울까, 아니면 낙뢰 자체를 강하게 할까?"',       'dmg',  22, 'stormBrand') } ],
     trina:    [ { make: () => _charEv('🎭 트리나의 무대',      '"환영을 늘릴까, 아니면 한 기를 더 진하게 만들까?"',       'dmg',  20, 'phantomStage') } ],
@@ -36211,7 +35761,7 @@
     if (!ABILITY_DEFS[id]) return '강화 실패.';
     const nm = ABILITY_DEFS[id].name;
     const ab = state.tower.abilities.find(a => a.id === id);
-    if (ab && !isAtMax(ab)) { ab.level = Math.min(ab.level + 1, maxLvFor(id)); if (ab.level >= maxLvFor(id)) checkAncientAwakening(id); _evIconPush(id, 'up'); return `🔧 ${nm} +1 (Lv${ab.level})!`; }
+    if (ab && !isAtMax(ab)) { ab.level = Math.min(ab.level + 1, maxLvFor(id)); _evIconPush(id, 'up'); return `🔧 ${nm} +1 (Lv${ab.level})!`; }
     if (ab) { const r = _shopUpgradeRandom(1); if (r && _lastUpgraded) _evIconPush(_lastUpgraded.id, 'up'); return r ? `${nm}는 이미 최대! 대신 ${r} +1.` : `${nm}는 이미 최대 레벨!`; }
     _shopGainAbility(id); _evIconPush(id, 'gained'); return `🎴 ${nm} 재획득!`;
   }
@@ -40837,7 +40387,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 795;
+  const APP_VERSION = 796;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
