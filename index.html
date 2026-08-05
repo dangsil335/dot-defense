@@ -4935,6 +4935,17 @@
   .rank-nick.len-lg .rank-title { font-size: 10px; margin-right: 3px; }
   .rank-nick.len-xl .rank-title { font-size: 9px;  margin-right: 2px; }
   .rank-nick > span { display: inline; }
+  /* 🏷 v794 — 칭호 전용 줄(닉네임 아래). 아래 .rank-nick.len-* .rank-title 규칙들은
+     칭호가 .rank-nick 밖으로 나가면서 랭킹 행에선 더 이상 매칭되지 않는다 — 크기는 여기서 준다. */
+  .rank-titleline {
+    margin-top: 1px; line-height: 1.15; min-width: 0;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .rank-titleline.len-md .tp-text, .rank-titleline.len-md .rank-title { font-size: 11px; }
+  .rank-titleline.len-lg .tp-text, .rank-titleline.len-lg .rank-title { font-size: 10px; }
+  .rank-titleline.len-xl .tp-text, .rank-titleline.len-xl .rank-title { font-size: 9px; }
+  .rank-titleline.len-lg .title-emblem { width: 11px; height: 11px; }
+  .rank-titleline.len-xl .title-emblem { width: 10px; height: 10px; }
   .rank-meta {
     font-size: 11px; color: #7a8090;
     white-space: nowrap;
@@ -5032,6 +5043,14 @@
     font-weight: bold; color: #fff; font-size: 11.5px; line-height: 1.25;
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
+  /* 🏷 v794 — 칭호 전용 줄. 닉네임은 위에서 폭을 다 쓰고, 칭호는 여기서 따로 잘린다. */
+  #globalRankScreen .podium-titleline {
+    margin-top: 2px; line-height: 1.1;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  #globalRankScreen .podium-titleline .tp-text,
+  #globalRankScreen .podium-titleline .rank-title { font-size: 9px; }
+  #globalRankScreen .podium-titleline .title-emblem { width: 10px; height: 10px; }
   #globalRankScreen .podium-score { font-weight: bold; color: #ffd479; font-size: 13px; font-family: ui-monospace,'Courier New',monospace; }
   /* 4위↓ — 세로 3:4 썸네일. 일러 22종 전부 머리 상단 1.2~10.1% → object-position 50% 0% 로 얼굴 확보 */
   #globalRankScreen .rank-row { grid-template-columns: 58px minmax(0,1fr) minmax(120px,max-content); position: relative; overflow: hidden; }
@@ -25899,11 +25918,15 @@
     card.className = `podium-card p-${rankNum}${isMe ? ' me' : ''}`;
     const ch = CHARACTERS[r.character];
     card.style.setProperty('--ac', ch ? (ch.color || '#7ad7ff') : '#7ad7ff');
+    // 🏷 v794 — 닉네임이 먼저(한 줄 전체), 칭호는 그 아래 줄.
+    //   예전엔 한 줄에 [칭호][닉네임] 이라 시즌 칭호처럼 긴 게 붙으면 닉네임이 통째로 잘렸다.
+    const _tt = titleHTML(r.title);
     card.innerHTML = `
       <div class="podium-art"><img alt=""></div>
       <div class="podium-medal">${['🥇','🥈','🥉'][rankNum-1] || `#${rankNum}`}</div>
       <div class="podium-info">
-        <div class="podium-nick">${isMe ? '👤 ' : ''}${titleHTML(r.title)}<span>${escapeHtml(r.nickname)}</span></div>
+        <div class="podium-nick">${isMe ? '👤 ' : ''}<span>${escapeHtml(r.nickname)}</span></div>
+        ${_tt ? `<div class="podium-titleline">${_tt}</div>` : ''}
         <div class="podium-score">${(r.score || 0).toLocaleString()}</div>
       </div>`;
     const art = card.querySelector('.podium-art');
@@ -25934,12 +25957,15 @@
     if      (nickLen >= 16) lenClass = ' len-xl';
     else if (nickLen >= 12) lenClass = ' len-lg';
     else if (nickLen >=  8) lenClass = ' len-md';
+    // 🏷 v794 — 칭호는 닉네임 아래 줄. 한 줄에 붙이면 긴 칭호가 닉네임을 밀어내 잘린다.
+    const _rtt = titleHTML(r.title);
     // 🖼 v716 — 세로 3:4 대표 일러 썸네일. 일러가 세로로 길어 가로 배경으로 깔면 몸통 한 줄만 남아 식별 불가 →
     //    썸네일로 얼굴을 확보하고(object-position 50% 0%), 배경엔 같은 일러를 저투명도로 깐다.
     row.innerHTML = `
       <div class="rank-thumb"><img alt="" loading="lazy"><b>${isTop3 ? ['🥇','🥈','🥉'][rankNum-1] : `#${rankNum}`}</b></div>
       <div class="rank-info">
-        <div class="rank-nick${lenClass}">${isMe ? '👤 ' : ''}${titleHTML(r.title)}<span>${escapeHtml(r.nickname)}</span></div>
+        <div class="rank-nick${lenClass}">${isMe ? '👤 ' : ''}<span>${escapeHtml(r.nickname)}</span></div>
+        ${_rtt ? `<div class="rank-titleline${lenClass}">${_rtt}</div>` : ''}
         <div class="rank-meta">${insignia}${rk ? `<span class="rank-rkname" style="color:${rk.color}">${rk.name}</span> · ` : ''}R${r.round} · ${ascText} · ${charName}</div>
       </div>
       <div class="rank-score">${(r.score || 0).toLocaleString()}</div>
@@ -40807,7 +40833,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 793;
+  const APP_VERSION = 794;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
