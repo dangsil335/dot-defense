@@ -208,10 +208,23 @@ missile_flinta: { sr:'cardista', ssr:'flinta', axis:'blast', name:'…', lines:[
 | `COMBO_CUTIN_LINES` | **조합 형성 시 컷인 대사** — 조합 3종 전부 | `const COMBO_CUTIN_LINES` |
 | `activateAncientAwaken` | 고대 유물 **★4/★8 각성 효과 분기** | `function activateAncientAwaken` |
 | `ACHIEVEMENTS` (8돌파) | `char8_<id>` 업적 | `char8_aria` |
+| **`ACH_CAT_MAP.chars`** | 위 업적을 **캐릭터 탭에 노출**시키는 id 배열 | `chars:    [` |
 | `MENU_HERO_IDS` | 메인 메뉴 배경 로테이션 | `const MENU_HERO_IDS` |
 
 ⚠ **`activateAncientAwaken` 이 제일 위험하다.** 유물 `desc` 에는 「★4 각성 1 / ★8 각성 2」를 써두는데
 여기 분기가 없으면 **글만 있고 효과가 0** 이다. 크래시도 경고도 없다.
+
+⚠ **`ACH_CAT_MAP.chars` 는 손으로 나열한 배열이다.** `ACHIEVEMENTS` 에 업적을 넣어도
+여기 id 를 안 넣으면 **어느 탭에도 안 떠서 영원히 못 본다.** 존재하는데 보이지 않는 상태라 놓치기 쉽다.
+검증:
+```bash
+python -c "
+import io,re; h=io.open('index.html',encoding='utf-8').read()
+ids=[x.strip().strip(chr(39)) for x in re.search(r'chars:\s*\[([^\]]*)\]',h).group(1).split(',') if x.strip()]
+all8=sorted(set(re.findall(r\"id:\s*'(char8_\w+)'\",h)))
+print('누락:', [a for a in all8 if a not in ids])"
+```
+→ 「캐릭터 N/M」 탭 카운트가 캐릭터 추가만큼 늘었는지 눈으로도 확인할 것.
 
 ## 4-C. 기획 판단이 필요한 것 (코드 누락 아님)
 

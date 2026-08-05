@@ -7089,6 +7089,7 @@
   // ✨ 고유장비 고유명 — charId 로 유도(세이브 미저장). 아이템엔 name 이 없고 charId 만 있으므로 여기서 조회한다.
   //    (기획: .superpowers/sdd/unique-gear-names.md — 가챠 21명, 고대유물 8종과 이름 충돌 0건)
   const SIGNATURE_GEAR = {
+    alba:      { name:'여명의 대검',            desc:'날 한복판에 새겨진 홈이 밤새 빛을 삼켰다가, 해가 뜨는 순간 한 줄기로 쏟아내는 백은의 대검.' },
     flinta:    { name:'부싯돌 리볼버',          desc:'공이를 당길 때마다 부싯쇠가 불티를 튀기는 와인빛 리볼버 — 실린더 여섯 칸 중 마지막 한 칸만 붉게 달아 있다.' },
     aria:      { name:'천상성가집',            desc:'펼치면 성가 한 소절마다 금빛 별과 반짝임이 쏟아지는, 빛이 들리는 성가집.' },
     misaki:    { name:'영겁나비 브로치',        desc:'반투명 보라 나비가 잔상을 남기며 갇혀 있는, 시간을 붙잡아 두는 브로치.' },
@@ -7118,7 +7119,7 @@
   const SIGNATURE_GEAR_ICON = {
     aria:'🎼', misaki:'🦋', elementia:'🔮', sumika:'🗡️', blanche:'🪄', kaira:'🐾', feria:'🧲', somnia:'💤',
     marine:'⚓', solar:'☀️', gravitas:'🌀', amy:'🛸', chloe:'⚗️', lara:'🎭', galatea:'🗿', sakura:'🌸',
-    luna:'🏹', levina:'⚡', cardista:'🃏', iris:'📷', trina:'🎨', flinta:'🔫',
+    luna:'🏹', levina:'⚡', cardista:'🃏', iris:'📷', trina:'🎨', flinta:'🔫', alba:'⚔️',
   };
   function _gearSigIcon(it) { return (it && _gearIsUnique(it) && SIGNATURE_GEAR_ICON[it.charId]) || ''; }
   // 슬롯별 옵션 풀 — 전부 "빌드타임 metaMods 필드"에만 매핑 (패시브 파생 필드는 매프레임 리셋되므로 제외)
@@ -8560,6 +8561,153 @@
           ctx.restore();
         }
         ctx.globalAlpha = 1;
+      },
+    },
+    // ═══ ⚔️ 알바 (SSR) — 적 밀도 충전 → 단일 초대형 일격 ═══════════════════════
+    //  참았다가 한 번에 내려친다. 플린타(6발을 아껴 쓴다)와 정반대의 자원 방향이다.
+    //  📊 충전 상수(maxCharge/densRate/idleRate)는 여기 dawnEdge.stats 가 단일 출처다.
+    //     읽기는 _albaMax()/_albaStat() 헬퍼만 거친다. 다른 알바 능력 stats 에 복제 금지.
+    dawnEdge: {
+      name: '여명의 칼날', isGachaUnique: true, single: true, baseCost: 130, color: '#dfe6f2',
+      desc: lv => `적이 많을수록 빨리 충전 · 만충 시 가장 강한 적에게 일격 · DMG ${18 + lv * 9} × 충전량(최대 3배)`,
+      stats: { maxCharge: 100, densRate: 0.55, idleRate: 0.12, fireCd: 30, range: 400, peakMul: 3.0 },
+      init(ab) { ab.cooldown = 0; ab.flash = []; _albaSt().charge = 0; },
+      tick(ab) {
+        const S = _S(ab);
+        for (const f of ab.flash) f.life--;
+        compactInPlace(ab.flash, _alivePredLife);
+        _albaTick(ab);
+        if (--ab.cooldown > 0) return;
+        if (_albaRatio() < 1) return;                       // 만충 전엔 쏘지 않는다 — 참는 게 컨셉이다
+        const target = _albaTarget(tdCappedRange(S.range * permaRangeMul('dawnEdge')));
+        if (!target) return;
+        const ratio = _albaRatio();
+        const spent = _albaSpend();
+        const [tx, ty] = enemyXY(target);
+        damageEnemy(target, (18 + ab.level * 9) * (1 + ratio * (S.peakMul - 1)));
+        _albaFlash(ab, tx, ty, 34, 2);
+        spawnParticles(tx, ty, '#dfe6f2', 10);
+        ab.cooldown = S.fireCd;
+        return spent;
+      },
+      draw(ab) { _albaDrawFlash(ab); },
+    },
+    // 🌄 tier2 조합: 여명의 칼날 + 회전검 — 일격이 전방 호를 그리며 광역이 된다
+    risingArc: {
+      name: '떠오르는 호', isGachaUnique: true, isCombo: true, baseCost: 190, color: '#c8d8ea',
+      desc: lv => `만충 시 반경 ${110 + lv * 6} 광역 참격 · DMG ${13 + lv * 6} × 충전량 · 적이 많을수록 총 피해↑`,
+      stats: { radius: 110, fireCd: 36, range: 400 },
+      init(ab) { ab.cooldown = 0; ab.flash = []; },
+      tick(ab) {
+        const S = _S(ab);
+        for (const f of ab.flash) f.life--;
+        compactInPlace(ab.flash, _alivePredLife);
+        if (--ab.cooldown > 0) return;
+        if (_albaRatio() < 1) return;
+        const target = findNearestEnemy(tdCappedRange(S.range * permaRangeMul('risingArc')));
+        if (!target) return;
+        const ratio = _albaRatio();
+        _albaSpend();
+        const [tx, ty] = enemyXY(target);
+        const r = S.radius + ab.level * 6;
+        const dmg = (13 + ab.level * 6) * (1 + ratio * 2);
+        for (const e of state.enemies) {
+          if (e.hp <= 0) continue;
+          const [ex, ey] = enemyXY(e);
+          if ((ex - tx) * (ex - tx) + (ey - ty) * (ey - ty) <= r * r) damageEnemy(e, dmg);
+        }
+        _albaFlash(ab, tx, ty, r * 0.5, 3);
+        ab.cooldown = S.fireCd;
+      },
+      draw(ab) { _albaDrawFlash(ab); },
+    },
+    // ☀ tier3 히든: 떠오르는 호 + 노바 — 화면 전체가 한 번 하얘진다
+    firstLight: {
+      name: '첫 빛', isGachaUnique: true, isCombo: true, isTriple: true, baseCost: 270, color: '#eef3fa',
+      desc: lv => `만충 시 화면 전체 섬광 · 전체 DMG ${9 + lv * 5} × 충전량 · 적이 많을수록 총 피해가 폭증`,
+      stats: { fireCd: 50 },
+      init(ab) { ab.cooldown = 30; ab.flash = []; },
+      tick(ab) {
+        const S = _S(ab);
+        for (const f of ab.flash) f.life--;
+        compactInPlace(ab.flash, _alivePredLife);
+        if (--ab.cooldown > 0) return;
+        if (_albaRatio() < 1) return;
+        const ratio = _albaRatio();
+        _albaSpend();
+        const dmg = (9 + ab.level * 5) * (1 + ratio * 2);
+        for (const e of state.enemies) { if (e.hp > 0) damageEnemy(e, dmg); }
+        _albaFlash(ab, CX, CY, 90, 4);
+        state.comboFlash = 24; state.comboFlashColor = '#dfe6f2';
+        ab.cooldown = S.fireCd;
+      },
+      draw(ab) { _albaDrawFlash(ab); },
+    },
+    // 🌅 tier4 히든: 첫 빛 + 처형 — 밤이 끝난다. 최대 위력의 단일 처형 + 여파.
+    daybreak: {
+      name: '일출', isGachaUnique: true, isCombo: true, isTriple: true, baseCost: 330, color: '#ffffff',
+      desc: lv => `만충 시 가장 강한 적 처형타 · DMG ${30 + lv * 14} × 충전량(최대 4배) · 주변 반경 ${130 + lv * 6} 여파`,
+      stats: { radius: 130, fireCd: 60, range: 420, peakMul: 4.0 },
+      init(ab) { ab.cooldown = 60; ab.flash = []; },
+      tick(ab) {
+        const S = _S(ab);
+        for (const f of ab.flash) f.life--;
+        compactInPlace(ab.flash, _alivePredLife);
+        if (--ab.cooldown > 0) return;
+        if (_albaRatio() < 1) return;
+        const target = _albaTarget(tdCappedRange(S.range * permaRangeMul('daybreak')));
+        if (!target) return;
+        const ratio = _albaRatio();
+        _albaSpend();
+        const [tx, ty] = enemyXY(target);
+        damageEnemy(target, (30 + ab.level * 14) * (1 + ratio * (S.peakMul - 1)));
+        const r = S.radius + ab.level * 6;
+        const spl = (30 + ab.level * 14) * ratio * 0.45;
+        for (const e of state.enemies) {
+          if (e === target || e.hp <= 0) continue;
+          const [ex, ey] = enemyXY(e);
+          if ((ex - tx) * (ex - tx) + (ey - ty) * (ey - ty) <= r * r) damageEnemy(e, spl);
+        }
+        _albaFlash(ab, tx, ty, r * 0.6, 5);
+        state.comboFlash = 30; state.comboFlashColor = '#ffffff';
+        shake(8, 10);
+        ab.cooldown = S.fireCd;
+      },
+      draw(ab) { _albaDrawFlash(ab); },
+    },
+    // 🕯 ★4 불침번 — 충전 속도를 끌어올린다
+    nightWatch: {
+      name: '불침번', isGachaUnique: true, isStarUnlock: true, baseCost: 280, color: '#c8d8ea',
+      desc: lv => `충전 속도 +${20 + lv * 8}% (밀도분·시간분 모두)`,
+      stats: {},
+      init(ab) { ab.applied = 0; },
+      tick(ab) {
+        const want = 1 + (20 + ab.level * 8) / 100;
+        if (ab.applied === want) return;                  // 값이 바뀔 때만 다시 쓴다
+        ab.applied = want;
+        const ov = state.abilityStatOverrides || (state.abilityStatOverrides = {});
+        const base = ABILITY_DEFS.dawnEdge.stats;
+        ov.dawnEdge = Object.assign({}, ov.dawnEdge, {
+          densRate: base.densRate * want,
+          idleRate: base.idleRate * want,
+        });
+      },
+    },
+    // 🌕 ★8 백야 — 밤이 오지 않는다. 일정 주기로 "쓰고도 충전이 남는" 시간.
+    whiteNight: {
+      name: '백야', isGachaUnique: true, isStarUnlock: true, baseCost: 480, color: '#ffffff',
+      desc: lv => `[8돌파] ${Math.round((540 - lv * 20) / 60 * 10) / 10}s마다 ${Math.round((150 + lv * 12) / 60 * 10) / 10}초간 충전이 소모되지 않음`,
+      stats: { cd: 540, dur: 150 },
+      init(ab) { ab.cooldown = 240; },
+      tick(ab) {
+        const S = _S(ab);
+        if (--ab.cooldown > 0) return;
+        const st = _albaSt();
+        st.charge = _albaMax();                            // 즉시 만충으로 열어준다
+        st.holdT = state.t + S.dur + ab.level * 12;
+        state.comboFlash = 20; state.comboFlashColor = '#ffffff';
+        toast('🌕 백야 — 밤이 오지 않는다');
+        ab.cooldown = Math.max(240, S.cd - ab.level * 20);
       },
     },
     // ═══ 🐈 플린타 (SSR) — 탄창·재장전 킷 ═══════════════════════════════════════
@@ -20919,6 +21067,7 @@
     // SSR
     aria:   { 4: ['celestialEcho'],  8: ['sirensSong'] },
     flinta: { 4: ['quickdraw'],      8: ['deadeye'] },
+    alba:   { 4: ['nightWatch'],     8: ['whiteNight'] },
     misaki: { 4: ['temporalLoop'],   8: ['paradoxFreeze'] },
     blanche:{ 4: ['refractionField'],8: ['whiteEclipse'] },
     kaira:  { 4: ['beastForm'],       8: ['apexPredator'] },
@@ -21205,6 +21354,14 @@
       unlockBy: 'ancient:kairaFang',
     },
     // 🧲 Feria 전용 — 자력·견인·관통 능력 각성
+    albaOath: {
+      name: '여명의 서약', icon: '⚔️', rarity: 'ancient',
+      isAncient: true, characterId: 'alba',
+      triggerAbilities: ['dawnEdge', 'risingArc', 'firstLight', 'daybreak'],
+      desc: '⚔️ Alba 전용 · ★별마다 강해짐.\n[기본] 만충 문턱 -15% · 데미지 +16% (Alba 시너지 -28% · +36%)\n[★4 각성 1] 여명 능력 max 도달 시 — 데미지 +50%\n[★8 각성 2] 여명 능력 2개 이상 max — 일격의 최대 배율 상승',
+      apply: (st) => { applyAncientRelic(st, 'albaOath'); },
+      unlockBy: 'ancient:albaOath',
+    },
     flintCylinder: {
       name: '부싯돌 실린더', icon: '🔫', rarity: 'ancient',
       isAncient: true, characterId: 'flinta',
@@ -21232,8 +21389,8 @@
     },
   };
   // 🌌 v245 — ANCIENT 매핑 & 헬퍼
-  const ANCIENT_RELIC_IDS = ['ariaHarp', 'misakiHourglass', 'elementiaSeal', 'sumikaBrush', 'blanchePrism', 'kairaFang', 'ferroCore', 'somniaPillow', 'flintCylinder'];
-  const ANCIENT_RELIC_BY_CHAR = { aria: 'ariaHarp', misaki: 'misakiHourglass', elementia: 'elementiaSeal', sumika: 'sumikaBrush', blanche: 'blanchePrism', kaira: 'kairaFang', feria: 'ferroCore', somnia: 'somniaPillow', flinta: 'flintCylinder' };
+  const ANCIENT_RELIC_IDS = ['ariaHarp', 'misakiHourglass', 'elementiaSeal', 'sumikaBrush', 'blanchePrism', 'kairaFang', 'ferroCore', 'somniaPillow', 'flintCylinder', 'albaOath'];
+  const ANCIENT_RELIC_BY_CHAR = { aria: 'ariaHarp', misaki: 'misakiHourglass', elementia: 'elementiaSeal', sumika: 'sumikaBrush', blanche: 'blanchePrism', kaira: 'kairaFang', feria: 'ferroCore', somnia: 'somniaPillow', flinta: 'flintCylinder', alba: 'albaOath' };
   const ANCIENT_MAX_STARS = 8;
   function getAncientRelicStars(rid) {
     return (META.ancientRelics && META.ancientRelics[rid] && META.ancientRelics[rid].stars) || 0;
@@ -21283,6 +21440,16 @@
       const baseDmg = synergy ? (1.34 + stars * 0.08) : (1.15 + stars * 0.05);
       st.metaMods.dmgMul = (st.metaMods.dmgMul || 1) * baseDmg;
       st.metaMods.luckyChanceBonus = (st.metaMods.luckyChanceBonus || 0) + (synergy ? 0.08 : 0.04);
+    } else if (rid === 'albaOath') {
+      // ⚔️ 여명의 서약 — 충전 축 전용. 최대 충전량을 낮춰 "더 자주" 터지게 한다.
+      //   ⚠ 충전 속도를 올리는 게 아니라 문턱을 낮추는 방향이다 — ★4 불침번(속도)과 역할이 겹치지 않는다.
+      const baseDmg = synergy ? (1.36 + stars * 0.08) : (1.16 + stars * 0.05);
+      st.metaMods.dmgMul = (st.metaMods.dmgMul || 1) * baseDmg;
+      const cut = synergy ? 0.72 : 0.85;
+      const ov = st.abilityStatOverrides || (st.abilityStatOverrides = {});
+      const base = (ABILITY_DEFS.dawnEdge && ABILITY_DEFS.dawnEdge.stats && ABILITY_DEFS.dawnEdge.stats.maxCharge) || 100;
+      const cur = (ov.dawnEdge && ov.dawnEdge.maxCharge) || base;
+      ov.dawnEdge = Object.assign({}, ov.dawnEdge, { maxCharge: Math.max(40, Math.round(cur * cut)) });
     } else if (rid === 'flintCylinder') {
       // 🔫 부싯돌 실린더 — 탄창 축 전용. 실린더 칸수를 직접 늘린다.
       //   _flintCyl() 은 state.abilityStatOverrides.flintShot.cylinder 를 먼저 읽으므로 여기로 개입한다.
@@ -21408,6 +21575,19 @@
         state.relicEffects.chainLightning = true;
         state.metaMods.dmgMul *= 1.20;
         toast(`🧲🌟 자기 코어 · 단극 각성!`);
+      }
+    } else if (relic.id === 'albaOath') {
+      if (level === 1) {
+        state.metaMods.dmgMul *= 1.50;
+        toast(`⚔️✨ 여명의 서약 · 박명 각성!`);
+      } else if (level === 2) {
+        // 일격의 최대 배율을 올린다 — 이 캐릭의 축(한 번의 무게)을 그대로 강화
+        const ov = state.abilityStatOverrides || (state.abilityStatOverrides = {});
+        const base = (ABILITY_DEFS.dawnEdge && ABILITY_DEFS.dawnEdge.stats && ABILITY_DEFS.dawnEdge.stats.peakMul) || 3.0;
+        const cur = (ov.dawnEdge && ov.dawnEdge.peakMul) || base;
+        ov.dawnEdge = Object.assign({}, ov.dawnEdge, { peakMul: cur + 1.5 });
+        state.metaMods.dmgMul *= 1.20;
+        toast(`⚔️🌟 여명의 서약 · 백야 각성!`);
       }
     } else if (relic.id === 'flintCylinder') {
       if (level === 1) {
@@ -21800,6 +21980,12 @@
     sakuraSlash:     ['회전', '광역'],
     moonShot:        ['관통', '유도'],
     starSong:        ['광역', '다중공격'],
+    dawnEdge:        ['단일', '충전'],
+    risingArc:       ['광역', '충전'],
+    firstLight:      ['광역', '전체', '충전'],
+    daybreak:        ['단일', '광역', '충전'],
+    nightWatch:      ['버프'],
+    whiteNight:      ['버프'],
     flintShot:       ['단일', '연사'],
     hammerFall:      ['광역', '폭발'],
     fanTheHammer:    ['단일', '연사', '폭발'],
@@ -21966,6 +22152,7 @@
   const ABILITY_ICON_ORDER = [
     'shot', 'multi', 'nova', 'laser', 'chain',
     'flintShot', 'hammerFall', 'fanTheHammer', 'finalChamber', 'quickdraw', 'deadeye',
+    'dawnEdge', 'risingArc', 'firstLight', 'daybreak', 'nightWatch', 'whiteNight',
     'orbital', 'scatter', 'mortar', 'thunder', 'turret',
     'boomerang', 'tornado', 'beam', 'sniper', 'frost',
     'missile', 'fire', 'iceLance', 'mine', 'drone',
@@ -22327,6 +22514,9 @@
     { parts: ['royalFlush', 'magnet'],   combo: 'grandSlam',   tier: 4 },
     { parts: ['inkSlash',        'sniper'],      combo: 'silentExecution', tier: 2 },
     { parts: ['flintShot',       'sniper'],      combo: 'hammerFall',      tier: 2 },
+    { parts: ['dawnEdge',        'sword'],       combo: 'risingArc',       tier: 2 },
+    { parts: ['risingArc',       'nova'],        combo: 'firstLight',      tier: 3 },
+    { parts: ['firstLight',      'executioner'], combo: 'daybreak',        tier: 4 },
     { parts: ['hammerFall',      'frenzy'],      combo: 'fanTheHammer',    tier: 3 },
     { parts: ['fanTheHammer',    'nova'],        combo: 'finalChamber',    tier: 4 },
     { parts: ['silentExecution', 'executioner'], combo: 'sumiReaper',       tier: 3 },
@@ -25596,7 +25786,7 @@
   const GACHA_POOL = {
     R:   [],   // 🆕 R 등급 폐지 — 마린/솔라/그래비타스는 SR로 승격
     SR:  ['sakura', 'luna', 'marine', 'solar', 'gravitas', 'cardista', 'levina', 'amy', 'chloe', 'lara', 'galatea', 'trina', 'iris'],
-    SSR: ['aria', 'misaki', 'elementia', 'sumika', 'blanche', 'kaira', 'feria', 'somnia', 'flinta'],
+    SSR: ['aria', 'misaki', 'elementia', 'sumika', 'blanche', 'kaira', 'feria', 'somnia', 'flinta', 'alba'],
   };
   const GACHA_RATES = { SR: 0.05, SSR: 0.01 };   // (구) 단일 배너 호환용 — 나머지(0.94)는 스타더스트
   const GACHA_REFUND = { R: 150, SR: 400, SSR: 800 };  // 중복 시 스타더스트 환불
@@ -26930,6 +27120,42 @@
       ],
     },
     // ===== 🎰 가챠 SSR 캐릭터 (2명) — 승천 13~15 클리어용 핵심 픽 =====
+    alba: {
+      name: '⚔️ 알바', color: '#dfe6f2',
+      desc: '[SSR] 여명의 칼날로 시작. 데미지 +50% / 보스 +62% / 레벨업 -20% / 둔화 +15%. 적이 많을수록 빨리 충전되고, 만충 시 한 번에 내려친다. 칼날 + 회전검 = 떠오르는 호.',
+      startAbilities: ['dawnEdge'],
+      // 📊 슬롯 0 인 이유: 충전이 찰 때까지 "안 쏘는" 킷이라 그 공백을 다른 능력으로 메우면
+      //    컨셉 자체가 무너진다. 대신 한 방 위력(보스 배율)을 높게 잡았다.
+      //    아리아(1.60/1.80·슬롯0)보다 낮고, 스미카(1.55/1.75·슬롯0)와도 겹치지 않는 자리.
+      passive: { dmgMul: 1.50, bossDmgMul: 1.62, slotMod: 0, levelUpMul: 0.80, slowMul: 1.15 },
+      unlockBy: 'gacha:alba',
+      isGacha: true, rarity: 'SSR',
+      story: [
+        { star: 0, title: '아직이야', text: `적이 밀려드는데도 검을 들지 않았다. 함장이 다급히 불렀지만 알바는 고개도 돌리지 않았다.
+
+"아직이야."
+
+셋이 넷이 되고, 넷이 열이 됐다. 그제야 검이 올라갔고, 한 번에 전부 끝났다.
+
+"…왜 기다렸지?" 함장이 묻자 알바는 칼끝의 빛이 꺼지는 걸 지켜보며 답했다.
+
+"적을 세는 게 아니라, 벨 무게를 재고 있었어."` },
+        { star: 4, title: '밤이 길수록', text: `가장 위험했던 라운드였다. 화면이 적으로 가득 찼을 때, 알바의 칼날은 어느 때보다 밝았다.
+
+"…이럴 때 제일 강해지는 건 좀 위험한 성격 아니야?" 함장이 말했다.
+
+"위험한 건 상황이야. 나는 그냥 그걸 쓰는 거고."
+
+잠시 뒤 덧붙였다. "밤이 길수록 새벽이 밝아. 그게 다야."` },
+        { star: 8, title: '백야', text: `언젠가부터 알바의 칼날은 꺼지지 않았다. 베고 나서도 빛이 남아 있었다.
+
+"…이제 안 기다려도 되는 거야?" 함장이 물었다.
+
+"아니." 알바가 칼끝을 내렸다. "기다리는 걸 그만둔 게 아니라, 기다림이 끝나지 않는 거야."
+
+창밖은 밝았다. 해가 지지 않는 밤이었다.` },
+      ],
+    },
     flinta: {
       name: '🐈 플린타', color: '#b0324a',
       desc: '[SSR] 부싯돌 사격으로 시작. 데미지 +54% / 보스 +68% / 슬롯 +1 / 레벨업 -22%. 실린더 6발 — 마지막 한 발이 3배. 부싯돌 사격 + 저격 = 공이 낙하.',
@@ -27203,6 +27429,8 @@
       check: () => ((META.charStars || {}).aria     || 0) >= 8 },
     { id: 'char8_flinta',   name: '🐈 여섯 번째 방아쇠', desc: '🐈 플린타 8★ 달성',   reward: 1500,
       check: () => ((META.charStars || {}).flinta   || 0) >= 8 },
+    { id: 'char8_alba',     name: '⚔️ 지지 않는 새벽',  desc: '⚔️ 알바 8★ 달성',     reward: 1500,
+      check: () => ((META.charStars || {}).alba     || 0) >= 8 },
     { id: 'char8_misaki',   name: '🦋 시공의 여행자',  desc: '🦋 미사키 8★ 달성',   reward: 1500,
       check: () => ((META.charStars || {}).misaki   || 0) >= 8 },
     { id: 'char8_elementia',name: '🔮 정령들의 여왕',  desc: '🔮 엘레미아 8★ 달성', reward: 1500,
@@ -27862,6 +28090,78 @@
       ctx.beginPath(); ctx.moveTo(s.x, s.y); ctx.lineTo(s.x - s.vx * 1.8, s.y - s.vy * 1.8); ctx.stroke();
     }
     ctx.lineCap = 'butt'; ctx.globalAlpha = 1; ctx.restore();
+  }
+  // ═══ ⚔️ 알바 공용 헬퍼 ═════════════════════════════════════════════════
+  //  충전은 "화면의 적 밀도" 로 쌓인다. 이 게임엔 HP 가 없고 패배는 오직
+  //  state.enemies.length >= getMaxAlive() 이므로, 적이 쌓이는 것 자체가 유일한 위험이다.
+  //  → 위기가 곧 충전, 방출이 곧 해소. 게임의 실제 위험 축과 맞물린다.
+  //  ⚠ 밀도만 쓰면 안전하게 굴러가는 판에서 영원히 안 찬다("잘할수록 약해지는" 역설).
+  //     그래서 시간분 바닥(idleRate)을 깔아 최소 속도를 보장한다.
+  function _albaSt() {
+    if (!state) return { charge: 0, holdT: 0 };
+    if (!state._alba) state._alba = { charge: 0, holdT: 0 };
+    return state._alba;
+  }
+  // 충전 상수의 단일 출처는 dawnEdge.stats 다. 숫자를 다른 능력 stats 에 복제하지 말 것.
+  function _albaStat(key, dflt) {
+    const o = (state && state.abilityStatOverrides && state.abilityStatOverrides.dawnEdge) || null;
+    if (o && o[key] != null) return o[key];
+    const d = ABILITY_DEFS.dawnEdge && ABILITY_DEFS.dawnEdge.stats;
+    return (d && d[key] != null) ? d[key] : dflt;
+  }
+  function _albaMax() { return _albaStat('maxCharge', 100); }
+  // 매 프레임 충전량 — 밀도분 + 시간분. holdT 동안은(백야) 소모돼도 유지된다.
+  function _albaTick(ab) {
+    const st = _albaSt();
+    const cap = _albaMax();
+    if (st.charge >= cap) return;
+    const alive = (state.enemies && state.enemies.length) || 0;
+    const maxA = (typeof getMaxAlive === 'function') ? Math.max(1, getMaxAlive()) : 60;
+    const dens = Math.min(1, alive / maxA);
+    const rate = _albaStat('densRate', 0.55) * dens + _albaStat('idleRate', 0.12);
+    st.charge = Math.min(cap, st.charge + rate * (1 + (ab.level || 1) * 0.06));
+  }
+  function _albaSpend() {
+    const st = _albaSt();
+    const c = st.charge;
+    if (st.holdT > state.t) return c;          // ⭐ 백야 — 소모하지 않는다
+    st.charge = 0;
+    return c;
+  }
+  // 충전 비율(0~1). 위력 배율에 그대로 곱한다.
+  function _albaRatio() { return Math.min(1, _albaSt().charge / _albaMax()); }
+  // 사거리 내에서 가장 센 적 = 현재 HP 최대. 기사의 일격은 잡몹이 아니라 위협을 벤다.
+  //   ⚠ findStrongestEnemy 라는 함수는 이 코드베이스에 없다(findNearest/findFarthest 뿐).
+  //      없는 이름을 typeof 없이 참조하면 ReferenceError 로 능력이 통째로 죽는다.
+  function _albaTarget(range) {
+    let best = null, bestHp = -1;
+    const r2 = range * range;
+    for (const e of state.enemies) {
+      if (!e || e.hp <= 0) continue;
+      const [ex, ey] = enemyXY(e);
+      const dx = ex - CX, dy = ey - CY;
+      if (dx * dx + dy * dy > r2) continue;
+      if (e.hp > bestHp) { bestHp = e.hp; best = e; }
+    }
+    return best;
+  }
+  // 여명 섬광 — 흰빛 링. 능력 인스턴스의 ab.flash 에 쌓고 draw 에서 그린다.
+  function _albaFlash(ab, x, y, r, n) {
+    if (!ab.flash) ab.flash = [];
+    for (let i = 0; i < (n || 1); i++) ab.flash.push({ x, y, r: r * (0.5 + i * 0.35), life: 22 + i * 6, max: 22 + i * 6 });
+  }
+  function _albaDrawFlash(ab) {
+    if (!ab.flash || !ab.flash.length) return;
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    for (const f of ab.flash) {
+      const p = 1 - f.life / f.max;
+      ctx.strokeStyle = '#dfe6f2';
+      ctx.globalAlpha = Math.max(0, 1 - p) * 0.8;
+      ctx.lineWidth = Math.max(1, 4 * (1 - p));
+      ctx.beginPath(); ctx.arc(f.x, f.y, f.r * (0.4 + p * 1.5), 0, Math.PI * 2); ctx.stroke();
+    }
+    ctx.globalAlpha = 1; ctx.restore();
   }
   function _S(ab) {
     if (!ab._stats) {
@@ -35072,6 +35372,7 @@
     feria:     '전부 끌어당겨. …도망칠 방향이 없게.',
     somnia:    '자… 눈 감아. 일어나면, 다 끝나 있을 거야.',
     flinta:    '여섯 발. …마지막 한 발은, 뭐, 네 몫이야.',
+    alba:      '아직이야. …지금이다.',
     sakura:    '벚꽃과 함께… 이 검을 받으렴.',
     luna:      '달빛이 너를 비춘다… 조용히, 받으렴.',
     cardista:  '운 좋은 패네 — 이 힘, 한번 베팅해봐!',
@@ -35392,6 +35693,7 @@
     feria:    '쇳조각 좀 뿌려놨어. 밟으면 아플 거야.',
     somnia:   '으음… 벌써 왔어? 그럼 저쪽부터 재울게.',
     flinta:   '…굳이 나까지 와야 했어? 뭐, 왔으니까 여섯 발은 써줄게.',
+    alba:     '많을수록 좋아. 한 번에 끝낼 수 있으니까.',
     sakura:   '한 송이, 베어줄게. 준비됐어?',
     luna:     '달빛 아래선… 아무도 못 도망가.',
     aria:     '이 무대의 주인공은 당신이에요. 노래, 맞춰드릴게요!',
@@ -35500,6 +35802,7 @@
     const lore = {
       aria:   { title: '🌌 천공의 하프', text: '"이 하프… 너라면 제대로 울려줄 수 있겠지. 받아."' },
       flinta: { title: '🌌 부싯돌 실린더', text: '"…한 칸 더 있어. 착각하진 마, 네가 오래 버텨서 주는 거야."' },
+      alba:   { title: '🌌 여명의 서약', text: '"이건 밤을 견딘 값이야. …너도 견뎠으니, 받아."' },
       misaki: { title: '🌌 시간의 모래시계', text: '"이 모래시계, 네 시간에 맞춰 돌아갈 거야. 가져."' },
       elementia: { title: '🌌 정령왕의 인장', text: '"정령들이 너를 인정했어. 이 인장, 받아줘."' },
       sumika:    { title: '🌌 먹의 인장',     text: '"…이 붓에 네 이름을 새긴다. 받아."' },
@@ -35525,6 +35828,8 @@
     galatea:  [ { make: () => _charEv('🗿 갈라테아의 시선',   '"넓게 굳혀둘까, 아니면 한 놈을 완전히 부숴버릴까?"',       'dmg',  20, 'petrifyGaze') } ],
     blanche:  [ { make: () => _charEv('🌈 블랑슈의 분광',      '"빛을 더 넓게 흩뿌릴까, 아니면 한 점으로 모아 태울까?"',   'dmg',  22, 'prismBolt') },
                 { avail: () => _ancientAvail('blanche'), make: () => _charRelicEv('blanche') } ],
+    alba:     [ { make: () => _charEv('⚔️ 알바의 검날',       '"더 빨리 차오르게 할까, 아니면 한 번의 무게를 늘릴까?"',    'dmg',  22, 'dawnEdge') },
+                { avail: () => _ancientAvail('alba'), make: () => _charRelicEv('alba') } ],
     flinta:   [ { make: () => _charEv('🐈 플린타의 실린더',    '"탄을 더 채워둘까, 아니면 마지막 한 발만 더 벼릴까?"',      'dmg',  22, 'flintShot') },
                 { avail: () => _ancientAvail('flinta'), make: () => _charRelicEv('flinta') } ],
     kaira:    [ { make: () => _charEv('🐾 카이라의 사냥',      '"인간형으로 사거리를 늘릴까, 야수형으로 물어뜯을까?"',     'dmg',  22, 'huntingClaw') },
@@ -35573,6 +35878,7 @@
     luna:     ['moonShot', 'moonFrostArrow', 'moonBombardment', 'lunarApocalypse'],
     aria:     ['starSong', 'cosmicChorus', 'celestialSymphony', 'stellarOpera'],
     flinta:   ['flintShot', 'hammerFall', 'fanTheHammer', 'finalChamber'],
+    alba:     ['dawnEdge', 'risingArc', 'firstLight', 'daybreak'],
     misaki:   ['timeButterfly', 'timePrison', 'eternalMoment', 'eternalPrison'],
     levina:   ['stormBrand', 'levinLash', 'tempestVeil', 'stormSovereign'],
     cardista: ['cardThrow', 'riggedDeck', 'royalFlush', 'grandSlam'],
@@ -35783,6 +36089,15 @@
                             lines:['솔라: 내가 불을 붙인다 — 네 클라이맥스에!', '아리아: 마지막 음에, 초신성을!'] },
     rocketSwarm_aria:     { sr:'solar',    ssr:'aria',      axis:'blast', name:'포화 협주곡',
                             lines:['솔라: 탄막 다발, 박자 맞춰 쏟아부을게!', '아리아: 그럼 화력의 협주곡이야 — 가자!'] },
+    // ── ⚔️ 알바 (여명·대검) ──
+    sword_alba:           { sr:'sakura',   ssr:'alba',      axis:'pierce', name:'개화하는 일섬',
+                            lines:['사쿠라: 가장 아름다운 한 베기, 알려줄게.', '알바: 한 번이면 충분해. …배우지.'] },
+    beam_alba:            { sr:'galatea',  ssr:'alba',      axis:'pierce', name:'석광의 참격',
+                            lines:['갈라테아: 굳혀둘게. 움직이지 못하게.', '알바: 그럼 나는 그 위로 내려친다.'] },
+    starfall_alba:        { sr:'sakura',   ssr:'alba',      axis:'blast',  name:'벚꽃의 여명',
+                            lines:['사쿠라: 꽃잎이 다 떨어지면 신호야.', '알바: 그때까지 기다린다. …익숙하니까.'] },
+    frost_alba:           { sr:'galatea',  ssr:'alba',      axis:'ice',    name:'서리 아래 새벽',
+                            lines:['갈라테아: 얼려두면 오래 버텨.', '알바: 오래 버틸수록 무거워져. 좋아.'] },
     // ── 🐈 플린타 (부싯돌·실린더) ──
     missile_flinta:       { sr:'cardista', ssr:'flinta',    axis:'blast',  name:'속임수 일제사격',
                             lines:['카르타: 패는 내가 돌릴게 — 넌 방아쇠만 당겨.', '플린타: …좋아. 여섯 발, 전부 네 신호에.'] },
@@ -35927,7 +36242,7 @@
   //   신규 SR→신규 SSR 브릿지: amy·galatea→blanche / chloe·lara→kaira (계보 공명 축 분배용, R_TOWERS.sr에도 편입됨).
   //   값은 문자열(단일 수렴) 또는 배열(복수 수렴). 💤 솜니아는 전용 신규 SR 없이 합류 → 🌙 루나가 미사키·솜니아 둘 다로 수렴한다.
   //   (기존 매핑 재배치 0 · R_TOWERS.sr 변경 0 — 루나는 R타워 5종/4축(blast·pierce·ice·echo)을 커버하는 유일한 SR이라 추가 배선이 필요 없다.)
-  const SR_TO_SSR = { marine:'elementia', levina:'elementia', luna:['misaki','somnia'], gravitas:'misaki', sakura:'sumika', cardista:['sumika','flinta'], solar:'aria', amy:'blanche', galatea:'blanche', chloe:'kaira', lara:'kaira', trina:'feria', iris:['feria','flinta'] };
+  const SR_TO_SSR = { marine:'elementia', levina:'elementia', luna:['misaki','somnia'], gravitas:'misaki', sakura:['sumika','alba'], cardista:['sumika','flinta'], solar:'aria', amy:'blanche', galatea:['blanche','alba'], chloe:'kaira', lara:'kaira', trina:'feria', iris:['feria','flinta'] };
   // SR_TO_SSR 값 정규화 — 문자열/배열을 항상 배열로. 모든 소비처는 반드시 이걸 거친다(SR_TO_SSR[x] 직접 인덱싱 금지).
   function _ssrOf(sr) { const v = SR_TO_SSR[sr]; return !v ? [] : (Array.isArray(v) ? v : [v]); }
   // 무료 해금 SR (가챠 불필요 — 무과금 척추)
@@ -36155,6 +36470,10 @@
   for (const _cid in CHAR_SIG_ABILITIES) for (const _a of CHAR_SIG_ABILITIES[_cid]) _charBySigAbility[_a] = _cid;
   // 🆕 조합별 컷인 대사 — 캐릭터 말투·컨셉 유지 (없으면 능력 이름으로 폴백)
   const COMBO_CUTIN_LINES = {
+    // ⚔️ 알바 (과묵한 기사)
+    risingArc:        '해가 뜬다. …비켜.',
+    firstLight:       '첫 빛이야. 눈 감아도 소용없어.',
+    daybreak:         '밤은 끝났다.',
     // 🐈 플린타 (도도한 총잡이)
     hammerFall:       '공이 떨어졌어. …피할 시간은 줬잖아.',
     fanTheHammer:     '여섯 발, 전부 지금. 세어보든가.',
@@ -36455,6 +36774,8 @@
   // ═══════════════════════════════════════════════════════════════════
   // 각 항목 style = 캐릭터 능력에 맞춘 이펙트 모티프(_buildSSRFx 가 분기). 색만이 아니라 움직임이 다름.
   const SSR_REVEAL_FX = {
+    // ⚔️ 알바 — 여명. 어둠 속 칼날의 눈금이 아래에서 위로 차오르다 한 번에 터진다.
+    alba:      { style: 'alba',      dust: '#dfe6f2', glow: '#7fa8d4', flashMid: '#ffffff', ember: '#c8d8ea' },
     // 🐈 플린타 — 부싯돌. 공이가 떨어지며 불티가 사방으로 튀고, 실린더 여섯 칸이 차례로 점화된다.
     flinta:    { style: 'flinta',    dust: '#ff8a3d', glow: '#b0324a', flashMid: '#ffd9a0', ember: '#ffb15c' },
     // 💤 솜니아 — 꿈/수면. (v690: 파문 링 제거) 별가루 소용돌이 + 비눗방울(꿈) + 중앙 플래시.
@@ -36475,6 +36796,10 @@
     feria:     { style: 'feria',     dust: '#cfd8e6',                    glow: '#7fa8e0', flashMid: '#cdddf5', poleN: '#ff6b6b', poleS: '#6ba8ff', core: '#dbe9ff', metal: '#98a3b6', shadow: '#59626f' },
   };
   const SSR_REVEAL_LINES = {
+    alba: {
+      new: '…알바. 검을 맡기겠다면, 기다리는 법부터 배워.',
+      dup: '또 왔군. …이번엔 더 무겁게 벨 수 있겠어.',
+    },
     flinta: {
       new: '…흐응. 네가 날 뽑은 거야? 뭐, 실력은 보여줄게. 착각은 하지 말고.',
       dup: '또 나야? …그렇게 내가 좋으면 말을 하든가.',
@@ -36582,6 +36907,60 @@
           const prog = Math.min(1, dt / 1550); const x = s.x * W + (cx - s.x * W) * prog * 0.55; const y = (s.y0 + prog * 1.15) * H;
           if (y > H * 1.02) continue; const tw = 0.55 + 0.45 * Math.sin(s.tw + t * 0.02); const a = tw * post * (0.5 + 0.5 * prog); if (a <= 0) continue;
           spark(ctx, x, y, s.size * (0.7 + prog * 0.5), C(fx.glow, a));
+        }
+      } };
+    }
+
+    // ── ⚔️ 알바 — 여명. 세로 눈금이 아래에서 위로 차오르다, 만충 순간 흰빛으로 터진다 ──
+    if (style === 'alba') {
+      const TICKS = 14;
+      const RAYS = [];
+      for (let i = 0; i < 26; i++) RAYS.push({ a: Math.random() * Math.PI * 2, len: 0.5 + Math.random() * 0.6, w: 1 + Math.random() * 2.2, delay: 1500 + Math.random() * 500 });
+      return { draw: function (ctx, g, t, post) {
+        const cx = g.cx, cy = g.cy, W = g.W, H = g.H;
+        const barH = Math.min(H * 0.52, 320), barW = Math.max(7, Math.min(W, H) * 0.022);
+        const top = cy - barH / 2;
+        const fill = Math.max(0, Math.min(1, (t - 200) / 1500));   // 1.5초에 걸쳐 차오른다
+        // 게이지 홈 — 꺼진 부분은 짙게
+        ctx.save();
+        ctx.fillStyle = C('#2a3240', 0.55 * post);
+        ctx.fillRect(cx - barW / 2, top, barW, barH);
+        // 눈금 — 아래에서 위로 점등
+        for (let i = 0; i < TICKS; i++) {
+          const p = i / (TICKS - 1);
+          const y = top + barH * (1 - p);
+          const lit = fill >= p ? 1 : 0;
+          if (!lit) continue;
+          ctx.fillStyle = C(fill >= 0.999 ? fx.flashMid : fx.dust, (0.55 + 0.45 * p) * post);
+          ctx.fillRect(cx - barW * 0.9, y - 1.6, barW * 1.8, 3.2);
+        }
+        // 채워진 기둥
+        const fh = barH * fill;
+        ctx.fillStyle = C(fx.glow, 0.5 * post);
+        ctx.fillRect(cx - barW / 2, top + barH - fh, barW, fh);
+        ctx.restore();
+        // 만충 이후 — 흰빛 폭발
+        if (t > 1700) {
+          const bp = Math.min(1, (t - 1700) / 900);
+          ctx.save();
+          ctx.globalCompositeOperation = 'lighter';
+          for (let i = 0; i < RAYS.length; i++) {
+            const r = RAYS[i]; if (t < r.delay) continue;
+            const q = Math.min(1, (t - r.delay) / 800);
+            const L = Math.min(W, H) * 0.75 * r.len * q;
+            const a = (1 - q) * post; if (a <= 0.02) continue;
+            ctx.strokeStyle = C(fx.flashMid, a); ctx.lineWidth = r.w * (1 - q * 0.6); ctx.lineCap = 'round';
+            ctx.beginPath();
+            ctx.moveTo(cx + Math.cos(r.a) * barW, cy + Math.sin(r.a) * barW);
+            ctx.lineTo(cx + Math.cos(r.a) * L, cy + Math.sin(r.a) * L);
+            ctx.stroke();
+          }
+          ctx.lineCap = 'butt';
+          // 확장 링
+          const rr = Math.min(W, H) * 0.55 * bp;
+          ctx.strokeStyle = C(fx.dust, (1 - bp) * 0.9 * post); ctx.lineWidth = 3 * (1 - bp) + 0.6;
+          ctx.beginPath(); ctx.arc(cx, cy, rr, 0, Math.PI * 2); ctx.stroke();
+          ctx.restore();
         }
       } };
     }
@@ -38116,7 +38495,7 @@
 
   // 🛰️ v461 — 메인 메뉴 로테이션 간판 캐릭터 백드롭 (메뉴 진입마다 순환)
   // ⚠️ refreshMenuButtons가 아니라 showScreen('menu') 진입에서만 호출 — refreshMenuButtons는 서버 pull 후에도 재호출돼 중복 회전/캐시-onload 버그 유발.
-  const MENU_HERO_IDS = ['aria','misaki','elementia','sumika','blanche','kaira','feria','somnia','flinta','solar','marine','gravitas','luna','sakura','cardista','levina','amy','chloe','lara','galatea','trina','iris'];
+  const MENU_HERO_IDS = ['aria','misaki','elementia','sumika','blanche','kaira','feria','somnia','flinta','alba','solar','marine','gravitas','luna','sakura','cardista','levina','amy','chloe','lara','galatea','trina','iris'];
   let _menuHeroIdx = -1;
   function refreshMenuHero() {
     const el = document.getElementById('menu-hero-bg');
@@ -38157,6 +38536,7 @@
   //   진화 대사(전투 톤)와 달리 여기 것들은 "메뉴에서 쉬는 중" 톤으로 쓴다.
   //   실제 풀 = EVO_CHAR_LINES 1줄 + 아래 3줄 = 캐릭당 4줄. 직전 대사는 연속으로 안 나온다.
   const PET_LINES = {
+    alba:      ['…무슨 일이지.', '검은 늘 닦아둔다. 언제 쓸지 모르니까.', '쉬는 것도 훈련이야. …너도 좀 앉아.'],
     flinta:    ['…뭐. 부른 건 너잖아.', '실린더 여섯 칸, 전부 채워놨어. 고맙단 말은 됐고.', '쓰다듬는 건… 한 번만이야. 딱 한 번.'],
     marine:    ['오늘 파도 좋다! 나갈까?', '어뢰 정비 끝. 언제든 말만 해.', '바다 냄새… 아, 여긴 함교였지.'],
     solar:     ['햇살 좀 쬐고 가. 공짜야.', '흑점이 하나 늘었어. 좋은 징조야, 아마?', '너무 가까이 오면 데인다? …농담이야.'],
@@ -40019,7 +40399,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 787;
+  const APP_VERSION = 788;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
@@ -40147,7 +40527,7 @@
     // 🌌 초월 — 승천 15 이후 단계적
     trans:    ['trans1', 'trans3', 'trans5', 'trans10', 'trans15'],
     // ⭐ 캐릭터 돌파 — 별 등급
-    chars:    ['firstStar', 'char8_marine', 'char8_solar', 'char8_gravitas', 'char8_sakura', 'char8_luna', 'char8_aria', 'char8_misaki', 'char8_elementia', 'char8_sumika', 'char8_amy', 'char8_chloe', 'char8_lara', 'char8_galatea', 'char8_trina', 'char8_iris', 'char8_blanche', 'char8_kaira', 'char8_feria', 'char8_somnia', 'char8_cardista', 'char8_levina'],
+    chars:    ['firstStar', 'char8_marine', 'char8_solar', 'char8_gravitas', 'char8_sakura', 'char8_luna', 'char8_aria', 'char8_misaki', 'char8_elementia', 'char8_sumika', 'char8_amy', 'char8_chloe', 'char8_lara', 'char8_galatea', 'char8_trina', 'char8_iris', 'char8_blanche', 'char8_kaira', 'char8_feria', 'char8_somnia', 'char8_cardista', 'char8_levina', 'char8_flinta', 'char8_alba'],
     special:  ['codexHalf', 'codexFull', 'allChars', 'speedrun', 'lowSlot',
                'lucky5', 'goldHold3k', 'gold5kRun',
                'relicFirst', 'relic3', 'relic5', 'relicRare', 'relicEpic', 'relicLeg', 'relicAllRar'],
