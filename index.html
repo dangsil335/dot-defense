@@ -7365,6 +7365,16 @@
     //    레거시 set 스탬프와 같은 흐름에 얹은 이유: 세이브 로드·기기간 병합(META = merged)·서버 로그인으로
     //    META 가 통째로 교체돼도 다음 _ensureGear 호출에서 자동으로 다시 맞춰진다(일회성 플래그가 필요 없음).
     if (_syncUniqueGear() > 0) _mig = true;
+    // 🌟 고유 코어 돌파 소급 — stars 없던 기존 코어는 ★1, 주인 라인이 없으면 붙인다.
+    //    멱등이라 매 로드마다 늘지 않는다(라인은 own 필드 유무로 판정).
+    for (const it of META.gear.inv) {
+      if (!it || it.slot !== 'signature') continue;
+      if (!it.stars) { it.stars = 1; _mig = true; }
+      if (Array.isArray(it.lines) && !it.lines.some(l => l && l.own)) {
+        const own = _sigCoreOwnLine(it.charId);
+        if (own) { it.lines.push(own); _mig = true; }
+      }
+    }
     if (_mig) { try { saveMeta(); } catch (e) {} }
     return META.gear;
   }
@@ -7387,6 +7397,55 @@
     }
     return { id: g.nextId++, slot, set, rarity, level:0, lines, v:1 };
   }
+  // 🌟 고유 코어 돌파 — 가챠에서 중복으로 뽑을 때마다 ★+1 (캐릭터 별과 같은 규칙).
+  const SIG_CORE_MAX_STARS = 8;
+  const SIG_CORE_STAR_MUL  = 0.08;   // ★당 수치 +8% → ★8 = 1.56배. 일반 3줄과 주인 라인 모두에 걸린다.
+
+  // 🌟 주인 전용 라인 — "그 캐릭터가 장착했을 때만" 켜지는 4번째 줄.
+  //   ⚠ 남이 끼면 applyGearEffects 에서 라인을 통째로 건너뛴다(일반 코어의 동조 ½ 감쇠와 다르다).
+  //     일반 3줄은 누가 껴도 그대로 들어가므로 "남이 껴도 쓸 만하되, 주인은 훨씬 좋다"가 성립한다.
+  //   · key/op/base : 일반 라인과 같은 형식 — metaMods 에 얹힌다
+  //   · ab          : 런 시작 시 state.abilityStatOverrides 에 병합 (그 캐릭터 시작 능력 강화)
+  //     ⚠ 오버라이드는 "절대값"으로 읽힌다(예: inkSlash 는 ov.markCap 을 그대로 반환).
+  //       그래서 mul 은 ABILITY_DEFS 의 원본 stats 를 읽어 곱한 결과를 써야 한다 — _sigCoreAbOverride 가 처리.
+  //   · stat 이름은 전부 각 능력의 실제 stats 키에서 확인했다. 오타면 조용히 무효가 되니 바꿀 때 재확인할 것.
+  const SIG_CORE_OWN = {
+    alba:      { key:'bossDmgMul',       op:'mul', base:0.10, label:'여명의 서약',     ab:{ id:'dawnEdge',         stat:'maxCharge',         mul:0.85 } },
+    flinta:    { key:'dmgBoost',         op:'add', base:0.07, label:'여섯 번째 약실',  ab:{ id:'flintShot',        stat:'cylinder',          add:1    } },
+    aria:      { key:'dmgBoost',         op:'add', base:0.07, label:'천상의 합창',     ab:{ id:'starSong',         stat:'starLife',          mul:1.30 } },
+    misaki:    { key:'bossDmgMul',       op:'mul', base:0.10, label:'영겁의 한때',     ab:{ id:'timeButterfly',    stat:'bossSlowMul',       mul:1.30 } },
+    elementia: { key:'dmgBoost',         op:'add', base:0.07, label:'만화의 축복',     ab:{ id:'spritling',        stat:'spiritLife',        mul:1.30 } },
+    sumika:    { key:'bossDmgMul',       op:'mul', base:0.10, label:'먹의 각인',       ab:{ id:'inkSlash',         stat:'markCap',           add:2    } },
+    blanche:   { key:'dmgBoost',         op:'add', base:0.07, label:'칠광 분산',       ab:{ id:'prismBolt',        stat:'shardDamageFactor', mul:1.30 } },
+    kaira:     { key:'luckyChanceBonus', op:'add', base:0.05, label:'월하의 이빨',     ab:{ id:'huntingClaw',      stat:'waveLife',          mul:1.30 } },
+    feria:     { key:'dmgBoost',         op:'add', base:0.07, label:'극의 확장',       ab:{ id:'polarField',       stat:'polarityCap',       add:2    } },
+    somnia:    { key:'slowMul',          op:'mul', base:0.08, label:'몽환의 요람',     ab:{ id:'lullaby',          stat:'drowseCap',         mul:0.80 } },
+    marine:    { key:'dmgBoost',         op:'add', base:0.06, label:'유실 어뢰',       ab:{ id:'torpedo',          stat:'maxSpeed',          mul:1.25 } },
+    solar:     { key:'dmgBoost',         op:'add', base:0.09, label:'응축된 소태양' },   // ⚠ sunspot 은 stats 가 없다 → 일반 수치만
+    gravitas:  { key:'bossDmgMul',       op:'mul', base:0.09, label:'인력의 고리',     ab:{ id:'pullField',        stat:'pullStrength',      mul:1.30 } },
+    amy:       { key:'dmgBoost',         op:'add', base:0.06, label:'요격 편대',       ab:{ id:'interceptorDrone', stat:'bulletMaxSpeed',    mul:1.25 } },
+    chloe:     { key:'dmgBoost',         op:'add', base:0.06, label:'산성 잔류',       ab:{ id:'acidFlask',        stat:'poolLife',          mul:1.35 } },
+    lara:      { key:'dmgBoost',         op:'add', base:0.06, label:'조종대의 실',     ab:{ id:'marionette',       stat:'fireRange',         mul:1.25 } },
+    galatea:   { key:'slowMul',          op:'mul', base:0.07, label:'석화의 여운',     ab:{ id:'petrifyGaze',      stat:'slowTail',          mul:1.40 } },
+    sakura:    { key:'dmgBoost',         op:'add', base:0.06, label:'만개의 일섬',     ab:{ id:'sakuraSlash',      stat:'petalCount',        add:3    } },
+    luna:      { key:'dmgBoost',         op:'add', base:0.06, label:'월광의 시위',     ab:{ id:'moonShot',         stat:'maxBullets',        add:1    } },
+    levina:    { key:'dmgBoost',         op:'add', base:0.06, label:'낙뢰의 사슬',     ab:{ id:'stormBrand',       stat:'chainRadius',       mul:1.30 } },
+    cardista:  { key:'goldMul',          op:'mul', base:0.10, label:'협잡의 패',       ab:{ id:'cardThrow',        stat:'goldCritMul',       mul:1.25 } },
+    iris:      { key:'dmgBoost',         op:'add', base:0.06, label:'과노출',          ab:{ id:'longExposure',     stat:'chargeCap',         mul:1.30 } },
+    trina:     { key:'dmgBoost',         op:'add', base:0.06, label:'삼중 인화',       ab:{ id:'phantomStage',     stat:'maxReps',           add:1    } },
+  };
+  // 주인 라인 1줄 생성 — 굴리지 않는다(고정). 값은 장착 시 ★ 배율을 받는다.
+  function _sigCoreOwnLine(charId) {
+    const d = SIG_CORE_OWN[charId];
+    if (!d) return null;
+    return { own: charId, key: d.key, op: d.op, label: d.label, val: d.base, sig: 1 };
+  }
+  // 코어 ★ → 수치 배율
+  function _sigCoreStarMul(it) {
+    const s = Math.max(1, Math.min(SIG_CORE_MAX_STARS, (it && it.stars) || 1));
+    return 1 + (s - 1) * SIG_CORE_STAR_MUL;
+  }
+
   // ✨ 고유장비 생성 — 캐릭터 전용, 기존 4슬롯과 별개인 5번째 슬롯(signature) 아이템.
   //    · set 필드 없음 (어떤 세트에도 속하지 않음 → _gearSetCounts 에 영향 0)
   //    · stars 필드 없음 (돌파는 META.charStars[charId] 에서 읽는다 — 단계 2)
@@ -7397,8 +7456,24 @@
     const n = GEAR_RARITY_LINES['unique'] || 3;
     const lines = [];
     for (let i = 0; i < n; i++) lines.push(_gearRollLine('signature'));   // → GEAR_OPTIONS_ALL 통합 풀
-    return { id: g.nextId++, slot:'signature', charId, rarity:'unique', level:0, lines, v:1 };
+    const own = _sigCoreOwnLine(charId);   // 🌟 주인 전용 4번째 줄 (고정, 굴리지 않는다)
+    if (own) lines.push(own);
+    return { id: g.nextId++, slot:'signature', charId, rarity:'unique', level:0, stars:1, lines, v:1 };
   }
+  // 🌟 고유 코어 돌파 — 가챠에서 코어가 또 나왔을 때. 없으면 지급(★1), 있으면 ★+1.
+  //    반환: { item, isNew, starUp, maxed } — 가챠 결과 카드가 이 값으로 문구를 고른다.
+  //    ⚠ 지급 자체는 _grantUniqueGear 하나로만 한다("charId 당 1개" 불변식의 단일 관문).
+  function _sigCorePull(charId) {
+    const before = _findUniqueGear(charId);
+    const item = _grantUniqueGear(charId);
+    if (!item) return null;
+    if (!before) return { item, isNew: true, starUp: false, maxed: false };
+    const cur = item.stars || 1;
+    if (cur >= SIG_CORE_MAX_STARS) return { item, isNew: false, starUp: false, maxed: true };
+    item.stars = cur + 1;
+    return { item, isNew: false, starUp: true, maxed: false };
+  }
+
   // ✨ 고유장비 조회 — charId 로 인벤에서 찾는다. 불변식 "charId 당 인벤에 정확히 1개"의 유일한 판정자.
   function _findUniqueGear(charId) {
     const g = META.gear;
@@ -7552,6 +7627,36 @@
   // 장착 코어의 라인을 metaMods에 합산 (주간모디파이어 apply와 동일 패턴). add=합산, mul=(1+합)배.
   // ⚠️ _outRaw 는 UI 전용 순수 출력 인자다(캡에 묻힌 세트 보너스 표시). 넘기지 않으면 동작이 예전과 완전히 동일하다 —
   //    게임 본체 호출부는 인자 1개로 부르므로 절대 이 분기를 타지 않는다. 여기서 로직을 분기시키지 말 것.
+  // 🌟 고유 코어 주인 라인의 능력 강화를 state.abilityStatOverrides 에 병합한다.
+  //    ⚠ 오버라이드는 "절대값"으로 읽힌다(예: inkSlash 는 ov.markCap 을 그대로 반환).
+  //      그래서 mul 은 ABILITY_DEFS 의 원본 stats 를 읽어 곱한 결과를 써야 한다.
+  //    ⚠ 주인이 직접 장착했을 때만 적용된다 — 코어를 갖고만 있어도, 남이 껴도 안 걸린다.
+  function _applySigCoreAbility(st, charId) {
+    if (!st || !charId) return;
+    const d = SIG_CORE_OWN[charId]; if (!d || !d.ab) return;
+    const eq = _gearLoadout(charId);
+    const id = eq && eq.signature; if (id == null) return;
+    const g = META.gear; if (!g || !Array.isArray(g.inv)) return;
+    const item = g.inv.find(x => x && x.id === id);
+    if (!item || item.slot !== 'signature' || item.charId !== charId) return;   // 남의 코어면 강화 없음
+
+    const def = (typeof ABILITY_DEFS !== 'undefined') && ABILITY_DEFS[d.ab.id];
+    const base = def && def.stats ? def.stats[d.ab.stat] : undefined;
+    if (base == null) return;   // stats 키 오타 방어 — 조용히 무효가 되지 않게 여기서 끊는다
+
+    const sMul = _sigCoreStarMul(item);
+    let val;
+    if (d.ab.add != null) {
+      val = base + d.ab.add * sMul;                       // 가산형(실린더 +1 등) — ★ 배율만큼 더 붙는다
+      val = Math.round(val);
+    } else {
+      const delta = (d.ab.mul - 1) * sMul;                // 배수형 — ★ 배율만큼 깊어진다
+      val = base * (1 + delta);
+      val = (Math.abs(val) >= 10) ? Math.round(val) : Math.round(val * 1000) / 1000;
+    }
+    const ov = st.abilityStatOverrides || (st.abilityStatOverrides = {});
+    ov[d.ab.id] = Object.assign({}, ov[d.ab.id], { [d.ab.stat]: val });
+  }
   function applyGearEffects(mm, _outRaw, charId) {
     const g = META.gear; if (!g || !g.equipped) return;
     const add = {}, mul = {};
@@ -7566,13 +7671,17 @@
       //    ⚠️ 정상 4슬롯 장착(일반 코어 + 비-signature 슬롯)은 전부 통과 → 기존 동작 완전 불변.
       if ((slot === 'signature') !== _gearIsUnique(item)) continue;
       const lvlMul = 1 + (item.level || 0) * 0.1;   // 레벨당 +10% (P3에서 골드로 레벨업)
+      // 🌟 고유 코어 ★ 배율 — 일반 3줄과 주인 라인 모두에 걸린다(주인은 라인 수 자체가 하나 더 많다).
+      const sigMul = (slot === 'signature') ? _sigCoreStarMul(item) : 1;
       for (const ln of item.lines) {
+        // 🌟 주인 전용 라인 — 남이 끼면 라인 통째로 비활성(일반 코어의 동조 ½ 감쇠와 다르다).
+        if (ln.own && ln.own !== curChar) continue;
         // 💠 레전드 고유 — overcore 는 "데미지 +25% 영구"가 전부고 그 효과는 바로 아래 dmgBoost 가산으로 끝난다.
         //    mm.uniq_overcore 를 읽는 코드가 게임 전체에 없어(uniq_reload/uniq_barrage 와 달리) 플래그를 세우지 않는다.
         //    ⚠️ 나중에 overcore 에 메커니즘을 붙이려면 여기서 플래그를 다시 세워야 한다.
         if (ln.uniq) { if (ln.uniq === 'overcore') add['dmgBoost'] = (add['dmgBoost'] || 0) + 0.25; else mm['uniq_' + ln.uniq] = true; continue; }
         if (ln.aff && item.slot === 'signature') continue;   // ✨ 고유장비엔 set 이 없다 → 동조 라인 자체가 존재할 수 없음. 오염분이면 GEAR_SETS 판정을 태우지 않고 라인을 버린다
-        let v = ln.val * (ln.flat ? 1 : lvlMul);
+        let v = ln.val * (ln.flat ? 1 : lvlMul) * (ln.flat ? 1 : sigMul);
         if (ln.aff) { const chs = (GEAR_SETS[ln.aff] || {}).affinity || []; v *= (chs.indexOf(curChar) >= 0 ? 1 : 0.5); }   // 소프트: 미매칭 ½
         if (ln.op === 'add') add[ln.key] = (add[ln.key] || 0) + v;
         else mul[ln.key] = (mul[ln.key] || 0) + v;
@@ -22763,6 +22872,9 @@
   function _refreshMetaModsForChar(charId) {
     if (!state || !state.metaMods) return;
     try { state.metaMods = _buildMetaMods(charId); } catch (e) { console.warn('[장비] metaMods 재구축 실패:', e); }
+    // 🌟 진화로 캐릭터가 바뀌면 고유 코어 능력 강화도 새 캐릭터 기준으로 갈아끼운다.
+    //    (예전 캐릭터의 강화가 남으면 엉뚱한 능력이 계속 강화된 채로 굴러간다)
+    try { state.abilityStatOverrides = {}; _applySigCoreAbility(state, charId); } catch (e) {}
   }
   function reset() {
     // 🏰 게임 모드 — 메뉴 → 모드 선택에서 결정
@@ -22914,9 +23026,10 @@
     // 🌀 v614 — 주간 모디파이어 id 기록 (효과 자체는 _buildMetaMods 안에서 적용)
     try { state.weeklyModifierId = getActiveWeeklyModifier().id; } catch (e) {}
     // 📊 v677 — 능력 stats 오버라이드 테이블 (능력id → {statName: value}).
-    //   고유장비 옵션이 나중 단계에서 이 객체를 채우면 _S(ab) 가 능력 정의의 stats 위에 병합한다.
-    //   이번 단계에서는 초기화만 하고 아무도 채우지 않는다 (런마다 새로 만들어져야 함).
+    //   _S(ab) 가 능력 정의의 stats 위에 이 값을 병합한다. 런마다 새로 만들어져야 한다.
+    //   🌟 v797 — 예고돼 있던 "나중 단계"가 이것: 고유 코어의 주인 전용 라인이 여기를 채운다.
     state.abilityStatOverrides = {};
+    try { _applySigCoreAbility(state, selectedCharacter); } catch (e) { console.warn('[고유코어] 능력 강화 주입 실패:', e); }
     // 🏰 디펜스 모드 (TD): 본진 HP + 타워 entity 배열
     if (state.mode === 'defense') {
       state.towerMaxHP = 40 + (mods.towerHPBonus || 0);   // 기본 40 (강화소 설명과 일치)
@@ -25750,6 +25863,7 @@
       },
       rates: { SR: 0.05, SSR: 0.01 },               // 나머지(0.94) = 스타더스트
       featured: 'elementia',
+      coreRate: 0.005,   // 🌟 고유 코어 별도 슬롯 — 캐릭터 대신 등장(구 고대유물 자리)
     },
     {
       id: 'ariaMisa',
@@ -25763,6 +25877,7 @@
       },
       rates: { SR: 0.05, SSR: 0.01 },
       featured: 'aria',
+      coreRate: 0.005,   // 🌟 고유 코어 별도 슬롯 — 캐릭터 대신 등장(구 고대유물 자리)
     },
     {
       id: 'prismBeast',
@@ -25776,6 +25891,7 @@
       },
       rates: { SR: 0.05, SSR: 0.01 },
       featured: 'blanche',
+      coreRate: 0.005,   // 🌟 고유 코어 별도 슬롯 — 캐릭터 대신 등장(구 고대유물 자리)
     },
     {
       id: 'feriaSomnia',
@@ -25789,6 +25905,7 @@
       },
       rates: { SR: 0.05, SSR: 0.01 },
       featured: 'feria',
+      coreRate: 0.005,   // 🌟 고유 코어 별도 슬롯 — 캐릭터 대신 등장(구 고대유물 자리)
     },
   ];
   // 현재 선택된 배너 인덱스 (META 에 저장)
@@ -25968,6 +26085,37 @@
   // 한 번 뽑기 — 현재 선택된 배너의 풀/확률 사용
   function gachaPullOne() {
     const banner = getCurrentBanner();
+    // 🌟 고유 코어 슬롯 — 캐릭터 추첨 "대신" 나온다(적중하면 여기서 끝). 구 고대유물이 쓰던 자리.
+    //    ⚠ 이미 보유한 캐릭터의 코어만 나온다. 없는 캐릭터의 코어는 쓸 수 없는 아이템이라 뽑혀도 의미가 없다.
+    //      픽업 SSR 중 보유한 캐릭이 하나도 없으면 이 슬롯을 건너뛰고 평소대로 캐릭터를 뽑는다.
+    if (Math.random() < (banner.coreRate || 0)) {
+      const owned = ((banner.pool && banner.pool.SSR) || []).filter(c => {
+        try { return _uqEligible(c); } catch (e) { return false; }
+      });
+      if (owned.length) {
+        const cid = owned[Math.floor(Math.random() * owned.length)];
+        const res = _sigCorePull(cid);
+        if (res) {
+          let shardGain = 0;
+          if (res.maxed) {   // ★8 만렙 중복 → 별조각 (캐릭터 만렙 규칙과 동일)
+            shardGain = SHARD_EARN.SSR || 0;
+            if (shardGain) {
+              META.starShards = (META.starShards || 0) + shardGain;
+              META.starShardsEarned = (META.starShardsEarned || 0) + shardGain;
+            }
+          }
+          saveMeta();
+          return {
+            rarity: 'core', isCore: true,
+            charId: cid,
+            coreName: (SIGNATURE_GEAR[cid] && SIGNATURE_GEAR[cid].name) || '고유 코어',
+            coreIcon: (typeof SIGNATURE_GEAR_ICON !== 'undefined' && SIGNATURE_GEAR_ICON[cid]) || '✨',
+            isNew: res.isNew, starUp: res.starUp, maxed: res.maxed,
+            newStars: res.item.stars || 1, shardGain,
+          };
+        }
+      }
+    }
     const rates = banner.rates;
     const r = Math.random();
     let rarity;
@@ -39611,7 +39759,7 @@
     for (let i = 0; i < count; i++) results.push(gachaPullOne());
     SFX.combo && SFX.combo();
     _pendingGachaResults = results;
-    const _isJackpot = results.some(r => r.rarity === 'SSR' || r.isAncient);
+    const _isJackpot = results.some(r => r.rarity === 'SSR' || r.isCore);
     showScreen('gachaTuning');
     requestAnimationFrame(() => _startGachaTuning(_isJackpot, () => {
       buildGachaResult(_pendingGachaResults);
@@ -39945,26 +40093,29 @@
     const rarityRank = { R: 0, SR: 1, SSR: 2, ancient: 3 };
     for (const r of results) {
       const card = document.createElement('div');
-      // 🌌 v245 — 고대 유물 결과 카드 (캐릭터와 다른 렌더링)
-      if (r.isAncient) {
+      // 🌟 v797 — 고유 코어 결과 카드 (캐릭터와 다른 렌더링).
+      //   ⚠ CSS 클래스 rarity-ancient / hint-ancient 를 그대로 쓴다. 구 고대유물용으로 튜닝된
+      //     연출(글리치 전조·홀로그램 광택·등장 펄스)을 버리지 않으려고 껍데기만 물려받았다.
+      //     클래스 이름의 'ancient' 는 과거 흔적이고, 고대 유물 시스템 자체는 v796 에서 제거됐다.
+      if (r.isCore) {
         ancientCount++;
         card.className = `gacha-result-card rarity-ancient`;
         card.style.setProperty('--rarity-color', '#ff88ff');
         card.style.boxShadow = '0 0 24px rgba(255,136,255,0.7)';
         let status;
-        if (r.isNew) status = `<div class="card-status new" style="color:#ff88ff;">🌌 ANCIENT NEW!</div>`;
-        else if (r.starUp) status = `<div class="card-status" style="color:#ff88ff;">${r.newStars}★ 강화!</div>`;
-        else status = `<div class="card-status">MAX · <span style="color:#c9a3ff;">💠+${r.shardGain||0}</span></div>`;
-        // 유물 이미지 (있으면) / 없으면 이모지
-        const relicImgSrc = `./icons/relics/${r.ancientId}.png`;
+        if (r.isNew) status = `<div class="card-status new" style="color:#ff88ff;">🌟 고유 코어 획득!</div>`;
+        else if (r.starUp) status = `<div class="card-status" style="color:#ff88ff;">${r.newStars}★ 돌파!</div>`;
+        else status = `<div class="card-status">MAX ${r.newStars}★ · <span style="color:#c9a3ff;">💠+${r.shardGain||0}</span></div>`;
+        // 코어 아이콘 — 정식 아트(icons/gear/sig-<charId>.png)가 생기면 자동으로 그걸 쓰고, 없으면 이모지
+        const coreImgSrc = `./icons/gear/sig-${r.charId}.png`;
         const portraitHTML = `<div class="card-portrait" style="background:#1a0a1f;padding:8px;overflow:hidden;">
-          <img src="${relicImgSrc}" style="width:100%;height:100%;object-fit:contain;image-rendering:pixelated;"
-               onerror="this.style.display='none';this.parentElement.innerHTML='<span style=&quot;font-size:64px&quot;>${r.relicIcon}</span>';" />
+          <img src="${coreImgSrc}" style="width:100%;height:100%;object-fit:contain;"
+               onerror="this.style.display='none';this.parentElement.innerHTML='<span style=&quot;font-size:64px&quot;>${r.coreIcon}</span>';" />
         </div>`;
         card.innerHTML = `
-          <div class="card-rarity-tag" style="background:#ff88ff;color:#1a0a1f;">ANCIENT</div>
+          <div class="card-rarity-tag" style="background:#ff88ff;color:#1a0a1f;">CORE</div>
           ${portraitHTML}
-          <div class="card-name" style="color:#ff88ff;">${r.relicName}</div>
+          <div class="card-name" style="color:#ff88ff;">${r.coreName}</div>
           ${status}
         `;
         { const _f = document.createElement('div'); _f.className = 'card-face-front'; while (card.firstChild) _f.appendChild(card.firstChild); card.appendChild(_f); }
@@ -40387,7 +40538,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 796;
+  const APP_VERSION = 797;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
