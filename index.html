@@ -5414,6 +5414,13 @@
   .cm-d-acts { display:flex; gap:7px; flex-wrap:wrap; }
   .cm-d-lv { display:flex; align-items:center; gap:10px; margin-bottom:12px; padding:8px 11px; background:linear-gradient(90deg,rgba(255,212,121,0.08),#141a26); border:1px solid #3a3524; border-radius:9px; }
   .cm-d-lvtxt { font-size:12px; font-weight:800; color:#ffd479; }
+  /* 🌟 고유 코어 돌파 행 — 강화 Lv 행과 같은 형식, 색만 보랏빛으로 구분 */
+  .cm-d-star { display:flex; flex-direction:column; gap:3px; margin-bottom:12px; padding:8px 11px;
+               background:linear-gradient(90deg,rgba(201,139,255,0.10),#141a26);
+               border:1px solid rgba(201,139,255,0.34); border-radius:8px; }
+  .cm-d-startxt { font-size:12px; font-weight:800; color:#c98bff; }
+  .cm-d-startxt b { color:#e8d4ff; letter-spacing:-1px; }
+  .cm-d-starnote { font-size:10px; color:#8892a4; }
   .cm-d-lv .gcm-btn { flex:0 0 auto; margin-left:auto; padding:8px 12px; }
   .gcm-btn.lv { border-color:#ffd479; color:#ffe6a0; }
   /* 🎽 세트 현황 패널 */
@@ -5461,9 +5468,6 @@
   .gcm-own { font-size:9px; font-weight:800; padding:1px 5px; border-radius:5px; flex-shrink:0;
              background:#4a3f1a; color:#ffd479; white-space:nowrap; }
   .gcm-line.own.off .gcm-own { background:#232c3c; color:#8892a4; }
-  /* 코어 ★ — 헤더 등급줄 옆 */
-  .cm-d-stars { color:#ffd479; letter-spacing:-1px; font-size:10px; }
-  .cm-d-stars i { font-style:normal; color:#9aa3b3; font-size:9px; margin-left:3px; letter-spacing:0; }
   .gcm-line.uniq small { display:block; color:#c9bd92; font-size:10px; margin-top:2px; line-height:1.45; white-space:normal; }
   .gear-core-img { object-fit:contain; display:inline-block; vertical-align:middle; }
   /* 🧰 코어 처리 툴바 (합성·일괄분해) */
@@ -40556,7 +40560,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 798;
+  const APP_VERSION = 799;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
@@ -41445,6 +41449,15 @@
     const _lvNext = (it.lines.length - _lvFix) === 0
       ? ' (라인 전부 고정값 — 수치 상승 없음)'
       : ` (+${(lvl + 1) * 10}%${_lvFix ? ` · 고정 ${_lvFix}줄 제외` : ''})`;
+    // 🌟 돌파 행 — 고유 코어 전용. 별만 찍어두면 그게 뭔지 모른다는 제보로 강화 Lv 행과 같은 형식으로 올렸다.
+    const _stN = Math.max(1, Math.min(SIG_CORE_MAX_STARS, it.stars || 1));
+    const _stMax = _stN >= SIG_CORE_MAX_STARS;
+    const _stPct = Math.round((_sigCoreStarMul(it) - 1) * 100);
+    const starRow = (!uq || _gearRerollPending) ? '' :
+      `<div class="cm-d-star">`
+      + `<span class="cm-d-startxt">🌟 돌파 <b>${'★'.repeat(_stN)}${'☆'.repeat(SIG_CORE_MAX_STARS - _stN)}</b> ${_stN}/${SIG_CORE_MAX_STARS}`
+      + `${_stPct > 0 ? ` · 수치 <b>+${_stPct}%</b>` : ''}${_stMax ? ' · MAX' : ` → 다음 ★ +${Math.round(SIG_CORE_STAR_MUL * 100)}%`}</span>`
+      + `<span class="cm-d-starnote">${_stMax ? '만렙 — 이후 중복은 별조각' : '가챠에서 같은 코어를 또 뽑으면 ★+1'}</span></div>`;
     const levelRow = _gearRerollPending ? '' : `<div class="cm-d-lv"><span class="cm-d-lvtxt">⚡ 강화 Lv.${lvl}${atMax ? ' · MAX' : ` → ${lvl + 1}${_lvNext}`}</span>${atMax ? '' : `<button class="gcm-btn lv" data-act="levelup"${gg < lvCost ? ' disabled' : ''}>⬆ 레벨업 <span class="gcm-cost">💰${lvCost}</span></button>`}</div>`;
     // 라인 표시 — 재설정 직후엔 왼쪽이 "직전" 라인(비교용, 잠금토글 없음), 평소엔 현재 라인 + 🔒 토글
     const curLines = _gearRerollPending
@@ -41465,7 +41478,7 @@
           }
           return `<div class="gcm-line${_gearLocks.has(i) ? ' locked' : ''}${i === 0 && sdef ? ' sig' : ''}${l.aff ? ' aff' : ''}">${lockBtn}<span class="gcm-tier t${l.tier}">T${l.tier}</span><span class="gcm-lbl">${l.label}${i === 0 && sdef ? ' <span class="gcm-sig">시그니처</span>' : ''}${_gearAffBadge(l)}</span><b>${l.flat ? '+' + l.val + 's' : '+' + Math.round(l.val * 100) + '%'}</b></div>`;
         }).join('');
-    let h = `<div class="cm-d-head" style="border-color:${col}"><span class="cm-d-ico">${_gearCoreImg(it, 34) || _gearSigIcon(it) || _GEAR_SLOTICO[it.slot]}</span><div><div class="cm-d-name">${uq ? (_gearSigName(it) || (uqch ? uqch.name + ' 고유장비' : '고유장비')) : _gearArchName(it) + ' 코어'}</div><div class="cm-d-rar" style="color:${col}">${GEAR_RARITY_LABEL[it.rarity]}${equipped ? ' · 장착중' : ''}${sdef ? ` · <span style="color:${sdef.color}">${sdef.icon}${sdef.name}</span>` : ''}${uq ? ` · <span style="color:${col}">✨${uqch ? uqch.name : '고유장비'}</span>` : ''}${uq ? ` · <span class="cm-d-stars">${'★'.repeat(Math.min(SIG_CORE_MAX_STARS, it.stars || 1))}<i>${it.stars || 1}/${SIG_CORE_MAX_STARS}</i></span>` : ''}${it.locked ? ' · <span style="color:#ffd479">🔒</span>' : ''}</div></div></div>${uq && _gearSigDesc(it) ? `<div class="cm-d-sigflavor">“${_gearSigDesc(it)}”</div>` : ''}${levelRow}<div class="cm-d-cols"><div class="cm-d-col"><div class="cm-d-colt">${_gearRerollPending ? '직전 잠재능력' : `현재 잠재능력${lockN ? ` · 🔒${lockN}` : ''}`}</div>${curLines}</div>`;
+    let h = `<div class="cm-d-head" style="border-color:${col}"><span class="cm-d-ico">${_gearCoreImg(it, 34) || _gearSigIcon(it) || _GEAR_SLOTICO[it.slot]}</span><div><div class="cm-d-name">${uq ? (_gearSigName(it) || (uqch ? uqch.name + ' 고유장비' : '고유장비')) : _gearArchName(it) + ' 코어'}</div><div class="cm-d-rar" style="color:${col}">${GEAR_RARITY_LABEL[it.rarity]}${equipped ? ' · 장착중' : ''}${sdef ? ` · <span style="color:${sdef.color}">${sdef.icon}${sdef.name}</span>` : ''}${uq ? ` · <span style="color:${col}">✨${uqch ? uqch.name : '고유장비'}</span>` : ''}${it.locked ? ' · <span style="color:#ffd479">🔒</span>' : ''}</div></div></div>${uq && _gearSigDesc(it) ? `<div class="cm-d-sigflavor">“${_gearSigDesc(it)}”</div>` : ''}${starRow}${levelRow}<div class="cm-d-cols"><div class="cm-d-col"><div class="cm-d-colt">${_gearRerollPending ? '직전 잠재능력' : `현재 잠재능력${lockN ? ` · 🔒${lockN}` : ''}`}</div>${curLines}</div>`;
     if (_gearRerollPending) h += `<div class="cm-d-arrow">→</div><div class="cm-d-col new"><div class="cm-d-colt">새 잠재능력 <span class="cm-d-applied">적용됨</span></div>${it.lines.map(_gearLineRow).join('')}</div>`;
     h += `</div>`;
     // 재설정 직후: 확인(비교 닫기) + 바로 한 번 더 굴리기. 되돌리기는 없다.
