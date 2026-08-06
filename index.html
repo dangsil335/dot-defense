@@ -35849,6 +35849,7 @@
     'chloe__madtea':            { evo: '차 한 잔 마셔볼래? …아, 그건 아니고!',         amb: '티파티 준비했어. 찻잔은 안 깨졌으면 좋겠는데.' },
     'elementia__monarch':       { evo: '정령들이 바다에서 놀고 있어 — 같이 가자!',       amb: '파도 정령이 부르네 — 함께 휩쓸어 줄게!' },
     'elementia__idol':          { evo: '정령들도 응원 왔어 — 무대 시작할게!',           amb: '앵콜은 정령들이 부르는 거야 — 같이 가자!' },
+    'elementia__bunny':         { evo: '정령들이 지켜보고 있어… 너무 빤히 보진 마!',    amb: '토끼 정령들도 같이 갈 거야. 그러니까… 괜찮아!' },
     'feria__zerog':             { evo: '중력도 극이야. …방향을 잃게 해줄게.',           amb: '무중력이야. 발 디딜 곳 없어.' },
     'feria__cataclysm':         { evo: '극을 지웠어. …끌 것도, 밀 것도 없어.',          amb: '폴라리티 소멸. 도망칠 방향 자체가 없어.' },
     'feria__polaritylancet':    { evo: '극을 한 점으로 세웠어. …찌를 곳만 남겨둘게.',    amb: '자기력선을 날 하나로 벼렸어. 스치면 베여.' },
@@ -36677,7 +36678,7 @@
     blanche:   [{ id: 'crystal',      name: '크리스탈 라군 리조트' }, { id: 'winterball', name: '윈터 볼' }, { id: 'orthodoxmage',  name: '정통 마도사' }],
     cardista:  [{ id: 'casino',       name: '비치 카지노 갬블러' }, { id: 'bloodmoon',  name: '블러드문 카지노' }],
     chloe:     [{ id: 'waterpark',    name: '애시드 워터파크 연구원' }, { id: 'madtea',  name: '매드 티파티 연금술사' }],
-    elementia: [{ id: 'monarch',      name: '정령왕의 해변' }, { id: 'idol',        name: '정령 아이돌' }],
+    elementia: [{ id: 'monarch',      name: '정령왕의 해변' }, { id: 'idol',        name: '정령 아이돌' }, { id: 'bunny',       name: '정령 바니' }],
     flinta:    [{ id: 'phantomcat',   name: '팬텀 캣' }, { id: 'noblemarksman', name: '고귀한 사격수' }, { id: 'beachracing',   name: '비치 레이싱' }],
     feria:     [{ id: 'zerog',        name: '제로그래비티 마그넷' }, { id: 'cataclysm', name: '제로 폴라리티 카타클리즘' }, { id: 'polaritylancet', name: '폴라리티 랜싯' }],
     galatea:   [{ id: 'whitesand',    name: '백사장 석화 퀸' }, { id: 'rosegarden',    name: '장미 석화 정원' }],
@@ -40561,7 +40562,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 800;
+  const APP_VERSION = 801;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
