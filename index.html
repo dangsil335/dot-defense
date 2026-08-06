@@ -6607,7 +6607,7 @@
 <!-- 🏮 상점 등장 컷인 — 등불 점등 연출. 내용은 JS에서 주입 -->
 <div id="shopCutin" class="shop-cutin"></div>
 
-<!-- 🌳 진화 게이트 — R5/R20/R40 보스 처치 후 (랜덤 타워 + 진화/거절) -->
+<!-- 🌳 진화 게이트 — R5/R20/R40 (랜덤 타워). v802 부터 수락/거절 없이 즉시 진화 + 컷인만 보여준다 -->
 <div id="evoGate" style="display:none; position:fixed; inset:0; z-index:9000; --evo-color:#88e0ff; background:rgba(6,8,16,.82); align-items:center; justify-content:center;">
   <div style="width:min(86vw,360px); padding:24px 20px; border-radius:16px; background:linear-gradient(180deg,#141a28,#0d1018); border:2px solid var(--evo-color); box-shadow:0 0 28px var(--evo-color),0 10px 40px rgba(0,0,0,.6); text-align:center; font-family:Jua,sans-serif;">
     <div style="font-size:13px; letter-spacing:2px; color:#9fb0c8; margin-bottom:6px;">🌳 진화 기회</div>
@@ -6616,10 +6616,8 @@
     <div class="evo-gate-name" style="font-size:24px; font-weight:bold; margin:2px 0 4px;">—</div>
     <div class="evo-gate-line" style="font-size:13px; color:#cfe0f5; font-style:italic; min-height:16px; margin:0 0 10px;"></div>
     <div class="evo-gate-ability" style="font-size:14px; color:#dfe8f5; min-height:40px; line-height:1.45; margin-bottom:18px;">—</div>
-    <div style="display:flex; gap:10px;">
-      <button id="evoYes" style="flex:1; padding:13px; border:none; border-radius:10px; background:var(--evo-color); color:#0a0d14; font-weight:bold; font-size:16px; cursor:pointer;">진화</button>
-      <button id="evoNo" style="flex:1; padding:13px; border:1px solid #3a4456; border-radius:10px; background:#1a2030; color:#aeb9c9; font-weight:bold; font-size:16px; cursor:pointer;">거절</button>
-    </div>
+    <div id="evoGo" style="padding:11px; border-radius:10px; background:var(--evo-color); color:#0a0d14; font-weight:bold; font-size:15px; text-align:center;">진화 완료</div>
+    <div style="margin-top:8px; font-size:11px; color:#8fa0b8;">화면을 누르면 바로 넘어갑니다</div>
   </div>
 </div>
 
@@ -23609,7 +23607,7 @@
       else if (name === 'roundOne') { if (scr !== 'game') return; _tutBubble('저것들이 너무 많아지면 우리가 밀려. 시간 안에 적당히 정리하면 돼 — 어렵지 않아.', { autoMs: 6500 }); }
       else if (name === 'levelCard') { _tutBubble('오, 카드 떴다! 이걸로 새 능력을 배우는 거야. 맘에 드는 거 골라 봐.', { autoMs: 6000 }); }
       else if (name === 'comboCard') { _tutBubble('잠깐, 이거! 완전 좋은 거야 — 두 능력이 합쳐지는 거라구. 무조건 이거!', { autoMs: 6000 }); }
-      else if (name === 'somniaGate') { const y = document.getElementById('evoYes'); if (y) _tutSpotlight(y); _tutBubble('이제 날 불러! 저 <b>진화</b> 누르면 내가 나올게. 이번만 특별히 도와주는 거야.', { pos: 'top' }); }
+      else if (name === 'somniaGate') { const y = document.getElementById('evoGo'); if (y) _tutSpotlight(y); _tutBubble('나 왔어! 이제부터 내가 같이 싸울게. 이번만 특별히 도와주는 거야.', { pos: 'top' }); }
     }, name === 'menuStart' ? 500 : 350);
   }
   // 🎓 화면 전환 시 튜토리얼 안내 디스패치 (showScreen 에서 호출)
@@ -34403,18 +34401,10 @@
     // 🤖 v726 — 백그라운드에선 연출을 보여줄 대상이 없으니 대기 없이 즉시 처리한다.
     //   (레벨업 카드가 이미 `document.hidden ? 0 : 600` 으로 동작하는 것과 결을 맞춤)
     const _d = document.hidden ? 0 : 1;
-    // 🌳 v779 — 진화 게이트는 AUTO 에서 "무조건 수락". 거절은 사다리를 끊는 선택이라
-    //   자동진행이 굴릴 만한 주사위가 아니다(R5 를 거절하면 R20·R40 이 영원히 안 열린다).
-    //   ⚠ 다른 씬보다 먼저 본다 — 진화 컷인이 떠 있는 동안은 이게 유일한 할 일이다.
+    // 🌳 v802 — 진화 게이트는 이제 선택지가 없다(수락/거절 폐지). 열리는 즉시 적용되고
+    //   스스로 닫히므로 AUTO 가 누를 대상이 없다. 떠 있는 동안은 다른 씬을 건드리지 않고 비켜준다.
     const _eg = document.getElementById('evoGate');
-    if (_eg && getComputedStyle(_eg).display !== 'none') {
-      const _yes = document.getElementById('evoYes');
-      if (_yes) {
-        if (!_eg._autoAt) _eg._autoAt = performance.now() + 1100 * _d;   // 컷인을 한 번은 보여준다
-        else if (performance.now() >= _eg._autoAt) { _eg._autoAt = 0; _yes.click(); }
-      }
-      return;
-    } else if (_eg) _eg._autoAt = 0;
+    if (_eg && getComputedStyle(_eg).display !== 'none') return;
     const draft = document.getElementById('cardDraftScene');
     if (draft && draft.classList.contains('show')) {
       const cards = [...draft.querySelectorAll('.draft-card:not(.dim):not(.revealed)')];
@@ -36342,7 +36332,8 @@
     triple1:'lovers', round50:'chariot', lvHigh:'hierophant', maxAbility:'sun', score100k:'star',
     kills2k:'devil', boss5:'justice', round100:'world',
   };
-  // ===== 🌳 진화 게이트 (R5→R / R20→SR / R40→SSR, 랜덤 + 진화/거절, 무손실 가산) =====
+  // ===== 🌳 진화 게이트 (R5→R / R20→SR / R40→SSR, 랜덤, 무손실 가산) =====
+  //   v802 — 수락/거절 폐지. showEvoGate 는 컷인을 띄우면서 그 자리에서 applyEvolution 한다.
   const _RTOWER_TO_ACH = {}; for (const _a in ACH_TO_RTOWER) _RTOWER_TO_ACH[ACH_TO_RTOWER[_a]] = _a;
   // 🌳 능력 출처 분류 — 게임 중 능력 리스트에서 진화-루트 / 고유 능력을 구분 표시
   const _RTOWER_ABILITY_SET = new Set(Object.values(R_TOWERS).map(rt => rt.ability));   // 진화 루트 13개 ability
@@ -36470,22 +36461,31 @@
     el._prevPaused = paused; paused = true;
     el.style.display = 'flex';
     try { SFX.click(); } catch (e) {}
-    const yes = document.getElementById('evoYes'), no = document.getElementById('evoNo');
-    if (yes) yes.onclick = () => {
-      el.style.display = 'none'; paused = el._prevPaused || false;
-      try { _tutClearGuide(); } catch (e) {}   // 🎓 게이트 안내(말풍선/링) 정리
-      applyEvolution(kind, id, info.abId);
-      // 🎓 튜토리얼 강제 솜니아 진화 완료 → evolved 단계 + 2라운드 더 체험 후 자동 완료(advanceRound에서 endGame)
-      if (forced && state && state.tutorial && kind === 'SSR' && id === 'somnia' && typeof _tutSetStage === 'function') {
-        _tutSetStage('evolved');
-        state._tutEndRound = (state.round || 5) + 2;
-      }
-    };
-    if (no) {
-      no.style.display = forced ? 'none' : '';   // 🎓 튜토리얼 강제진화 = 거절 버튼 숨김(진화만 가능)
-      no.onclick = forced ? null : () => { el.style.display = 'none'; paused = el._prevPaused || false; try { toast('진화 거절 — 현 단계 유지'); } catch (e) {} };
+
+    // 🌳 v802 — 수락/거절 폐지. 진화는 "선택"이 아니라 "결과"다.
+    //   거절은 사다리를 끊는 선택이라(R5 를 거절하면 R20·R40 이 영원히 안 열린다) 물어볼 이유가 없었다.
+    //   ⚠ 적용을 먼저 하고 컷인은 보여주기만 한다 — 닫기 타이밍과 무관하게 진화가 확정되도록.
+    applyEvolution(kind, id, info.abId);
+    // 🎓 튜토리얼 강제 솜니아 진화 완료 → evolved 단계 + 2라운드 더 체험 후 자동 완료(advanceRound에서 endGame)
+    if (forced && state && state.tutorial && kind === 'SSR' && id === 'somnia' && typeof _tutSetStage === 'function') {
+      _tutSetStage('evolved');
+      state._tutEndRound = (state.round || 5) + 2;
     }
-    if (forced) { try { _tutStep('somniaGate'); } catch (e) {} }   // 🎓 진화 유도 말풍선 + evoYes 링
+
+    // 컷인을 한 번 보여주고 스스로 닫힌다. 화면을 누르면 즉시 넘어간다.
+    //   백그라운드(document.hidden)면 보여줄 대상이 없으니 기다리지 않는다.
+    if (el._closeT) { clearTimeout(el._closeT); el._closeT = 0; }
+    const _close = () => {
+      if (el.style.display === 'none') return;
+      if (el._closeT) { clearTimeout(el._closeT); el._closeT = 0; }
+      el.onclick = null;
+      el.style.display = 'none';
+      paused = el._prevPaused || false;
+      try { _tutClearGuide(); } catch (e) {}   // 🎓 게이트 안내(말풍선/링) 정리
+    };
+    el.onclick = _close;
+    el._closeT = setTimeout(_close, document.hidden ? 0 : 2200);
+    if (forced) { try { _tutStep('somniaGate'); } catch (e) {} }   // 🎓 등장 말풍선 + 완료 배지 링
   }
   function applyEvolution(kind, id, abId) {
     if (!state) return;
@@ -40562,7 +40562,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 801;
+  const APP_VERSION = 802;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
