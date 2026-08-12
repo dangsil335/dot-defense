@@ -4514,7 +4514,7 @@
       justify-self: center; min-width: 0 !important;
       display: flex !important; flex-direction: column; align-items: center; justify-content: flex-start;
       gap: 0; padding: 0 !important;
-      font-size: clamp(8px, 1.35vh, 10.5px) !important; line-height: 1.05 !important;
+      font-size: clamp(8.5px, 1.6vh, 11.5px) !important; line-height: 1.05 !important;
       /* ⚠ 글자가 판 위가 아니라 배경 일러 위로 나왔다. 남색이면 안 읽힌다 */
       color: #eef6ff !important; font-weight: 800; text-align: center;
       text-shadow: 0 1px 3px rgba(0,0,0,0.85), 0 0 7px rgba(0,0,0,0.55) !important;
@@ -4558,10 +4558,41 @@
     #menu #coreMgrBtn, #menu #globalRankBtn { padding-left: 29px !important; }
     #menu #coreMgrBtn    { --mb-ico: url('./icons/ui/menu/core.webp'); }
     #menu #globalRankBtn { --mb-ico: url('./icons/ui/menu/rank.webp'); }
-    #menu #gachaBtn::after { left: 10px; width: 24px; height: 24px; }
-    #menu #gachaBtn { --mb-ico: url('./icons/ui/menu/scout.webp'); padding-left: 40px !important; }
-    #menu .menu-btn-primary::after { left: 5%; width: 18%; height: 62%; }
-    #menu .menu-btn-primary { --mb-ico: url('./icons/ui/menu/start.webp'); padding-left: 26% !important; text-align: left; }
+    #menu #gachaBtn::after {
+      left: 4%; width: 19%; height: 74%;
+      border-radius: 26%;
+      background-color: rgba(255,255,255,0.32);
+      background-size: 72%;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.6),
+                  inset 0 -2px 4px rgba(190,140,50,0.3);
+    }
+    #menu #gachaBtn {
+      --mb-ico: url('./icons/ui/menu/scout.webp');
+      box-sizing: border-box !important;
+      padding: 0 calc(var(--cta-w) * 0.05) 0 calc(var(--cta-w) * 0.26) !important;
+      font-size: clamp(11px, 2.4vh, 15px) !important; white-space: nowrap;
+    }
+    /* 🏷 v820 — 판 구조를 좌측 아이콘 배지 + 우측 라벨 면으로.
+       ::after 를 아이콘이 아니라 "배지" 로 쓴다 (배경색 + 그 위에 아이콘 이미지). */
+    #menu .menu-btn-primary::after {
+      left: 4.5%; width: 25%; height: 72%;
+      border-radius: 24%;
+      background-color: rgba(255,255,255,0.26);
+      background-size: 74%;
+      box-shadow: inset 0 1.5px 0 rgba(255,255,255,0.55),
+                  inset 0 -2px 5px rgba(20,80,140,0.28);
+    }
+    #menu .menu-btn-primary {
+      --mb-ico: url('./icons/ui/menu/start.webp');
+      /* ⚠ % 패딩은 자기 폭이 아니라 컨테이닝 블록 폭 기준이다.
+         버튼 자기 폭(--cta-w)으로 계산해야 배지 비율과 어긋나지 않는다. */
+      box-sizing: border-box !important;
+      padding: 0 calc(var(--cta-w) * 0.05) 0 calc(var(--cta-w) * 0.33) !important;
+      display: flex !important; align-items: center; justify-content: center;
+      text-align: center !important;
+      font-size: clamp(13px, 3.4vh, 21px) !important; line-height: 1.05 !important;
+      white-space: nowrap;
+    }
 
     /* ── CTA(출격) — 가장 크고 둥글게. 파스텔 하늘색 ── */
     #menu .menu-btn-primary::before {
@@ -5108,8 +5139,8 @@
 
     <!-- 메인 CTA: 이어하기 / 빠른 시작 / 새 게임 / 난이도 -->
     <div class="menu-cta-group">
-      <button id="continueBtn" class="menu-btn menu-btn-primary" style="display:none;">▶ 이어하기</button>
-      <button id="startBtn" class="menu-btn menu-btn-primary">▶ 새 게임</button>
+      <button id="continueBtn" class="menu-btn menu-btn-primary" style="display:none;">이어하기</button>
+      <button id="startBtn" class="menu-btn menu-btn-primary">새 게임</button>
       <!-- 빠른 시작 미리보기 (마지막 설정 표시) -->
       <div id="quickStartPreview" class="quick-start-preview" style="display:none;"></div>
       <!-- 설정 변경 (빠른 시작 가능할 때만 노출) -->
@@ -39017,7 +39048,7 @@
         startBtn.classList.add('menu-btn-restart');   // 보조 스타일
       } else {
         startBtn.classList.remove('menu-btn-restart');
-        startBtn.textContent = '▶ 새 게임';
+        startBtn.textContent = '새 게임';   // ▶ 는 좌측 배지 아이콘과 중복
         startBtn.dataset.quickStart = '1';
       }
     }
@@ -41000,7 +41031,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 819;
+  const APP_VERSION = 822;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
