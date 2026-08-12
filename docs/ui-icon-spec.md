@@ -1,4 +1,4 @@
-# 아크 제로 — 로비 UI 리소스 규격 (v813 기준)
+# 아크 제로 — 로비 UI 리소스 규격 (v819 기준)
 
 > 메인 로비 버튼용. **라벨 판(배경) + 아이콘(글리프)을 분리**해서 받는다.
 > 글자는 이미지에 넣지 않는다 — CSS 가 렌더한다(문구 수정·길이 대응 때문).
@@ -18,117 +18,115 @@
 
 ---
 
-## 1. 라벨 판 — 3장  (3차 개정: 발바닥 젤리)
+## 1. 버튼 판 — 3장  (4차 개정: 원형 독)
 
 버튼의 배경이 되는 판. 글자와 아이콘은 CSS 가 위에 얹는다.
 
-### ⚠ 앞선 두 번이 실패한 이유 — 같은 실수를 반복하지 말 것
+### ⚠ 세 번 실패했다. 원인을 다 적어둔다
 
-| | 지시한 것 | 나온 것 |
-|---|---|---|
-| 1차 | `thin darker band` / `vertical gradient only` | 납작한 흰 판 + 회색 막대 = "목록 행" |
-| 2차 | `capsule pill` / 다섯 층 음영 | 여전히 납작한 막대. **캔버스도 240×96 구 규격** |
+| | 지시한 것 | 나온 것 | 원인 |
+|---|---|---|---|
+| 1차 | `thin darker band` / `vertical gradient only` | 납작한 흰 판 = "목록 행" | 볼륨 단어를 내가 지웠다 |
+| 2차 | `capsule pill` + 다섯 층 음영 | 여전히 납작. 캔버스도 구 규격 | ① `pill` 은 옆에서 본 알약 → 막대<br>② 문서 뒤쪽에 옛 수치가 남아 있었다 |
+| 3차 | `the shape of a cat's paw pad` | **판 위에 발가락 젤리 4개** | **은유를 형상으로 받았다** |
 
-2차가 구 규격으로 돌아온 건 **이 문서 뒤쪽 체크리스트에 옛 수치가 남아 있었기 때문**이다.
-지금은 정리했다. 캔버스 수치는 아래 표가 유일한 출처다.
+> **4차의 제1원칙: 은유를 쓰지 않는다.**
+> "발바닥 같은" "젤리 같은" 은 사람에게는 질감이지만 그림 AI 에게는 **형상 지시**다.
+> 형태는 기하로만 적고, 말랑함은 *음영*으로 적는다.
 
-**그리고 2차의 진짜 문제는 낱개 음영이 아니라 형태 언어였다.**
-`pill` `capsule` 이라고 하면 옆에서 본 알약, 즉 **납작한 막대**가 나온다.
-함장이 원하는 건 그게 아니라 **고양이 발바닥 젤리** 다 — 가운데가 볼록 부푼 쿠션.
+### 그리고 독 버튼이 원이 됐다 (v815)
 
-> **3차의 한 줄 지시: 가운데가 위로 부풀어야 한다.**
-> 평평한 판에 그라디언트를 칠하는 게 아니라, 공기가 든 쿠션을 위에서 내려다본 그림이다.
-
-### 🚨 아이콘과 정반대다 — 헷갈리면 둘 다 망한다
-
-| | 아이콘 (§2) | **판 (여기)** |
-|---|---|---|
-| 입체 | **금지.** 반평면 벡터 | **필수.** 부푼 입체 |
-| `flat` | 원하는 것 | **네거티브에 넣는다** |
-| 그림자 | 넣지 않는다 | 접지 그림자 넣는다 |
-| 시점 | 정면 평면 | 살짝 위에서 내려다봄 |
+가로로 긴 판을 고집할 이유가 없어서 **하단 독 6개를 원형 버튼**으로 바꿨다.
+아이콘은 원 안, 글자는 원 밖 아래. 그래서 `normal` 은 **정원(1:1)** 이다.
 
 ### 파일과 캔버스 — ⚠ 이 표가 유일한 출처
 
-| 파일 | 쓰이는 곳 | 캔버스 | 비율 | 근거(실측) |
+| 파일 | 쓰이는 곳 | 캔버스 | 형태 | 근거(실측) |
 |---|---|---|---|---|
-| `icons/ui/plate/normal.webp` | 하단 독 6개 | **420 × 240** | 7:4 | 독 버튼 109×62 = 1.76 |
-| `icons/ui/plate/cta.webp` | **출격** | **480 × 160** | 3:1 | 출격 170×56 = 3.04 |
-| `icons/ui/plate/gold.webp` | 차원 스카우트 | **470 × 100** | 4.7:1 | 가챠 170×36 = 4.72 |
+| `icons/ui/plate/normal.webp` | 하단 독 6개 | **320 × 320** | **정원** | 원 63~80px |
+| `icons/ui/plate/cta.webp` | **출격** | **480 × 240** | 둥근 가로판 2:1 | 171×85 |
+| `icons/ui/plate/gold.webp` | 차원 스카우트 | **476 × 140** | 둥근 가로판 3.4:1 | 171×50 |
 
-포맷: 투명 WebP. 판 바깥은 완전 투명(알파 0).
-접지 그림자는 **캔버스 안에** 들어가야 한다 — 판을 캔버스에 꽉 채우지 말고 아래에 여백을 둘 것.
+투명 WebP. 판 바깥 알파 0. **접지 그림자는 캔버스 안에** — 판을 꽉 채우지 말고 여백을 둘 것.
+(3차 `gold` 는 가장자리 불투명 17.7% 로 좌우가 잘려 있었다.)
 
-상단 칩(코어관리·글로벌랭킹)은 비율이 훨씬 납작해서 `normal` 을 늘려 쓰면 도밍이 눌린다.
-→ 칩은 판 이미지를 쓰지 않고 지금 CSS 를 유지한다.
-
-### 색 (v812 CSS 에서 확정, 그대로 재현)
+### 색 (CSS 에서 확정, 그대로 재현)
 
 ```
-normal  위 #ffffff → 아래 #e6edf6,  아래 립 #c4d0e0   (차가운 흰 실리콘)
-cta     위 #8fcdf2 → 아래 #4f9bd2,  아래 립 #3d7fae   (채도 낮은 하늘)
-gold    위 #f8e6bc → 아래 #dfbc6e,  아래 립 #b39a63   (탁한 크림골드)
+normal  위 #ffffff → 아래 #e6edf6,  아래 테두리 #c4d0e0   (차가운 흰 실리콘)
+cta     위 #8fcdf2 → 아래 #4f9bd2,  아래 테두리 #3d7fae   (채도 낮은 하늘)
+gold    위 #f8e6bc → 아래 #dfbc6e,  아래 테두리 #b39a63   (탁한 크림골드)
 ```
 
-유광 금지. 어디까지나 **매트 소프트터치**다.
+유광 금지. 매트 소프트터치다.
 
-### 영문 프롬프트
+### 영문 프롬프트 — `normal` (정원)
 
 ```
-Top-down product shot of a soft silicone button pad, {SIZE},
-TRANSPARENT background (alpha channel), nothing outside the pad except its own soft shadow.
+Top-down view of ONE soft silicone push-button pad, 320x320 canvas,
+TRANSPARENT background (alpha channel).
 
-A single rounded-rectangle pad with very soft corners —
-the shape and feel of a cat's paw pad, or a squishy silicone keycap.
+EXACTLY ONE PERFECT CIRCLE, centered, filling about 88% of the canvas.
+Nothing else in the image: no second circle, no small bumps, no lobes,
+no toes, no beans, no decorations, no icon, no text.
 
-THE SURFACE IS DOMED. The center of the pad rises noticeably higher than the edges,
-like a cushion filled with air. The edges roll downward and slightly under,
-so the pad reads as thick and squeezable. It must never look like a flat plate.
+The surface is domed — highest at the center, falling away smoothly toward the rim,
+so it reads as a thick soft cushion seen from directly above.
+The rim rolls slightly downward and under.
 
-{COLOR}
+Off-white silicone: #ffffff at the center of the dome, fading to #e6edf6 near the rim,
+with a slightly darker cool grey-blue edge #c4d0e0 along the bottom of the rim.
 
-Matte soft-touch silicone finish with a very fine subtle grain.
-Not glossy, no mirror reflection, no wet look.
+Matte soft-touch finish with a very fine subtle grain. Not glossy, no mirror reflection.
 
-Lighting — one large soft light from above and slightly in front:
-  a broad soft highlight spread across the upper half of the dome, not a small dot,
-  the lower third falling gently into shadow as the surface curves away,
-  a thin darker rim along the very bottom edge,
-  a soft contact shadow directly beneath the pad, kept inside the canvas.
-The highlight should be slightly uneven, like real silicone, not a perfect gradient.
-A faint hint of light passing through the thinnest edges.
+One large soft light from above and slightly in front:
+  a broad gentle highlight across the upper half of the dome, not a small dot,
+  the lower third settling into soft shadow,
+  a soft contact shadow directly beneath the pad, fully inside the canvas.
+The highlight is slightly uneven, like real silicone, not a perfect gradient.
 
-Premium, tactile, physical. No icon, no text, no numbers, no logo, no pattern, no frame.
+Premium, tactile, physical.
 ```
 
-`{SIZE}` / `{COLOR}`:
+### `cta` / `gold` (둥근 가로판)
 
-| 파일 | SIZE | COLOR |
+위 프롬프트에서 첫 두 문단만 바꾼다:
+
+```
+Top-down view of ONE soft silicone push-button pad, {SIZE} canvas,
+TRANSPARENT background (alpha channel).
+
+EXACTLY ONE horizontal rounded-rectangle pad, centered, corners fully rounded
+(corner radius about 40% of the pad height). Nothing else in the image:
+no second shape, no bumps, no lobes, no decorations, no icon, no text.
+```
+
+| 파일 | SIZE | 색 |
 |---|---|---|
-| `normal` | `420x240 canvas, pad is wide` | `Neutral off-white silicone: #ffffff at the crown fading to #e6edf6 at the lower edge, with a cool grey-blue bottom rim #c4d0e0` |
-| `cta` | `480x160 canvas, pad is wide` | `Soft desaturated sky blue silicone: #8fcdf2 at the crown to #4f9bd2 at the lower edge, with a deeper blue bottom rim #3d7fae` |
-| `gold` | `470x100 canvas, pad is very wide and low` | `Muted warm cream silicone: #f8e6bc at the crown to #dfbc6e at the lower edge, with a soft bronze bottom rim #b39a63` |
+| `cta` | `480x240` | `#8fcdf2 center → #4f9bd2 near the rim, bottom rim #3d7fae` |
+| `gold` | `476x140` | `#f8e6bc center → #dfbc6e near the rim, bottom rim #b39a63` |
 
-**네거티브**
+**네거티브 (판 공통)**
 ```
+multiple objects, two shapes, small circles, bumps, lobes, toes, beans, paw, animal,
+capsule, pill, bar, tab,
 flat, flat design, 2d, sticker, vector, paper, card,
 glossy, mirror reflection, specular highlight, chrome, metal, glass, wet look,
-capsule, pill, bar, rectangle button, tab,
 icon, text, numbers, letters, logo, watermark, pattern, border, frame, outline,
 sharp corners, hard edges, neon, gradient banding,
 background, solid background, green screen, chroma key,
-isometric, perspective tilt, side view, multiple objects
+isometric, perspective tilt, side view
 ```
-⚠ `capsule` `pill` 을 네거티브에 넣은 게 3차의 핵심 변경이다 — 2차 프롬프트가 그 단어로 실패했다.
-⚠ `flat` 은 **판에서만** 네거티브다. 아이콘(§2)에서는 정반대이니 프롬프트를 섞지 말 것.
+⚠ `paw` `beans` `bumps` `multiple objects` 가 4차의 핵심 추가다 — 3차가 정확히 그걸로 실패했다.
+⚠ `flat` 은 **판에서만** 네거티브. 아이콘(§2)은 정반대이니 프롬프트를 섞지 말 것.
 
 ### 통과 기준
 
-1. 캔버스가 위 표와 정확히 일치 (420×240 / 480×160 / 470×100)
-2. 판 바깥 알파 0. 접지 그림자가 캔버스 밖으로 잘리지 않음
-3. **가로 중앙에서 세로로 잘랐을 때 위쪽이 볼록해야 한다.** 직선이면 실패다
-4. 유광 반사 없음
-5. 글자·아이콘·테두리 없음
+1. 캔버스가 위 표와 일치 (320×320 / 480×240 / 476×140)
+2. **물체가 하나뿐인가.** 위에 얹힌 작은 덩어리가 하나라도 있으면 실패
+3. 판 바깥 알파 0, 접지 그림자가 캔버스 밖으로 잘리지 않음
+4. 가운데를 세로로 잘랐을 때 위쪽이 볼록 (직선이면 실패)
+5. 유광 반사 없음, 글자·아이콘·테두리 없음
 
 ---
 
@@ -344,7 +342,7 @@ this is the primary action — make it the most vivid and saturated of the set
 /* 판은 아직 CSS 로 그리는 중 (v813). 이미지가 오면 이렇게 바뀐다.
    9-slice(border-image)는 쓰지 않는다 — 늘어나는 가운데에서 도밍이 뭉개진다.
    비율을 코드에서 고정했으므로 통째로 늘려도 왜곡되지 않는다. */
-#menu .menu-btn::before {
+#menu .menu-nav3 .menu-btn::before {
   background: url('./icons/ui/plate/normal.webp') center / 100% 100% no-repeat !important;
   box-shadow: none !important;   /* 음영은 그림 안에 있다 */
 }
@@ -352,6 +350,6 @@ this is the primary action — make it the most vivid and saturated of the set
 
 체크리스트
 1. 파일명이 위 표와 **정확히** 일치 (`perma` `achieve` `chars` 주의)
-2. 판: 420×240 / 480×160 / 470×100 · 알파 투명 · **세로로 잘라 위쪽이 볼록한지**
+2. 판: 320×320(정원) / 480×240 / 476×140 · 알파 투명 · **물체가 하나뿐인지** · 위쪽이 볼록한지
 3. 아이콘: 256×256 · 모서리 알파 0(투명) · **29px 로 줄여서 알아볼 수 있는지**
 4. `APP_VERSION` + `sw.js` 의 `CACHE` 동시 상향 (정적 에셋 cache-first)
