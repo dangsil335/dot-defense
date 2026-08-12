@@ -4407,6 +4407,29 @@
   /* 🌳 v805 — 캐릭터·진화 화면이 가로 폰(812)에서 832px 로 20px 넘쳐 가로 스크롤바가 생겼다.
      전용 규칙이 없던 화면이라 최소한만 건다. */
   #evoTreeScreen { max-width: 100vw; overflow-x: hidden; }
+  /* ═══ 🖼 v806 — 로비 배경 ═══
+     2048x1152 (16:9) WebP. object-fit:cover 라 세로/가로 어디서든 화면을 꽉 채우고 넘치는 쪽이 잘린다.
+     ⚠ 세로(가로 폰)에선 가운데 띠만 남는다 — 배경 그릴 때 핵심 소품은 중앙에 몰아야 하는 이유. */
+  .menu-lobby-bg {
+    position: absolute; inset: 0; z-index: -3; pointer-events: none;
+    width: 100%; height: 100%; object-fit: cover; object-position: 50% 42%;
+    opacity: 0; transition: opacity .7s ease;
+  }
+  #menu .menu-lobby-bg.show { opacity: 1; }
+  /* 배경에 캐릭터가 그려져 있으므로 컷아웃 캐릭터는 끈다 */
+  #menu.has-lobby-bg .menu-hero-bg { display: none !important; }
+  /* 별 배경도 끈다 — 로비 일러 위에 별이 겹치면 지저분하다 */
+  #menu.has-lobby-bg { background-image: none !important; background-color: #06090f !important; }
+  /* UI 가독성 스크림 — 좌/우/하단만 어둡게 깔고 중앙(캐릭터)은 열어둔다.
+     ⚠ ::before 는 이미 L4031 이 쓰고 있어 ::after 를 쓴다. */
+  #menu.has-lobby-bg::after {
+    content: ''; position: absolute; inset: 0; z-index: -2; pointer-events: none;
+    background:
+      linear-gradient(90deg, rgba(6,9,16,0.80) 0%, rgba(6,9,16,0.34) 22%, rgba(6,9,16,0) 42%,
+                             rgba(6,9,16,0) 58%, rgba(6,9,16,0.38) 78%, rgba(6,9,16,0.84) 100%),
+      linear-gradient(to top, rgba(6,9,16,0.80) 0%, rgba(6,9,16,0) 24%),
+      linear-gradient(to bottom, rgba(6,9,16,0.55) 0%, rgba(6,9,16,0) 16%);
+  }
   /* 🎖️ v501 — 진급 시네마틱 오버레이 (PROMOTION GRANTED) */
   #promotionOverlay { position: fixed; inset: 0; z-index: 9996; display: none; align-items: center; justify-content: center; background: radial-gradient(circle at 50% 44%, rgba(10,16,28,0.72), rgba(4,6,12,0.93)); cursor: pointer; }
   #promotionOverlay.show { display: flex; animation: promoFade .4s ease; }
@@ -4729,6 +4752,9 @@
 <!-- ===== 메뉴 화면 (v218 — 그룹화 + 그리드 레이아웃) ===== -->
 <div id="menu" class="screen show">
   <!-- 🛰️ v461 — 로테이션 간판 캐릭터 백드롭 (진입마다 순환, 콘솔 뒤 시네마틱) -->
+  <!-- 🖼 v806 — 로비 배경. icons/ui/lobby/<대표일러id>.webp (없으면 캐릭터 기본으로 폴백, 그것도 없으면 숨김).
+       ⚠ 이 배경엔 캐릭터가 이미 그려져 있다 → 배경이 붙으면 hero 컷아웃은 끈다(캐릭터가 둘이 되므로). -->
+  <img id="menu-lobby-bg" class="menu-lobby-bg" alt="">
   <img id="menu-hero-bg" class="menu-hero-bg" alt="">
   <!-- 🐾 v749 — 메뉴 펫. 이동 없음(제자리 아이들) — 이유는 CSS 주석 참고. -->
   <div id="menuPet" class="menu-pet hide" role="button" tabindex="0" aria-label="대표 캐릭터">
@@ -38735,6 +38761,34 @@
   // ⚠️ refreshMenuButtons가 아니라 showScreen('menu') 진입에서만 호출 — refreshMenuButtons는 서버 pull 후에도 재호출돼 중복 회전/캐시-onload 버그 유발.
   const MENU_HERO_IDS = ['aria','misaki','elementia','sumika','blanche','kaira','feria','somnia','flinta','alba','solar','marine','gravitas','luna','sakura','cardista','levina','amy','chloe','lara','galatea','trina','iris'];
   let _menuHeroIdx = -1;
+  // 🖼 v806 — 로비 배경 적용. '<char>__<skin>' → 없으면 '<char>' → 그것도 없으면 숨김.
+  //   파일 목록이 없으므로 존재 여부는 <img> 의 load/error 로 판정한다(일러 체인과 같은 방식).
+  //   ⚠ 배경이 붙으면 #menu 에 has-lobby-bg 를 달아 hero 컷아웃·별 배경을 끄고 스크림을 켠다.
+  function _applyLobbyBg(id) {
+    const bg = document.getElementById('menu-lobby-bg');
+    const menu = document.getElementById('menu');
+    if (!bg || !menu) return;
+    const tries = [];
+    if (id) {
+      tries.push(id);
+      const cut = id.indexOf('__');
+      if (cut >= 0) tries.push(id.slice(0, cut));   // 스킨 배경이 없으면 그 캐릭터 기본 배경으로
+    }
+    let i = 0;
+    const fail = () => {
+      bg.onload = bg.onerror = null;
+      if (i < tries.length) { step(); return; }
+      bg.classList.remove('show'); menu.classList.remove('has-lobby-bg');
+      bg.removeAttribute('src');
+    };
+    const step = () => {
+      const t = tries[i++];
+      bg.onerror = fail;
+      bg.onload = () => { bg.onload = bg.onerror = null; bg.classList.add('show'); menu.classList.add('has-lobby-bg'); };
+      bg.src = './icons/ui/lobby/' + t + '.webp';
+    };
+    fail();   // i=0 에서 시작 → 첫 후보부터 시도
+  }
   function refreshMenuHero() {
     const el = document.getElementById('menu-hero-bg');
     if (!el) return;
@@ -38747,6 +38801,7 @@
       _menuHeroIdx = -1;   // 해제 후 첫 랜덤이 직전 값에 막히지 않게 초기화
       _applyIllustChain(el, base, () => { el.classList.remove('show'); }, sc);
       if (_illustFmt[sc] !== 'none') el.classList.add('show');
+      try { _applyLobbyBg(sc); } catch (e) {}
       return;
     }
     // 🎲 진짜 랜덤 순서 (접속·진입 모두 무작위). 직전과 동일한 캐릭터만 회피.
@@ -38757,6 +38812,7 @@
     const heroId = MENU_HERO_IDS[_menuHeroIdx];
     _applyIllustChain(el, heroId, () => { el.classList.remove('show'); });   // webp→gif→png, 전부 없으면 숨김
     if (_illustFmt[heroId] !== 'none') el.classList.add('show');   // 즉시 표시 — CSS transition이 페이드인 (일러 없음 확정이면 숨김 유지)
+    try { _applyLobbyBg(heroId); } catch (e) {}
   }
   // 🐾 v749 — 메뉴 펫 (제자리 아이들형. 이동 안 함 — 이유는 .menu-pet CSS 주석 참고)
   //   표시 대상 우선순위: 대표 일러 → 보유 가챠 캐릭 무작위 → 기본 도트포대.
@@ -40626,7 +40682,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 805;
+  const APP_VERSION = 806;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
