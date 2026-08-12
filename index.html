@@ -4360,16 +4360,21 @@
     /* ⚠ 우측 CTA 컬럼은 하단 독 위에 앉는다. 독 높이가 바뀌면 여기도 같이 바뀌어야 한다
        (v813 에서 독을 7:4 로 두껍게 하면서 43→62px 이 됐고, 64px 로는 4px 겹쳤다).
        독 점유 = bottom 6px + 버튼 높이. 변수 한 곳만 고치면 가챠까지 따라온다. */
-    #menu { --dock-clear: 78px; }
+    #menu {
+      --dock-h: clamp(66px, 20.5vh, 98px);          /* 원 + 아래 글자까지의 전체 높이 */
+      --dock-clear: calc(var(--dock-h) + 18px);      /* 독 위로 비워둘 높이 */
+      --cta-w: clamp(140px, 21vw, 200px);            /* 우측 컬럼 폭 */
+    }
     #menu .menu-cta-group {
       position: absolute !important; right: 12px; bottom: var(--dock-clear);
-      width: clamp(140px, 21vw, 200px) !important; z-index: 6;
+      width: var(--cta-w) !important; z-index: 6;
     }
     #menu #gachaBtn {
       position: absolute !important; right: 12px !important;
-      bottom: calc(var(--dock-clear) + clamp(52px, 11vh, 74px)) !important;
+      /* 출격 높이(=폭/2) + 여백 8px 만큼 띄운다. 상수로 두면 출격 비율 바꿀 때 겹친다 */
+      bottom: calc(var(--dock-clear) + var(--cta-w) / 2 + 8px) !important;
       top: auto !important; left: auto !important;
-      width: clamp(140px, 21vw, 200px) !important; height: auto !important;
+      width: var(--cta-w) !important; height: auto !important; aspect-ratio: 3.4 / 1;
       border-radius: 10px !important; padding: 9px 8px !important; z-index: 6;
     }
 
@@ -4378,7 +4383,9 @@
        transform:translateY(0) 을 끝까지 물고 있어 덮인다. left/right+auto 마진으로 센터링한다. */
     #menu .menu-nav3 {
       position: absolute !important; left: 0; right: 0; margin: 0 auto !important;
-      bottom: 6px; width: min(700px, 84vw) !important;
+      /* 폭을 --dock-h 에 연동한다. 고정값을 쓰면 큰 화면에서 원(0.82×dock-h)이
+         칸보다 커져 서로 겹친다. 5.95 = 원 6개 + 그 사이 여백 */
+      bottom: 6px; width: min(calc(var(--dock-h) * 5.95), 74vw) !important;
       grid-template-columns: repeat(6, 1fr) !important;
       gap: 5px !important; row-gap: 5px !important; z-index: 6;
     }
@@ -4404,8 +4411,8 @@
   }
   /* 가로 폰처럼 높이가 아주 낮을 때 — 좌측 열과 신분증은 접는다(캐릭터/독 우선) */
   @media (orientation: landscape) and (max-height: 430px) {
-    #menu .weekly-panel { display: none !important; }
-    #menu .nickname-display.cred-card { display: none !important; }
+    /* v817 — 숨기지 않는다. 레퍼런스 로비는 좁은 화면에서도 프로필과 임무를 좌측에 둔다.
+       축소 규칙은 라이트 로비 블록 뒤(아래)에 있다 — 여기 두면 그쪽에 덮인다. */
     #menu .menu-char-preview { top: 44px; width: clamp(140px, 22vw, 180px) !important; }
   }
   /* 🌳 v805 — 캐릭터·진화 화면이 가로 폰(812)에서 832px 로 20px 넘쳐 가로 스크롤바가 생겼다.
@@ -4498,23 +4505,34 @@
     #menu .menu-nav3 { gap: 6px !important; row-gap: 6px !important; }
     /* 🏷 라벨 판 이미지를 쓰려면 버튼 비율이 화면마다 달라지면 안 된다(늘리면 모서리가 찌그러진다).
        5:2 로 고정한다 — 이 비율이 곧 이미지 규격이다. 폭은 독 폭/6 으로 자동, 높이는 비율이 정한다. */
+    /* 🔲 v814 — 가로 라벨 폐기, 정사각 버튼.
+       가로로 긴 판은 구조적으로 통통해 보일 수가 없다. 발바닥 젤리가 통통한 건
+       거의 정사각이기 때문이다. 그래서 버튼 형태를 먼저 정하고 내용을 거기 맞춘다.
+       ⚠ 높이는 vh 로 잡는다. grid 1fr 폭(≈113px)을 그대로 쓰면 정사각이 너무 커진다. */
     #menu .menu-nav3 .menu-btn {
-      aspect-ratio: 7 / 4; height: auto !important;
-      display: flex !important; flex-direction: row; align-items: center; justify-content: flex-start;
-      gap: 0; padding: 0 6% 0 34% !important;
-      font-size: clamp(8.5px, 1.5vh, 11px) !important; line-height: 1.1 !important;
-      color: #1d3a55 !important; font-weight: 800; text-align: left;
-      text-shadow: 0 1px 0 rgba(255,255,255,0.6) !important;
+      height: var(--dock-h) !important; width: auto !important; aspect-ratio: 0.82 / 1;
+      justify-self: center; min-width: 0 !important;
+      display: flex !important; flex-direction: column; align-items: center; justify-content: flex-start;
+      gap: 0; padding: 0 !important;
+      font-size: clamp(8px, 1.35vh, 10.5px) !important; line-height: 1.05 !important;
+      /* ⚠ 글자가 판 위가 아니라 배경 일러 위로 나왔다. 남색이면 안 읽힌다 */
+      color: #eef6ff !important; font-weight: 800; text-align: center;
+      text-shadow: 0 1px 3px rgba(0,0,0,0.85), 0 0 7px rgba(0,0,0,0.55) !important;
+    }
+    /* 판 = 완전한 원. 버튼 박스 위쪽 정사각만 덮는다 (아래 남는 자리가 글자 몫) */
+    #menu .menu-nav3 .menu-btn::before {
+      inset: 0 0 auto 0 !important; height: auto !important; aspect-ratio: 1 / 1;
+      border-radius: 999px !important;
     }
     #menu .menu-nav3 .menu-btn::after {
       content: '';
-      position: absolute; left: 4%; top: 50%; transform: translateY(-50%);
-      display: block; width: 26%; height: 66%;
-      font-size: clamp(15px, 3.6vh, 22px); line-height: 1; text-align: center;
-      display: flex; align-items: center; justify-content: center;
+      position: static !important; transform: none !important;
+      order: -1;                      /* ::after 는 글자 뒤라 order 로 위로 올린다 */
+      display: block; width: 100%; height: auto; aspect-ratio: 1 / 1;
       background-image: var(--mb-ico, none);
-      background-size: contain; background-position: center; background-repeat: no-repeat;
-      filter: drop-shadow(0 1px 2px rgba(0,0,0,0.45));
+      background-size: 54%;           /* 원 안쪽에 아이콘을 앉힌다 */
+      background-position: center; background-repeat: no-repeat;
+      filter: drop-shadow(0 1px 1.5px rgba(30,50,80,0.28));
     }
     #menu #shopBtn            { --mb-ico: url('./icons/ui/menu/shop.webp'); }
     #menu #codexBtn           { --mb-ico: url('./icons/ui/menu/codex.webp'); }
@@ -4556,7 +4574,8 @@
       animation: none !important;   /* 각진 시절의 네온 펄스 제거 */
       filter: none;
     }
-    #menu .menu-btn-primary { color: #08202f !important; text-shadow: 0 1px 0 rgba(255,255,255,0.35) !important; }
+    #menu .menu-btn-primary { color: #08202f !important; text-shadow: 0 1px 0 rgba(255,255,255,0.35) !important;
+      aspect-ratio: 2 / 1; height: auto !important; }   /* ⚠ 가챠 bottom 이 폭/2 를 전제한다 */
     #menu .menu-btn-primary:active::before { box-shadow: 0 1px 0 #3d7fae, 0 3px 7px rgba(40,90,140,0.28),
       inset 0 1px 0 rgba(255,255,255,0.7), inset 0 -2px 6px rgba(50,110,165,0.35) !important; }
     /* 처음부터 다시 = 붉은 톤. 전용 판을 따로 만들지 않고 색조만 돌린다 */
@@ -4593,6 +4612,131 @@
         0 3px 0 rgba(108,152,196,0.95), 0 6px 10px rgba(6,12,24,0.38),
         inset 0 2px 0 rgba(255,255,255,0.9), inset 0 -2px 4px rgba(120,168,214,0.5) !important;
     }
+
+    /* ═══════════════════════════════════════════════════════════════
+       v816 — 라이트 로비. 블루아카이브 / 스텔라소라 배치와 팔레트를 따른다.
+       우주·SF 컨셉(시안 네온, 모노스페이스 ID 카드, 어두운 글래스)을 전부 걷어낸다.
+
+       레퍼런스 배치
+         좌상단  플레이어 프로필      ← 지금까지 우상단에 있었다
+         좌측    공지/임무 패널
+         우상단  유틸 칩 + 설정
+         하단중앙 메뉴 독 (원)
+         우하단  주요 행동(출격)
+       ═══════════════════════════════════════════════════════════════ */
+    #menu {
+      --lb-face: linear-gradient(180deg, #ffffff 0%, #f2f6fb 55%, #e3ebf5 100%);
+      --lb-lip:  rgba(184,198,217,0.9);
+      --lb-ink:  #1d3a55;
+      --lb-sub:  #6b87a5;
+      --lb-accent: #3c7fbd;
+      --lb-drop: 0 4px 0 var(--lb-lip), 0 8px 16px rgba(40,60,92,0.22);
+      --lb-side: clamp(200px, 28vw, 270px);
+    }
+
+    /* ── 배치 ── */
+    /* 로고는 스플래시에서 이미 보여준다. 레퍼런스 로비에는 타이틀이 없다.
+       되살리려면 이 한 줄만 지우면 된다. */
+    #menu .menu-logo { display: none !important; }
+
+    /* ⚠ 선택자를 .nickname-display.cred-card 로 맞춘다. 기존 규칙이 클래스 2개라
+       #menu .cred-card 로는 특이도에서 져서 폭이 안 먹었다.
+       box-sizing 도 content-box 여서 패딩 28px 만큼 더 커졌다. */
+    #menu .nickname-display.cred-card {
+      left: 12px !important; right: auto !important; top: 10px !important;
+      width: var(--lb-side) !important; box-sizing: border-box !important;
+    }
+    #menu .weekly-panel {
+      position: absolute !important; left: 12px !important; top: 88px !important;
+      width: var(--lb-side) !important; max-width: none !important; margin: 0 !important; z-index: 6;
+    }
+    /* 우상단 유틸 칩 — 설정(오른쪽 12px, 32px) 왼쪽으로 순서대로 */
+    #menu #coreMgrBtn {
+      position: absolute !important; right: 52px !important; left: auto !important;
+      top: 12px !important; width: 104px !important; z-index: 7;
+    }
+    #menu #globalRankBtn {
+      position: absolute !important; right: 164px !important; left: auto !important;
+      top: 12px !important; width: 96px !important; z-index: 7;
+    }
+
+    /* ── 팔레트: 어두운 글래스 → 밝은 카드 ── */
+    #menu .cred-card::before {
+      background: var(--lb-face) !important;
+      border: 0 !important; border-radius: 14px !important;
+      box-shadow: var(--lb-drop), inset 0 2px 0 rgba(255,255,255,1) !important;
+      -webkit-backdrop-filter: none !important; backdrop-filter: none !important;
+    }
+    /* SF ID 카드 티가 나던 모노스페이스·시안·글로우를 전부 없앤다 */
+    #menu .cred-card .cred-head,
+    #menu .cred-card .cred-lv,
+    #menu .cred-card .cred-no,
+    #menu .cred-card .cred-rank { font-family: inherit !important; letter-spacing: 0.4px !important;
+                                  text-shadow: none !important; }
+    #menu .cred-card .cred-head { color: var(--lb-sub) !important; }
+    #menu .cred-card .cred-id   { color: var(--lb-ink) !important; }
+    #menu .cred-card .cred-lv   { color: var(--lb-accent) !important; }
+    #menu .cred-card .cred-no   { color: #9db0c6 !important; }
+    #menu .cred-card .cred-rank { color: var(--lb-accent) !important; }
+    #menu .cred-card .cred-badge::before {
+      background: rgba(223,233,245,0.95) !important;
+      border: 1px solid rgba(120,150,185,0.28) !important; border-radius: 9px !important;
+    }
+    #menu .cred-card .cred-insignia { filter: none !important; }
+    #menu .cred-card .cred-xp {
+      background: linear-gradient(90deg, #4f9bd2, #9ed3f5) !important; box-shadow: none !important;
+    }
+
+    #menu .weekly-panel {
+      background: var(--lb-face) !important;
+      border: 1px solid rgba(120,150,185,0.3) !important; border-radius: 14px !important;
+      box-shadow: var(--lb-drop) !important;
+      color: #33506e !important;
+    }
+    /* ⚠ 패널이 밝아지면 안에 있던 밝은 회색 글자가 전부 안 읽힌다(대비 1.36 까지 떨어졌다).
+       개별로 고르면 반드시 빠뜨리므로 전부 어둡게 깔고, 강조색만 뒤에서 되살린다. */
+    #menu .weekly-panel, #menu .weekly-panel * { color: #33506e !important; }
+    #menu .weekly-panel .weekly-mod-badge { color: #6b3fc0 !important; }
+    #menu .weekly-panel .weekly-mod-name  { color: #97690c !important; }
+    #menu #weekly-quest-progress          { color: #6b3fc0 !important; }
+    #menu .cred-card .cred-no             { color: #6b87a5 !important; }
+
+    /* 상단 칩 두 개의 높이를 맞춘다 — 코어관리가 줄바꿈으로 혼자 44px 이 됐다 */
+    #menu #coreMgrBtn, #menu #globalRankBtn {
+      height: 30px !important; min-height: 0 !important;
+      display: flex !important; align-items: center; justify-content: center;
+      white-space: nowrap !important; overflow: hidden;
+      font-size: clamp(9px, 1.5vh, 11.5px) !important;
+    }
+
+    /* 상단 칩 — 배경이 어두운 채로 남아 있었다(v812 에서 box-shadow 만 갈아끼웠다) */
+    #menu #coreMgrBtn::before, #menu #globalRankBtn::before {
+      background: var(--lb-face) !important;
+      border: 0 !important;
+      -webkit-backdrop-filter: none !important; backdrop-filter: none !important;
+    }
+
+    #menu .menu-pet-bubble {
+      background: var(--lb-face) !important;
+      border: 1px solid rgba(120,150,185,0.35) !important;
+      color: #2a4763 !important;
+      box-shadow: 0 4px 12px rgba(40,60,92,0.25) !important;
+    }
+    #menu .menu-pet-bubble::after { border-top-color: #eaf0f8 !important; }
+
+    /* 좁은 가로(가로 폰)에서 좌측 두 패널을 줄인다. 라이트 로비 블록 뒤에 와야 이긴다 */
+    @media (max-height: 430px) {
+      #menu { --lb-side: clamp(150px, 23vw, 200px); }
+      #menu .nickname-display.cred-card { top: 8px !important; padding: 5px 10px !important; }
+      #menu .cred-card .cred-id { font-size: 12px !important; }
+      #menu .cred-card .cred-badge { width: 36px !important; }
+      #menu .cred-card .cred-insignia { width: 24px !important; height: 26px !important; }
+      #menu .weekly-panel {
+        top: 74px !important; padding: 6px 9px !important; font-size: 10px !important;
+        border-radius: 11px !important;
+      }
+    }
+
     #menu #coreMgrBtn, #menu #globalRankBtn { color: #1d3a55 !important; font-weight: 800;
       text-shadow: 0 1px 0 rgba(255,255,255,0.6) !important; }
     /* 설정·업데이트도 같은 결로 */
@@ -40856,7 +41000,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 813;
+  const APP_VERSION = 819;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
