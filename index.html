@@ -4457,12 +4457,13 @@
       border-image: none !important;
       border-radius: 999px !important;
       background: linear-gradient(180deg,
-        rgba(247,252,255,0.96) 0%, rgba(214,238,255,0.94) 46%, rgba(168,212,247,0.92) 100%) !important;
+        rgba(255,255,255,0.97) 0%, rgba(246,249,253,0.95) 52%, rgba(230,237,246,0.94) 100%) !important;
       box-shadow:
-        0 5px 0 rgba(108,152,196,0.95),
-        0 9px 14px rgba(6,12,24,0.42),
-        inset 0 3px 0 rgba(255,255,255,0.95),
-        inset 0 -3px 5px rgba(120,168,214,0.55) !important;
+        0 3px 0 rgba(196,208,224,0.9),
+        0 6px 13px rgba(40,60,92,0.20),
+        0 1px 2px rgba(40,60,92,0.10),
+        inset 0 2px 0 rgba(255,255,255,1),
+        inset 0 -3px 6px rgba(202,214,231,0.5) !important;
       -webkit-backdrop-filter: none; backdrop-filter: none;
       filter: none;
     }
@@ -4471,12 +4472,12 @@
     #menu .menu-btn:active { transform: translateY(2px) !important; }
     /* 눌리면 립이 얇아진다 — 실제로 눌려 들어가는 느낌의 핵심 */
     #menu .menu-btn:active::before {
-      box-shadow: 0 1px 0 rgba(108,152,196,0.95), 0 3px 6px rgba(6,12,24,0.36),
-                  inset 0 2px 0 rgba(255,255,255,0.8), inset 0 -2px 4px rgba(120,168,214,0.5) !important;
+      box-shadow: 0 1px 0 rgba(196,208,224,0.9), 0 2px 5px rgba(40,60,92,0.18),
+                  inset 0 1px 0 rgba(255,255,255,0.9), inset 0 -2px 5px rgba(202,214,231,0.55) !important;
     }
     #menu .menu-btn:hover:not(:disabled)::before {
       background: linear-gradient(180deg,
-        rgba(252,254,255,1) 0%, rgba(226,244,255,0.96) 46%, rgba(184,224,252,0.94) 100%) !important;
+        rgba(255,255,255,1) 0%, rgba(250,252,255,0.98) 52%, rgba(238,244,251,0.96) 100%) !important;
     }
     /* nth-child 로 좌/우열에 걸려 있던 마름모 skew 해제 */
     #menu .menu-nav3 .menu-btn:nth-child(3n+1)::before,
@@ -4538,16 +4539,16 @@
     #menu .menu-btn-primary::before {
       border: 0 !important; border-image: none !important;
       border-radius: 999px !important;
-      background: linear-gradient(180deg, #a8e2ff 0%, #58b4f4 52%, #2f8fdc 100%) !important;
+      background: linear-gradient(180deg, #8fcdf2 0%, #6bb4e4 52%, #4f9bd2 100%) !important;
       box-shadow:
-        0 6px 0 #1f6ba8, 0 12px 20px rgba(30,90,150,0.5),
-        inset 0 4px 0 rgba(255,255,255,0.85), inset 0 -4px 7px rgba(20,80,140,0.45) !important;
+        0 4px 0 #3d7fae, 0 8px 16px rgba(40,90,140,0.32),
+        inset 0 2px 0 rgba(255,255,255,0.75), inset 0 -3px 7px rgba(50,110,165,0.35) !important;
       animation: none !important;   /* 각진 시절의 네온 펄스 제거 */
       filter: none;
     }
     #menu .menu-btn-primary { color: #08202f !important; text-shadow: 0 1px 0 rgba(255,255,255,0.35) !important; }
-    #menu .menu-btn-primary:active::before { box-shadow: 0 2px 0 #1f6ba8, 0 4px 9px rgba(30,90,150,0.4),
-      inset 0 3px 0 rgba(255,255,255,0.75), inset 0 -3px 6px rgba(20,80,140,0.4) !important; }
+    #menu .menu-btn-primary:active::before { box-shadow: 0 1px 0 #3d7fae, 0 3px 7px rgba(40,90,140,0.28),
+      inset 0 1px 0 rgba(255,255,255,0.7), inset 0 -2px 6px rgba(50,110,165,0.35) !important; }
     /* 처음부터 다시 = 붉은 톤. 전용 판을 따로 만들지 않고 색조만 돌린다 */
     #menu .menu-btn-restart::before {
       background: linear-gradient(180deg, #ffc8cf 0%, #f88a9c 52%, #e4576f 100%) !important;
@@ -4564,10 +4565,10 @@
     #menu #gachaBtn::before {
       border: 0 !important; border-image: none !important;
       border-radius: 999px !important;
-      background: linear-gradient(180deg, #fff2c8 0%, #ffd97e 52%, #f0b449 100%) !important;
+      background: linear-gradient(180deg, #f8e6bc 0%, #eed392 52%, #dfbc6e 100%) !important;
       box-shadow:
-        0 5px 0 #b8873a, 0 10px 16px rgba(160,120,40,0.45),
-        inset 0 3px 0 rgba(255,255,255,0.9), inset 0 -3px 5px rgba(190,140,50,0.45) !important;
+        0 3px 0 #b39a63, 0 7px 14px rgba(140,110,50,0.3),
+        inset 0 2px 0 rgba(255,255,255,0.8), inset 0 -3px 6px rgba(175,145,85,0.35) !important;
       filter: none;
     }
     #menu #gachaBtn, #menu #gachaBtn .gacha-circle-label { color: #3a2708 !important; text-shadow: 0 1px 0 rgba(255,255,255,0.35) !important; }
@@ -40845,7 +40846,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 811;
+  const APP_VERSION = 812;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
