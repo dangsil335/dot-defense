@@ -4438,33 +4438,30 @@
        #startBtn 은 JS 가 textContent 를 덮어써서(L38697/38702) 자식을 넣으면 지워진다.
        가상요소는 textContent 교체에 영향받지 않는다.
 
-     🖼 아이콘 파일이 준비되면 아래 --mb-ico 만 채우면 된다. 지금은 --mb-emoji 로 자리를 잡아둔다.
-        규격: 256x256 투명 WebP, 표시 40px. (능력 아이콘의 "불투명 액자형"과 반대 — 반드시 투명)
-        예) #menu #shopBtn { --mb-ico: url('./icons/ui/menu/shop.webp'); } 를 추가하고
-            .menu-nav3 .menu-btn::after 의 content 를 '' 로 바꾸면 이모지가 사라지고 이미지가 뜬다. */
+     🖼 v810 — 실제 리소스 적용 완료. 판은 icons/ui/plate/*.webp(9-slice), 아이콘은
+        icons/ui/menu/*.webp(256x256 투명). 아이콘 교체는 --mb-ico 한 줄만 바꾸면 된다.
+        규격 문서: docs/ui-icon-spec.md */
   @media (orientation: landscape) {
     /* ── 공통: 각진 칩 → 둥근 젤리 ── */
+    /* 🏷 라벨 판 = 실제 이미지. 9-slice(border-image)로 모서리는 원본 비율을 지키고 가운데만 늘린다.
+       ⚠ slice 32 는 원본 240x96 기준, width 13px 는 화면에 그려질 모서리 크기다.
+         버튼 높이가 43px 이라 32px 를 그대로 쓰면 상하 합 64 > 43 이 되어 브라우저가 임의로 줄인다. */
     #menu .menu-btn::before, #menu .menu-btn-grid::before {
       transform: none !important;
-      border-radius: 14px !important;
-      background: linear-gradient(180deg, rgba(238,248,255,0.17), rgba(150,190,235,0.10)) !important;
-      border: 1px solid rgba(190,225,255,0.34) !important;
-      box-shadow: 0 3px 0 rgba(10,16,28,0.42), 0 6px 14px rgba(6,10,20,0.34),
-                  inset 0 1px 0 rgba(255,255,255,0.30) !important;
-      -webkit-backdrop-filter: blur(9px); backdrop-filter: blur(9px);
+      border-radius: 0 !important;
+      background: none !important;
+      border: 13px solid transparent !important;
+      border-image: url('./icons/ui/plate/normal.webp') 32 fill / 13px / 0 stretch !important;
+      box-shadow: none !important;
+      -webkit-backdrop-filter: none; backdrop-filter: none;
+      filter: drop-shadow(0 2px 3px rgba(6,10,20,0.42));
     }
     #menu .menu-btn { transition: transform .09s ease !important; }
     /* 눌리면 아래로 살짝 꺼진다 — 말랑한 느낌의 핵심 */
     #menu .menu-btn:active { transform: translateY(2px) !important; }
-    #menu .menu-btn:active::before {
-      box-shadow: 0 1px 0 rgba(10,16,28,0.42), 0 3px 8px rgba(6,10,20,0.3),
-                  inset 0 1px 0 rgba(255,255,255,0.22) !important;
-    }
-    #menu .menu-btn:hover:not(:disabled)::before {
-      border-color: rgba(215,240,255,0.72) !important;
-      box-shadow: 0 3px 0 rgba(10,16,28,0.42), 0 8px 18px rgba(90,170,255,0.30),
-                  inset 0 1px 0 rgba(255,255,255,0.38) !important;
-    }
+    /* 판이 이미지가 되면서 box-shadow 로 눌림을 표현할 수 없다 → filter 로 바꾼다 */
+    #menu .menu-btn:active::before { filter: drop-shadow(0 1px 1px rgba(6,10,20,0.42)) brightness(0.94); }
+    #menu .menu-btn:hover:not(:disabled)::before { filter: drop-shadow(0 3px 6px rgba(90,170,255,0.45)) brightness(1.08); }
     /* nth-child 로 좌/우열에 걸려 있던 마름모 skew 해제 */
     #menu .menu-nav3 .menu-btn:nth-child(3n+1)::before,
     #menu .menu-nav3 .menu-btn:nth-child(3n+2)::before,
@@ -4482,7 +4479,7 @@
       color: #dceaf8 !important; font-weight: 700; text-align: left;
     }
     #menu .menu-nav3 .menu-btn::after {
-      content: var(--mb-emoji, '');
+      content: '';
       position: absolute; left: 4%; top: 50%; transform: translateY(-50%);
       display: block; width: 26%; height: 66%;
       font-size: clamp(15px, 3.6vh, 22px); line-height: 1; text-align: center;
@@ -4491,42 +4488,70 @@
       background-size: contain; background-position: center; background-repeat: no-repeat;
       filter: drop-shadow(0 1px 2px rgba(0,0,0,0.45));
     }
-    #menu #shopBtn            { --mb-emoji: '🔧'; }
-    #menu #codexBtn           { --mb-emoji: '📖'; }
-    #menu #abilityPermaBtn    { --mb-emoji: '🧬'; }
-    #menu #achievementsBtn    { --mb-emoji: '🏆'; }
-    #menu #charCollectionBtn  { --mb-emoji: '👥'; }
-    #menu #recordsBtn         { --mb-emoji: '📋'; }
+    #menu #shopBtn            { --mb-ico: url('./icons/ui/menu/shop.webp'); }
+    #menu #codexBtn           { --mb-ico: url('./icons/ui/menu/codex.webp'); }
+    #menu #abilityPermaBtn    { --mb-ico: url('./icons/ui/menu/perma.webp'); }
+    #menu #achievementsBtn    { --mb-ico: url('./icons/ui/menu/achieve.webp'); }
+    #menu #charCollectionBtn  { --mb-ico: url('./icons/ui/menu/chars.webp'); }
+    #menu #recordsBtn         { --mb-ico: url('./icons/ui/menu/records.webp'); }
+
+    /* ── 독 밖 버튼들도 같은 방식으로 아이콘을 얹는다 ──
+       ⚠ #startBtn 은 JS 가 textContent 를 덮어쓰고(L38697/38702), #gachaBtn 은 JS 가
+         innerHTML 을 재생성한다(L39421). 그래서 자식이 아니라 ::after 로만 붙인다. */
+    #menu #coreMgrBtn::after, #menu #globalRankBtn::after,
+    #menu #gachaBtn::after,   #menu .menu-btn-primary::after {
+      content: ''; position: absolute; top: 50%; transform: translateY(-50%);
+      background-image: var(--mb-ico, none);
+      background-size: contain; background-position: center; background-repeat: no-repeat;
+      pointer-events: none;
+    }
+    #menu #coreMgrBtn, #menu #globalRankBtn, #menu #gachaBtn, #menu .menu-btn-primary { position: relative; }
+    #menu #coreMgrBtn::after, #menu #globalRankBtn::after {
+      left: 7px; width: 18px; height: 18px;
+    }
+    #menu #coreMgrBtn, #menu #globalRankBtn { padding-left: 29px !important; }
+    #menu #coreMgrBtn    { --mb-ico: url('./icons/ui/menu/core.webp'); }
+    #menu #globalRankBtn { --mb-ico: url('./icons/ui/menu/rank.webp'); }
+    #menu #gachaBtn::after { left: 10px; width: 24px; height: 24px; }
+    #menu #gachaBtn { --mb-ico: url('./icons/ui/menu/scout.webp'); padding-left: 40px !important; }
+    #menu .menu-btn-primary::after { left: 5%; width: 18%; height: 62%; }
+    #menu .menu-btn-primary { --mb-ico: url('./icons/ui/menu/start.webp'); padding-left: 26% !important; text-align: left; }
 
     /* ── CTA(출격) — 가장 크고 둥글게. 파스텔 하늘색 ── */
     #menu .menu-btn-primary::before {
-      border-radius: 18px !important;
-      background: linear-gradient(180deg, #7fd4ff, #46a6f0) !important;
-      border: 0 !important;
-      box-shadow: 0 4px 0 #2b6fae, 0 10px 20px rgba(60,150,230,0.42),
-                  inset 0 2px 0 rgba(255,255,255,0.55) !important;
+      border-radius: 0 !important;
+      background: none !important;
+      border: 16px solid transparent !important;
+      border-image: url('./icons/ui/plate/cta.webp') 32 fill / 16px / 0 stretch !important;
+      box-shadow: none !important;
       animation: none !important;   /* 각진 시절의 네온 펄스 제거 */
+      filter: drop-shadow(0 3px 5px rgba(40,110,180,0.5));
     }
     #menu .menu-btn-primary { color: #08202f !important; text-shadow: 0 1px 0 rgba(255,255,255,0.35) !important; }
-    #menu .menu-btn-primary:active::before { box-shadow: 0 1px 0 #2b6fae, 0 4px 10px rgba(60,150,230,0.35), inset 0 2px 0 rgba(255,255,255,0.4) !important; }
-    #menu .menu-btn-restart::before { background: linear-gradient(180deg, #ffa3ae, #f0687e) !important; box-shadow: 0 4px 0 #a8384c, 0 10px 20px rgba(230,90,120,0.38), inset 0 2px 0 rgba(255,255,255,0.5) !important; }
-    #menu .menu-btn-secondary::before { background: linear-gradient(180deg, rgba(255,230,170,0.28), rgba(232,196,90,0.18)) !important; border-color: rgba(255,225,150,0.55) !important; }
+    #menu .menu-btn-primary:active::before { filter: drop-shadow(0 1px 2px rgba(40,110,180,0.5)) brightness(0.94); }
+    /* 처음부터 다시 = 붉은 톤. 전용 판을 따로 만들지 않고 색조만 돌린다 */
+    #menu .menu-btn-restart::before { filter: drop-shadow(0 3px 5px rgba(180,60,80,0.5)) hue-rotate(155deg) saturate(1.25); }
+    #menu .menu-btn-secondary::before { border-image-source: url('./icons/ui/plate/gold.webp') !important; filter: drop-shadow(0 2px 3px rgba(6,10,20,0.42)) saturate(0.7) brightness(0.92); }
 
     /* ── 가챠 — 크림/골드 젤리 ── */
     #menu #gachaBtn::before {
-      border-radius: 16px !important;
-      background: linear-gradient(180deg, #ffe6a8, #f5c05a) !important;
-      border: 0 !important;
-      box-shadow: 0 4px 0 #b8873a, 0 9px 18px rgba(220,170,70,0.38), inset 0 2px 0 rgba(255,255,255,0.55) !important;
+      border-radius: 0 !important;
+      background: none !important;
+      border: 13px solid transparent !important;
+      border-image: url('./icons/ui/plate/gold.webp') 32 fill / 13px / 0 stretch !important;
+      box-shadow: none !important;
+      filter: drop-shadow(0 3px 5px rgba(180,140,50,0.5));
     }
     #menu #gachaBtn, #menu #gachaBtn .gacha-circle-label { color: #3a2708 !important; text-shadow: 0 1px 0 rgba(255,255,255,0.35) !important; }
-    #menu #gachaBtn:active::before { box-shadow: 0 1px 0 #b8873a, 0 4px 9px rgba(220,170,70,0.3), inset 0 2px 0 rgba(255,255,255,0.45) !important; }
+    #menu #gachaBtn:active::before { filter: drop-shadow(0 1px 2px rgba(180,140,50,0.5)) brightness(0.94); }
 
     /* ── 상단 미니 칩(코어관리·글로벌랭킹) ── */
     #menu #coreMgrBtn::before, #menu #globalRankBtn::before {
-      border-radius: 999px !important; transform: none !important;
-      background: rgba(232,245,255,0.16) !important; border: 1px solid rgba(200,232,255,0.4) !important;
-      box-shadow: 0 2px 0 rgba(10,16,28,0.34), inset 0 1px 0 rgba(255,255,255,0.28) !important;
+      border-radius: 0 !important; transform: none !important;
+      background: none !important;
+      border: 11px solid transparent !important;
+      border-image: url('./icons/ui/plate/normal.webp') 32 fill / 11px / 0 stretch !important;
+      box-shadow: none !important;
     }
     #menu #coreMgrBtn, #menu #globalRankBtn { color: #e2f2ff !important; font-weight: 700; }
     /* 설정·업데이트도 같은 결로 */
@@ -40790,7 +40815,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 809;
+  const APP_VERSION = 810;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
