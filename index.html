@@ -4472,16 +4472,21 @@
 
     /* ── 하단 독: 아이콘 위 + 라벨 아래 (레퍼런스 구조) ── */
     #menu .menu-nav3 { gap: 6px !important; row-gap: 6px !important; }
+    /* 🏷 라벨 판 이미지를 쓰려면 버튼 비율이 화면마다 달라지면 안 된다(늘리면 모서리가 찌그러진다).
+       5:2 로 고정한다 — 이 비율이 곧 이미지 규격이다. 폭은 독 폭/6 으로 자동, 높이는 비율이 정한다. */
     #menu .menu-nav3 .menu-btn {
-      display: flex !important; flex-direction: column; align-items: center; justify-content: center;
-      gap: 1px; padding: 4px 2px 5px !important;
+      aspect-ratio: 5 / 2; height: auto !important;
+      display: flex !important; flex-direction: row; align-items: center; justify-content: flex-start;
+      gap: 0; padding: 0 6% 0 34% !important;
       font-size: clamp(8.5px, 1.5vh, 11px) !important; line-height: 1.1 !important;
-      color: #dceaf8 !important; font-weight: 700;
+      color: #dceaf8 !important; font-weight: 700; text-align: left;
     }
     #menu .menu-nav3 .menu-btn::after {
       content: var(--mb-emoji, '');
-      display: block; width: clamp(24px, 6vh, 34px); height: clamp(24px, 6vh, 34px);
-      font-size: clamp(18px, 4.4vh, 26px); line-height: clamp(24px, 6vh, 34px); text-align: center;
+      position: absolute; left: 4%; top: 50%; transform: translateY(-50%);
+      display: block; width: 26%; height: 66%;
+      font-size: clamp(15px, 3.6vh, 22px); line-height: 1; text-align: center;
+      display: flex; align-items: center; justify-content: center;
       background-image: var(--mb-ico, none);
       background-size: contain; background-position: center; background-repeat: no-repeat;
       filter: drop-shadow(0 1px 2px rgba(0,0,0,0.45));
@@ -40785,7 +40790,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 808;
+  const APP_VERSION = 809;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
