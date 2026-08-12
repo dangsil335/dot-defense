@@ -4301,6 +4301,112 @@
   #menu .cred-card .cred-lv { font-family: ui-monospace,'Courier New',monospace; font-weight: 700; font-size: 10px; color: rgba(159,224,255,0.82); flex-shrink: 0; }
   #menu .cred-card .cred-no { font-family: ui-monospace,'Courier New',monospace; font-size: 8px; letter-spacing: 1.5px; color: rgba(150,170,200,0.5); }
   #menu .cred-card .cred-xp { position: absolute; left: 0; right: auto; bottom: 0; height: 2px; width: 0%; max-width: 100%; background: linear-gradient(90deg, var(--rkc,#6ad0ff), #cdefff); box-shadow: 0 0 6px var(--rkc,#6ad0ff); transition: width .5s ease; pointer-events: none; border-radius: 2px; }
+  /* ═══════════════ 🛰️ v805 — 가로 로비 레이아웃 ═══════════════
+     블루아카/스텔라소라식 "캐릭터가 있는 로비". 세로 전용으로 짜여 있던 메뉴를 가로 기준으로 재배치한다.
+     ⚠ 설계 제약 (실측으로 정함)
+       · .screen 은 건드리지 않는다 — 16개 화면이 공유하는 기반 클래스다.
+       · 요소를 지우지 않고 위치만 옮긴다 — 스플래시 등장 애니메이션(L707~738)과
+         가챠 버튼 innerHTML 재생성(L39421)이 이 요소들을 이름으로 잡고 있다.
+       · 기존 portrait CSS 118곳은 그대로 둔다 — 회전 안내를 무시하고 세로로 들어와도 안 깨지게.
+       · 배치는 absolute 로 간다. 이 파일의 기존 관용구(#globalRankBtn, .gacha-circle-btn)와 같다.
+         .menu-main 은 display:contents 로 풀어 자식들이 #menu 기준으로 앉게 한다(배경/테두리 없는
+         순수 flex 컨테이너라 지워도 시각 손실이 없다).
+     ⚠ 최소 대상 = 가로 폰 812x375. 높이가 375 뿐이라 상단 40 + 본문 + 하단 독 54 로 잡았다.
+       레퍼런스처럼 독을 크게 하면 안 들어간다. */
+  @media (orientation: landscape) {
+    /* 로비는 스크롤되면 안 된다. 버튼 칩(::before)의 skewX 가 스크롤 영역을 요소 박스 밖으로
+       늘려서(실측 세로 469 / 가로 1015, 정작 요소는 하나도 안 넘침) 세로 스크롤이 생겼다.
+       ⚠ .screen 의 overflow 는 건드리지 않는다 — 다른 15개 화면은 스크롤이 있어야 한다. */
+    #menu { overflow: hidden !important; }
+    #menu .menu-main {
+      display: contents !important;
+      width: auto !important; margin: 0 !important; align-self: auto !important;
+    }
+    /* 로고 — 좌상단으로 축소. 매번 보는 로비에서 중앙 대형 로고는 캐릭터를 가린다. */
+    #menu h1.menu-logo {
+      position: absolute !important; left: 12px; top: 10px; margin: 0 !important; z-index: 7;
+    }
+    #menu h1.menu-logo img { height: clamp(22px, 4.4vh, 34px) !important; width: auto !important; }
+    #menu .subtitle { display: none !important; }          /* 375px 높이에선 사치 */
+    #menu .update-cache-btn { top: auto !important; bottom: 10px; left: 12px !important;
+                              font-size: 10px !important; padding: 5px 9px !important; z-index: 7; }
+
+    /* ── 좌측 정보 열 ── */
+    #menu .menu-char-preview {
+      position: absolute !important; left: 12px; top: clamp(44px, 9vh, 56px);
+      width: clamp(150px, 23vw, 210px) !important; z-index: 5;
+    }
+    #menu .weekly-panel {
+      position: absolute !important; left: 12px; top: clamp(116px, 26vh, 150px);
+      width: clamp(150px, 23vw, 210px) !important; max-width: none !important; margin: 0 !important;
+      max-height: calc(100vh - 210px); overflow-y: auto; z-index: 5;
+    }
+
+    /* ── 중앙: 캐릭터를 주인공으로 ──
+       기존엔 z-index -1 + opacity .5 + 상단 페이드라 "배경 텍스처"였다. 앞으로 끌어내 세운다. */
+    #menu .menu-hero-bg {
+      z-index: 0 !important;
+      top: 0 !important; left: 50% !important;
+      height: 100vh !important; max-width: 62vw !important;
+      object-position: center bottom !important;
+      -webkit-mask-image: linear-gradient(to bottom, #000 76%, transparent 99%) !important;
+              mask-image: linear-gradient(to bottom, #000 76%, transparent 99%) !important;
+    }
+    #menu .menu-hero-bg.show { opacity: 0.96 !important; }
+    #menu .menu-pet { left: auto !important; right: clamp(150px, 22vw, 240px) !important;
+                      top: auto !important; bottom: 62px !important; height: clamp(56px, 13vh, 84px) !important; z-index: 6; }
+
+    /* ── 우측: CTA ── */
+    #menu .menu-cta-group {
+      position: absolute !important; right: 12px; bottom: 64px;
+      width: clamp(140px, 21vw, 200px) !important; z-index: 6;
+    }
+    #menu #gachaBtn {
+      position: absolute !important; right: 12px !important;
+      bottom: calc(64px + clamp(52px, 11vh, 74px)) !important;
+      top: auto !important; left: auto !important;
+      width: clamp(140px, 21vw, 200px) !important; height: auto !important;
+      border-radius: 10px !important; padding: 9px 8px !important; z-index: 6;
+    }
+
+    /* ── 하단 독 ── */
+    /* ⚠ transform 으로 중앙정렬하지 말 것 — menuItemRise 애니메이션이 fill-mode:both 로
+       transform:translateY(0) 을 끝까지 물고 있어 덮인다. left/right+auto 마진으로 센터링한다. */
+    #menu .menu-nav3 {
+      position: absolute !important; left: 0; right: 0; margin: 0 auto !important;
+      bottom: 6px; width: min(700px, 84vw) !important;
+      grid-template-columns: repeat(6, 1fr) !important;
+      gap: 5px !important; row-gap: 5px !important; z-index: 6;
+    }
+    #menu .menu-nav3 .menu-btn {
+      padding: 9px 2px !important; font-size: clamp(9px, 1.6vh, 12px) !important; min-height: 0 !important;
+    }
+    /* ⚠ 설정 버튼(right:16, w:32 → 좌변 764)과 겹치지 않게 그 왼쪽으로 물린다 */
+    #menu #coreMgrBtn {
+      position: absolute !important; right: 56px; top: 12px;
+      width: auto !important; max-width: 34vw; margin: 0 !important;
+      font-size: 11px !important; padding: 7px 11px !important; z-index: 7;
+    }
+    #menu #coreMgrBtn::before { transform: none !important; border-radius: 8px !important; }
+    #menu #globalRankBtn { top: 10px !important; left: 0 !important; right: 0 !important;
+                           margin: 0 auto !important; width: max-content !important; }
+
+    /* ── 함장 신분증 → 우상단(설정 아래) ── */
+    #menu .nickname-display.cred-card {
+      position: absolute !important; right: 12px; top: 46px;
+      width: clamp(180px, 26vw, 250px) !important; margin: 0 !important; z-index: 7;
+    }
+    #menu .settings-btn { width: 32px !important; height: 32px !important; top: 10px !important; }
+  }
+  /* 가로 폰처럼 높이가 아주 낮을 때 — 좌측 열과 신분증은 접는다(캐릭터/독 우선) */
+  @media (orientation: landscape) and (max-height: 430px) {
+    #menu .weekly-panel { display: none !important; }
+    #menu .nickname-display.cred-card { display: none !important; }
+    #menu .menu-char-preview { top: 44px; width: clamp(140px, 22vw, 180px) !important; }
+  }
+  /* 🌳 v805 — 캐릭터·진화 화면이 가로 폰(812)에서 832px 로 20px 넘쳐 가로 스크롤바가 생겼다.
+     전용 규칙이 없던 화면이라 최소한만 건다. */
+  #evoTreeScreen { max-width: 100vw; overflow-x: hidden; }
   /* 🎖️ v501 — 진급 시네마틱 오버레이 (PROMOTION GRANTED) */
   #promotionOverlay { position: fixed; inset: 0; z-index: 9996; display: none; align-items: center; justify-content: center; background: radial-gradient(circle at 50% 44%, rgba(10,16,28,0.72), rgba(4,6,12,0.93)); cursor: pointer; }
   #promotionOverlay.show { display: flex; animation: promoFade .4s ease; }
@@ -40520,7 +40626,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 804;
+  const APP_VERSION = 805;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
