@@ -9,8 +9,8 @@
 ## 0. 한 줄 요약
 
 ```
-라벨 판   icons/ui/plate/   3장   240×96 투명 WebP   9-slice(모서리 32px)
-아이콘    icons/ui/menu/    10장  256×256 투명 WebP  표시 28~29px
+라벨 판   icons/ui/plate/   3장   비율 고정 전체 아트 (9-slice 폐기)
+아이콘    icons/ui/menu/    10장  256×256 투명 WebP  표시 28~29px  ← 1차 완료
 ```
 
 ⚠ **둘 다 투명 배경.** 이 게임의 *능력* 아이콘(`icons/abilities/`)만 **불투명 액자형**이다.
@@ -18,64 +18,109 @@
 
 ---
 
-## 1. 라벨 판 — 3장
+## 1. 라벨 판 — 3장  (2차 개정: 9-slice 폐기 → 비율 고정 전체 아트)
 
-버튼의 배경이 되는 둥근 판. 글자와 아이콘이 이 위에 얹힌다.
+버튼의 배경이 되는 판. 글자와 아이콘은 CSS 가 위에 얹는다.
 
-| 파일 | 쓰이는 곳 | 색 방향 |
-|---|---|---|
-| `icons/ui/plate/normal.webp` | 하단 독 6개 · 코어관리 · 글로벌랭킹 | 반투명 하늘색 유리 |
-| `icons/ui/plate/cta.webp` | **출격** (가장 중요한 버튼) | 진한 파랑, 가장 선명 |
-| `icons/ui/plate/gold.webp` | 차원 스카우트(가챠) | 크림골드 |
+### ⚠ 1차 실패와 방향 전환
 
-### 규격
+1차 판은 **납작한 흰 판 + 회색 막대**로 와서 젤리가 아니라 "목록 행"으로 보였다.
+원인은 내 프롬프트의 `thin darker band` / `vertical gradient only` 다 — 볼륨을 지워버렸다.
 
-```
-크기        240 × 96
-모서리      각 변 32px 가 "늘어나지 않는 영역"  ← 9-slice 기준선
-포맷        투명 WebP
-```
+그 뒤 CSS 로 형태를 먼저 확정했고(v812), **형태는 이걸로 맞다**는 확인을 받았다.
+남은 것은 **질감**뿐이다. 그래서 2차 발주의 목표는 딱 하나다:
 
-### ⚠ 9-slice 를 반드시 지킬 것
+> 아래 CSS 와 같은 형태·색·음영을 유지하면서, **실리콘 표면 질감만 얹는다.**
 
-버튼 폭이 화면마다 다르다(독 109~112px, 출격 171~200px). 이미지를 통째로 늘리면 모서리가
-찌그러진다. 그래서 `border-image` 로 **모서리 32px 은 원본 그대로, 가운데만 늘린다.**
+그리고 **9-slice 를 폐기한다.** 늘어나는 가운데 영역에서는 질감이 뭉개지기 때문이다.
+대신 버튼 비율을 코드에서 고정했으므로, 이미지를 통째로 늘려도 왜곡되지 않는다.
 
-```
-        32px          늘어남         32px
-      ┌──────┬───────────────────┬──────┐
- 32px │  ◜   │      상단 변       │   ◝  │
-      ├──────┼───────────────────┼──────┤
- 늘어 │ 좌변  │      가운데        │ 우변 │
-      ├──────┼───────────────────┼──────┤
- 32px │  ◟   │      하단 변       │   ◞  │
-      └──────┴───────────────────┴──────┘
-```
+### 파일과 비율
 
-그리는 규칙:
-- **모서리 32×32 안에 둥근 모서리와 테두리가 전부 들어가야 한다.** 넘치면 잘린다.
-- **가운데 영역은 균일해야 한다.** 가로 그라디언트·무늬·로고를 넣으면 늘어날 때 뭉개진다.
-  세로 방향 그라디언트(위 밝고 아래 어두운)는 괜찮다 — 가로로만 늘어나므로.
-- 아이콘·글자를 판에 그려 넣지 말 것. 둘 다 따로 얹는다.
-
-### 디자인 방향 — 말랑말랑
-
-```
-· 둥근 모서리(반경 14~18px 느낌). ⚠ 입체 렌더가 아니라 평면 패널이다
-· 위쪽 밝고 아래쪽 살짝 어두운 세로 그라디언트 (2톤이면 충분)
-· 아래 가장자리에 얇은 진한 띠 — "두께" 표현 (눌리면 사라지는 그 부분)
-· 상단에 은은한 광택 하이라이트 한 줄
-· 굵은 검정 외곽선 금지. 테두리는 밝은 반투명 흰빛으로 얇게
-```
-
-| 판 | 바탕 | 테두리 | 아래 두께띠 |
+| 파일 | 쓰이는 곳 | 캔버스 | 비율 |
 |---|---|---|---|
-| `normal` | `rgba(238,248,255,.17)` → `rgba(150,190,235,.10)` 반투명 | `rgba(190,225,255,.34)` | `rgba(10,16,28,.42)` |
-| `cta` | `#7fd4ff` → `#46a6f0` 불투명 | 없음 | `#2b6fae` |
-| `gold` | `#ffe6a8` → `#f5c05a` 불투명 | 없음 | `#b8873a` |
+| `icons/ui/plate/normal.webp` | 하단 독 6개 · 코어관리 · 글로벌랭킹 | **450 × 200** | 9:4 (코드에서 고정됨) |
+| `icons/ui/plate/cta.webp` | **출격** | **500 × 200** | 5:2 |
+| `icons/ui/plate/gold.webp` | 차원 스카우트 | **600 × 120** | 5:1 |
 
-`normal` 은 **반투명**이어야 한다 — 뒤의 캐릭터 일러가 비쳐야 로비 느낌이 산다.
-`cta` 와 `gold` 는 불투명이어도 된다(가장 눈에 띄어야 하는 두 개).
+포맷: 투명 WebP. 모서리 바깥은 완전 투명(알파 0).
+
+### 현재 CSS 값 = 목표 형태 (이 수치를 그대로 재현할 것)
+
+```css
+/* normal — 매트 흰 실리콘 */
+border-radius: 999px;                                  /* 완전한 캡슐 */
+background: linear-gradient(180deg,
+  rgba(255,255,255,0.97) 0%,
+  rgba(246,249,253,0.95) 52%,
+  rgba(230,237,246,0.94) 100%);
+box-shadow:
+  0 3px 0 rgba(196,208,224,0.9),      /* ① 아래 립 — 얇게 3px, 옅은 회청 */
+  0 6px 13px rgba(40,60,92,0.20),     /* ② 넓은 외부 그림자 */
+  0 1px 2px rgba(40,60,92,0.10),      /* ③ 좁은 접지 그림자 */
+  inset 0 2px 0 rgba(255,255,255,1),  /* ④ 위쪽 하이라이트 */
+  inset 0 -3px 6px rgba(202,214,231,0.5); /* ⑤ 아래 안쪽 음영 */
+
+/* cta */   #8fcdf2 → #6bb4e4 → #4f9bd2,  립 4px #3d7fae
+/* gold */  #f8e6bc → #eed392 → #dfbc6e,  립 3px #b39a63
+```
+
+**①~⑤ 다섯 층이 전부 보여야 한다.** 하나라도 빠지면 1차처럼 납작해진다.
+
+### 질감 — 이게 2차의 유일한 추가분
+
+```
+· 아주 미세한 매트 그레인 — 실리콘/소프트터치 플라스틱 표면. 노이즈가 보이면 안 되고
+  "완벽하게 매끈하지 않다"는 인상만 남을 정도
+· 광택은 균일하지 않게 — 위쪽 하이라이트가 한쪽으로 살짝 치우치거나 세기가 변한다.
+  CSS 그라디언트가 너무 완벽해서 플라스틱처럼 보이는 부분이다
+· 가장자리에 아주 옅은 빛 투과 — 얇은 실리콘에 빛이 스미는 느낌
+· 유광 반사·거울 하이라이트 금지. 어디까지나 매트다
+```
+
+### 영문 프롬프트
+
+```
+Soft-touch silicone UI button plate, {SIZE}, TRANSPARENT background (alpha), nothing outside the shape.
+A single {SHAPE} pill-shaped pad, fully rounded ends (capsule, radius = half the height).
+{COLOR}
+Matte soft-touch surface with a very fine subtle grain — not glossy, not mirror-like.
+Volume comes from five layers, all must be visible:
+  a thin darker lip along the bottom edge (about 1.5% of height),
+  a soft wide shadow under the pad,
+  a tight contact shadow right beneath it,
+  a bright thin highlight along the very top inner edge,
+  a soft inner shading along the bottom inner edge.
+The top highlight should be slightly uneven in strength, like real silicone, not a perfect gradient.
+A faint hint of light passing through the thinnest edges.
+Premium, restrained, physical product look — like a white silicone keycap or a cat paw pad toy.
+No icon, no text, no numbers, no logo, no pattern, no glossy reflection, no heavy outline.
+```
+
+`{SIZE}` / `{SHAPE}` / `{COLOR}`:
+
+| 파일 | SIZE | SHAPE | COLOR |
+|---|---|---|---|
+| `normal` | `450x200` | `wide` | `Off-white, almost neutral: #ffffff at the top fading to #e6edf6 at the bottom, with a cool grey-blue lip #c4d0e0` |
+| `cta` | `500x200` | `wide` | `Soft desaturated sky blue: #8fcdf2 top to #4f9bd2 bottom, with a deeper blue lip #3d7fae` |
+| `gold` | `600x120` | `very wide` | `Muted warm cream: #f8e6bc top to #dfbc6e bottom, with a soft bronze lip #b39a63` |
+
+**네거티브**
+```
+glossy, mirror reflection, specular highlight, chrome, metal, wet look,
+9-slice, tiling, seamless pattern, texture pattern, noise overlay,
+icon, text, numbers, letters, logo, border, frame, outline,
+flat design, sharp corners, angular, neon, gradient banding,
+background, green screen, chroma key, drop shadow outside the canvas
+```
+
+### 넣은 뒤
+
+비율이 코드에서 고정돼 있으므로 `background-size: 100% 100%` 로 그대로 늘려 쓴다.
+9-slice(`border-image`)는 쓰지 않는다.
+
+⚠ 지금 CTA(출격)와 가챠는 비율이 화면마다 다르다(출격 3.04:1 ↔ 2.60:1). 판 이미지를
+넣을 때 내가 `aspect-ratio` 로 고정한다 — 독(9:4)은 이미 고정돼 있다.
 
 ---
 
@@ -175,21 +220,7 @@
 
 ### 라벨 판
 
-```
-Game UI button plate, 240x96, TRANSPARENT background, 9-slice safe.
-A single rounded rectangle panel, {STYLE},
-semi-flat vector panel (NOT a 3D render), rounded corners fully inside the outer 32 pixels,
-vertical gradient only (lighter top, darker bottom), a thin darker band along
-the bottom edge to suggest thickness, one subtle glossy highlight along the top.
-The center area must be flat and uniform so it can stretch horizontally without artifacts.
-No icon, no text, no numbers, no logo, no horizontal gradient, no pattern in the center,
-no heavy black outline, no sharp corners.
-```
-
-`{STYLE}` 자리:
-- `normal` → `translucent pale sky-blue frosted glass with a soft white rim`
-- `cta` → `vivid sky-blue to azure (#7fd4ff to #46a6f0), opaque, the brightest of the set`
-- `gold` → `warm cream to gold (#ffe6a8 to #f5c05a), opaque`
+→ **1절로 옮겼다.** 구 프롬프트(240x96 · 9-slice)는 1차 실패본이라 삭제했다.
 
 ### 아이콘
 
