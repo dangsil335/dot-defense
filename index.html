@@ -4430,6 +4430,109 @@
       linear-gradient(to top, rgba(6,9,16,0.80) 0%, rgba(6,9,16,0) 24%),
       linear-gradient(to bottom, rgba(6,9,16,0.55) 0%, rgba(6,9,16,0) 16%);
   }
+  /* ═══════════════ 🫧 v807 — 말랑말랑 버튼 (가로 로비 전용) ═══════════════
+     기존은 skewX(-12deg) 각진 네온 콘솔 칩이었다. 레퍼런스(블루아카/스텔라소라)처럼
+     둥글고 부푼 앱 아이콘 느낌으로 바꾼다.
+
+     ⚠ DOM 을 건드리지 않는다. 아이콘은 ::after 가상요소로 얹는다 —
+       #startBtn 은 JS 가 textContent 를 덮어써서(L38697/38702) 자식을 넣으면 지워진다.
+       가상요소는 textContent 교체에 영향받지 않는다.
+
+     🖼 아이콘 파일이 준비되면 아래 --mb-ico 만 채우면 된다. 지금은 --mb-emoji 로 자리를 잡아둔다.
+        규격: 256x256 투명 WebP, 표시 40px. (능력 아이콘의 "불투명 액자형"과 반대 — 반드시 투명)
+        예) #menu #shopBtn { --mb-ico: url('./icons/ui/menu/shop.webp'); } 를 추가하고
+            .menu-nav3 .menu-btn::after 의 content 를 '' 로 바꾸면 이모지가 사라지고 이미지가 뜬다. */
+  @media (orientation: landscape) {
+    /* ── 공통: 각진 칩 → 둥근 젤리 ── */
+    #menu .menu-btn::before, #menu .menu-btn-grid::before {
+      transform: none !important;
+      border-radius: 14px !important;
+      background: linear-gradient(180deg, rgba(238,248,255,0.17), rgba(150,190,235,0.10)) !important;
+      border: 1px solid rgba(190,225,255,0.34) !important;
+      box-shadow: 0 3px 0 rgba(10,16,28,0.42), 0 6px 14px rgba(6,10,20,0.34),
+                  inset 0 1px 0 rgba(255,255,255,0.30) !important;
+      -webkit-backdrop-filter: blur(9px); backdrop-filter: blur(9px);
+    }
+    #menu .menu-btn { transition: transform .09s ease !important; }
+    /* 눌리면 아래로 살짝 꺼진다 — 말랑한 느낌의 핵심 */
+    #menu .menu-btn:active { transform: translateY(2px) !important; }
+    #menu .menu-btn:active::before {
+      box-shadow: 0 1px 0 rgba(10,16,28,0.42), 0 3px 8px rgba(6,10,20,0.3),
+                  inset 0 1px 0 rgba(255,255,255,0.22) !important;
+    }
+    #menu .menu-btn:hover:not(:disabled)::before {
+      border-color: rgba(215,240,255,0.72) !important;
+      box-shadow: 0 3px 0 rgba(10,16,28,0.42), 0 8px 18px rgba(90,170,255,0.30),
+                  inset 0 1px 0 rgba(255,255,255,0.38) !important;
+    }
+    /* nth-child 로 좌/우열에 걸려 있던 마름모 skew 해제 */
+    #menu .menu-nav3 .menu-btn:nth-child(3n+1)::before,
+    #menu .menu-nav3 .menu-btn:nth-child(3n+2)::before,
+    #menu .menu-nav3 .menu-btn:nth-child(3n)::before { transform: none !important; }
+
+    /* ── 하단 독: 아이콘 위 + 라벨 아래 (레퍼런스 구조) ── */
+    #menu .menu-nav3 { gap: 6px !important; row-gap: 6px !important; }
+    #menu .menu-nav3 .menu-btn {
+      display: flex !important; flex-direction: column; align-items: center; justify-content: center;
+      gap: 1px; padding: 4px 2px 5px !important;
+      font-size: clamp(8.5px, 1.5vh, 11px) !important; line-height: 1.1 !important;
+      color: #dceaf8 !important; font-weight: 700;
+    }
+    #menu .menu-nav3 .menu-btn::after {
+      content: var(--mb-emoji, '');
+      display: block; width: clamp(24px, 6vh, 34px); height: clamp(24px, 6vh, 34px);
+      font-size: clamp(18px, 4.4vh, 26px); line-height: clamp(24px, 6vh, 34px); text-align: center;
+      background-image: var(--mb-ico, none);
+      background-size: contain; background-position: center; background-repeat: no-repeat;
+      filter: drop-shadow(0 1px 2px rgba(0,0,0,0.45));
+    }
+    #menu #shopBtn            { --mb-emoji: '🔧'; }
+    #menu #codexBtn           { --mb-emoji: '📖'; }
+    #menu #abilityPermaBtn    { --mb-emoji: '🧬'; }
+    #menu #achievementsBtn    { --mb-emoji: '🏆'; }
+    #menu #charCollectionBtn  { --mb-emoji: '👥'; }
+    #menu #recordsBtn         { --mb-emoji: '📋'; }
+
+    /* ── CTA(출격) — 가장 크고 둥글게. 파스텔 하늘색 ── */
+    #menu .menu-btn-primary::before {
+      border-radius: 18px !important;
+      background: linear-gradient(180deg, #7fd4ff, #46a6f0) !important;
+      border: 0 !important;
+      box-shadow: 0 4px 0 #2b6fae, 0 10px 20px rgba(60,150,230,0.42),
+                  inset 0 2px 0 rgba(255,255,255,0.55) !important;
+      animation: none !important;   /* 각진 시절의 네온 펄스 제거 */
+    }
+    #menu .menu-btn-primary { color: #08202f !important; text-shadow: 0 1px 0 rgba(255,255,255,0.35) !important; }
+    #menu .menu-btn-primary:active::before { box-shadow: 0 1px 0 #2b6fae, 0 4px 10px rgba(60,150,230,0.35), inset 0 2px 0 rgba(255,255,255,0.4) !important; }
+    #menu .menu-btn-restart::before { background: linear-gradient(180deg, #ffa3ae, #f0687e) !important; box-shadow: 0 4px 0 #a8384c, 0 10px 20px rgba(230,90,120,0.38), inset 0 2px 0 rgba(255,255,255,0.5) !important; }
+    #menu .menu-btn-secondary::before { background: linear-gradient(180deg, rgba(255,230,170,0.28), rgba(232,196,90,0.18)) !important; border-color: rgba(255,225,150,0.55) !important; }
+
+    /* ── 가챠 — 크림/골드 젤리 ── */
+    #menu #gachaBtn::before {
+      border-radius: 16px !important;
+      background: linear-gradient(180deg, #ffe6a8, #f5c05a) !important;
+      border: 0 !important;
+      box-shadow: 0 4px 0 #b8873a, 0 9px 18px rgba(220,170,70,0.38), inset 0 2px 0 rgba(255,255,255,0.55) !important;
+    }
+    #menu #gachaBtn, #menu #gachaBtn .gacha-circle-label { color: #3a2708 !important; text-shadow: 0 1px 0 rgba(255,255,255,0.35) !important; }
+    #menu #gachaBtn:active::before { box-shadow: 0 1px 0 #b8873a, 0 4px 9px rgba(220,170,70,0.3), inset 0 2px 0 rgba(255,255,255,0.45) !important; }
+
+    /* ── 상단 미니 칩(코어관리·글로벌랭킹) ── */
+    #menu #coreMgrBtn::before, #menu #globalRankBtn::before {
+      border-radius: 999px !important; transform: none !important;
+      background: rgba(232,245,255,0.16) !important; border: 1px solid rgba(200,232,255,0.4) !important;
+      box-shadow: 0 2px 0 rgba(10,16,28,0.34), inset 0 1px 0 rgba(255,255,255,0.28) !important;
+    }
+    #menu #coreMgrBtn, #menu #globalRankBtn { color: #e2f2ff !important; font-weight: 700; }
+    /* 설정·업데이트도 같은 결로 */
+    #menu .settings-btn, #menu .update-cache-btn {
+      border-radius: 999px !important;
+      background: rgba(232,245,255,0.16) !important; border: 1px solid rgba(200,232,255,0.4) !important;
+      box-shadow: 0 2px 0 rgba(10,16,28,0.34), inset 0 1px 0 rgba(255,255,255,0.28) !important;
+      color: #e2f2ff !important;
+    }
+    #menu .settings-btn:active, #menu .update-cache-btn:active { transform: translateY(2px); }
+  }
   /* 🎖️ v501 — 진급 시네마틱 오버레이 (PROMOTION GRANTED) */
   #promotionOverlay { position: fixed; inset: 0; z-index: 9996; display: none; align-items: center; justify-content: center; background: radial-gradient(circle at 50% 44%, rgba(10,16,28,0.72), rgba(4,6,12,0.93)); cursor: pointer; }
   #promotionOverlay.show { display: flex; animation: promoFade .4s ease; }
@@ -40682,7 +40785,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 806;
+  const APP_VERSION = 807;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
