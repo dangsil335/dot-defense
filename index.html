@@ -4361,7 +4361,7 @@
        (v813 에서 독을 7:4 로 두껍게 하면서 43→62px 이 됐고, 64px 로는 4px 겹쳤다).
        독 점유 = bottom 6px + 버튼 높이. 변수 한 곳만 고치면 가챠까지 따라온다. */
     #menu {
-      --dock-h: clamp(66px, 20.5vh, 98px);          /* 원 + 아래 글자까지의 전체 높이 */
+      --dock-h: clamp(52px, 15.5vh, 74px);          /* 아이콘 + 아래 글자. 레퍼런스는 작고 납작하다 */
       --dock-clear: calc(var(--dock-h) + 18px);      /* 독 위로 비워둘 높이 */
       --cta-w: clamp(140px, 21vw, 200px);            /* 우측 컬럼 폭 */
     }
@@ -4385,7 +4385,7 @@
       position: absolute !important; left: 0; right: 0; margin: 0 auto !important;
       /* 폭을 --dock-h 에 연동한다. 고정값을 쓰면 큰 화면에서 원(0.82×dock-h)이
          칸보다 커져 서로 겹친다. 5.95 = 원 6개 + 그 사이 여백 */
-      bottom: 6px; width: min(calc(var(--dock-h) * 5.95), 74vw) !important;
+      bottom: 10px; width: min(calc(var(--dock-h) * 6.2), 74vw) !important;
       grid-template-columns: repeat(6, 1fr) !important;
       gap: 5px !important; row-gap: 5px !important; z-index: 6;
     }
@@ -4510,7 +4510,7 @@
        거의 정사각이기 때문이다. 그래서 버튼 형태를 먼저 정하고 내용을 거기 맞춘다.
        ⚠ 높이는 vh 로 잡는다. grid 1fr 폭(≈113px)을 그대로 쓰면 정사각이 너무 커진다. */
     #menu .menu-nav3 .menu-btn {
-      height: var(--dock-h) !important; width: auto !important; aspect-ratio: 0.82 / 1;
+      height: var(--dock-h) !important; width: auto !important; aspect-ratio: 0.98 / 1;
       justify-self: center; min-width: 0 !important;
       display: flex !important; flex-direction: column; align-items: center; justify-content: flex-start;
       gap: 0; padding: 0 !important;
@@ -4519,20 +4519,27 @@
       color: #eef6ff !important; font-weight: 800; text-align: center;
       text-shadow: 0 1px 3px rgba(0,0,0,0.85), 0 0 7px rgba(0,0,0,0.55) !important;
     }
-    /* 판 = 완전한 원. 버튼 박스 위쪽 정사각만 덮는다 (아래 남는 자리가 글자 몫) */
-    #menu .menu-nav3 .menu-btn::before {
-      inset: 0 0 auto 0 !important; height: auto !important; aspect-ratio: 1 / 1;
-      border-radius: 999px !important;
+    /* 🔵 v823 — 독은 판을 쓰지 않는다.
+       레퍼런스(블루아카이브) 독은 큰 버튼 판이 아니라 작은 아이콘 + 아래 글자이고
+       전체가 반투명 띠 하나 위에 얹혀 있다. 원형 판은 레퍼런스보다 훨씬 컸다. */
+    #menu .menu-nav3 .menu-btn::before { display: none !important; }
+    #menu .menu-nav3::before {
+      content: ''; position: absolute; inset: -7px clamp(-22px, -2.4vw, -12px);
+      background: rgba(16,26,42,0.40);
+      border: 1px solid rgba(255,255,255,0.10);
+      border-radius: 20px; z-index: -1;
+      -webkit-backdrop-filter: blur(9px); backdrop-filter: blur(9px);
+      box-shadow: 0 6px 18px rgba(10,18,32,0.30);
     }
     #menu .menu-nav3 .menu-btn::after {
       content: '';
       position: static !important; transform: none !important;
       order: -1;                      /* ::after 는 글자 뒤라 order 로 위로 올린다 */
-      display: block; width: 100%; height: auto; aspect-ratio: 1 / 1;
+      display: block; width: 100%; height: auto; aspect-ratio: 1.18 / 1;
       background-image: var(--mb-ico, none);
-      background-size: 54%;           /* 원 안쪽에 아이콘을 앉힌다 */
+      background-size: contain;       /* 판이 없으므로 아이콘을 꽉 채운다 */
       background-position: center; background-repeat: no-repeat;
-      filter: drop-shadow(0 1px 1.5px rgba(30,50,80,0.28));
+      filter: drop-shadow(0 1.5px 2.5px rgba(6,12,24,0.55));
     }
     #menu #shopBtn            { --mb-ico: url('./icons/ui/menu/shop.webp'); }
     #menu #codexBtn           { --mb-ico: url('./icons/ui/menu/codex.webp'); }
@@ -4560,11 +4567,9 @@
     #menu #globalRankBtn { --mb-ico: url('./icons/ui/menu/rank.webp'); }
     #menu #gachaBtn::after {
       left: 4%; width: 19%; height: 74%;
-      border-radius: 26%;
-      background-color: rgba(255,255,255,0.32);
-      background-size: 72%;
-      box-shadow: inset 0 1px 0 rgba(255,255,255,0.6),
-                  inset 0 -2px 4px rgba(190,140,50,0.3);
+      background-color: transparent !important;   /* 홈은 판 그림 안에 있다 */
+      background-size: 64%;
+      box-shadow: none !important;
     }
     #menu #gachaBtn {
       --mb-ico: url('./icons/ui/menu/scout.webp');
@@ -4576,11 +4581,9 @@
        ::after 를 아이콘이 아니라 "배지" 로 쓴다 (배경색 + 그 위에 아이콘 이미지). */
     #menu .menu-btn-primary::after {
       left: 4.5%; width: 25%; height: 72%;
-      border-radius: 24%;
-      background-color: rgba(255,255,255,0.26);
-      background-size: 74%;
-      box-shadow: inset 0 1.5px 0 rgba(255,255,255,0.55),
-                  inset 0 -2px 5px rgba(20,80,140,0.28);
+      background-color: transparent !important;   /* 홈은 판 그림 안에 있다 */
+      background-size: 66%;
+      box-shadow: none !important;
     }
     #menu .menu-btn-primary {
       --mb-ico: url('./icons/ui/menu/start.webp');
@@ -4595,20 +4598,18 @@
     }
 
     /* ── CTA(출격) — 가장 크고 둥글게. 파스텔 하늘색 ── */
+    /* 🖼 v823 — 판을 실제 이미지로. 배지 홈·베벨·접지그림자가 전부 그림 안에 있다.
+       tools/make_plates.py 로 생성한다(이미지 생성 AI 6번 실패 후 직접 그리는 쪽으로). */
     #menu .menu-btn-primary::before {
-      border: 0 !important; border-image: none !important;
-      border-radius: 999px !important;
-      background: linear-gradient(180deg, #8fcdf2 0%, #6bb4e4 52%, #4f9bd2 100%) !important;
-      box-shadow:
-        0 4px 0 #3d7fae, 0 8px 16px rgba(40,90,140,0.32),
-        inset 0 2px 0 rgba(255,255,255,0.75), inset 0 -3px 7px rgba(50,110,165,0.35) !important;
-      animation: none !important;   /* 각진 시절의 네온 펄스 제거 */
+      border: 0 !important; border-image: none !important; border-radius: 0 !important;
+      background: url('./icons/ui/plate/cta.webp') center / 100% 100% no-repeat !important;
+      box-shadow: none !important;
+      animation: none !important;
       filter: none;
     }
     #menu .menu-btn-primary { color: #08202f !important; text-shadow: 0 1px 0 rgba(255,255,255,0.35) !important;
       aspect-ratio: 2 / 1; height: auto !important; }   /* ⚠ 가챠 bottom 이 폭/2 를 전제한다 */
-    #menu .menu-btn-primary:active::before { box-shadow: 0 1px 0 #3d7fae, 0 3px 7px rgba(40,90,140,0.28),
-      inset 0 1px 0 rgba(255,255,255,0.7), inset 0 -2px 6px rgba(50,110,165,0.35) !important; }
+    #menu .menu-btn-primary:active::before { transform: translateY(2px) scale(0.985); filter: brightness(0.95); }
     /* 처음부터 다시 = 붉은 톤. 전용 판을 따로 만들지 않고 색조만 돌린다 */
     #menu .menu-btn-restart::before {
       background: linear-gradient(180deg, #ffc8cf 0%, #f88a9c 52%, #e4576f 100%) !important;
@@ -4623,17 +4624,13 @@
 
     /* ── 가챠 — 크림/골드 젤리 ── */
     #menu #gachaBtn::before {
-      border: 0 !important; border-image: none !important;
-      border-radius: 999px !important;
-      background: linear-gradient(180deg, #f8e6bc 0%, #eed392 52%, #dfbc6e 100%) !important;
-      box-shadow:
-        0 3px 0 #b39a63, 0 7px 14px rgba(140,110,50,0.3),
-        inset 0 2px 0 rgba(255,255,255,0.8), inset 0 -3px 6px rgba(175,145,85,0.35) !important;
+      border: 0 !important; border-image: none !important; border-radius: 0 !important;
+      background: url('./icons/ui/plate/gold.webp') center / 100% 100% no-repeat !important;
+      box-shadow: none !important;
       filter: none;
     }
     #menu #gachaBtn, #menu #gachaBtn .gacha-circle-label { color: #3a2708 !important; text-shadow: 0 1px 0 rgba(255,255,255,0.35) !important; }
-    #menu #gachaBtn:active::before { box-shadow: 0 1px 0 #b8873a, 0 3px 7px rgba(160,120,40,0.36),
-      inset 0 2px 0 rgba(255,255,255,0.8), inset 0 -2px 4px rgba(190,140,50,0.4) !important; }
+    #menu #gachaBtn:active::before { transform: translateY(2px) scale(0.985); filter: brightness(0.95); }
 
     /* ── 상단 미니 칩(코어관리·글로벌랭킹) ── */
     /* 상단 칩은 독과 같은 젤리를 쓰되 립만 얇게(작은 버튼이라) */
@@ -41031,7 +41028,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 822;
+  const APP_VERSION = 823;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
