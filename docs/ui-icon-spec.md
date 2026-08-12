@@ -61,8 +61,8 @@
 ### 디자인 방향 — 말랑말랑
 
 ```
-· 둥근 모서리(반경 14~18px 느낌), 부푼 볼륨
-· 위쪽 밝고 아래쪽 살짝 어두운 세로 그라디언트
+· 둥근 모서리(반경 14~18px 느낌). ⚠ 입체 렌더가 아니라 평면 패널이다
+· 위쪽 밝고 아래쪽 살짝 어두운 세로 그라디언트 (2톤이면 충분)
 · 아래 가장자리에 얇은 진한 띠 — "두께" 표현 (눌리면 사라지는 그 부분)
 · 상단에 은은한 광택 하이라이트 한 줄
 · 굵은 검정 외곽선 금지. 테두리는 밝은 반투명 흰빛으로 얇게
@@ -130,24 +130,43 @@
 
 ---
 
-## 3. 공통 디자인 톤
+## 3. 공통 디자인 톤 — ⚠ 3D 클레이 아님
 
-레퍼런스: 블루아카이브 / 스텔라소라의 밝은 로비 UI.
+레퍼런스: 블루아카이브 / 스텔라소라의 로비 UI 아이콘.
+
+**1차 시도가 실패한 이유** — 프롬프트에 `clay-render` `puffy 3D` `soft 3D` 를 넣었더니
+스톡 3D 아이콘 팩 같은 **두꺼운 입체 렌더**가 나왔다. 레퍼런스는 그것과 다르다.
+
+| | 나오면 안 되는 것 | 목표 |
+|---|---|---|
+| 렌더 | 두꺼운 3D 입체 렌더 | **반평면 벡터 일러** |
+| 음영 | 강한 볼륨·바닥 그림자 | 최소한, 단색면 위주 |
+| 시점 | 살짝 사선 원근 | **정면 평면** |
+| 질감 | 매트 플라스틱·점토 | 깨끗한 색면 |
+| 인상 | 스톡 3D 아이콘 | 게임 UI 아이콘 |
+
+**실용적인 이유도 있다.** 표시 크기가 **29px** 이라 3D 볼륨·페이지 선·리본 같은 디테일은
+전부 뭉개져 회색 덩어리가 된다. 평면이 작게 줄었을 때 훨씬 잘 읽힌다.
 
 ```
-· 둥글고 부푼 젤리·클레이 질감 (squishy / puffy / soft 3D)
+· 반평면(semi-flat) 벡터. 정면. 굵고 단순한 실루엣
+· 면은 단색 또는 아주 완만한 2톤 그라디언트
+· 음영은 면 분할로만 (밝은 면 / 어두운 면). 블러 그림자 최소
+· 하이라이트는 점 하나 정도까지만
 · 파스텔 — 하늘 #7fd4ff · 민트 #a8e6cf · 크림 #ffe6a8 · 연보라 #c9b8ff
-· 아래로 부드러운 그림자, 위로 은은한 광택
-· 형태 1~2개로 단순하게
+· 요소 1~2개. 29px 로 줄여서 알아볼 수 있어야 한다
 ```
 
 **금지**
 ```
-✗ 굵은 검정 외곽선      29px 로 줄면 뭉개진다
-✗ 각진 모서리·날카로운 사선   지금 바꾼 방향과 정반대
-✗ 네온 글로우·사이버펑크     기존 콘솔 룩(v806 이전)
-✗ 텍스트·숫자           라벨은 CSS 가 렌더한다
-✗ 불투명 배경판          라벨 판이 따로 있다
+✗ clay / 3D render / puffy / volumetric   ← 1차 실패 원인. 절대 넣지 말 것
+✗ 바닥에 드리우는 블러 그림자
+✗ 사선 원근·입체 두께 표현
+✗ 굵은 검정 외곽선        29px 로 줄면 뭉개진다
+✗ 각진 모서리·날카로운 사선
+✗ 네온 글로우·사이버펑크
+✗ 텍스트·숫자            라벨은 CSS 가 렌더한다
+✗ 불투명 배경판·크로마키 초록 배경   반드시 알파 투명
 ```
 
 ---
@@ -159,7 +178,7 @@
 ```
 Game UI button plate, 240x96, TRANSPARENT background, 9-slice safe.
 A single rounded rectangle panel, {STYLE},
-soft puffy clay look, rounded corners fully inside the outer 32 pixels,
+semi-flat vector panel (NOT a 3D render), rounded corners fully inside the outer 32 pixels,
 vertical gradient only (lighter top, darker bottom), a thin darker band along
 the bottom edge to suggest thickness, one subtle glossy highlight along the top.
 The center area must be flat and uniform so it can stretch horizontally without artifacts.
@@ -175,22 +194,27 @@ no heavy black outline, no sharp corners.
 ### 아이콘
 
 ```
-Soft 3D game UI icon, 256x256, TRANSPARENT background, no frame, no background plate.
+Cute mobile game UI icon, semi-flat vector illustration, 256x256,
+TRANSPARENT background (alpha), no frame, no background plate, no green screen.
 {CONCEPT}
-Squishy puffy clay-render style, rounded shapes, matte soft surface,
-pastel sky-blue palette (#7fd4ff) with cream and mint accents,
-gentle soft drop shadow below, one subtle glossy highlight on top.
-Simple silhouette with only one or two clear elements —
-must stay readable when scaled down to 29 pixels.
-No outline strokes, no neon glow, no text, no numbers, no sharp angular edges.
+Flat front-facing view, bold simple silhouette with rounded corners.
+Solid color fills with at most a gentle two-tone shading — light face and shadow face.
+Pastel palette: sky blue #7fd4ff, mint #a8e6cf, cream #ffe6a8.
+Clean and cute, in the style of bright anime mobile game menu icons.
+Must stay readable when scaled down to 29 pixels.
+NOT a 3D render. No clay, no plastic, no volumetric depth, no perspective,
+no drop shadow, no outline strokes, no text, no numbers.
 ```
 
 **네거티브 (공통)**
 ```
-transparent background required, no background plate, no frame, text, numbers, letters,
-watermark, neon glow, cyberpunk, sharp angular edges, thin lines, heavy black outline,
-cluttered detail, photorealistic, flat 2d vector
+3d render, clay, claymation, plastic, volumetric, isometric, perspective, depth, extrusion,
+drop shadow, ambient occlusion, glossy plastic, stock 3d icon,
+green screen, chroma key, solid background, background plate, frame, border,
+text, numbers, letters, watermark, neon glow, cyberpunk, sharp angular edges,
+thin lines, heavy black outline, cluttered detail, photorealistic
 ```
+⚠ `flat 2d vector` 를 네거티브에 넣지 말 것 — 1차 프롬프트의 실수다. 우리가 원하는 게 그거다.
 
 ---
 
@@ -198,8 +222,8 @@ cluttered detail, photorealistic, flat 2d vector
 
 ### `shop.webp` — 강화소
 ```
-a plump rounded wrench crossed with a small glowing upgrade arrow pointing up,
-soft blue clay body with cream metal accents
+a rounded wrench crossed with a small upgrade arrow pointing up,
+sky-blue body with cream metal accents, flat two-tone shading
 ```
 ### `codex.webp` — 도감
 ```
@@ -213,8 +237,8 @@ mint and sky-blue, with a tiny star at the top
 ```
 ### `achieve.webp` — 업적
 ```
-a puffy rounded trophy cup with a small star on its front,
-cream-gold body with soft blue base
+a rounded trophy cup with a small star on its front,
+cream-gold body with a sky-blue base, flat two-tone shading
 ```
 ### `chars.webp` — 캐릭터·진화
 ```
@@ -238,14 +262,13 @@ a small cream star or laurel accent at the lower right
 ```
 ### `scout.webp` — 차원 스카우트
 ```
-a puffy rounded gacha capsule splitting open with a small star bursting out,
-cream-gold capsule with sky-blue glow inside
+a rounded gacha capsule splitting open with a small star above it,
+cream-gold capsule with a sky-blue inner face, flat two-tone shading
 ```
 ### `start.webp` — 출격 (CTA)
 ```
-a bold rounded play triangle with soft thick edges, floating on a small
-cushion of light, bright sky-blue with a strong white highlight —
-this is the primary action, make it the most vivid of the set
+a bold rounded play triangle, bright sky-blue with a lighter top face,
+this is the primary action — make it the most vivid and saturated of the set
 ```
 
 ---
