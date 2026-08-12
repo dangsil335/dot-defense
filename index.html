@@ -4357,13 +4357,17 @@
                       top: auto !important; bottom: 62px !important; height: clamp(56px, 13vh, 84px) !important; z-index: 6; }
 
     /* ── 우측: CTA ── */
+    /* ⚠ 우측 CTA 컬럼은 하단 독 위에 앉는다. 독 높이가 바뀌면 여기도 같이 바뀌어야 한다
+       (v813 에서 독을 7:4 로 두껍게 하면서 43→62px 이 됐고, 64px 로는 4px 겹쳤다).
+       독 점유 = bottom 6px + 버튼 높이. 변수 한 곳만 고치면 가챠까지 따라온다. */
+    #menu { --dock-clear: 78px; }
     #menu .menu-cta-group {
-      position: absolute !important; right: 12px; bottom: 64px;
+      position: absolute !important; right: 12px; bottom: var(--dock-clear);
       width: clamp(140px, 21vw, 200px) !important; z-index: 6;
     }
     #menu #gachaBtn {
       position: absolute !important; right: 12px !important;
-      bottom: calc(64px + clamp(52px, 11vh, 74px)) !important;
+      bottom: calc(var(--dock-clear) + clamp(52px, 11vh, 74px)) !important;
       top: auto !important; left: auto !important;
       width: clamp(140px, 21vw, 200px) !important; height: auto !important;
       border-radius: 10px !important; padding: 9px 8px !important; z-index: 6;
@@ -4456,14 +4460,19 @@
       border: 0 !important;
       border-image: none !important;
       border-radius: 999px !important;
-      background: linear-gradient(180deg,
-        rgba(255,255,255,0.97) 0%, rgba(246,249,253,0.95) 52%, rgba(230,237,246,0.94) 100%) !important;
+      /* 🐾 발바닥 젤리 — 위쪽 넓은 밝은 면 + 아래로 급격히 어두워지는 곡면.
+         radial 을 겹쳐 "부푼 구" 처럼 보이게 한다. 선형 그라디언트만으론 납작하다. */
+      background:
+        radial-gradient(120% 90% at 50% 6%, rgba(255,255,255,1) 0%, rgba(255,255,255,0) 62%),
+        linear-gradient(180deg,
+          rgba(252,253,255,0.98) 0%, rgba(240,245,251,0.96) 44%, rgba(218,228,241,0.95) 100%) !important;
       box-shadow:
-        0 3px 0 rgba(196,208,224,0.9),
-        0 6px 13px rgba(40,60,92,0.20),
-        0 1px 2px rgba(40,60,92,0.10),
-        inset 0 2px 0 rgba(255,255,255,1),
-        inset 0 -3px 6px rgba(202,214,231,0.5) !important;
+        0 6px 0 rgba(184,198,217,0.95),
+        0 10px 18px rgba(40,60,92,0.26),
+        0 2px 4px rgba(40,60,92,0.14),
+        inset 0 3px 0 rgba(255,255,255,1),
+        inset 0 -6px 11px rgba(190,205,226,0.72),
+        inset 0 0 0 1px rgba(255,255,255,0.55) !important;
       -webkit-backdrop-filter: none; backdrop-filter: none;
       filter: none;
     }
@@ -4472,8 +4481,9 @@
     #menu .menu-btn:active { transform: translateY(2px) !important; }
     /* 눌리면 립이 얇아진다 — 실제로 눌려 들어가는 느낌의 핵심 */
     #menu .menu-btn:active::before {
-      box-shadow: 0 1px 0 rgba(196,208,224,0.9), 0 2px 5px rgba(40,60,92,0.18),
-                  inset 0 1px 0 rgba(255,255,255,0.9), inset 0 -2px 5px rgba(202,214,231,0.55) !important;
+      box-shadow: 0 2px 0 rgba(184,198,217,0.95), 0 3px 7px rgba(40,60,92,0.2),
+                  inset 0 2px 0 rgba(255,255,255,0.9), inset 0 -4px 9px rgba(190,205,226,0.7),
+                  inset 0 0 0 1px rgba(255,255,255,0.5) !important;
     }
     #menu .menu-btn:hover:not(:disabled)::before {
       background: linear-gradient(180deg,
@@ -4489,7 +4499,7 @@
     /* 🏷 라벨 판 이미지를 쓰려면 버튼 비율이 화면마다 달라지면 안 된다(늘리면 모서리가 찌그러진다).
        5:2 로 고정한다 — 이 비율이 곧 이미지 규격이다. 폭은 독 폭/6 으로 자동, 높이는 비율이 정한다. */
     #menu .menu-nav3 .menu-btn {
-      aspect-ratio: 9 / 4; height: auto !important;
+      aspect-ratio: 7 / 4; height: auto !important;
       display: flex !important; flex-direction: row; align-items: center; justify-content: flex-start;
       gap: 0; padding: 0 6% 0 34% !important;
       font-size: clamp(8.5px, 1.5vh, 11px) !important; line-height: 1.1 !important;
@@ -40846,7 +40856,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 812;
+  const APP_VERSION = 813;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {

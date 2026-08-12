@@ -1,4 +1,4 @@
-# 아크 제로 — 로비 UI 리소스 규격 (v809 기준)
+# 아크 제로 — 로비 UI 리소스 규격 (v813 기준)
 
 > 메인 로비 버튼용. **라벨 판(배경) + 아이콘(글리프)을 분리**해서 받는다.
 > 글자는 이미지에 넣지 않는다 — CSS 가 렌더한다(문구 수정·길이 대응 때문).
@@ -18,109 +18,117 @@
 
 ---
 
-## 1. 라벨 판 — 3장  (2차 개정: 9-slice 폐기 → 비율 고정 전체 아트)
+## 1. 라벨 판 — 3장  (3차 개정: 발바닥 젤리)
 
 버튼의 배경이 되는 판. 글자와 아이콘은 CSS 가 위에 얹는다.
 
-### ⚠ 1차 실패와 방향 전환
+### ⚠ 앞선 두 번이 실패한 이유 — 같은 실수를 반복하지 말 것
 
-1차 판은 **납작한 흰 판 + 회색 막대**로 와서 젤리가 아니라 "목록 행"으로 보였다.
-원인은 내 프롬프트의 `thin darker band` / `vertical gradient only` 다 — 볼륨을 지워버렸다.
+| | 지시한 것 | 나온 것 |
+|---|---|---|
+| 1차 | `thin darker band` / `vertical gradient only` | 납작한 흰 판 + 회색 막대 = "목록 행" |
+| 2차 | `capsule pill` / 다섯 층 음영 | 여전히 납작한 막대. **캔버스도 240×96 구 규격** |
 
-그 뒤 CSS 로 형태를 먼저 확정했고(v812), **형태는 이걸로 맞다**는 확인을 받았다.
-남은 것은 **질감**뿐이다. 그래서 2차 발주의 목표는 딱 하나다:
+2차가 구 규격으로 돌아온 건 **이 문서 뒤쪽 체크리스트에 옛 수치가 남아 있었기 때문**이다.
+지금은 정리했다. 캔버스 수치는 아래 표가 유일한 출처다.
 
-> 아래 CSS 와 같은 형태·색·음영을 유지하면서, **실리콘 표면 질감만 얹는다.**
+**그리고 2차의 진짜 문제는 낱개 음영이 아니라 형태 언어였다.**
+`pill` `capsule` 이라고 하면 옆에서 본 알약, 즉 **납작한 막대**가 나온다.
+함장이 원하는 건 그게 아니라 **고양이 발바닥 젤리** 다 — 가운데가 볼록 부푼 쿠션.
 
-그리고 **9-slice 를 폐기한다.** 늘어나는 가운데 영역에서는 질감이 뭉개지기 때문이다.
-대신 버튼 비율을 코드에서 고정했으므로, 이미지를 통째로 늘려도 왜곡되지 않는다.
+> **3차의 한 줄 지시: 가운데가 위로 부풀어야 한다.**
+> 평평한 판에 그라디언트를 칠하는 게 아니라, 공기가 든 쿠션을 위에서 내려다본 그림이다.
 
-### 파일과 비율
+### 🚨 아이콘과 정반대다 — 헷갈리면 둘 다 망한다
 
-| 파일 | 쓰이는 곳 | 캔버스 | 비율 |
-|---|---|---|---|
-| `icons/ui/plate/normal.webp` | 하단 독 6개 · 코어관리 · 글로벌랭킹 | **450 × 200** | 9:4 (코드에서 고정됨) |
-| `icons/ui/plate/cta.webp` | **출격** | **500 × 200** | 5:2 |
-| `icons/ui/plate/gold.webp` | 차원 스카우트 | **600 × 120** | 5:1 |
+| | 아이콘 (§2) | **판 (여기)** |
+|---|---|---|
+| 입체 | **금지.** 반평면 벡터 | **필수.** 부푼 입체 |
+| `flat` | 원하는 것 | **네거티브에 넣는다** |
+| 그림자 | 넣지 않는다 | 접지 그림자 넣는다 |
+| 시점 | 정면 평면 | 살짝 위에서 내려다봄 |
 
-포맷: 투명 WebP. 모서리 바깥은 완전 투명(알파 0).
+### 파일과 캔버스 — ⚠ 이 표가 유일한 출처
 
-### 현재 CSS 값 = 목표 형태 (이 수치를 그대로 재현할 것)
+| 파일 | 쓰이는 곳 | 캔버스 | 비율 | 근거(실측) |
+|---|---|---|---|---|
+| `icons/ui/plate/normal.webp` | 하단 독 6개 | **420 × 240** | 7:4 | 독 버튼 109×62 = 1.76 |
+| `icons/ui/plate/cta.webp` | **출격** | **480 × 160** | 3:1 | 출격 170×56 = 3.04 |
+| `icons/ui/plate/gold.webp` | 차원 스카우트 | **470 × 100** | 4.7:1 | 가챠 170×36 = 4.72 |
 
-```css
-/* normal — 매트 흰 실리콘 */
-border-radius: 999px;                                  /* 완전한 캡슐 */
-background: linear-gradient(180deg,
-  rgba(255,255,255,0.97) 0%,
-  rgba(246,249,253,0.95) 52%,
-  rgba(230,237,246,0.94) 100%);
-box-shadow:
-  0 3px 0 rgba(196,208,224,0.9),      /* ① 아래 립 — 얇게 3px, 옅은 회청 */
-  0 6px 13px rgba(40,60,92,0.20),     /* ② 넓은 외부 그림자 */
-  0 1px 2px rgba(40,60,92,0.10),      /* ③ 좁은 접지 그림자 */
-  inset 0 2px 0 rgba(255,255,255,1),  /* ④ 위쪽 하이라이트 */
-  inset 0 -3px 6px rgba(202,214,231,0.5); /* ⑤ 아래 안쪽 음영 */
+포맷: 투명 WebP. 판 바깥은 완전 투명(알파 0).
+접지 그림자는 **캔버스 안에** 들어가야 한다 — 판을 캔버스에 꽉 채우지 말고 아래에 여백을 둘 것.
 
-/* cta */   #8fcdf2 → #6bb4e4 → #4f9bd2,  립 4px #3d7fae
-/* gold */  #f8e6bc → #eed392 → #dfbc6e,  립 3px #b39a63
-```
+상단 칩(코어관리·글로벌랭킹)은 비율이 훨씬 납작해서 `normal` 을 늘려 쓰면 도밍이 눌린다.
+→ 칩은 판 이미지를 쓰지 않고 지금 CSS 를 유지한다.
 
-**①~⑤ 다섯 층이 전부 보여야 한다.** 하나라도 빠지면 1차처럼 납작해진다.
-
-### 질감 — 이게 2차의 유일한 추가분
+### 색 (v812 CSS 에서 확정, 그대로 재현)
 
 ```
-· 아주 미세한 매트 그레인 — 실리콘/소프트터치 플라스틱 표면. 노이즈가 보이면 안 되고
-  "완벽하게 매끈하지 않다"는 인상만 남을 정도
-· 광택은 균일하지 않게 — 위쪽 하이라이트가 한쪽으로 살짝 치우치거나 세기가 변한다.
-  CSS 그라디언트가 너무 완벽해서 플라스틱처럼 보이는 부분이다
-· 가장자리에 아주 옅은 빛 투과 — 얇은 실리콘에 빛이 스미는 느낌
-· 유광 반사·거울 하이라이트 금지. 어디까지나 매트다
+normal  위 #ffffff → 아래 #e6edf6,  아래 립 #c4d0e0   (차가운 흰 실리콘)
+cta     위 #8fcdf2 → 아래 #4f9bd2,  아래 립 #3d7fae   (채도 낮은 하늘)
+gold    위 #f8e6bc → 아래 #dfbc6e,  아래 립 #b39a63   (탁한 크림골드)
 ```
+
+유광 금지. 어디까지나 **매트 소프트터치**다.
 
 ### 영문 프롬프트
 
 ```
-Soft-touch silicone UI button plate, {SIZE}, TRANSPARENT background (alpha), nothing outside the shape.
-A single {SHAPE} pill-shaped pad, fully rounded ends (capsule, radius = half the height).
+Top-down product shot of a soft silicone button pad, {SIZE},
+TRANSPARENT background (alpha channel), nothing outside the pad except its own soft shadow.
+
+A single rounded-rectangle pad with very soft corners —
+the shape and feel of a cat's paw pad, or a squishy silicone keycap.
+
+THE SURFACE IS DOMED. The center of the pad rises noticeably higher than the edges,
+like a cushion filled with air. The edges roll downward and slightly under,
+so the pad reads as thick and squeezable. It must never look like a flat plate.
+
 {COLOR}
-Matte soft-touch surface with a very fine subtle grain — not glossy, not mirror-like.
-Volume comes from five layers, all must be visible:
-  a thin darker lip along the bottom edge (about 1.5% of height),
-  a soft wide shadow under the pad,
-  a tight contact shadow right beneath it,
-  a bright thin highlight along the very top inner edge,
-  a soft inner shading along the bottom inner edge.
-The top highlight should be slightly uneven in strength, like real silicone, not a perfect gradient.
+
+Matte soft-touch silicone finish with a very fine subtle grain.
+Not glossy, no mirror reflection, no wet look.
+
+Lighting — one large soft light from above and slightly in front:
+  a broad soft highlight spread across the upper half of the dome, not a small dot,
+  the lower third falling gently into shadow as the surface curves away,
+  a thin darker rim along the very bottom edge,
+  a soft contact shadow directly beneath the pad, kept inside the canvas.
+The highlight should be slightly uneven, like real silicone, not a perfect gradient.
 A faint hint of light passing through the thinnest edges.
-Premium, restrained, physical product look — like a white silicone keycap or a cat paw pad toy.
-No icon, no text, no numbers, no logo, no pattern, no glossy reflection, no heavy outline.
+
+Premium, tactile, physical. No icon, no text, no numbers, no logo, no pattern, no frame.
 ```
 
-`{SIZE}` / `{SHAPE}` / `{COLOR}`:
+`{SIZE}` / `{COLOR}`:
 
-| 파일 | SIZE | SHAPE | COLOR |
-|---|---|---|---|
-| `normal` | `450x200` | `wide` | `Off-white, almost neutral: #ffffff at the top fading to #e6edf6 at the bottom, with a cool grey-blue lip #c4d0e0` |
-| `cta` | `500x200` | `wide` | `Soft desaturated sky blue: #8fcdf2 top to #4f9bd2 bottom, with a deeper blue lip #3d7fae` |
-| `gold` | `600x120` | `very wide` | `Muted warm cream: #f8e6bc top to #dfbc6e bottom, with a soft bronze lip #b39a63` |
+| 파일 | SIZE | COLOR |
+|---|---|---|
+| `normal` | `420x240 canvas, pad is wide` | `Neutral off-white silicone: #ffffff at the crown fading to #e6edf6 at the lower edge, with a cool grey-blue bottom rim #c4d0e0` |
+| `cta` | `480x160 canvas, pad is wide` | `Soft desaturated sky blue silicone: #8fcdf2 at the crown to #4f9bd2 at the lower edge, with a deeper blue bottom rim #3d7fae` |
+| `gold` | `470x100 canvas, pad is very wide and low` | `Muted warm cream silicone: #f8e6bc at the crown to #dfbc6e at the lower edge, with a soft bronze bottom rim #b39a63` |
 
 **네거티브**
 ```
-glossy, mirror reflection, specular highlight, chrome, metal, wet look,
-9-slice, tiling, seamless pattern, texture pattern, noise overlay,
-icon, text, numbers, letters, logo, border, frame, outline,
-flat design, sharp corners, angular, neon, gradient banding,
-background, green screen, chroma key, drop shadow outside the canvas
+flat, flat design, 2d, sticker, vector, paper, card,
+glossy, mirror reflection, specular highlight, chrome, metal, glass, wet look,
+capsule, pill, bar, rectangle button, tab,
+icon, text, numbers, letters, logo, watermark, pattern, border, frame, outline,
+sharp corners, hard edges, neon, gradient banding,
+background, solid background, green screen, chroma key,
+isometric, perspective tilt, side view, multiple objects
 ```
+⚠ `capsule` `pill` 을 네거티브에 넣은 게 3차의 핵심 변경이다 — 2차 프롬프트가 그 단어로 실패했다.
+⚠ `flat` 은 **판에서만** 네거티브다. 아이콘(§2)에서는 정반대이니 프롬프트를 섞지 말 것.
 
-### 넣은 뒤
+### 통과 기준
 
-비율이 코드에서 고정돼 있으므로 `background-size: 100% 100%` 로 그대로 늘려 쓴다.
-9-slice(`border-image`)는 쓰지 않는다.
-
-⚠ 지금 CTA(출격)와 가챠는 비율이 화면마다 다르다(출격 3.04:1 ↔ 2.60:1). 판 이미지를
-넣을 때 내가 `aspect-ratio` 로 고정한다 — 독(9:4)은 이미 고정돼 있다.
+1. 캔버스가 위 표와 정확히 일치 (420×240 / 480×160 / 470×100)
+2. 판 바깥 알파 0. 접지 그림자가 캔버스 밖으로 잘리지 않음
+3. **가로 중앙에서 세로로 잘랐을 때 위쪽이 볼록해야 한다.** 직선이면 실패다
+4. 유광 반사 없음
+5. 글자·아이콘·테두리 없음
 
 ---
 
@@ -220,7 +228,8 @@ background, green screen, chroma key, drop shadow outside the canvas
 
 ### 라벨 판
 
-→ **1절로 옮겼다.** 구 프롬프트(240x96 · 9-slice)는 1차 실패본이라 삭제했다.
+→ **1절로 옮겼다.** 구 프롬프트(240×96 · 9-slice)는 실패본이라 삭제했다.
+⚠ 판 프롬프트는 1절에만 있다. 여기에 사본을 두지 않는다 — 2차 실패가 사본 때문이었다.
 
 ### 아이콘
 
@@ -329,19 +338,20 @@ this is the primary action — make it the most vivid and saturated of the set
 파일만 넣으면 CSS 한 블록으로 끝난다. 지금은 CSS 젤리 + 이모지로 자리를 잡아둔 상태다.
 
 ```css
-/* 현재 (v807~809) */
-#menu #shopBtn { --mb-emoji: '🔧'; }
-#menu .menu-btn::before { background: linear-gradient(...); }   /* CSS 로 그린 젤리 */
-
-/* 파일 투입 후 */
-#menu .menu-btn::before {
-  border-image: url('./icons/ui/plate/normal.webp') 32 fill / 32px stretch;
-}
+/* 아이콘은 이미 들어갔다 (v810~) */
 #menu #shopBtn { --mb-ico: url('./icons/ui/menu/shop.webp'); }
+
+/* 판은 아직 CSS 로 그리는 중 (v813). 이미지가 오면 이렇게 바뀐다.
+   9-slice(border-image)는 쓰지 않는다 — 늘어나는 가운데에서 도밍이 뭉개진다.
+   비율을 코드에서 고정했으므로 통째로 늘려도 왜곡되지 않는다. */
+#menu .menu-btn::before {
+  background: url('./icons/ui/plate/normal.webp') center / 100% 100% no-repeat !important;
+  box-shadow: none !important;   /* 음영은 그림 안에 있다 */
+}
 ```
 
 체크리스트
 1. 파일명이 위 표와 **정확히** 일치 (`perma` `achieve` `chars` 주의)
-2. 판: 240×96 · 모서리 32px 안에 둥근 모서리가 전부 들어갔는지 · 가운데 균일한지
+2. 판: 420×240 / 480×160 / 470×100 · 알파 투명 · **세로로 잘라 위쪽이 볼록한지**
 3. 아이콘: 256×256 · 모서리 알파 0(투명) · **29px 로 줄여서 알아볼 수 있는지**
 4. `APP_VERSION` + `sw.js` 의 `CACHE` 동시 상향 (정적 에셋 cache-first)
