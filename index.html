@@ -35813,6 +35813,7 @@
     'amy__streettech':          { evo: '드론 튜닝 끝났어 — 이 골목은 내 구역이야!',      amb: '스프레이 자국 따라와. 화망은 깔아뒀어.' },
     'aria__siren':              { evo: '자—, 파도 위에서 한 곡. 별보다 바다가 어울리네요!', amb: '이 무대는 해변이에요. 노래, 파도에 맞춰드릴게요!' },
     'aria__abyssal':            { evo: '자—, 심연에서 올라온 아리아예요. 숨 참으세요.',        amb: '이 무대의 조명은 어둠이에요. 노래, 맞춰드릴게요.' },
+    'aria__backstage':          { evo: '무대 뒤에서도 노래는 준비되어 있어요.',          amb: '이어피스 확인했어요. 다음 소절, 바로 갈게요.' },
     'blanche__crystal':         { evo: '물에 비쳐도 빛은 꺾이지 않아. …쳐다보지 마.',     amb: '라군에 일곱 빛깔 풀어놨어. 눈부실 거야.' },
     'blanche__winterball':      { evo: '눈송이도 빛을 나눠. …딱 한 곡만이야.',          amb: '무도회장 얼려놨어. 미끄러지면 잡아줄게. …기대는 마.' },
     'blanche__orthodoxmage':    { evo: '정석대로 간다. 화려한 건 취향이 아니야.',        amb: '진은 이미 그려놨어. 밟지 마.' },
@@ -35847,6 +35848,7 @@
     'marine__harboroffice':     { evo: '입출항 허가 났어 — 자, 내 파도에 올라타!',      amb: '서류는 나중에. 지금은 바다부터 쓸자.' },
     'misaki__butterfly':        { evo: '나비가 앉았어요… 시간이 당신을 선택했어요.',          amb: '날갯짓 한 번이면 돼요 — 금방 끝나요.' },
     'misaki__jazzbar':          { evo: '한 곡 끝날 동안만… 시간을 빌릴게요.',            amb: '박자 안에서 잠깐 멈춰드릴게요 — 금방이에요.' },
+    'misaki__neoncity':         { evo: '네온 불빛 사이로 시간이 접혀요. 지금 뛰어요.',   amb: '도시의 밤은 빨라요. 그래도 제 나비가 먼저예요.' },
     'sakura__blacklabel':       { evo: '검은 칼집에서… 이 한 자루를 받으렴.',          amb: '한 송이도 검게 물들었어. 준비됐어?' },
     'sakura__kendo':            { evo: '한 판만. …이 죽도, 받으렴.',                amb: '머리 한 번 갈게. 방심하지 마.' },
     'solar__sunbed':            { evo: '누워서도 태양은 내 편이야 — 타오를 시간!',      amb: '선베드에서 봐도 화력은 그대로야 — 올려줄게!' },
@@ -36630,7 +36632,7 @@
   const SKINS = {
     alba:      [{ id: 'fallenoath',   name: '무너진 서약' }, { id: 'lifeguard',   name: '해변 인명구조대' }, { id: 'sleepyguard',   name: '졸린 불침번' }],
     amy:       [{ id: 'sunset',       name: '석양의 관제사' }, { id: 'streettech',  name: '스트리트 테크' }],
-    aria:      [{ id: 'siren',        name: '바다 세이렌 아이돌' }, { id: 'abyssal',    name: '심연의 오페라' }],
+    aria:      [{ id: 'siren',        name: '바다 세이렌 아이돌' }, { id: 'abyssal',    name: '심연의 오페라' }, { id: 'backstage',  name: '백스테이지 디바' }],
     blanche:   [{ id: 'crystal',      name: '크리스탈 라군 리조트' }, { id: 'winterball', name: '윈터 볼' }, { id: 'orthodoxmage',  name: '정통 마도사' }],
     cardista:  [{ id: 'casino',       name: '비치 카지노 갬블러' }, { id: 'bloodmoon',  name: '블러드문 카지노' }],
     chloe:     [{ id: 'waterpark',    name: '애시드 워터파크 연구원' }, { id: 'madtea',  name: '매드 티파티 연금술사' }],
@@ -36645,7 +36647,7 @@
     levina:    [{ id: 'surf',         name: '스톰 서프 라이더' }, { id: 'stormband',  name: '스톰 밴드' }],
     luna:      [{ id: 'moonlit',      name: '월광 라군' }, { id: 'nightshift',  name: '나이트 시프트' }],
     marine:    [{ id: 'rashguard',    name: '프릴 래시가드' }, { id: 'harboroffice',  name: '항만 사무소' }],
-    misaki:    [{ id: 'butterfly',    name: '바이올렛 버터플라이' }, { id: 'jazzbar',    name: '재즈바' }],
+    misaki:    [{ id: 'butterfly',    name: '바이올렛 버터플라이' }, { id: 'jazzbar',    name: '재즈바' }, { id: 'neoncity',   name: '네온 시티 러너' }],
     sakura:    [{ id: 'blacklabel',   name: '블랙라벨 검객' }, { id: 'kendo',       name: '검도부' }],
     solar:     [{ id: 'sunbed',       name: '석양의 선베드' }, { id: 'cheer',       name: '치어리더' }],
     somnia:    [{ id: 'beachnap',     name: '해변 낮잠' }, { id: 'nightshift',  name: '야간 근무' }, { id: 'overtimenap',   name: '야근 쪽잠' }],
@@ -40518,7 +40520,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 803;
+  const APP_VERSION = 804;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
