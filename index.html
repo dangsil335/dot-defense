@@ -4443,25 +4443,41 @@
         규격 문서: docs/ui-icon-spec.md */
   @media (orientation: landscape) {
     /* ── 공통: 각진 칩 → 둥근 젤리 ── */
-    /* 🏷 라벨 판 = 실제 이미지. 9-slice(border-image)로 모서리는 원본 비율을 지키고 가운데만 늘린다.
-       ⚠ slice 32 는 원본 240x96 기준, width 13px 는 화면에 그려질 모서리 크기다.
-         버튼 높이가 43px 이라 32px 를 그대로 쓰면 상하 합 64 > 43 이 되어 브라우저가 임의로 줄인다. */
+    /* 🐾 v811 — 발바닥 젤리 판. 1차로 받은 plate 이미지는 납작한 흰 판 + 회색 막대라
+       "목록 행"처럼 보였다(내 프롬프트의 thin darker band / vertical gradient only 가 원인).
+       젤리로 읽히려면 세 가지가 필요하다:
+         ① 두툼한 아래 립  — 같은 색 계열의 진한 톤. 회색이면 죽는다
+         ② 위쪽 하이라이트 — inset 밝은 선. 표면이 부푼 것처럼 보이게 한다
+         ③ 충분한 채도    — 흰색은 캐릭터 위에서 버튼이 아니라 종이로 보인다
+       ⚠ 이미지 판으로 되돌리려면 이 블록을 border-image 로 바꾸면 된다.
+         단 위 세 가지가 그림에 들어간 뒤에. */
     #menu .menu-btn::before, #menu .menu-btn-grid::before {
       transform: none !important;
-      border-radius: 0 !important;
-      background: none !important;
-      border: 13px solid transparent !important;
-      border-image: url('./icons/ui/plate/normal.webp') 32 fill / 13px / 0 stretch !important;
-      box-shadow: none !important;
+      border: 0 !important;
+      border-image: none !important;
+      border-radius: 999px !important;
+      background: linear-gradient(180deg,
+        rgba(247,252,255,0.96) 0%, rgba(214,238,255,0.94) 46%, rgba(168,212,247,0.92) 100%) !important;
+      box-shadow:
+        0 5px 0 rgba(108,152,196,0.95),
+        0 9px 14px rgba(6,12,24,0.42),
+        inset 0 3px 0 rgba(255,255,255,0.95),
+        inset 0 -3px 5px rgba(120,168,214,0.55) !important;
       -webkit-backdrop-filter: none; backdrop-filter: none;
-      filter: drop-shadow(0 2px 3px rgba(6,10,20,0.42));
+      filter: none;
     }
     #menu .menu-btn { transition: transform .09s ease !important; }
     /* 눌리면 아래로 살짝 꺼진다 — 말랑한 느낌의 핵심 */
     #menu .menu-btn:active { transform: translateY(2px) !important; }
-    /* 판이 이미지가 되면서 box-shadow 로 눌림을 표현할 수 없다 → filter 로 바꾼다 */
-    #menu .menu-btn:active::before { filter: drop-shadow(0 1px 1px rgba(6,10,20,0.42)) brightness(0.94); }
-    #menu .menu-btn:hover:not(:disabled)::before { filter: drop-shadow(0 3px 6px rgba(90,170,255,0.45)) brightness(1.08); }
+    /* 눌리면 립이 얇아진다 — 실제로 눌려 들어가는 느낌의 핵심 */
+    #menu .menu-btn:active::before {
+      box-shadow: 0 1px 0 rgba(108,152,196,0.95), 0 3px 6px rgba(6,12,24,0.36),
+                  inset 0 2px 0 rgba(255,255,255,0.8), inset 0 -2px 4px rgba(120,168,214,0.5) !important;
+    }
+    #menu .menu-btn:hover:not(:disabled)::before {
+      background: linear-gradient(180deg,
+        rgba(252,254,255,1) 0%, rgba(226,244,255,0.96) 46%, rgba(184,224,252,0.94) 100%) !important;
+    }
     /* nth-child 로 좌/우열에 걸려 있던 마름모 skew 해제 */
     #menu .menu-nav3 .menu-btn:nth-child(3n+1)::before,
     #menu .menu-nav3 .menu-btn:nth-child(3n+2)::before,
@@ -4472,11 +4488,12 @@
     /* 🏷 라벨 판 이미지를 쓰려면 버튼 비율이 화면마다 달라지면 안 된다(늘리면 모서리가 찌그러진다).
        5:2 로 고정한다 — 이 비율이 곧 이미지 규격이다. 폭은 독 폭/6 으로 자동, 높이는 비율이 정한다. */
     #menu .menu-nav3 .menu-btn {
-      aspect-ratio: 5 / 2; height: auto !important;
+      aspect-ratio: 9 / 4; height: auto !important;
       display: flex !important; flex-direction: row; align-items: center; justify-content: flex-start;
       gap: 0; padding: 0 6% 0 34% !important;
       font-size: clamp(8.5px, 1.5vh, 11px) !important; line-height: 1.1 !important;
-      color: #dceaf8 !important; font-weight: 700; text-align: left;
+      color: #1d3a55 !important; font-weight: 800; text-align: left;
+      text-shadow: 0 1px 0 rgba(255,255,255,0.6) !important;
     }
     #menu .menu-nav3 .menu-btn::after {
       content: '';
@@ -4519,41 +4536,54 @@
 
     /* ── CTA(출격) — 가장 크고 둥글게. 파스텔 하늘색 ── */
     #menu .menu-btn-primary::before {
-      border-radius: 0 !important;
-      background: none !important;
-      border: 16px solid transparent !important;
-      border-image: url('./icons/ui/plate/cta.webp') 32 fill / 16px / 0 stretch !important;
-      box-shadow: none !important;
+      border: 0 !important; border-image: none !important;
+      border-radius: 999px !important;
+      background: linear-gradient(180deg, #a8e2ff 0%, #58b4f4 52%, #2f8fdc 100%) !important;
+      box-shadow:
+        0 6px 0 #1f6ba8, 0 12px 20px rgba(30,90,150,0.5),
+        inset 0 4px 0 rgba(255,255,255,0.85), inset 0 -4px 7px rgba(20,80,140,0.45) !important;
       animation: none !important;   /* 각진 시절의 네온 펄스 제거 */
-      filter: drop-shadow(0 3px 5px rgba(40,110,180,0.5));
+      filter: none;
     }
     #menu .menu-btn-primary { color: #08202f !important; text-shadow: 0 1px 0 rgba(255,255,255,0.35) !important; }
-    #menu .menu-btn-primary:active::before { filter: drop-shadow(0 1px 2px rgba(40,110,180,0.5)) brightness(0.94); }
+    #menu .menu-btn-primary:active::before { box-shadow: 0 2px 0 #1f6ba8, 0 4px 9px rgba(30,90,150,0.4),
+      inset 0 3px 0 rgba(255,255,255,0.75), inset 0 -3px 6px rgba(20,80,140,0.4) !important; }
     /* 처음부터 다시 = 붉은 톤. 전용 판을 따로 만들지 않고 색조만 돌린다 */
-    #menu .menu-btn-restart::before { filter: drop-shadow(0 3px 5px rgba(180,60,80,0.5)) hue-rotate(155deg) saturate(1.25); }
-    #menu .menu-btn-secondary::before { border-image-source: url('./icons/ui/plate/gold.webp') !important; filter: drop-shadow(0 2px 3px rgba(6,10,20,0.42)) saturate(0.7) brightness(0.92); }
+    #menu .menu-btn-restart::before {
+      background: linear-gradient(180deg, #ffc8cf 0%, #f88a9c 52%, #e4576f 100%) !important;
+      box-shadow: 0 6px 0 #a8384c, 0 12px 20px rgba(160,50,70,0.45),
+                  inset 0 4px 0 rgba(255,255,255,0.8), inset 0 -4px 7px rgba(150,50,70,0.4) !important;
+    }
+    #menu .menu-btn-secondary::before {
+      background: linear-gradient(180deg, rgba(255,246,222,0.95) 0%, rgba(244,222,168,0.92) 100%) !important;
+      box-shadow: 0 4px 0 rgba(180,148,84,0.9), 0 8px 12px rgba(6,12,24,0.36),
+                  inset 0 2px 0 rgba(255,255,255,0.9) !important;
+    }
 
     /* ── 가챠 — 크림/골드 젤리 ── */
     #menu #gachaBtn::before {
-      border-radius: 0 !important;
-      background: none !important;
-      border: 13px solid transparent !important;
-      border-image: url('./icons/ui/plate/gold.webp') 32 fill / 13px / 0 stretch !important;
-      box-shadow: none !important;
-      filter: drop-shadow(0 3px 5px rgba(180,140,50,0.5));
+      border: 0 !important; border-image: none !important;
+      border-radius: 999px !important;
+      background: linear-gradient(180deg, #fff2c8 0%, #ffd97e 52%, #f0b449 100%) !important;
+      box-shadow:
+        0 5px 0 #b8873a, 0 10px 16px rgba(160,120,40,0.45),
+        inset 0 3px 0 rgba(255,255,255,0.9), inset 0 -3px 5px rgba(190,140,50,0.45) !important;
+      filter: none;
     }
     #menu #gachaBtn, #menu #gachaBtn .gacha-circle-label { color: #3a2708 !important; text-shadow: 0 1px 0 rgba(255,255,255,0.35) !important; }
-    #menu #gachaBtn:active::before { filter: drop-shadow(0 1px 2px rgba(180,140,50,0.5)) brightness(0.94); }
+    #menu #gachaBtn:active::before { box-shadow: 0 1px 0 #b8873a, 0 3px 7px rgba(160,120,40,0.36),
+      inset 0 2px 0 rgba(255,255,255,0.8), inset 0 -2px 4px rgba(190,140,50,0.4) !important; }
 
     /* ── 상단 미니 칩(코어관리·글로벌랭킹) ── */
+    /* 상단 칩은 독과 같은 젤리를 쓰되 립만 얇게(작은 버튼이라) */
     #menu #coreMgrBtn::before, #menu #globalRankBtn::before {
-      border-radius: 0 !important; transform: none !important;
-      background: none !important;
-      border: 11px solid transparent !important;
-      border-image: url('./icons/ui/plate/normal.webp') 32 fill / 11px / 0 stretch !important;
-      box-shadow: none !important;
+      border-radius: 999px !important; transform: none !important;
+      box-shadow:
+        0 3px 0 rgba(108,152,196,0.95), 0 6px 10px rgba(6,12,24,0.38),
+        inset 0 2px 0 rgba(255,255,255,0.9), inset 0 -2px 4px rgba(120,168,214,0.5) !important;
     }
-    #menu #coreMgrBtn, #menu #globalRankBtn { color: #e2f2ff !important; font-weight: 700; }
+    #menu #coreMgrBtn, #menu #globalRankBtn { color: #1d3a55 !important; font-weight: 800;
+      text-shadow: 0 1px 0 rgba(255,255,255,0.6) !important; }
     /* 설정·업데이트도 같은 결로 */
     #menu .settings-btn, #menu .update-cache-btn {
       border-radius: 999px !important;
@@ -40815,7 +40845,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 810;
+  const APP_VERSION = 811;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
