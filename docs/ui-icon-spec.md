@@ -1,4 +1,4 @@
-# 아크 제로 — 로비 UI 리소스 규격 (v819 기준)
+# 아크 제로 — 로비 UI 리소스 규격 (v822 기준)
 
 > 메인 로비 버튼용. **라벨 판(배경) + 아이콘(글리프)을 분리**해서 받는다.
 > 글자는 이미지에 넣지 않는다 — CSS 가 렌더한다(문구 수정·길이 대응 때문).
@@ -18,115 +18,150 @@
 
 ---
 
-## 1. 버튼 판 — 3장  (4차 개정: 원형 독)
+## 1. 버튼 판 — 3장  (5차: 구조는 맞다, 색과 배지만 고치면 된다)
 
-버튼의 배경이 되는 판. 글자와 아이콘은 CSS 가 위에 얹는다.
+### ✅ 4차에서 맞힌 것 — 이 구조를 유지할 것
 
-### ⚠ 세 번 실패했다. 원인을 다 적어둔다
+4차 시안의 **좌측 아이콘 배지 + 우측 라벨 면** 구조는 정확하다.
+코드도 그 구조에 맞춰 이미 바꿔놨다(v820). **구조는 건드리지 말 것.**
+
+```
+┌──────────────────────────────────────┐
+│ ┌──────┐                             │
+│ │ 배지 │      라벨 면 (글자 자리)      │
+│ └──────┘                             │
+└──────────────────────────────────────┘
+   ↑ 여기 우리 아이콘이 얹힌다 → 비워둘 것
+```
+
+### ❌ 두 가지만 고치면 된다
+
+| | 4차에서 온 것 | 고쳐야 할 것 |
+|---|---|---|
+| **배지 안** | 발바닥 그림이 그려져 있다 | **비워둔다.** 여기에 우리 아이콘 10장이 얹힌다 |
+| **판 색** | 거의 검정 (평균 밝기 76 / 51 / 36) | **밝은 실리콘.** 로비가 밝은 팔레트다 |
+
+배지 안에 그림이 있으면 우리 아이콘이 그 위에 겹쳐서 둘 다 안 보인다.
+배지는 **살짝 다른 톤의 빈 홈**이면 된다.
+
+### ⚠ 여기까지 온 실패 기록 (같은 실수를 반복하지 말 것)
 
 | | 지시한 것 | 나온 것 | 원인 |
 |---|---|---|---|
-| 1차 | `thin darker band` / `vertical gradient only` | 납작한 흰 판 = "목록 행" | 볼륨 단어를 내가 지웠다 |
-| 2차 | `capsule pill` + 다섯 층 음영 | 여전히 납작. 캔버스도 구 규격 | ① `pill` 은 옆에서 본 알약 → 막대<br>② 문서 뒤쪽에 옛 수치가 남아 있었다 |
-| 3차 | `the shape of a cat's paw pad` | **판 위에 발가락 젤리 4개** | **은유를 형상으로 받았다** |
+| 1차 | `thin darker band` | 납작한 흰 판 | 볼륨 단어를 내가 지웠다 |
+| 2차 | `capsule pill` | 옆에서 본 알약 = 막대 | `pill` 이 형태를 막대로 몰았다 |
+| 3차 | `the shape of a cat's paw pad` | 판 위에 발가락 젤리 4개 | **은유를 형상으로 받았다** |
+| 4차 | 은유 제거 + `EXACTLY ONE` | 구조는 정확, 배지에 발바닥 + 검정 | 색 지정이 약했고 배지를 비우라고 안 했다 |
 
-> **4차의 제1원칙: 은유를 쓰지 않는다.**
-> "발바닥 같은" "젤리 같은" 은 사람에게는 질감이지만 그림 AI 에게는 **형상 지시**다.
-> 형태는 기하로만 적고, 말랑함은 *음영*으로 적는다.
-
-### 그리고 독 버튼이 원이 됐다 (v815)
-
-가로로 긴 판을 고집할 이유가 없어서 **하단 독 6개를 원형 버튼**으로 바꿨다.
-아이콘은 원 안, 글자는 원 밖 아래. 그래서 `normal` 은 **정원(1:1)** 이다.
+> **원칙: 은유를 쓰지 않는다.** 형태는 기하로, 말랑함은 음영으로 적는다.
 
 ### 파일과 캔버스 — ⚠ 이 표가 유일한 출처
 
 | 파일 | 쓰이는 곳 | 캔버스 | 형태 | 근거(실측) |
 |---|---|---|---|---|
-| `icons/ui/plate/normal.webp` | 하단 독 6개 | **320 × 320** | **정원** | 원 63~80px |
-| `icons/ui/plate/cta.webp` | **출격** | **480 × 240** | 둥근 가로판 2:1 | 171×85 |
-| `icons/ui/plate/gold.webp` | 차원 스카우트 | **476 × 140** | 둥근 가로판 3.4:1 | 171×50 |
+| `icons/ui/plate/normal.webp` | 하단 독 6개 | **320 × 320** | **정원**(배지 없음) | 원 63~80px |
+| `icons/ui/plate/cta.webp` | **출격** | **480 × 240** | 배지+라벨 2:1 | 171×85 |
+| `icons/ui/plate/gold.webp` | 차원 스카우트 | **476 × 140** | 배지+라벨 3.4:1 | 171×50 |
 
-투명 WebP. 판 바깥 알파 0. **접지 그림자는 캔버스 안에** — 판을 꽉 채우지 말고 여백을 둘 것.
-(3차 `gold` 는 가장자리 불투명 17.7% 로 좌우가 잘려 있었다.)
+투명 WebP, 판 바깥 알파 0. 접지 그림자는 **캔버스 안에**.
 
-### 색 (CSS 에서 확정, 그대로 재현)
+**배지 위치·크기 (코드 실측값 그대로)**
+
+| 파일 | 배지 좌측 여백 | 배지 폭 | 배지 높이 | 모서리 |
+|---|---|---|---|---|
+| `cta` | 캔버스 폭의 4.5% | 25% | 72% | 폭의 24% |
+| `gold` | 4% | 19% | 74% | 26% |
+
+`normal` 은 독 원형 버튼용이라 **배지 없이 원 하나**다.
+
+### 색 — 4차의 검정을 밝은 실리콘으로
 
 ```
-normal  위 #ffffff → 아래 #e6edf6,  아래 테두리 #c4d0e0   (차가운 흰 실리콘)
-cta     위 #8fcdf2 → 아래 #4f9bd2,  아래 테두리 #3d7fae   (채도 낮은 하늘)
-gold    위 #f8e6bc → 아래 #dfbc6e,  아래 테두리 #b39a63   (탁한 크림골드)
+normal  판 위 #ffffff → 아래 #e6edf6,  아래 테두리 #c4d0e0
+cta     판 위 #8fcdf2 → 아래 #4f9bd2,  아래 테두리 #3d7fae
+        배지: 판보다 살짝 밝고 안으로 들어간 홈 (흰색 26% 정도)
+gold    판 위 #f8e6bc → 아래 #dfbc6e,  아래 테두리 #b39a63
+        배지: 흰색 32% 정도
 ```
 
-유광 금지. 매트 소프트터치다.
+유광 금지. 매트 소프트터치.
 
-### 영문 프롬프트 — `normal` (정원)
+### 영문 프롬프트 — `cta` / `gold` (배지 + 라벨)
+
+```
+Top-down view of ONE soft silicone UI button plate, {SIZE} canvas,
+TRANSPARENT background (alpha channel).
+
+A single horizontal rounded-rectangle plate, corners fully rounded.
+Inside it, on the LEFT, a slightly recessed square badge well with rounded corners —
+the badge is EMPTY: a plain smooth recessed surface, no drawing, no symbol,
+no paw, no icon, no glyph inside it. It is only a shallow empty well.
+The rest of the plate to the right of the badge is a smooth EMPTY label area,
+also completely plain — no text, no lines, no decoration.
+
+{COLOR}
+
+Matte soft-touch silicone finish, very fine subtle grain.
+Not glossy, no mirror reflection, no wet look.
+Light from above and slightly in front: a broad soft highlight across the upper half,
+the lower third settling into soft shadow, a thin darker rim along the bottom edge,
+and a soft contact shadow beneath the plate, fully inside the canvas.
+
+Premium, tactile, physical. Bright and light in tone, NOT dark, NOT black.
+```
+
+| 파일 | SIZE | COLOR |
+|---|---|---|
+| `cta` | `480x240` | `Soft light sky blue silicone: #8fcdf2 at the top fading to #4f9bd2 at the bottom, darker blue bottom rim #3d7fae. The badge well is a lighter tint of the same blue, as if brushed with 26% white.` |
+| `gold` | `476x140` | `Light warm cream silicone: #f8e6bc at the top fading to #dfbc6e at the bottom, soft bronze bottom rim #b39a63. The badge well is a lighter tint of the same cream, as if brushed with 32% white.` |
+
+### 영문 프롬프트 — `normal` (정원, 배지 없음)
 
 ```
 Top-down view of ONE soft silicone push-button pad, 320x320 canvas,
 TRANSPARENT background (alpha channel).
 
 EXACTLY ONE PERFECT CIRCLE, centered, filling about 88% of the canvas.
-Nothing else in the image: no second circle, no small bumps, no lobes,
-no toes, no beans, no decorations, no icon, no text.
+Nothing else in the image: no second circle, no badge, no bumps, no lobes,
+no paw, no toes, no icon, no text. The surface is completely plain.
 
 The surface is domed — highest at the center, falling away smoothly toward the rim,
 so it reads as a thick soft cushion seen from directly above.
 The rim rolls slightly downward and under.
 
-Off-white silicone: #ffffff at the center of the dome, fading to #e6edf6 near the rim,
-with a slightly darker cool grey-blue edge #c4d0e0 along the bottom of the rim.
+Off-white silicone: #ffffff at the center, fading to #e6edf6 near the rim,
+with a cool grey-blue edge #c4d0e0 along the bottom of the rim.
 
-Matte soft-touch finish with a very fine subtle grain. Not glossy, no mirror reflection.
+Matte soft-touch finish, very fine subtle grain. Not glossy, no mirror reflection.
+Light from above and slightly in front: a broad soft highlight across the upper half,
+the lower third in soft shadow, a soft contact shadow beneath, inside the canvas.
 
-One large soft light from above and slightly in front:
-  a broad gentle highlight across the upper half of the dome, not a small dot,
-  the lower third settling into soft shadow,
-  a soft contact shadow directly beneath the pad, fully inside the canvas.
-The highlight is slightly uneven, like real silicone, not a perfect gradient.
-
-Premium, tactile, physical.
+Premium, tactile, physical. Bright and light in tone, NOT dark, NOT black.
 ```
-
-### `cta` / `gold` (둥근 가로판)
-
-위 프롬프트에서 첫 두 문단만 바꾼다:
-
-```
-Top-down view of ONE soft silicone push-button pad, {SIZE} canvas,
-TRANSPARENT background (alpha channel).
-
-EXACTLY ONE horizontal rounded-rectangle pad, centered, corners fully rounded
-(corner radius about 40% of the pad height). Nothing else in the image:
-no second shape, no bumps, no lobes, no decorations, no icon, no text.
-```
-
-| 파일 | SIZE | 색 |
-|---|---|---|
-| `cta` | `480x240` | `#8fcdf2 center → #4f9bd2 near the rim, bottom rim #3d7fae` |
-| `gold` | `476x140` | `#f8e6bc center → #dfbc6e near the rim, bottom rim #b39a63` |
 
 **네거티브 (판 공통)**
 ```
-multiple objects, two shapes, small circles, bumps, lobes, toes, beans, paw, animal,
+dark, black, charcoal, dark grey, navy, night, low key,
+paw, paw print, animal, beans, toes, bumps, lobes, multiple objects, two shapes,
+icon inside badge, symbol, glyph, emblem, logo, text, numbers, letters, watermark,
 capsule, pill, bar, tab,
 flat, flat design, 2d, sticker, vector, paper, card,
 glossy, mirror reflection, specular highlight, chrome, metal, glass, wet look,
-icon, text, numbers, letters, logo, watermark, pattern, border, frame, outline,
-sharp corners, hard edges, neon, gradient banding,
+pattern, border, frame, outline, sharp corners, hard edges, neon, gradient banding,
 background, solid background, green screen, chroma key,
 isometric, perspective tilt, side view
 ```
-⚠ `paw` `beans` `bumps` `multiple objects` 가 4차의 핵심 추가다 — 3차가 정확히 그걸로 실패했다.
+⚠ `dark, black` 과 `paw, icon inside badge` 가 5차의 핵심 추가다 — 4차가 정확히 그 둘로 막혔다.
 ⚠ `flat` 은 **판에서만** 네거티브. 아이콘(§2)은 정반대이니 프롬프트를 섞지 말 것.
 
 ### 통과 기준
 
 1. 캔버스가 위 표와 일치 (320×320 / 480×240 / 476×140)
-2. **물체가 하나뿐인가.** 위에 얹힌 작은 덩어리가 하나라도 있으면 실패
-3. 판 바깥 알파 0, 접지 그림자가 캔버스 밖으로 잘리지 않음
-4. 가운데를 세로로 잘랐을 때 위쪽이 볼록 (직선이면 실패)
-5. 유광 반사 없음, 글자·아이콘·테두리 없음
+2. **배지 안이 비어 있는가.** 그림이 하나라도 있으면 실패 — 우리 아이콘이 못 들어간다
+3. **밝은가.** 불투명 픽셀 평균 밝기가 150 이상이어야 한다 (4차는 76/51/36 이었다)
+4. 판 바깥 알파 0, 접지 그림자가 캔버스 안
+5. 가운데를 세로로 자를 때 위쪽이 볼록 (직선이면 실패)
+6. 유광 반사 없음, 글자·테두리 없음
 
 ---
 
@@ -350,6 +385,6 @@ this is the primary action — make it the most vivid and saturated of the set
 
 체크리스트
 1. 파일명이 위 표와 **정확히** 일치 (`perma` `achieve` `chars` 주의)
-2. 판: 320×320(정원) / 480×240 / 476×140 · 알파 투명 · **물체가 하나뿐인지** · 위쪽이 볼록한지
+2. 판: 320×320(정원) / 480×240 / 476×140 · **배지 안이 비었는지** · **평균 밝기 150 이상인지**
 3. 아이콘: 256×256 · 모서리 알파 0(투명) · **29px 로 줄여서 알아볼 수 있는지**
 4. `APP_VERSION` + `sw.js` 의 `CACHE` 동시 상향 (정적 에셋 cache-first)
