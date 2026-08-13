@@ -7265,6 +7265,61 @@
     background: transparent !important; border: 0 !important; box-shadow: none !important;
   }
 
+  /* ── 난이도 화면 ───────────────────────────────────────────────
+     ⚠ 행성 캐러셀은 건드리지 않는다.
+       레퍼런스(스텔라소라 난이도 선택)는 세로 리스트지만, 우리 쪽이 기능적으로 더 낫다:
+         · 해제 조건을 문장으로 보여준다 — "이전 섹터 R100 클리어로 해금됩니다"
+         · 잠긴 섹터는 출격 버튼이 disabled 로 바뀐다
+         · 승천 1~15 스테퍼로 난이도를 직접 고른다
+       레퍼런스에 맞추려고 리스트로 바꾸면 이걸 다 잃는다. 시각 언어만 맞춘다. */
+  #difficultyScreen .planet-info {
+    background: var(--ss-panel2) !important;
+    border: 1px solid var(--ss-edge) !important;
+    border-radius: var(--ss-r) !important;
+    box-shadow: var(--ss-shadow) !important;
+    -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
+    padding: 12px 14px !important; box-sizing: border-box;
+    margin: 0 auto; max-width: 560px; width: 100%;
+    /* ⚠ 원래 overflow:hidden 이라 긴 난이도 설명이 잘려 있었다.
+       아비스는 내용 155px 인데 칸이 81px 이라 절반 넘게 안 보였다.
+       난이도 수치는 고를 때 꼭 봐야 하는 정보다 → 스크롤로 바꾼다. */
+    overflow-y: auto !important; overflow-x: hidden !important;
+    scrollbar-width: thin; -webkit-overflow-scrolling: touch;
+  }
+  #difficultyScreen .planet-info::-webkit-scrollbar { width: 6px; }
+  #difficultyScreen .planet-info::-webkit-scrollbar-thumb {
+    background: rgba(255,255,255,0.22); border-radius: 3px;
+  }
+  /* 출격 버튼 — 행성 색은 그대로 둔다(섹터 식별 색이다). 형태만 캡슐 + 립으로 */
+  #difficultyScreen .planet-launch {
+    border-radius: var(--ss-pill) !important;
+    font-family: inherit !important; letter-spacing: 0.2px !important;
+    padding: 13px 34px !important;
+    font-size: clamp(14px, 2.6vh, 17px) !important;
+    box-shadow: 0 4px 0 rgba(0,0,0,0.34), 0 9px 18px rgba(0,0,0,0.32),
+                inset 0 2px 0 rgba(255,255,255,0.45) !important;
+  }
+  #difficultyScreen .planet-launch:active:not(:disabled) {
+    transform: translateY(2px);
+    box-shadow: 0 1px 0 rgba(0,0,0,0.34), 0 3px 8px rgba(0,0,0,0.3),
+                inset 0 1px 0 rgba(255,255,255,0.4) !important;
+  }
+  #difficultyScreen .planet-launch:disabled {
+    background: var(--ss-panel) !important;
+    border: 1px solid var(--ss-edge) !important;
+    color: var(--ss-dim) !important;
+    box-shadow: none !important;
+  }
+
+  /* ⚠ 원래부터 있던 세로 6px 잘림 (내 패널 규칙 이전에도 동일했다).
+     행성 무대가 224px 고정(flex: 0 0 auto)이라 짧은 화면에서 안 줄어든다.
+     오브는 transform 으로 배치되므로 무대 높이를 건드리면 좌표가 틀어진다.
+     → 하단 여백만 줄여 10px 을 확보한다. 짧은 화면에서만. */
+  @media (max-height: 560px) {
+    #difficultyScreen .planet-launch-wrap { padding: 5px 0 8px !important; }
+    #difficultyScreen .planet-info { padding: 9px 12px !important; }
+  }
+
   /* ── 필터 칩 ───────────────────────────────────────────────────── */
   .screen .codex-filter-chips > button {
     border-radius: var(--ss-pill) !important;
@@ -41284,7 +41339,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 833;
+  const APP_VERSION = 836;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
