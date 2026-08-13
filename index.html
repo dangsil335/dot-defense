@@ -7019,6 +7019,147 @@
     .draft-row { gap: 8px; width: 96vw; }
     .draft-title { font-size: 18px; }
   }
+
+  /* ═══════════════════════════════════════════════════════════════════════
+     🌌 v824 — 스텔라소라 UI 문법 · 1단계 공용 크롬
+
+     레퍼런스는 화면마다 새로 디자인하지 않는다. 같은 부품을 재배치할 뿐이다.
+     우리도 이미 공용 클래스가 있어서(.codex-header 13화면, .codex-tabs 6화면)
+     여기만 고치면 13개 화면의 상단이 한 번에 바뀐다.
+
+     ⚠ 이 블록은 스타일시트 맨 끝이다. 앞의 규칙들을 순서로 이긴다.
+        화면별 예외를 여기 넣지 말 것 — 공용 부품만 둔다.
+     ═══════════════════════════════════════════════════════════════════════ */
+  :root {
+    --ss-panel:  rgba(12,22,40,0.62);      /* 패널 바닥 */
+    --ss-panel2: rgba(16,28,48,0.78);      /* 한 단계 진한 패널 */
+    --ss-edge:   rgba(255,255,255,0.14);   /* 얇은 테두리 */
+    --ss-ink:    #eaf2ff;
+    --ss-dim:    #9db3cf;
+    --ss-accent: #4ea8e8;
+    --ss-accent2:#8fd6ff;
+    --ss-r:      16px;
+    --ss-pill:   999px;
+    --ss-shadow: 0 6px 18px rgba(6,14,28,0.34);
+  }
+
+  /* ── 상단 바 ── 원형 뒤로가기 + 위치 알약 + 우측 자원 ────────────── */
+  .screen .codex-header {
+    display: flex !important; align-items: center; gap: 10px;
+    justify-content: flex-start !important;
+    background: transparent !important; border: 0 !important;
+    border-image: none !important; box-shadow: none !important;
+    -webkit-backdrop-filter: none !important; backdrop-filter: none !important;
+    padding: 8px 2px 10px !important; margin-bottom: 10px !important;
+  }
+  /* 뒤로가기 = 원형 아이콘 버튼. 글자는 남기되(스크린리더) 화살표만 보인다 */
+  .screen .codex-header .codex-back {
+    order: 1; flex: 0 0 auto;
+    width: 38px; height: 38px; padding: 0 !important;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 0 !important;
+    border-radius: var(--ss-pill) !important;
+    background: linear-gradient(180deg, #5cb6ee, #3f8fce) !important;
+    border: 1px solid rgba(255,255,255,0.28) !important;
+    box-shadow: 0 3px 0 rgba(32,78,120,0.9), var(--ss-shadow) !important;
+  }
+  .screen .codex-header .codex-back::before {
+    content: '↩'; font-size: 19px; line-height: 1; color: #fff;
+    text-shadow: 0 1px 2px rgba(10,30,55,0.5);
+  }
+  .screen .codex-header .codex-back:active { transform: translateY(2px); }
+  .screen .codex-header .codex-back:active { box-shadow: 0 1px 0 rgba(32,78,120,0.9) !important; }
+  /* 제목 = 위치 알약 */
+  .screen .codex-header h2 {
+    order: 2; flex: 0 0 auto; margin: 0 !important;
+    padding: 7px 18px !important;
+    background: var(--ss-panel2) !important;
+    border: 1px solid var(--ss-edge);
+    border-radius: var(--ss-pill);
+    box-shadow: var(--ss-shadow);
+    color: var(--ss-ink) !important;
+    font-size: clamp(13px, 2.2vh, 16px) !important; font-weight: 800;
+    letter-spacing: 0.2px; white-space: nowrap;
+    text-shadow: 0 1px 2px rgba(4,10,20,0.5);
+  }
+  /* 우측 자원 칩 (강화소·능력영구·코어) */
+  .screen .codex-header .stardust-bar,
+  .screen .codex-header .cm-shardhud {
+    order: 3; margin-left: auto !important; margin-right: 0 !important;
+    padding: 7px 14px !important;
+    background: var(--ss-panel2) !important;
+    border: 1px solid var(--ss-edge) !important;
+    border-radius: var(--ss-pill) !important;
+    box-shadow: var(--ss-shadow) !important;
+    font-size: 12px !important; font-weight: 800; white-space: nowrap;
+  }
+
+  /* ── 탭 = 알약. 활성은 채워진다 ─────────────────────────────────── */
+  .screen .codex-tabs {
+    gap: 7px !important; padding: 0 2px 4px !important;
+    background: transparent !important; border: 0 !important;
+  }
+  .screen .codex-tabs > button {
+    padding: 8px 15px !important;
+    border-radius: var(--ss-pill) !important;
+    background: var(--ss-panel) !important;
+    border: 1px solid var(--ss-edge) !important;
+    color: var(--ss-dim) !important;
+    font-weight: 800; font-size: clamp(11px, 1.9vh, 13.5px) !important;
+    box-shadow: none !important; white-space: nowrap;
+  }
+  .screen .codex-tabs > button.active,
+  .screen .codex-tabs > button[aria-selected="true"] {
+    background: linear-gradient(180deg, #5cb6ee, #3f8fce) !important;
+    border-color: rgba(255,255,255,0.34) !important;
+    color: #fff !important;
+    box-shadow: 0 3px 0 rgba(32,78,120,0.85), var(--ss-shadow) !important;
+  }
+
+  /* ── 화면별 전용 탭 스타일 무력화 ──────────────────────────────
+     4개 화면이 밑줄·마름모 네온 탭을 ID 2개짜리 선택자 + !important 로 걸어놨다.
+     클래스 규칙으로는 못 이기므로 같은 특이도로 맞춘다(뒤에 있어 순서로 이긴다).
+     ⚠ display/flex-direction 은 건드리지 않는다 — 업적 탭은 아이콘+글자 2단이다. */
+  #achievementsScreen #ach-tabs .codex-tab,
+  #shop #shop-tabs .codex-tab,
+  #abilityPerma #perma-tabs .codex-tab,
+  #perma-tabs .codex-tab,
+  #codex .codex-tab {
+    background: var(--ss-panel) !important;
+    border: 1px solid var(--ss-edge) !important;
+    border-radius: var(--ss-pill) !important;
+    color: var(--ss-dim) !important;
+    box-shadow: none !important;
+    font-family: inherit !important;
+    letter-spacing: 0 !important;
+  }
+  #achievementsScreen #ach-tabs .codex-tab.active,
+  #shop #shop-tabs .codex-tab.active,
+  #abilityPerma #perma-tabs .codex-tab.active,
+  #perma-tabs .codex-tab.active,
+  #codex .codex-tab.active {
+    background: linear-gradient(180deg, #5cb6ee, #3f8fce) !important;
+    border-color: rgba(255,255,255,0.34) !important;
+    color: #fff !important;
+    box-shadow: 0 3px 0 rgba(32,78,120,0.85), var(--ss-shadow) !important;
+  }
+  /* 밑줄 애니메이션과 마름모 칩 제거 */
+  #achievementsScreen #ach-tabs .codex-tab.active::after,
+  #abilityPerma #perma-tabs .codex-tab.active::after,
+  #shop #shop-tabs .codex-tab.active::after,
+  #codex .codex-tab::before,
+  #codex .codex-tab.active::before { display: none !important; content: none !important; }
+
+  /* ── 필터 칩 ───────────────────────────────────────────────────── */
+  .screen .codex-filter-chips > button {
+    border-radius: var(--ss-pill) !important;
+    background: var(--ss-panel) !important;
+    border: 1px solid var(--ss-edge) !important;
+    color: var(--ss-dim) !important; font-weight: 700;
+  }
+  .screen .codex-filter-chips > button.active {
+    background: linear-gradient(180deg, #5cb6ee, #3f8fce) !important; color: #fff !important;
+  }
 </style>
 <div id="shopScene" class="npc-scene">
   <div class="npc-scene-inner">
@@ -41028,7 +41169,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 823;
+  const APP_VERSION = 825;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
