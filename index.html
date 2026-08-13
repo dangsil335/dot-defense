@@ -7211,6 +7211,60 @@
   }
   #codex::after { display: none !important; }
 
+  /* ── 리스트 카드 = 레퍼런스 행 ─────────────────────────────────
+     4화면이 서로 다른 클래스를 쓰지만 전부 "아이콘 + 제목 + 부제" 골격이라
+     레퍼런스의 리스트 행과 같다. DOM 은 건드리지 않고 시각 처리만 통일한다.
+
+     ⚠ border-left 는 남긴다 — 도감·강화소가 등급/계열 색을 거기 인라인으로 넣는다.
+     ⚠ 쉐브론(›)은 붙이지 않는다. 레퍼런스에서 쉐브론은 "누르면 다음 화면으로 가는 행"의
+       표시인데, 이 카드들은 정보 표시이거나 안에 버튼이 따로 있다. */
+  #codex .codex-card,
+  #achievementsScreen .achievement-card,
+  #shop .shop-card,
+  #abilityPerma .perma-list > * {
+    background: var(--ss-panel2) !important;
+    /* ⚠ border 단축 속성을 !important 로 쓰면 인라인 border-left-color 까지 덮는다.
+       도감·강화소는 등급/계열 색을 거기 인라인으로 넣으므로 좌측은 색을 안 건드린다.
+       (한 번 덮어서 도감 카드의 #ffe28a 등급색이 회색으로 죽었었다) */
+    border-top: 1px solid var(--ss-edge) !important;
+    border-right: 1px solid var(--ss-edge) !important;
+    border-bottom: 1px solid var(--ss-edge) !important;
+    border-left-style: solid !important;
+    border-left-width: 4px !important;
+    border-radius: 14px !important;
+    box-shadow: var(--ss-shadow) !important;
+    -webkit-backdrop-filter: blur(7px); backdrop-filter: blur(7px);
+  }
+  #codex .codex-card::before, #codex .codex-card::after,
+  #achievementsScreen .achievement-card::before { content: none !important; }
+
+  /* 카드 안 썸네일 — 둥근 사각 + 얇은 테두리 */
+  #codex .codex-card .ability-img-icon,
+  #achievementsScreen .achievement-card .ach-icon,
+  #achievementsScreen .achievement-card .ability-img-icon {
+    border-radius: 11px !important;
+    background: rgba(255,255,255,0.07);
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.12);
+  }
+  #achievementsScreen .achievement-card .ach-icon {
+    display: flex !important; align-items: center; justify-content: center;
+  }
+
+  /* NPC 대사 패널 */
+  #codex .up-dialog, #shop .up-dialog,
+  #abilityPerma .up-dialog, #achievementsScreen .up-dialog {
+    background: var(--ss-panel2) !important;
+    border: 1px solid var(--ss-edge) !important;
+    border-radius: var(--ss-r) !important;
+    box-shadow: var(--ss-shadow) !important;
+    -webkit-backdrop-filter: blur(9px); backdrop-filter: blur(9px);
+  }
+
+  /* 리스트 스크롤 영역 — 배경 위에 뜨는 판이 아니라 투명하게 둔다 */
+  #codex .up-list, #shop .up-list, #abilityPerma .up-list, #achievementsScreen .up-list {
+    background: transparent !important; border: 0 !important; box-shadow: none !important;
+  }
+
   /* ── 필터 칩 ───────────────────────────────────────────────────── */
   .screen .codex-filter-chips > button {
     border-radius: var(--ss-pill) !important;
@@ -41230,7 +41284,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 831;
+  const APP_VERSION = 833;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
