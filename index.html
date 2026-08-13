@@ -7362,7 +7362,11 @@
      레퍼런스 ⑤(별의 탑)처럼 좌측에 큰 배너, 우측에 정보·버튼으로 나눈다.
      ⚠ 세로 화면은 건드리지 않는다 — 거기선 지금 세로 쌓기가 맞다. */
   @media (orientation: landscape) and (min-width: 720px) {
-    #gachaScreen {
+    /* ⚠ 반드시 .show 를 붙인다.
+       .screen 은 display:none 으로 숨고 .screen.show 에서 flex 가 된다.
+       #gachaScreen { display:grid !important } 로 쓰면 숨김까지 이겨서
+       가챠 화면이 항상 떠 있고 메인이 가려진다. */
+    #gachaScreen.show {
       display: grid !important;
       grid-template-columns: minmax(0, 1.32fr) minmax(0, 1fr);
       grid-template-rows: auto auto auto 1fr;
@@ -41451,7 +41455,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 841;
+  const APP_VERSION = 842;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
