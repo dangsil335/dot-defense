@@ -4595,9 +4595,10 @@
     #menu #globalRankBtn { --mb-ico: url('./icons/ui/menu/rank.webp'); }
     #menu #gachaBtn::after {
       left: 4%; width: 19%; height: 74%;
-      background-color: transparent !important;   /* 홈은 판 그림 안에 있다 */
+      /* scout.webp 가 크림골드인데 판도 크림골드라 아예 안 보였다 */
+      background-color: rgba(92,62,18,0.28) !important;
       background-size: 60%;
-      box-shadow: none !important;
+      box-shadow: inset 0 1px 2px rgba(70,46,12,0.32) !important;
     }
     #menu #gachaBtn {
       --mb-ico: url('./icons/ui/menu/scout.webp');
@@ -4609,9 +4610,11 @@
        ::after 를 아이콘이 아니라 "배지" 로 쓴다 (배경색 + 그 위에 아이콘 이미지). */
     #menu .menu-btn-primary::after {
       left: 4.5%; width: 25%; height: 72%;
-      background-color: transparent !important;   /* 홈은 판 그림 안에 있다 */
+      /* ⚠ 아이콘 색이 판 색과 같으면 배지가 텅 빈 것처럼 보인다.
+         start.webp 는 하늘색인데 판도 하늘색이었다 → 홈을 어둡게 깔아 대비를 만든다. */
+      background-color: rgba(16,52,92,0.30) !important;
       background-size: 62%;
-      box-shadow: none !important;
+      box-shadow: inset 0 1px 2px rgba(8,30,58,0.35) !important;
     }
     #menu .menu-btn-primary {
       --mb-ico: url('./icons/ui/menu/start.webp');
@@ -41485,7 +41488,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 843;
+  const APP_VERSION = 844;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
