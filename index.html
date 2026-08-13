@@ -4399,8 +4399,12 @@
     #menu .menu-nav3 {
       position: absolute !important; left: 0; right: 0; margin: 0 auto !important;
       /* 폭을 --dock-h 에 연동한다. 고정값을 쓰면 큰 화면에서 원(0.82×dock-h)이
-         칸보다 커져 서로 겹친다. 5.95 = 원 6개 + 그 사이 여백 */
+         칸보다 커져 서로 겹친다. 6.2 = 원 6개 + 그 사이 여백
+         ⚠ CTA 2개가 같은 바닥선 우측에 서므로 그만큼 비켜 배치한다.
+           right: 0 인 채로 가운데 정렬하면 좁은 화면에서 차원 스카우트와 겹친다
+           (740px 에서 16x66 겹쳤다). left 0 ~ right (CTA 자리) 안에서 가운데 정렬한다. */
       bottom: 10px; width: min(calc(var(--dock-h) * 6.2), 74vw) !important;
+      right: calc(var(--cta-d, 84px) * 1.88 + 44px) !important;
       grid-template-columns: repeat(6, 1fr) !important;
       gap: 5px !important; row-gap: 5px !important; z-index: 6;
     }
@@ -7447,15 +7451,16 @@
        ::before 의 background 한 줄만 바꾸면 된다 (docs/ui-cta-buttons.md). */
   @media (orientation: landscape) {
     #menu {
-      --cta-d:  clamp(86px, 21vh, 120px);            /* 새 게임 원 지름 */
-      --cta-d2: calc(var(--cta-d) * 0.84);           /* 차원 스카우트 — 한 단계 작게 */
+      --cta-d:  clamp(68px, 16.5vh, 92px);           /* 새 게임 원 지름 */
+      --cta-d2: calc(var(--cta-d) * 0.88);           /* 차원 스카우트 — 한 단계 작게 */
     }
     /* 공통 — 원 + 아래 글자 */
     #menu .menu-btn-primary, #menu #gachaBtn {
       display: flex !important; flex-direction: column !important;
-      align-items: center !important; justify-content: flex-start !important;
+      align-items: center !important; justify-content: flex-end !important;
       padding: 0 !important; box-sizing: border-box;
       aspect-ratio: 0.86 / 1 !important; height: auto !important;
+      overflow: visible !important;   /* 원 밖 라벨이 잘리면 안 된다 */
       background: transparent !important; border: 0 !important;
       color: #eef6ff !important; font-weight: 800; text-align: center !important;
       text-shadow: 0 1px 3px rgba(0,0,0,0.85), 0 0 7px rgba(0,0,0,0.55) !important;
@@ -7466,10 +7471,16 @@
       inset: 0 0 auto 0 !important; height: auto !important; aspect-ratio: 1 / 1 !important;
       border-radius: 999px !important;
     }
-    /* 아이콘 = 원 안 중앙. ::after 는 DOM 상 글자 뒤라 order 로 위에 올린다 */
+    /* 아이콘 = 원 안 중앙.
+       ⚠ ::after 를 flex 아이템으로 두면 안 된다. width:100% + aspect-ratio 조합이
+         흐름에서 191px 을 차지해(버튼은 71px) 라벨이 193px 아래로 밀렸고
+         overflow:hidden 에 잘려 글자가 아예 안 보였다.
+       → 아이콘은 절대배치로 원 위에 얹고, 흐름에는 라벨만 남긴다. */
     #menu .menu-btn-primary::after, #menu #gachaBtn::after {
-      position: static !important; transform: none !important; order: -1;
-      display: block !important; width: 100% !important; height: auto !important;
+      position: absolute !important; order: 0 !important;
+      left: 0 !important; right: 0 !important; top: 0 !important; bottom: auto !important;
+      transform: none !important;
+      display: block !important; width: auto !important; height: auto !important;
       aspect-ratio: 1 / 1 !important;
       background-color: transparent !important;
       background-size: 52% !important; background-position: center !important;
@@ -7484,13 +7495,15 @@
       font-size: inherit !important; color: inherit !important; padding: 0 !important;
       margin-top: 2px;
     }
-    /* 배치 — 우측에 세로로 쌓는다. 가챠는 새 게임 위 */
+    /* 배치 — 독 오른쪽에 가로로 나란히. 세로로 쌓으니 우측이 무거웠다.
+       바닥은 독과 같은 선(bottom 10px)에 맞춘다.
+       순서: [차원 스카우트] [새 게임] — 가장 중요한 게 오른쪽 코너 */
     #menu .menu-cta-group {
-      width: var(--cta-d) !important; right: 16px !important; bottom: var(--dock-clear) !important;
+      width: var(--cta-d) !important; right: 16px !important; bottom: 10px !important;
     }
     #menu #gachaBtn {
-      right: calc(16px + (var(--cta-d) - var(--cta-d2)) / 2) !important;
-      bottom: calc(var(--dock-clear) + var(--cta-d) / 0.86 + 12px) !important;
+      right: calc(16px + var(--cta-d) + 12px) !important;
+      bottom: 10px !important;
     }
   }
 
@@ -41543,7 +41556,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 845;
+  const APP_VERSION = 848;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
