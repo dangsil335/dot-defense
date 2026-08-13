@@ -7473,9 +7473,15 @@
       transform: none !important;
       display: block !important; width: auto !important; height: auto !important;
       aspect-ratio: 1 / 1 !important;
-      /* ⚠ 가챠는 옛 원형 칩 시절 규칙이 z-index -1 + opacity 0.55 를 걸어
-         레이더가 버튼 배경 뒤에 반투명으로 깔려 안 보였다. 여기서 되돌린다. */
+      /* ⚠ 가챠는 옛 원형 칩 시절 규칙이 세 가지를 걸어놨다. 전부 되돌린다.
+           z-index -1  → 레이더가 버튼 배경 뒤로 깔려 안 보였다
+           opacity 0.55 → 반투명
+           mask radial-gradient(circle, #000 38%, transparent 70%)
+                        → 가운데만 남기는 글로우 마스크. 아이콘을 위쪽에 그리니
+                          상단이 마스크 밖으로 나가 흐릿하게 잘렸다 */
       z-index: 2 !important; opacity: 1 !important;
+      -webkit-mask-image: none !important; mask-image: none !important;
+      -webkit-mask: none !important; mask: none !important;
       background-color: transparent !important;
       background-size: 94% !important; background-position: center top !important;
       background-repeat: no-repeat !important;
@@ -41626,7 +41632,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 854;
+  const APP_VERSION = 855;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
