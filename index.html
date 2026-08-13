@@ -4632,16 +4632,13 @@
     }
 
     /* ── CTA(출격) — 가장 크고 둥글게. 파스텔 하늘색 ── */
-    /* 🖼 v830 — 6차 판이 통과했다. 좌측 배지 홈이 비어 있고 판이 캔버스를 채운다.
-       실측: cta 가로 97.1% · 평균밝기 174 · 캔버스 2.00:1 (버튼 2.01:1 과 일치)
-       ⚠ background-size 100% 100% 로 늘려 쓰므로 파일 캔버스 비율 = 버튼 비율이어야 한다.
-         그림이 캔버스 안에서 작게 그려져 오면 tools/trim_plate.py 로 여백을 자른다. */
+    /* ⚠ v851 — 가로 판 이미지(plate/*.webp)를 걷어냈다.
+       CTA 가 원형이 되면서 2:1 판을 1:1 원에 넣으니 가로로 2배 짓눌려
+       배지 홈과 둥근 끝이 뭉개졌다. 원은 아래 CSS 로 그린다.
+       icons/ui/plate/ 는 이제 코드에서 안 쓴다(파일은 보관). */
     #menu .menu-btn-primary::before {
-      border: 0 !important; border-image: none !important; border-radius: 0 !important;
-      background: url('./icons/ui/plate/cta.webp') center / 100% 100% no-repeat !important;
-      box-shadow: none !important;
+      border: 0 !important; border-image: none !important;
       animation: none !important;
-      filter: drop-shadow(0 3px 6px rgba(20,50,85,0.35));
     }
     #menu .menu-btn-primary { color: #08202f !important; text-shadow: 0 1px 0 rgba(255,255,255,0.35) !important;
       aspect-ratio: 2 / 1; height: auto !important; }   /* ⚠ 가챠 bottom 이 폭/2 를 전제한다 */
@@ -4660,10 +4657,7 @@
 
     /* ── 가챠 — 크림/골드 젤리 ── */
     #menu #gachaBtn::before {
-      border: 0 !important; border-image: none !important; border-radius: 0 !important;
-      background: url('./icons/ui/plate/gold.webp') center / 100% 100% no-repeat !important;
-      box-shadow: none !important;
-      filter: drop-shadow(0 3px 5px rgba(120,90,30,0.3));
+      border: 0 !important; border-image: none !important;
     }
     #menu #gachaBtn, #menu #gachaBtn .gacha-circle-label { color: #3a2708 !important; text-shadow: 0 1px 0 rgba(255,255,255,0.35) !important; }
     #menu #gachaBtn:active::before { transform: translateY(2px) scale(0.99); filter: brightness(0.95); }
@@ -7465,10 +7459,42 @@
       text-shadow: 0 1px 3px rgba(0,0,0,0.85), 0 0 7px rgba(0,0,0,0.55) !important;
       white-space: nowrap; overflow: visible;
     }
-    /* 판 = 원. 버튼 박스 위쪽 정사각만 덮고 아래는 글자 자리 */
+    /* 판 = 원. 버튼 박스 위쪽 정사각만 덮고 아래는 글자 자리.
+       ⚠ 가로 판 이미지(plate/cta.webp 2:1, plate/gold.webp 2.78:1)를 그대로 두면
+         background-size 100% 100% 로 원에 짓눌린다. 배지 홈과 둥근 끝이 뭉개져
+         "판때기 같은" 모양이 됐다. 원은 CSS 로 깨끗하게 그린다.
+       → icons/ui/plate/ 는 이제 어디서도 안 쓴다. */
     #menu .menu-btn-primary::before, #menu #gachaBtn::before {
       inset: 0 0 auto 0 !important; height: auto !important; aspect-ratio: 1 / 1 !important;
       border-radius: 999px !important;
+      background-image: none !important;
+    }
+    #menu .menu-btn-primary::before {
+      background:
+        radial-gradient(120% 90% at 50% 8%, rgba(255,255,255,0.50) 0%, rgba(255,255,255,0) 62%),
+        linear-gradient(180deg, #8fcdf2 0%, #6bb4e4 52%, #4f9bd2 100%) !important;
+      box-shadow:
+        0 4px 0 #3d7fae, 0 9px 18px rgba(40,90,140,0.38),
+        inset 0 2px 0 rgba(255,255,255,0.70), inset 0 -3px 7px rgba(50,110,165,0.32) !important;
+    }
+    #menu #gachaBtn::before {
+      background:
+        radial-gradient(120% 90% at 50% 8%, rgba(255,255,255,0.55) 0%, rgba(255,255,255,0) 62%),
+        linear-gradient(180deg, #ffe9b8 0%, #f5cf85 52%, #e0b463 100%) !important;
+      box-shadow:
+        0 4px 0 #b39a63, 0 8px 16px rgba(140,110,50,0.36),
+        inset 0 2px 0 rgba(255,255,255,0.85), inset 0 -3px 6px rgba(175,145,85,0.32) !important;
+    }
+    /* 눌림 — 립이 얇아진다 */
+    #menu .menu-btn-primary:active::before {
+      transform: translateY(2px) !important; filter: none !important;
+      box-shadow: 0 1px 0 #3d7fae, 0 3px 8px rgba(40,90,140,0.3),
+                  inset 0 2px 0 rgba(255,255,255,0.6) !important;
+    }
+    #menu #gachaBtn:active::before {
+      transform: translateY(2px) !important; filter: none !important;
+      box-shadow: 0 1px 0 #b39a63, 0 3px 7px rgba(140,110,50,0.3),
+                  inset 0 2px 0 rgba(255,255,255,0.75) !important;
     }
     /* 아이콘 = 원 안 중앙.
        ⚠ ::after 를 flex 아이템으로 두면 안 된다. width:100% + aspect-ratio 조합이
@@ -41592,7 +41618,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 850;
+  const APP_VERSION = 852;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
