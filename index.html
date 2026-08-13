@@ -7439,6 +7439,61 @@
     transform: translateY(2px); box-shadow: 0 1px 0 rgba(32,78,120,0.9) !important;
   }
 
+  /* ── 메인 CTA 2개를 원형 버튼 + 아래 글자로 ─────────────────────
+     가로 판 + 좌측 배지 + 우측 글자 구조를 버린다.
+     하단 독 발바닥과 같은 문법으로 통일: 원 안에 아이콘, 글자는 원 밖 아래.
+     ⚠ 위계는 크기로 준다 — 새 게임(주요)이 차원 스카우트보다 크다.
+     ⚠ 지금 아이콘은 임시다. icons/ui/cta/ 에 레이더·우주선이 오면
+       ::before 의 background 한 줄만 바꾸면 된다 (docs/ui-cta-buttons.md). */
+  @media (orientation: landscape) {
+    #menu {
+      --cta-d:  clamp(86px, 21vh, 120px);            /* 새 게임 원 지름 */
+      --cta-d2: calc(var(--cta-d) * 0.84);           /* 차원 스카우트 — 한 단계 작게 */
+    }
+    /* 공통 — 원 + 아래 글자 */
+    #menu .menu-btn-primary, #menu #gachaBtn {
+      display: flex !important; flex-direction: column !important;
+      align-items: center !important; justify-content: flex-start !important;
+      padding: 0 !important; box-sizing: border-box;
+      aspect-ratio: 0.86 / 1 !important; height: auto !important;
+      background: transparent !important; border: 0 !important;
+      color: #eef6ff !important; font-weight: 800; text-align: center !important;
+      text-shadow: 0 1px 3px rgba(0,0,0,0.85), 0 0 7px rgba(0,0,0,0.55) !important;
+      white-space: nowrap; overflow: visible;
+    }
+    /* 판 = 원. 버튼 박스 위쪽 정사각만 덮고 아래는 글자 자리 */
+    #menu .menu-btn-primary::before, #menu #gachaBtn::before {
+      inset: 0 0 auto 0 !important; height: auto !important; aspect-ratio: 1 / 1 !important;
+      border-radius: 999px !important;
+    }
+    /* 아이콘 = 원 안 중앙. ::after 는 DOM 상 글자 뒤라 order 로 위에 올린다 */
+    #menu .menu-btn-primary::after, #menu #gachaBtn::after {
+      position: static !important; transform: none !important; order: -1;
+      display: block !important; width: 100% !important; height: auto !important;
+      aspect-ratio: 1 / 1 !important;
+      background-color: transparent !important;
+      background-size: 52% !important; background-position: center !important;
+      box-shadow: none !important;
+      filter: drop-shadow(0 2px 3px rgba(6,12,24,0.45));
+    }
+    #menu .menu-btn-primary { width: var(--cta-d) !important; font-size: clamp(11px, 1.9vh, 14px) !important; }
+    #menu #gachaBtn         { width: var(--cta-d2) !important; font-size: clamp(10px, 1.7vh, 12.5px) !important; }
+    /* 가챠 라벨은 텍스트 노드가 아니라 div 다 */
+    #menu #gachaBtn .gacha-circle-label {
+      position: static !important; width: auto !important; bottom: auto !important;
+      font-size: inherit !important; color: inherit !important; padding: 0 !important;
+      margin-top: 2px;
+    }
+    /* 배치 — 우측에 세로로 쌓는다. 가챠는 새 게임 위 */
+    #menu .menu-cta-group {
+      width: var(--cta-d) !important; right: 16px !important; bottom: var(--dock-clear) !important;
+    }
+    #menu #gachaBtn {
+      right: calc(16px + (var(--cta-d) - var(--cta-d2)) / 2) !important;
+      bottom: calc(var(--dock-clear) + var(--cta-d) / 0.86 + 12px) !important;
+    }
+  }
+
   /* ── 도감 화면 잔재 정리 ───────────────────────────────────────
      도감만 전용 규칙이 남아 공용 크롬을 이기고 있었다.
      선택자가 #codex #codexBack (2,0,0) 이라 클래스로는 못 이긴다 → 같은 걸로 맞춘다.
@@ -41488,7 +41543,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 844;
+  const APP_VERSION = 845;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
