@@ -7311,14 +7311,13 @@
     box-shadow: none !important;
   }
 
-  /* ⚠ 원래부터 있던 세로 6px 잘림 (내 패널 규칙 이전에도 동일했다).
-     행성 무대가 224px 고정(flex: 0 0 auto)이라 짧은 화면에서 안 줄어든다.
-     오브는 transform 으로 배치되므로 무대 높이를 건드리면 좌표가 틀어진다.
-     → 하단 여백만 줄여 10px 을 확보한다. 짧은 화면에서만. */
-  @media (max-height: 560px) {
-    #difficultyScreen .planet-launch-wrap { padding: 5px 0 8px !important; }
-    #difficultyScreen .planet-info { padding: 9px 12px !important; }
-  }
+  /* ⚠ 여기 있던 "세로 6px 잘림 보정"을 되돌렸다.
+     그 6px 은 레이아웃 문제가 아니라 _screen-fade-in 의 translateY(6px) 였다.
+     ⚠ 원인은 "측정이 빨랐다"가 아니다. 브라우저 프리뷰 창이 숨겨져 있으면
+       CSS 애니메이션이 0% 키프레임에 멈춰서, 얼마를 기다려도 안 풀린다.
+     → 화면을 실측할 때는 .screen 의 animation 을 반드시 꺼야 한다.
+       (끈 스타일은 되돌릴 것 — transition 을 남기면 transitionend 가 안 뛰어
+        모달 숨김이 안 끝나고 투명 오버레이가 클릭을 막는다) */
 
   /* ── 진화 트리 화면 ───────────────────────────────────────────
      ⚠ 성도(星圖) 맵은 건드리지 않는다. 노드를 별자리로 잇는 전용 기능이라
@@ -7355,10 +7354,7 @@
     transform: translateY(2px);
     box-shadow: 0 1px 0 rgba(32,78,120,0.85) !important;
   }
-  /* 하단 바가 6px 넘쳐 잘렸다. 성도 높이는 건드리지 않고 공명 패널 여백에서 회수한다 */
-  @media (max-height: 560px) {
-    #evoTreeScreen .evo-res-codex { margin: 1px 12px 3px !important; }
-  }
+  /* (여기 있던 6px 보정도 되돌렸다 — 위와 같은 진입 애니메이션 유령이었다) */
 
   /* ── 필터 칩 ───────────────────────────────────────────────────── */
   .screen .codex-filter-chips > button {
@@ -41379,7 +41375,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 837;
+  const APP_VERSION = 838;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
