@@ -7436,6 +7436,36 @@
     transform: translateY(2px); box-shadow: 0 1px 0 rgba(32,78,120,0.9) !important;
   }
 
+  /* ── 도감 화면 잔재 정리 ───────────────────────────────────────
+     도감만 전용 규칙이 남아 공용 크롬을 이기고 있었다.
+     선택자가 #codex #codexBack (2,0,0) 이라 클래스로는 못 이긴다 → 같은 걸로 맞춘다.
+     (뒤에 있으므로 순서로 이긴다) */
+  #codex .codex-back, #codex #codexBack {
+    background: linear-gradient(180deg, #5cb6ee, #3f8fce) !important;
+    border: 1px solid rgba(255,255,255,0.28) !important;
+    border-radius: var(--ss-pill) !important;
+    color: #fff !important;
+    font-family: inherit !important; font-size: 0 !important; letter-spacing: 0 !important;
+    padding: 0 !important; width: 38px; height: 38px;
+    box-shadow: 0 3px 0 rgba(32,78,120,0.9), var(--ss-shadow) !important;
+  }
+  #codex .codex-back:hover, #codex #codexBack:hover {
+    border-color: rgba(255,255,255,0.28) !important; color: #fff !important;
+    box-shadow: 0 3px 0 rgba(32,78,120,0.9), var(--ss-shadow) !important;
+  }
+  #codex .codex-header h2 {
+    color: var(--ss-ink) !important;
+    text-shadow: 0 1px 2px rgba(4,10,20,0.5) !important;   /* 시안 글로우 제거 */
+  }
+  /* 비블리아를 좌측으로. 다른 3화면(.up-hero-left)과 같은 기준으로 맞춘다.
+     스크롤 시차(translateY)는 살린다. */
+  #codex .up-hero {
+    left: 0 !important; right: auto !important;
+    transform: translateY(calc(var(--cxScroll,0) * 0.02px)) !important;
+    opacity: 0.9 !important;
+  }
+  #codex .up-hero-img { max-width: 62vw !important; }
+
   /* ── 필터 칩 ───────────────────────────────────────────────────── */
   .screen .codex-filter-chips > button {
     border-radius: var(--ss-pill) !important;
@@ -41455,7 +41485,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 842;
+  const APP_VERSION = 843;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
