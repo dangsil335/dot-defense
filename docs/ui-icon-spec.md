@@ -1,4 +1,4 @@
-# 아크 제로 — 로비 UI 리소스 규격 (v822 기준)
+# 아크 제로 — 로비 UI 리소스 규격 (v823 기준)
 
 > 메인 로비 버튼용. **라벨 판(배경) + 아이콘(글리프)을 분리**해서 받는다.
 > 글자는 이미지에 넣지 않는다 — CSS 가 렌더한다(문구 수정·길이 대응 때문).
@@ -152,6 +152,21 @@ background, solid background, green screen, chroma key,
 isometric, perspective tilt, side view
 ```
 ⚠ `dark, black` 과 `paw, icon inside badge` 가 5차의 핵심 추가다 — 4차가 정확히 그 둘로 막혔다.
+
+### 5차 결과 — 색은 잡혔다. 남은 두 가지
+
+밝기 250 / 230 / 230 으로 밝아졌고 배지 안도 비었다. 남은 문제는 형태다.
+
+| 문제 | 고칠 문장 |
+|---|---|
+| 흰 광택이 크고 불규칙한 얼룩처럼 번진다 | `The top highlight is a THIN EVEN BAND hugging the top edge of the plate, about 12% of the plate height. It must NOT be a large irregular patch, a blob, or a puddle.` |
+| 배지가 판 밖으로 삐져나온다 | `The badge well is entirely INSIDE the plate outline, with a clear margin on all sides. It must never touch or cross the plate edge.` |
+
+네거티브에 추가:
+```
+large white blob, glossy blob, wet highlight, melted highlight, puddle, liquid,
+bubble, water droplet, shape sticking out, overlapping shapes, badge outside the plate
+```
 ⚠ `flat` 은 **판에서만** 네거티브. 아이콘(§2)은 정반대이니 프롬프트를 섞지 말 것.
 
 ### 통과 기준
@@ -165,208 +180,134 @@ isometric, perspective tilt, side view
 
 ---
 
-## 2. 아이콘 — 10장
+## 2. 메뉴 아이콘 — 10장  (2차 발주)
 
-| 파일명 | 버튼 | 라벨 | 현재 이모지 | 의미 |
-|---|---|---|---|---|
-| `shop.webp` | `#shopBtn` | 강화소 | 🔧 | 영구 강화·업그레이드 상점 |
-| `codex.webp` | `#codexBtn` | 도감 | 📖 | 능력·유물 수집 도감 |
-| `perma.webp` | `#abilityPermaBtn` | 능력 영구 | 🧬 | 능력의 영구 강화(별 퍼크) |
-| `achieve.webp` | `#achievementsBtn` | 업적 | 🏆 | 업적 달성 목록 |
-| `chars.webp` | `#charCollectionBtn` | 캐릭터·진화 | 👥 | 캐릭터 보유·진화 트리 |
-| `records.webp` | `#recordsBtn` | 기록 | 📋 | 플레이 기록·통계 |
-| `core.webp` | `#coreMgrBtn` | 전술 코어 관리 | 🔩 | 장비(코어) 장착·강화 |
-| `rank.webp` | `#globalRankBtn` | 글로벌 랭킹 | 🌐 | 서버 순위표 |
-| `scout.webp` | `#gachaBtn` | 차원 스카우트 | 🎰 | 캐릭터 뽑기 |
-| `start.webp` | `#startBtn` | 출격 / 새 게임 | ▶ | 게임 시작 (최우선 CTA) |
+⚠ 아이콘 관련 내용은 **전부 이 절에만** 둔다.
+1차 때 §2·§3·§4·§5·§6 다섯 군데에 흩어져 있었고, 판이 2차에서 실패한 이유가
+정확히 그거였다(뒤쪽에 남은 옛 사본을 보고 만들었다). 사본을 만들지 말 것.
+
+### 1차 결과 — 10장 중 5장이 못 쓴다
+
+40px 로 줄여서 무엇인지 알아볼 수 있는지로 판정했다.
+
+| 파일 | 의도 | 실제로 보이는 것 | |
+|---|---|---|---|
+| `shop` | 렌치 + 상승 화살표 | 색 블록 덩어리 | ❌ |
+| `perma` | 나선 | `OXO` 글자처럼 보임 | ❌ |
+| `chars` | 인물 2명 | 그냥 원 3개 | ❌ |
+| `scout` | 캡슐 | 정체불명의 고리 | ❌ |
+| `achieve` | 트로피 | 왕관처럼 뭉개짐 | ❌ |
+| `codex` `records` `core` `rank` `start` | | 읽힌다 | ✅ |
+
+**원인 둘**
+
+1. **주제를 이름으로만 줬다.** "a wrench crossed with an upgrade arrow" 라고 하면
+   모델이 알아서 해석해 덩어리를 만든다. **기하로 묘사해야 한다** — 어느 방향으로
+   몇 개의 덩어리가 어떻게 놓이는지.
+2. **열 장을 따로 뽑았다.** 그래서 선 두께·채도·명암이 제각각이라 한 세트로 안 보인다.
+
+### ⭐ 이번엔 한 장에 열 개를 함께 뽑는다
+
+따로 열 번 뽑으면 반드시 그림체가 갈린다. **하나의 시트로 한 번에** 그리게 하면
+모델이 열 개를 서로 보면서 그리므로 통일된다.
+
+```
+2행 5열, 셀 하나가 정사각, 전체 1280 x 512
+배경 완전 투명, 셀 사이 여백 균일, 각 아이콘은 자기 셀 중앙
+순서:  1행  shop  codex  perma  achieve  chars
+       2행  records  core  rank  scout  start
+```
+
+받으면 내가 잘라서 256×256 으로 정규화한다 (`python tools/slice_icon_sheet.py <파일>`).
+시트가 안 되면 낱장 10회로 가되, **아래 STYLE 블록을 글자 하나 바꾸지 말고** 매번
+그대로 앞에 붙일 것. 그게 유일한 통일 장치다.
+
+### STYLE 블록 — 열 장 모두 여기까지 동일
+
+```
+Cute mobile game menu icon, in the style of Blue Archive / Stella Sora lobby UI.
+
+Drawn as a DIE-CUT STICKER: the entire icon is wrapped by ONE continuous clean
+WHITE BORDER about 6% of the icon width, following only the outer silhouette.
+Inside that border the icon is built from 2 to 4 large chunky shapes with
+generously rounded corners. No thin lines anywhere. No small details.
+
+Each shape is filled with one flat saturated color, plus ONE lighter tint over its
+upper-left portion to suggest a single soft light from the upper left, and one
+slightly deeper tone on the lower-right. Shading is flat color areas, not blur,
+not airbrush, not gradient mesh.
+
+Bright, cheerful, high contrast, clean and confident.
+Fully TRANSPARENT background (alpha) — nothing behind the icon.
+Centered, filling about 84% of its square cell.
+It must stay instantly recognizable when shrunk to 40 pixels.
+```
+
+### 팔레트 — 열 장이 공유한다
+
+```
+sky blue    #4EA8E8   밝은 면 #9FD9F8
+warm gold   #F2B33C   밝은 면 #FFDE93
+mint green  #43C7A4   밝은 면 #96E8D0
+soft purple #9A7DF0   밝은 면 #C9B8FB
+white       #FFFFFF
+```
+
+### 주제 — 이름이 아니라 기하로 적는다
+
+| 파일 | 쓰임 | SUBJECT (영문 그대로 붙일 것) |
+|---|---|---|
+| `shop` | 강화소 | `A thick upward-pointing arrow with a wide head and a short wide shaft, rising from a small rounded platform beneath it. Arrow in sky blue, platform in warm gold.` |
+| `codex` | 도감 | `An open book seen straight from the front, symmetric, two pages spread flat, three short horizontal lines on each page. Sky blue cover, cream-white pages.` |
+| `perma` | 능력 영구 | `A simple skill tree: one large round node at the bottom center and two smaller round nodes above it to the left and right, joined by two thick straight branches. Mint green.` |
+| `achieve` | 업적 | `A trophy cup with two curved side handles standing on a short square base, and one five-pointed white star on the front of the cup. Warm gold.` |
+| `chars` | 캐릭터·진화 | `Two simple person figures side by side, each a round head above a rounded shoulder shape. The front figure is larger and sky blue, the back figure is smaller, soft purple, and partly hidden behind it.` |
+| `records` | 기록 | `A clipboard seen straight from the front with a small clip at the top center and three list rows, each row one round bullet and one short bar. Sky blue board, white paper.` |
+| `core` | 코어 관리 | `A hexagonal gem seen flat from the front with one bright round core at its center, the upper-left facets lighter. Mint green.` |
+| `rank` | 글로벌 랭킹 | `A globe: a circle with one horizontal band across the middle and one vertical oval meridian, wearing a small three-point crown on top. Sky blue globe, warm gold crown.` |
+| `scout` | 차원 스카우트 | `A gacha capsule: a sphere split across its middle by a thin white band, the top half lighter and the bottom half deeper, with two four-pointed sparkles floating beside it. Warm gold.` |
+| `start` | 출격 | `A bold right-pointing play triangle with softly rounded corners, with a short rounded vertical bar just to its left. Vivid sky blue — this is the primary action, make it the most saturated icon of the set.` |
+
+`achieve` `scout` 만 골드로 "보상 계열"을 묶고, 나머지는 하늘·민트·보라로 간다.
+`start` 가 세트에서 가장 선명해야 한다 — 유일한 주요 행동 버튼이다.
+
+### 네거티브 (아이콘 공통)
+
+```
+photorealistic, photo, 3d render, clay, claymation, plastic, metal, chrome, glass,
+line art, outline only, thin lines, sketch, pencil, watercolor, painterly, brush texture,
+abstract, geometric abstraction, random shapes, unrecognizable blob,
+text, letters, numbers, logo, watermark, signature, button, panel, frame, badge,
+background, solid background, gradient background, shadow cast on background,
+green screen, chroma key,
+dark, muddy, desaturated, neon glow, cyberpunk, sci-fi,
+cluttered, many small elements, scattered parts
+```
+
+⚠ `flat 2d vector` 를 네거티브에 넣지 말 것 — 우리가 원하는 게 그거다.
+⚠ 판(§1)과 정반대다. 판은 입체가 필요하고 `flat` 이 네거티브다. 프롬프트를 섞지 말 것.
 
 ### 규격
 
 ```
-캔버스   256 × 256 정사각
-포맷     투명 WebP
-여백     상하좌우 8~12px. 가장자리에 붙이지 말 것
-용량     장당 30KB 이하 (10장 합쳐 300KB 이내)
+파일 위치   icons/ui/menu/
+파일명      shop codex perma achieve chars records core rank scout start  (.webp)
+캔버스      256 x 256
+배경        완전 투명 (알파). ⚠ 능력 아이콘(icons/abilities/)만 불투명 액자형이다
+표시 크기   독에서 약 40px
 ```
 
-**표시 크기 (실측)**
+### 통과 기준 — 내가 숫자와 눈으로 확인한다
 
-| 화면 | 아이콘 | 버튼 |
-|---|---|---|
-| 가로 폰 812×375 | **28 × 29** | 109 × 43 |
-| 데스크톱 1280×800 | **29 × 29** | 112 × 45 |
-
-→ 256px 원본은 표시의 약 9배. 충분하다.
-
-⚠ **29px 로 줄여도 뭔지 알아봐야 한다.** 가는 선·작은 글자·복잡한 디테일은 뭉개진다.
-확정 전에 29px 로 축소해서 확인할 것.
-
-### 배치 (내가 CSS 로 처리)
-
-```
-┌────────────────────────────┐  ← 라벨 판 (normal.webp)
-│  ┌────┐                    │
-│  │아이콘│   강화소           │  아이콘 좌측 4~30%, 글자 34%~
-│  └────┘                    │
-└────────────────────────────┘
-```
-
-아이콘은 판의 **왼쪽 26% 폭**을 쓰고, 글자는 34% 지점부터 왼쪽 정렬로 들어간다.
-그래서 아이콘은 **정사각 안에 꽉 차게** 그리면 된다 — 여백은 CSS 가 준다.
+1. 256×256, 가장자리 알파 0
+2. **40px 로 줄였을 때 무엇인지 읽히는가** — 어두운 띠 위에 얹어서 본다. 1차는 5장이 여기서 죽었다
+3. 흰 외곽 테두리가 하나로 이어져 있는가
+4. 팔레트가 위 표 안에 있는가 (열 장이 한 세트로 보이는가)
+5. 글자·배경·액자 없음
 
 ---
 
-## 3. 공통 디자인 톤 — ⚠ 3D 클레이 아님
-
-레퍼런스: 블루아카이브 / 스텔라소라의 로비 UI 아이콘.
-
-**1차 시도가 실패한 이유** — 프롬프트에 `clay-render` `puffy 3D` `soft 3D` 를 넣었더니
-스톡 3D 아이콘 팩 같은 **두꺼운 입체 렌더**가 나왔다. 레퍼런스는 그것과 다르다.
-
-| | 나오면 안 되는 것 | 목표 |
-|---|---|---|
-| 렌더 | 두꺼운 3D 입체 렌더 | **반평면 벡터 일러** |
-| 음영 | 강한 볼륨·바닥 그림자 | 최소한, 단색면 위주 |
-| 시점 | 살짝 사선 원근 | **정면 평면** |
-| 질감 | 매트 플라스틱·점토 | 깨끗한 색면 |
-| 인상 | 스톡 3D 아이콘 | 게임 UI 아이콘 |
-
-**실용적인 이유도 있다.** 표시 크기가 **29px** 이라 3D 볼륨·페이지 선·리본 같은 디테일은
-전부 뭉개져 회색 덩어리가 된다. 평면이 작게 줄었을 때 훨씬 잘 읽힌다.
-
-```
-· 반평면(semi-flat) 벡터. 정면. 굵고 단순한 실루엣
-· 면은 단색 또는 아주 완만한 2톤 그라디언트
-· 음영은 면 분할로만 (밝은 면 / 어두운 면). 블러 그림자 최소
-· 하이라이트는 점 하나 정도까지만
-· 파스텔 — 하늘 #7fd4ff · 민트 #a8e6cf · 크림 #ffe6a8 · 연보라 #c9b8ff
-· 요소 1~2개. 29px 로 줄여서 알아볼 수 있어야 한다
-```
-
-**금지**
-```
-✗ clay / 3D render / puffy / volumetric   ← 1차 실패 원인. 절대 넣지 말 것
-✗ 바닥에 드리우는 블러 그림자
-✗ 사선 원근·입체 두께 표현
-✗ 굵은 검정 외곽선        29px 로 줄면 뭉개진다
-✗ 각진 모서리·날카로운 사선
-✗ 네온 글로우·사이버펑크
-✗ 텍스트·숫자            라벨은 CSS 가 렌더한다
-✗ 불투명 배경판·크로마키 초록 배경   반드시 알파 투명
-```
-
----
-
-## 4. 영문 프롬프트
-
-### 라벨 판
-
-→ **1절로 옮겼다.** 구 프롬프트(240×96 · 9-slice)는 실패본이라 삭제했다.
-⚠ 판 프롬프트는 1절에만 있다. 여기에 사본을 두지 않는다 — 2차 실패가 사본 때문이었다.
-
-### 아이콘
-
-```
-Cute mobile game UI icon, semi-flat vector illustration, 256x256,
-TRANSPARENT background (alpha), no frame, no background plate, no green screen.
-{CONCEPT}
-Flat front-facing view, bold simple silhouette with rounded corners.
-Solid color fills with at most a gentle two-tone shading — light face and shadow face.
-Pastel palette: sky blue #7fd4ff, mint #a8e6cf, cream #ffe6a8.
-Clean and cute, in the style of bright anime mobile game menu icons.
-Must stay readable when scaled down to 29 pixels.
-NOT a 3D render. No clay, no plastic, no volumetric depth, no perspective,
-no drop shadow, no outline strokes, no text, no numbers.
-```
-
-**네거티브 (공통)**
-```
-3d render, clay, claymation, plastic, volumetric, isometric, perspective, depth, extrusion,
-drop shadow, ambient occlusion, glossy plastic, stock 3d icon,
-green screen, chroma key, solid background, background plate, frame, border,
-text, numbers, letters, watermark, neon glow, cyberpunk, sharp angular edges,
-thin lines, heavy black outline, cluttered detail, photorealistic
-```
-⚠ `flat 2d vector` 를 네거티브에 넣지 말 것 — 1차 프롬프트의 실수다. 우리가 원하는 게 그거다.
-
----
-
-## 5. 아이콘 개별 `{CONCEPT}`
-
-### `shop.webp` — 강화소
-```
-a rounded wrench crossed with a small upgrade arrow pointing up,
-sky-blue body with cream metal accents, flat two-tone shading
-```
-### `codex.webp` — 도감
-```
-a chubby open book with rounded corners, a small star floating above the pages,
-sky-blue cover with cream pages
-```
-### `perma.webp` — 능력 영구
-```
-a soft rounded DNA helix made of two twisting jelly strands,
-mint and sky-blue, with a tiny star at the top
-```
-### `achieve.webp` — 업적
-```
-a rounded trophy cup with a small star on its front,
-cream-gold body with a sky-blue base, flat two-tone shading
-```
-### `chars.webp` — 캐릭터·진화
-```
-two overlapping rounded character silhouette busts (no faces),
-front one sky-blue and back one soft violet, simple shoulder shapes only
-```
-### `records.webp` — 기록
-```
-a plump clipboard with rounded corners and three short line marks,
-sky-blue board with cream paper
-```
-### `core.webp` — 전술 코어 관리
-```
-a rounded hexagonal core gem with a soft glow inside,
-one small orbiting ring around it, mint and sky-blue
-```
-### `rank.webp` — 글로벌 랭킹
-```
-a chubby rounded globe with soft latitude bands,
-a small cream star or laurel accent at the lower right
-```
-### `scout.webp` — 차원 스카우트
-```
-a rounded gacha capsule splitting open with a small star above it,
-cream-gold capsule with a sky-blue inner face, flat two-tone shading
-```
-### `start.webp` — 출격 (CTA)
-```
-a bold rounded play triangle, bright sky-blue with a lighter top face,
-this is the primary action — make it the most vivid and saturated of the set
-```
-
----
-
-## 6. 세트 일관성
-
-| 아이콘 | 주 형태 | 주색 | 밝기 |
-|---|---|---|---|
-| shop | 렌치+화살표 | 하늘 | 중 |
-| codex | 책 | 하늘+크림 | 중 |
-| perma | 나선 | 민트 | 중 |
-| achieve | 트로피 | 크림골드 | 높음 |
-| chars | 인물 실루엣 2 | 하늘+연보라 | 중 |
-| records | 클립보드 | 하늘+크림 | 낮음 |
-| core | 육각 젬 | 민트 | 중 |
-| rank | 지구본 | 하늘 | 중 |
-| scout | 캡슐 | 크림골드 | 높음 |
-| **start** | **재생 삼각형** | **하늘(진함)** | **최고** |
-
-`start` 가 가장 선명해야 한다 — 유일한 주요 행동 버튼이다.
-`achieve` `scout` 만 크림골드로 "보상 계열"을 묶고 나머지는 하늘/민트로 통일한다.
-
----
-
-## 7. 넣은 뒤 (내가 할 작업)
+## 3. 넣은 뒤 (내가 할 작업)
 
 파일만 넣으면 CSS 한 블록으로 끝난다. 지금은 CSS 젤리 + 이모지로 자리를 잡아둔 상태다.
 
