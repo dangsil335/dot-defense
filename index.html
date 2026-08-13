@@ -5166,8 +5166,8 @@
 
     <!-- 메인 CTA: 이어하기 / 빠른 시작 / 새 게임 / 난이도 -->
     <div class="menu-cta-group">
-      <button id="continueBtn" class="menu-btn menu-btn-primary" style="display:none;">이어하기</button>
-      <button id="startBtn" class="menu-btn menu-btn-primary">새 게임</button>
+      <button id="continueBtn" class="menu-btn menu-btn-primary is-cta-hidden"><span class="cta-label">이어하기</span></button>
+      <button id="startBtn" class="menu-btn menu-btn-primary"><span class="cta-label">새 게임</span></button>
       <!-- 빠른 시작 미리보기 (마지막 설정 표시) -->
       <div id="quickStartPreview" class="quick-start-preview" style="display:none;"></div>
       <!-- 설정 변경 (빠른 시작 가능할 때만 노출) -->
@@ -7452,65 +7452,65 @@
       display: flex !important; flex-direction: column !important;
       align-items: center !important; justify-content: flex-end !important;
       padding: 0 !important; box-sizing: border-box;
-      aspect-ratio: 0.86 / 1 !important; height: auto !important;
+      aspect-ratio: 0.78 / 1 !important; height: auto !important;
       overflow: visible !important;   /* 원 밖 라벨이 잘리면 안 된다 */
       background: transparent !important; border: 0 !important;
       color: #eef6ff !important; font-weight: 800; text-align: center !important;
       text-shadow: 0 1px 3px rgba(0,0,0,0.85), 0 0 7px rgba(0,0,0,0.55) !important;
       white-space: nowrap; overflow: visible;
     }
-    /* 판 = 원. 버튼 박스 위쪽 정사각만 덮고 아래는 글자 자리.
-       ⚠ 가로 판 이미지(plate/cta.webp 2:1, plate/gold.webp 2.78:1)를 그대로 두면
-         background-size 100% 100% 로 원에 짓눌린다. 배지 홈과 둥근 끝이 뭉개져
-         "판때기 같은" 모양이 됐다. 원은 CSS 로 깨끗하게 그린다.
-       → icons/ui/plate/ 는 이제 어디서도 안 쓴다. */
-    #menu .menu-btn-primary::before, #menu #gachaBtn::before {
-      inset: 0 0 auto 0 !important; height: auto !important; aspect-ratio: 1 / 1 !important;
-      border-radius: 999px !important;
-      background-image: none !important;
-    }
-    #menu .menu-btn-primary::before {
-      background:
-        radial-gradient(120% 90% at 50% 8%, rgba(255,255,255,0.50) 0%, rgba(255,255,255,0) 62%),
-        linear-gradient(180deg, #8fcdf2 0%, #6bb4e4 52%, #4f9bd2 100%) !important;
-      box-shadow:
-        0 4px 0 #3d7fae, 0 9px 18px rgba(40,90,140,0.38),
-        inset 0 2px 0 rgba(255,255,255,0.70), inset 0 -3px 7px rgba(50,110,165,0.32) !important;
-    }
-    #menu #gachaBtn::before {
-      background:
-        radial-gradient(120% 90% at 50% 8%, rgba(255,255,255,0.55) 0%, rgba(255,255,255,0) 62%),
-        linear-gradient(180deg, #ffe9b8 0%, #f5cf85 52%, #e0b463 100%) !important;
-      box-shadow:
-        0 4px 0 #b39a63, 0 8px 16px rgba(140,110,50,0.36),
-        inset 0 2px 0 rgba(255,255,255,0.85), inset 0 -3px 6px rgba(175,145,85,0.32) !important;
-    }
-    /* 눌림 — 립이 얇아진다 */
-    #menu .menu-btn-primary:active::before {
-      transform: translateY(2px) !important; filter: none !important;
-      box-shadow: 0 1px 0 #3d7fae, 0 3px 8px rgba(40,90,140,0.3),
-                  inset 0 2px 0 rgba(255,255,255,0.6) !important;
-    }
-    #menu #gachaBtn:active::before {
-      transform: translateY(2px) !important; filter: none !important;
-      box-shadow: 0 1px 0 #b39a63, 0 3px 7px rgba(140,110,50,0.3),
-                  inset 0 2px 0 rgba(255,255,255,0.75) !important;
-    }
-    /* 아이콘 = 원 안 중앙.
-       ⚠ ::after 를 flex 아이템으로 두면 안 된다. width:100% + aspect-ratio 조합이
-         흐름에서 191px 을 차지해(버튼은 71px) 라벨이 193px 아래로 밀렸고
-         overflow:hidden 에 잘려 글자가 아예 안 보였다.
-       → 아이콘은 절대배치로 원 위에 얹고, 흐름에는 라벨만 남긴다. */
+    /* ⚠ v853 — 원을 없앤다. 아이콘을 원으로 둘러싸니 답답해 보였다.
+       아이콘은 아이콘대로 크게 두고, 글자만 아래 네모 프레임에 넣는다.
+       icons/ui/plate/ 는 계속 안 쓴다. */
+    #menu .menu-btn-primary::before, #menu #gachaBtn::before { display: none !important; }
+    /* CTA 숨김 — display:flex !important 보다 뒤에 와야 이긴다 */
+    #menu .menu-btn-primary.is-cta-hidden { display: none !important; }
+
+    /* 아이콘 — 원이 없으니 크게. 버튼 폭을 거의 다 쓴다 */
     #menu .menu-btn-primary::after, #menu #gachaBtn::after {
-      position: absolute !important; order: 0 !important;
+      position: absolute !important;
       left: 0 !important; right: 0 !important; top: 0 !important; bottom: auto !important;
       transform: none !important;
       display: block !important; width: auto !important; height: auto !important;
       aspect-ratio: 1 / 1 !important;
+      /* ⚠ 가챠는 옛 원형 칩 시절 규칙이 z-index -1 + opacity 0.55 를 걸어
+         레이더가 버튼 배경 뒤에 반투명으로 깔려 안 보였다. 여기서 되돌린다. */
+      z-index: 2 !important; opacity: 1 !important;
       background-color: transparent !important;
-      background-size: 58% !important; background-position: center !important;
+      background-size: 94% !important; background-position: center top !important;
+      background-repeat: no-repeat !important;
       box-shadow: none !important;
-      filter: drop-shadow(0 2px 3px rgba(6,12,24,0.45));
+      filter: drop-shadow(0 3px 5px rgba(6,12,24,0.5));
+    }
+
+    /* 글자 — 아이콘 아래 네모 프레임 */
+    #menu .menu-btn-primary .cta-label,
+    #menu #gachaBtn .gacha-circle-label {
+      position: static !important; width: auto !important;
+      bottom: auto !important; left: auto !important; right: auto !important;
+      display: inline-block; box-sizing: border-box;
+      padding: 4px 10px !important; margin: 0 !important;
+      border-radius: 9px !important;
+      font-size: inherit !important; font-weight: 800; line-height: 1.15;
+      white-space: nowrap;
+      text-shadow: 0 1px 2px rgba(4,10,20,0.55) !important;
+    }
+    #menu .menu-btn-primary .cta-label {
+      background: linear-gradient(180deg, rgba(120,190,240,0.94), rgba(64,140,205,0.94)) !important;
+      border: 1.5px solid rgba(200,230,255,0.75) !important;
+      color: #08202f !important;
+      box-shadow: 0 3px 0 rgba(40,90,140,0.85), 0 5px 12px rgba(10,30,55,0.35) !important;
+    }
+    #menu #gachaBtn .gacha-circle-label {
+      background: linear-gradient(180deg, rgba(255,231,175,0.95), rgba(228,183,105,0.95)) !important;
+      border: 1.5px solid rgba(255,244,214,0.8) !important;
+      color: #3a2708 !important;
+      box-shadow: 0 3px 0 rgba(150,118,60,0.85), 0 5px 12px rgba(60,44,14,0.32) !important;
+    }
+    #menu .menu-btn-primary:active .cta-label,
+    #menu #gachaBtn:active .gacha-circle-label {
+      transform: translateY(2px);
+      box-shadow: 0 1px 0 rgba(40,90,140,0.85) !important;
     }
     #menu .menu-btn-primary { width: var(--cta-d) !important; font-size: clamp(11px, 1.9vh, 14px) !important; }
     #menu #gachaBtn         { width: var(--cta-d2) !important; font-size: clamp(10px, 1.7vh, 12.5px) !important; }
@@ -39618,7 +39618,15 @@
     const inProgress = state && !state.gameOver && state.tower;
     // ▶ 이어하기: 게임 시작 후 게임오버 전까지 항상 표시
     const continueBtn = document.getElementById('continueBtn');
-    if (continueBtn) continueBtn.style.display = inProgress ? '' : 'none';
+    // 🔀 v853 — 진행 중이면 이어하기만, 아니면 새 게임만. 전에는 둘이 같이 떠서 CTA 가 셋이었다.
+    //   ⚠ 인라인 style.display 로 숨기면 안 된다. CTA 를 display:flex !important 로 잡아놔서
+    //     인라인이 진다. 클래스(.is-cta-hidden)로 토글한다.
+    //   ⚠ 진행 중에 새로 시작하려면 이어하기 → 게임 안에서 처음부터 다시 를 쓴다.
+    if (continueBtn) continueBtn.classList.toggle('is-cta-hidden', !inProgress);
+    {
+      const _sb = document.getElementById('startBtn');
+      if (_sb) _sb.classList.toggle('is-cta-hidden', !!inProgress);
+    }
     // 🚀 v223+v228 — 빠른 시작 vs 새 게임 vs 처음부터 다시 (진행 중일 때 구분)
     const startBtn = document.getElementById('startBtn');
     const qsPreview = document.getElementById('quickStartPreview');
@@ -39635,7 +39643,7 @@
         startBtn.classList.add('menu-btn-restart');   // 보조 스타일
       } else {
         startBtn.classList.remove('menu-btn-restart');
-        startBtn.textContent = '새 게임';   // ▶ 는 좌측 배지 아이콘과 중복
+        startBtn.innerHTML = '<span class="cta-label">새 게임</span>';   // 네모 라벨 프레임을 씌우려면 요소가 필요
         startBtn.dataset.quickStart = '1';
       }
     }
@@ -41618,7 +41626,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 852;
+  const APP_VERSION = 854;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
