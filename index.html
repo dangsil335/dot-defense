@@ -4507,10 +4507,10 @@
                   inset 0 2px 0 rgba(255,255,255,0.9), inset 0 -4px 9px rgba(190,205,226,0.7),
                   inset 0 0 0 1px rgba(255,255,255,0.5) !important;
     }
-    #menu .menu-btn:hover:not(:disabled)::before {
-      background: linear-gradient(180deg,
-        rgba(255,255,255,1) 0%, rgba(250,252,255,0.98) 52%, rgba(238,244,251,0.96) 100%) !important;
-    }
+    /* ⚠ 호버로 background 를 갈아끼우면 판 이미지(cta.webp·gold.webp)까지 덮여
+       출격·차원 스카우트가 흰색으로 변했다. 이미지 버튼에는 배경 교체가 아니라
+       밝기 조절을 쓴다 — CSS 로 그린 판이든 이미지 판이든 둘 다 안전하다. */
+    #menu .menu-btn:hover:not(:disabled)::before { filter: brightness(1.06); }
     /* nth-child 로 좌/우열에 걸려 있던 마름모 skew 해제 */
     #menu .menu-nav3 .menu-btn:nth-child(3n+1)::before,
     #menu .menu-nav3 .menu-btn:nth-child(3n+2)::before,
@@ -7355,6 +7355,82 @@
     box-shadow: 0 1px 0 rgba(32,78,120,0.85) !important;
   }
   /* (여기 있던 6px 보정도 되돌렸다 — 위와 같은 진입 애니메이션 유령이었다) */
+
+  /* ── 가챠 화면 ─────────────────────────────────────────────────
+     세로로 쌓다 보니 가로 화면에서 배너가 356x201 로 쪼그라들어 있었다.
+     원본이 1672x941 인데 354x199 로 표시되고 좌우로 276px 씩 비었다.
+     레퍼런스 ⑤(별의 탑)처럼 좌측에 큰 배너, 우측에 정보·버튼으로 나눈다.
+     ⚠ 세로 화면은 건드리지 않는다 — 거기선 지금 세로 쌓기가 맞다. */
+  @media (orientation: landscape) and (min-width: 720px) {
+    #gachaScreen {
+      display: grid !important;
+      grid-template-columns: minmax(0, 1.32fr) minmax(0, 1fr);
+      grid-template-rows: auto auto auto 1fr;
+      align-content: start;
+      gap: 10px 14px !important;
+      padding: 14px !important;
+      max-width: 1180px; margin: 0 auto;
+    }
+    #gachaScreen .gacha-top-bar          { grid-column: 1 / 3; grid-row: 1; max-width: none !important; }
+      /* ⚠ 기본 규칙이 width: min(100%, 70vh) 다. 세로로 쌓던 시절 16:9 를 지키려고
+         넣은 건데, 2단에서는 배너를 354px 에 묶어버린다(좌측 열이 493px 인데).
+         의도(높이로 상한)는 유지하되 실제 남는 높이로 계산한다.
+         상단바 44 + 패딩 28 + 여백 → 대략 110px 을 뺀다. */
+      #gachaScreen .gacha-fullbanner {
+        grid-column: 1; grid-row: 2 / 5; align-self: start; max-width: none !important;
+        width: min(100%, calc((100vh - 110px) * 16 / 9)) !important;
+        margin: 0 !important;
+      }
+    #gachaScreen .gacha-info-panel       { grid-column: 2; grid-row: 2; max-width: none !important; }
+    #gachaScreen .gacha-pull-console     { grid-column: 2; grid-row: 3; max-width: none !important; }
+    #gachaScreen .gacha-secondary-actions{ grid-column: 2; grid-row: 4; align-self: start; max-width: none !important; }
+  }
+
+  /* 배너 — 카드 문법. 원본 비율(16:9)을 지킨다 */
+  #gachaScreen .gacha-fullbanner {
+    border-radius: var(--ss-r) !important;
+    box-shadow: 0 8px 22px rgba(6,14,28,0.45) !important;
+    border: 1px solid var(--ss-edge);
+    overflow: hidden;
+  }
+  /* img 는 기본 규칙(width/height 100% + object-fit: contain)을 그대로 쓴다.
+     height: auto 로 바꾸면 배너의 16:9 박스와 그림 높이가 어긋난다. */
+
+  /* 정보 패널 · 뽑기 콘솔 · 보조 액션 → 패널 문법 */
+  #gachaScreen .gacha-info-panel,
+  #gachaScreen .gacha-pull-console,
+  #gachaScreen .gacha-secondary-actions {
+    background: var(--ss-panel2) !important;
+    border: 1px solid var(--ss-edge) !important;
+    border-radius: var(--ss-r) !important;
+    box-shadow: var(--ss-shadow) !important;
+    -webkit-backdrop-filter: blur(9px); backdrop-filter: blur(9px);
+    box-sizing: border-box; padding: 12px 14px !important;
+  }
+
+  /* 뽑기 버튼 — 캡슐 + 립. 10회는 골드로 구분(주요 행동) */
+  #gachaScreen .gacha-pull-console button,
+  #gachaScreen .gacha-secondary-actions button {
+    border-radius: var(--ss-pill) !important;
+    border: 1px solid rgba(255,255,255,0.26) !important;
+    font-family: inherit !important; font-weight: 800;
+  }
+  #gachaScreen .gacha-pull-console button:nth-of-type(1) {
+    background: linear-gradient(180deg, #5cb6ee, #3f8fce) !important; color: #fff !important;
+    box-shadow: 0 4px 0 rgba(32,78,120,0.9), var(--ss-shadow) !important;
+  }
+  #gachaScreen .gacha-pull-console button:nth-of-type(2) {
+    background: linear-gradient(180deg, #ffe9b8, #e0b463) !important; color: #3a2708 !important;
+    box-shadow: 0 4px 0 #b39a63, var(--ss-shadow) !important;
+  }
+  #gachaScreen .gacha-secondary-actions button {
+    background: var(--ss-panel) !important; color: var(--ss-ink) !important;
+    box-shadow: 0 3px 0 rgba(20,34,56,0.8) !important;
+  }
+  #gachaScreen .gacha-pull-console button:active,
+  #gachaScreen .gacha-secondary-actions button:active {
+    transform: translateY(2px); box-shadow: 0 1px 0 rgba(32,78,120,0.9) !important;
+  }
 
   /* ── 필터 칩 ───────────────────────────────────────────────────── */
   .screen .codex-filter-chips > button {
@@ -41375,7 +41451,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 838;
+  const APP_VERSION = 841;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
