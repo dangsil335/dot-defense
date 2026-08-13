@@ -7176,6 +7176,33 @@
   #codex .codex-tab::before,
   #codex .codex-tab.active::before { display: none !important; content: none !important; }
 
+  /* ── 화면 배경 = 이미지 한 장 ──────────────────────────────────
+     전에는 화면마다 radial-gradient 를 4~6겹 쌓고 성운 애니메이션까지 돌렸다.
+     이미지 한 장이 더 깔끔하고 CSS 도 훨씬 준다.
+
+     ⚠ 파일이 없으면 배경색만 남는다(빈 화면이 아니라 그냥 단색). 그래서 존재
+       판정용 JS 가 필요 없다 — 로비 배경(_applyLobbyBg)과 달리 여기선 CSS 한 줄이다.
+     ⚠ 캐릭터 일러가 좌측에 서므로(.up-hero-left) 배경의 볼거리는 중앙~우측에 둔다.
+       그림 발주 규격은 docs/ui-screen-bg.md */
+  #achievementsScreen, #shop, #abilityPerma, #codex {
+    background-repeat: no-repeat !important;
+    background-position: center !important;
+    background-size: cover !important;
+  }
+  #achievementsScreen { background-image: url('./icons/ui/bg/achievements.webp') !important; }
+  #shop              { background-image: url('./icons/ui/bg/shop.webp') !important; }
+  #abilityPerma      { background-image: url('./icons/ui/bg/perma.webp') !important; }
+  #codex             { background-image: url('./icons/ui/bg/codex.webp') !important; }
+
+  /* 성운 겹·스캔라인 제거 → 글자 가독용 스크림 하나만 남긴다 */
+  #achievementsScreen::before, #shop::before, #abilityPerma::before, #codex::before {
+    inset: 0 !important; filter: none !important; animation: none !important;
+    background: linear-gradient(180deg,
+      rgba(6,12,22,0.62) 0%, rgba(6,12,22,0.30) 34%,
+      rgba(6,12,22,0.42) 72%, rgba(6,12,22,0.74) 100%) !important;
+  }
+  #codex::after { display: none !important; }
+
   /* ── 필터 칩 ───────────────────────────────────────────────────── */
   .screen .codex-filter-chips > button {
     border-radius: var(--ss-pill) !important;
@@ -41195,7 +41222,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 827;
+  const APP_VERSION = 828;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
