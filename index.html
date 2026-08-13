@@ -37662,7 +37662,44 @@
   };
   function _skinsOf(charId) { return SKINS[charId] || []; }
   function _skinKey(charId, skinId) { return charId + '__' + skinId; }   // = 일러 파일 base (icons/illust/<charId>__<skinId>.png)
-  function _skinOwned(charId, skinId) { return !!(META.skins && META.skins.owned && META.skins.owned[_skinKey(charId, skinId)]); }
+  // 🔧 개발용 — 스킨 전체 해금 치트 (배경 일러 테스트용).
+  //   콘솔에서  __allSkins(true)  로 켜고  __allSkins(false)  로 끈다.
+  //   ⚠ 저장 데이터(META.skins.owned)는 손대지 않는다. 보유 판정만 우회하므로
+  //     끄면 원래 보유 상태로 정확히 돌아온다. 기본값은 꺼짐이라 다른 사람에겐 영향 없다.
+  let _DEV_ALL_SKINS = false;
+  try { _DEV_ALL_SKINS = localStorage.getItem('dev_all_skins') === '1'; } catch (e) {}
+  function _skinOwned(charId, skinId) {
+    if (_DEV_ALL_SKINS) return true;
+    return !!(META.skins && META.skins.owned && META.skins.owned[_skinKey(charId, skinId)]);
+  }
+  window.__allSkins = function (on) {
+    _DEV_ALL_SKINS = (on !== false);
+    try { localStorage.setItem('dev_all_skins', _DEV_ALL_SKINS ? '1' : '0'); } catch (e) {}
+    const n = Object.keys(SKINS).reduce((a, k) => a + SKINS[k].length, 0);
+    console.log(_DEV_ALL_SKINS
+      ? `🔓 스킨 ${n}종 전체 해금 (개발용). 끄려면 __allSkins(false)`
+      : '🔒 원래 보유 상태로 복구됨');
+    setTimeout(() => location.reload(), 120);
+    return _DEV_ALL_SKINS ? 'ON — 새로고침합니다' : 'OFF — 새로고침합니다';
+  };
+  // 🖼 로비 배경 파일이 있는 스킨만 추려서 보여준다 (배경 일러 작업 확인용)
+  window.__lobbyBgStatus = async function () {
+    const ids = [];
+    Object.keys(CHARACTERS).forEach(c => {
+      ids.push(c);
+      (SKINS[c] || []).forEach(s => ids.push(c + '__' + s.id));
+    });
+    const has = [];
+    for (const id of ids) {
+      const ok = await new Promise(r => { const im = new Image();
+        im.onload = () => r(true); im.onerror = () => r(false);
+        im.src = './icons/ui/lobby/' + id + '.webp'; });
+      if (ok) has.push(id);
+    }
+    console.log(`🖼 로비 배경 있음 ${has.length} / 후보 ${ids.length}`);
+    has.forEach(x => console.log('  ' + x));
+    return has;
+  };
   function _skinApplied(charId) { return (META.skins && META.skins.applied) ? (META.skins.applied[charId] || null) : null; }
   // 🎨 캐릭 일러 id 해석 — 적용+보유 스킨이 있으면 스킨 일러 base 반환(체인이 그 파일 프로브), 없으면 원본 charId.
   function _resolveIllustId(charId) { const s = _skinApplied(charId); if (s && _skinOwned(charId, s) && _skinsOf(charId).some(sk => sk.id === s)) return _skinKey(charId, s); return charId; }   // 스킨이 레지스트리에 아직 있을 때만(삭제된 스킨 적용 상태면 기본 일러로 폴백)
@@ -41556,7 +41593,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 848;
+  const APP_VERSION = 849;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
