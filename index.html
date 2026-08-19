@@ -7626,6 +7626,139 @@
   #gachaScreen .gacha-rotation-note.standing { color: #9fd8f8; }
   #gachaScreen .gacha-rotation-note:empty { display: none; }
 
+  /* ── 메인 CTA 2개를 원형 버튼 + 아래 글자로 ─────────────────────
+     가로 판 + 좌측 배지 + 우측 글자 구조를 버린다.
+     하단 독 발바닥과 같은 문법으로 통일: 원 안에 아이콘, 글자는 원 밖 아래.
+     ⚠ 위계는 크기로 준다 — 새 게임(주요)이 차원 스카우트보다 크다.
+     ⚠ 지금 아이콘은 임시다. icons/ui/cta/ 에 레이더·우주선이 오면
+       ::before 의 background 한 줄만 바꾸면 된다 (docs/ui-cta-buttons.md). */
+  @media (orientation: landscape) {
+    #menu {
+      --cta-d:  clamp(88px, 22vh, 124px);            /* 라벨이 없으니 더 크게 */
+      --cta-d2: var(--cta-d);                        /* 둘을 같은 크기로 (함장 요청) */
+    }
+    /* 공통 — 원 + 아래 글자 */
+    #menu .menu-btn-primary, #menu #gachaBtn {
+      display: flex !important; flex-direction: column !important;
+      align-items: center !important; justify-content: flex-end !important;
+      padding: 0 !important; box-sizing: border-box;
+      aspect-ratio: 1 / 1 !important; height: auto !important;   /* 라벨 없음 → 정사각 */
+      overflow: visible !important;   /* 원 밖 라벨이 잘리면 안 된다 */
+      background: transparent !important; border: 0 !important;
+      color: #eef6ff !important; font-weight: 800; text-align: center !important;
+      text-shadow: 0 1px 3px rgba(0,0,0,0.85), 0 0 7px rgba(0,0,0,0.55) !important;
+      white-space: nowrap; overflow: visible;
+    }
+    /* ⚠ v853 — 원을 없앤다. 아이콘을 원으로 둘러싸니 답답해 보였다.
+       아이콘은 아이콘대로 크게 두고, 글자만 아래 네모 프레임에 넣는다.
+       icons/ui/plate/ 는 계속 안 쓴다. */
+    #menu .menu-btn-primary::before, #menu #gachaBtn::before { display: none !important; }
+    /* CTA 숨김 — display:flex !important 보다 뒤에 와야 이긴다 */
+    #menu .menu-btn-primary.is-cta-hidden { display: none !important; }
+
+    /* 아이콘 — 원이 없으니 크게. 버튼 폭을 거의 다 쓴다 */
+    #menu .menu-btn-primary::after, #menu #gachaBtn::after {
+      position: absolute !important;
+      left: 0 !important; right: 0 !important; top: 0 !important; bottom: auto !important;
+      transform: none !important;
+      display: block !important; width: auto !important; height: auto !important;
+      aspect-ratio: 1 / 1 !important;
+      /* ⚠ 가챠는 옛 원형 칩 시절 규칙이 세 가지를 걸어놨다. 전부 되돌린다.
+           z-index -1  → 레이더가 버튼 배경 뒤로 깔려 안 보였다
+           opacity 0.55 → 반투명
+           mask radial-gradient(circle, #000 38%, transparent 70%)
+                        → 가운데만 남기는 글로우 마스크. 아이콘을 위쪽에 그리니
+                          상단이 마스크 밖으로 나가 흐릿하게 잘렸다 */
+      z-index: 2 !important; opacity: 1 !important;
+      -webkit-mask-image: none !important; mask-image: none !important;
+      -webkit-mask: none !important; mask: none !important;
+      background-color: transparent !important;
+      background-size: contain !important; background-position: center !important;
+      background-repeat: no-repeat !important;
+      box-shadow: none !important;
+      filter: drop-shadow(0 3px 5px rgba(6,12,24,0.5));
+    }
+
+    /* ⚠ 글자는 넣지 않는다 (함장 요청).
+       라벨 박스를 두면 버튼이 세로로 길어져 하단 독과 높이가 안 맞았다.
+       레이더·우주선 아이콘만으로 구분되고 이름은 title 속성에 남아 있다. */
+    #menu .menu-btn-primary .cta-label,
+    #menu #gachaBtn .gacha-circle-label { display: none !important; }
+
+    #menu .menu-btn-primary { width: var(--cta-d) !important; }
+    #menu #gachaBtn         { width: var(--cta-d2) !important; }
+    /* 가챠 라벨은 텍스트 노드가 아니라 div 다 */
+    #menu #gachaBtn .gacha-circle-label {
+      position: static !important; width: auto !important; bottom: auto !important;
+      font-size: inherit !important; color: inherit !important; padding: 0 !important;
+      margin-top: 2px;
+    }
+    /* 배치 — 독 오른쪽에 가로로 나란히. 세로로 쌓으니 우측이 무거웠다.
+       바닥은 독과 같은 선(bottom 10px)에 맞춘다.
+       순서: [차원 스카우트] [새 게임] — 가장 중요한 게 오른쪽 코너 */
+    #menu .menu-cta-group {
+      width: var(--cta-d) !important; right: 16px !important; bottom: 10px !important;
+    }
+    #menu #gachaBtn {
+      right: calc(16px + var(--cta-d) + 12px) !important;
+      bottom: 10px !important;
+    }
+  }
+
+  /* ── 📱 가로 유도 오버레이 ──────────────────────────────────────
+     ⚠ 뜨는 조건을 좁게 잡는다. 데스크톱 창을 좁게 쓰는 사람까지 막으면 안 된다.
+       세로 + 짧은 변 900px 이하 + 터치 기기(pointer: coarse) 를 전부 만족할 때만. */
+  #rotateGate { display: none; }
+  @media (orientation: portrait) and (max-width: 900px) and (pointer: coarse) {
+    #rotateGate {
+      display: flex !important; position: fixed; inset: 0; z-index: 99999;
+      align-items: center; justify-content: center;
+      background: #0b0d12;
+      color: #eef6ff; text-align: center; padding: 24px;
+      -webkit-user-select: none; user-select: none;
+    }
+    body.splash-active #rotateGate { display: none !important; }   /* 스플래시가 먼저 */
+  }
+  #rotateGate .rot-inner { max-width: 340px; }
+  #rotateGate .rot-phone {
+    width: 92px; height: 152px; margin: 0 auto 26px;
+    border: 4px solid #7fc4f0; border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    animation: rotHint 2.6s ease-in-out infinite;
+  }
+  #rotateGate .rot-phone-screen {
+    display: block; width: 62px; height: 112px;
+    background: rgba(127,196,240,0.18); border-radius: 5px;
+  }
+  @keyframes rotHint {
+    0%, 28%   { transform: rotate(0deg); }
+    48%, 78%  { transform: rotate(-90deg); }
+    100%      { transform: rotate(0deg); }
+  }
+  #rotateGate .rot-title { font-size: 21px; font-weight: 800; margin-bottom: 9px; }
+  #rotateGate .rot-desc  { font-size: 14px; color: #a9c0da; line-height: 1.6; }
+  #rotateGate #rotateLockBtn {
+    margin-top: 22px; padding: 13px 24px;
+    border-radius: 999px; border: 1px solid rgba(255,255,255,0.28);
+    background: linear-gradient(180deg, #5cb6ee, #3f8fce);
+    color: #fff; font-family: inherit; font-size: 15px; font-weight: 800;
+    box-shadow: 0 4px 0 rgba(32,78,120,0.9); cursor: pointer;
+  }
+  #rotateGate #rotateLockBtn:active { transform: translateY(2px); box-shadow: 0 2px 0 rgba(32,78,120,0.9); }
+  #rotateGate #rotateLockBtn[hidden] { display: none; }
+  #rotateGate .rot-hint { margin-top: 16px; font-size: 12px; color: #6b829c; }
+
+  /* ── ⏳ 가챠 로테이션 안내 ─────────────────────────────────────
+     픽업이 언제 바뀌는지 알려준다. 상시 배너에서는 문구가 달라진다. */
+  #gachaScreen .gacha-rotation-note {
+    margin-top: 5px;
+    font-size: clamp(10px, 1.7vh, 12.5px);
+    font-weight: 700; letter-spacing: 0.2px;
+    color: #ffd98a;
+  }
+  #gachaScreen .gacha-rotation-note.standing { color: #9fd8f8; }
+  #gachaScreen .gacha-rotation-note:empty { display: none; }
+
   /* ── 도감 화면 잔재 정리 ───────────────────────────────────────
      도감만 전용 규칙이 남아 공용 크롬을 이기고 있었다.
      선택자가 #codex #codexBack (2,0,0) 이라 클래스로는 못 이긴다 → 같은 걸로 맞춘다.
@@ -41941,7 +42074,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 872;
+  const APP_VERSION = 873;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
