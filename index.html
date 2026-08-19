@@ -6693,6 +6693,7 @@
   <div class="gacha-info-panel">
     <div id="gacha-banner-name" class="gacha-banner-name">🌟 픽업 배너</div>
     <div id="gacha-banner-pickup-info" class="gacha-banner-pickup-info"></div>
+    <div id="gacha-banner-rotation" class="gacha-rotation-note"></div>
     <div id="gacha-pickup-icons" class="gacha-pickup-icons"></div>
     <div id="gacha-banner-ancient-chip" class="gacha-banner-ancient-chip" style="display:none;">
       <img id="gacha-banner-ancient-img" src="" alt="ancient" />
@@ -7633,6 +7634,17 @@
   #rotateGate #rotateLockBtn:active { transform: translateY(2px); box-shadow: 0 2px 0 rgba(32,78,120,0.9); }
   #rotateGate #rotateLockBtn[hidden] { display: none; }
   #rotateGate .rot-hint { margin-top: 16px; font-size: 12px; color: #6b829c; }
+
+  /* ── ⏳ 가챠 로테이션 안내 ─────────────────────────────────────
+     픽업이 언제 바뀌는지 알려준다. 상시 배너에서는 문구가 달라진다. */
+  #gachaScreen .gacha-rotation-note {
+    margin-top: 5px;
+    font-size: clamp(10px, 1.7vh, 12.5px);
+    font-weight: 700; letter-spacing: 0.2px;
+    color: #ffd98a;
+  }
+  #gachaScreen .gacha-rotation-note.standing { color: #9fd8f8; }
+  #gachaScreen .gacha-rotation-note:empty { display: none; }
 
   /* ── 도감 화면 잔재 정리 ───────────────────────────────────────
      도감만 전용 규칙이 남아 공용 크롬을 이기고 있었다.
@@ -27004,6 +27016,11 @@
   // 각 배너는 자기 SSR만 픽업 (다른 SSR 제외), SR/R 풀은 동일
   // 🎴 배너 2개 — 각 배너 SSR 픽업 2명(어느 쪽이 나올진 운), SR은 전체 동일. 엘레미아·스미카 우선.
   const _GACHA_SR_ALL = ['sakura', 'luna', 'marine', 'solar', 'gravitas', 'cardista', 'levina', 'amy', 'chloe', 'lara', 'galatea', 'trina', 'iris'];
+  // 🌌 SSR 전 목록 — 상시 배너용.
+  //   ⚠ 픽업 배너 4개가 다루는 건 8명뿐이라 alba 와 flinta 는 어느 배너에도 없었다.
+  //     즉 지금까지 그 둘은 뽑을 방법이 아예 없었다. 상시 배너가 그걸 푼다.
+  const _GACHA_SSR_ALL = ['elementia', 'sumika', 'aria', 'misaki', 'blanche', 'kaira',
+                          'feria', 'somnia', 'alba', 'flinta'];
   const GACHA_BANNERS = [
     {
       id: 'elemSumi',
@@ -27061,40 +27078,76 @@
       featured: 'feria',
       coreRate: 0.005,   // 🌟 고유 코어 별도 슬롯 — 캐릭터 대신 등장(구 고대유물 자리)
     },
+    // ⚠ 상시는 반드시 배열 맨 뒤. 로테이션은 앞쪽 픽업들만 돈다(_PICKUP_COUNT).
+    {
+      id: 'standard',
+      name: '🌌 상시 차원 스카우트',
+      desc: '모든 차원에 닿는다 — 픽업 없음',
+      bannerImg: './icons/gacha-standard.webp',
+      pool: {
+        SSR: _GACHA_SSR_ALL,     // 전체 SSR — 픽업 배너에 없는 알바·플린타도 여기서 나온다
+        SR:  _GACHA_SR_ALL,
+        R:   [],
+      },
+      rates: { SR: 0.05, SSR: 0.01 },   // 픽업과 같다. 픽업의 이점은 "그 캐릭을 노릴 수 있다"는 것뿐
+      featured: null,
+      coreRate: 0.005,
+    },
   ];
-  // 현재 선택된 배너 인덱스 (META 에 저장)
-  function getCurrentBannerIdx() {
-    const id = META.selectedBanner || GACHA_BANNERS[0].id;
-    const idx = GACHA_BANNERS.findIndex(b => b.id === id);
-    return idx < 0 ? 0 : idx;
-  }
-  function getCurrentBanner() { return GACHA_BANNERS[getCurrentBannerIdx()]; }
-
-  // ═══ ✨ 오늘의 픽업 ═══
-  //   배너는 전부 상시로 열어둔다. 매일 하나만 골라 SSR 확률에 보너스를 준다.
-  //   ⚠ 막지 않는 게 핵심이다. 원하는 캐릭은 아무 날에나 뽑을 수 있고,
-  //     오늘의 배너면 확률만 좋아진다. 싱글플레이어 게임이라 대기를 강요할 이유가 없다.
+  const STANDARD_BANNER_ID = 'standard';
+  const _PICKUP_COUNT = GACHA_BANNERS.filter(b => b.id !== STANDARD_BANNER_ID).length;
+  // ═══ 🌌 배너 구성 — 화면에는 딱 2개만 뜬다 ═══
+  //     [0] 오늘의 픽업 — 픽업 4개가 하루씩 돌아간다
+  //     [1] 상시       — 전체 SSR. 픽업에 없는 캐릭도 여기서 나온다
+  //   확률은 둘이 같다(SSR 1%). 픽업의 이점은 "그 2명만 나오므로 노릴 수 있다"는 것.
   //   ⚠ 날짜로 결정하므로 서버가 필요 없고 오프라인에서도 모든 기기가 같은 배너를 가리킨다.
-  //     UTC 기준 일수를 쓴다 — 로컬 자정마다 바뀌면 시간대별로 어긋난다.
-  const TODAY_PICK_SSR_MUL = 1.5;   // SSR 1% → 1.5%
+  //     UTC 기준 일수를 쓴다 — 로컬 자정 기준이면 시간대별로 어긋난다.
   function getTodayBannerIdx() {
     const d = new Date();
     const days = Math.floor(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) / 86400000);
-    return ((days % GACHA_BANNERS.length) + GACHA_BANNERS.length) % GACHA_BANNERS.length;
+    return ((days % _PICKUP_COUNT) + _PICKUP_COUNT) % _PICKUP_COUNT;   // 픽업만 로테이션
   }
-  function isTodayBanner(b) {
-    const t = GACHA_BANNERS[getTodayBannerIdx()];
-    return !!(b && t && b.id === t.id);
+  function todayPickupBanner() { return GACHA_BANNERS[getTodayBannerIdx()]; }
+  // 화면에 보이는 배너 목록. 좌우 화살표도 이 배열 위에서 움직인다.
+  function visibleBanners() {
+    const list = [todayPickupBanner()];
+    const std = GACHA_BANNERS.find(b => b.id === STANDARD_BANNER_ID);
+    if (std) list.push(std);
+    return list;
   }
-  // 표시와 실제 뽑기가 같은 값을 쓰도록, 확률은 반드시 이걸로만 읽는다
-  function bannerRates(b) {
-    const r = b.rates;
-    if (!isTodayBanner(b)) return r;
-    return { SR: r.SR, SSR: Math.min(1, r.SSR * TODAY_PICK_SSR_MUL) };
+  function isTodayBanner(b) { const t = todayPickupBanner(); return !!(b && t && b.id === t.id); }
+  // ⏳ 픽업 로테이션은 UTC 자정에 바뀐다. 한국이면 오전 9시다.
+  //   ⚠ 사용자에겐 로컬 시각으로 보여준다. UTC 를 그대로 쓰면 "왜 9시에 바뀌지?" 가 된다.
+  function pickupEndsAt() {
+    const d = new Date();
+    return Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() + 1);
   }
+  function pickupRemainText() {
+    const end = pickupEndsAt();
+    const ms = Math.max(0, end - Date.now());
+    const h = Math.floor(ms / 3600000), m = Math.floor((ms % 3600000) / 60000);
+    const e = new Date(end);
+    const when = `${e.getMonth() + 1}/${e.getDate()} ${String(e.getHours()).padStart(2, '0')}:${String(e.getMinutes()).padStart(2, '0')}`;
+    const left = h > 0 ? `${h}시간 ${m}분 남음` : `${m}분 남음`;
+    return { when, left };
+  }
+  // 표시와 실제 뽑기가 갈리면 안 된다. 확률은 반드시 이걸로만 읽는다.
+  //   ⚠ 예전엔 오늘의 픽업에 1.5배를 줬는데, 화면에 픽업이 하나만 뜨게 되면서
+  //     "픽업은 늘 1.5%" 가 되어 의미가 없어졌다. 지금은 둘 다 정가다.
+  function bannerRates(b) { return b.rates; }
+
+  // 현재 선택된 배너 — 보이는 2개 중에서만 고른다
+  function getCurrentBannerIdx() {
+    const vis = visibleBanners();
+    const id = META.selectedBanner;
+    const idx = vis.findIndex(b => b.id === id);
+    return idx < 0 ? 0 : idx;   // 어제 픽업이 저장돼 있으면 오늘의 픽업으로 되돌린다
+  }
+  function getCurrentBanner() { return visibleBanners()[getCurrentBannerIdx()]; }
   function setBannerIdx(idx) {
-    const i = ((idx % GACHA_BANNERS.length) + GACHA_BANNERS.length) % GACHA_BANNERS.length;
-    META.selectedBanner = GACHA_BANNERS[i].id;
+    const vis = visibleBanners();
+    const i = ((idx % vis.length) + vis.length) % vis.length;
+    META.selectedBanner = vis[i].id;
     saveMeta();
   }
   // 🚀 모든 배너 이미지 사전 로드 — 전환 시 이전 이미지가 남아있지 않게
@@ -40981,6 +41034,18 @@
         infoText += `  ·  고유코어 ${(banner.coreRate * 100).toFixed(2)}%`;
       }
       infoEl.textContent = infoText;
+      // ⏳ 로테이션 배너면 언제까진지 알려준다. 상시는 안 바뀌므로 표시하지 않는다.
+      const rotEl = document.getElementById('gacha-banner-rotation');
+      if (rotEl) {
+        if (banner.id === STANDARD_BANNER_ID) {
+          rotEl.textContent = '언제나 이용 가능 · 전체 SSR 등장';
+          rotEl.className = 'gacha-rotation-note standing';
+        } else {
+          const t = pickupRemainText();
+          rotEl.textContent = `⏳ 오늘의 픽업 · ${t.when} 까지 (${t.left})`;
+          rotEl.className = 'gacha-rotation-note';
+        }
+      }
     }
     // 🌟 v798 — 고유 코어 픽업 칩 (우상단 부유). 구 고대유물 칩의 DOM·CSS 를 그대로 물려받았다.
     //    ⚠ id/class 의 'ancient' 는 과거 흔적이다. 고대유물 시스템은 v796 에서 제거됐다.
@@ -41853,7 +41918,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 862;
+  const APP_VERSION = 864;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
