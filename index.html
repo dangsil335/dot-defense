@@ -4366,8 +4366,14 @@
               mask-image: linear-gradient(to bottom, #000 76%, transparent 99%) !important;
     }
     #menu .menu-hero-bg.show { opacity: 0.96 !important; }
-    #menu .menu-pet { left: auto !important; right: clamp(150px, 22vw, 240px) !important;
-                      top: auto !important; bottom: 62px !important; height: clamp(56px, 13vh, 84px) !important; z-index: 6; }
+    /* ⚠ 크기는 항상 적용하되 위치는 .is-placed 가 아닐 때만 건다.
+       드래그는 인라인 style.left/top 을 쓰는데 인라인은 !important 를 못 이긴다.
+       그래서 left: auto !important 가 있으면 모바일에서 펫이 안 움직였다. */
+    #menu .menu-pet { height: clamp(56px, 13vh, 84px) !important; z-index: 6; }
+    #menu .menu-pet:not(.is-placed) {
+      left: auto !important; right: clamp(150px, 22vw, 240px) !important;
+      top: auto !important; bottom: 62px !important;
+    }
 
     /* ── 우측: CTA ── */
     /* ⚠ 우측 CTA 컬럼은 하단 독 위에 앉는다. 독 높이가 바뀌면 여기도 같이 바뀌어야 한다
@@ -39964,11 +39970,15 @@
     if (!w || !menu) return;
     const p = (typeof META !== 'undefined') ? META.petPos : null;
     if (!p || typeof p.fx !== 'number' || typeof p.fy !== 'number') {
-      w.style.left = ''; w.style.top = ''; return;   // 미설정 → CSS 기본 배치로
+      w.style.left = ''; w.style.top = '';
+      w.classList.remove('is-placed');              // 미설정 → CSS 기본 배치로
+      return;
     }
     const m = _petBounds(menu, w);
     w.style.left = Math.round(Math.min(1, Math.max(0, p.fx)) * m.maxX) + 'px';
     w.style.top = Math.round(Math.min(1, Math.max(0, p.fy)) * m.maxY) + 'px';
+    // ⚠ 이 클래스가 있어야 가로 미디어쿼리의 left/top: auto !important 를 비켜간다
+    w.classList.add('is-placed');
   }
   // ⚠ 한계는 scrollWidth/scrollHeight 가 아니라 client 박스로 잡아야 한다.
   //   펫은 #menu 안의 absolute 요소라서, 오른쪽/아래로 끌면 그만큼 scrollWidth 가 같이 늘어나
@@ -39994,6 +40004,7 @@
       drag = { ox: e.clientX - b.left, oy: e.clientY - b.top, sx: e.clientX, sy: e.clientY };
       moved = false;
       w.classList.add('dragging');
+      w.classList.add('is-placed');   // 첫 드래그부터 CSS 기본 배치를 비켜간다
       try { w.setPointerCapture(e.pointerId); } catch (err) {}
       e.preventDefault();
     });
@@ -41715,7 +41726,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 856;
+  const APP_VERSION = 857;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
