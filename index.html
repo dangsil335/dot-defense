@@ -7535,7 +7535,9 @@
       box-shadow: none !important; backdrop-filter: none !important;
       padding: 0 !important; max-width: none !important;
     }
-    #gachaScreen .gacha-pull-row { display: flex; gap: 10px; }
+    /* ⚠ 콘솔이 그리드 칸 폭(780px)을 그대로 쓰는데 row 가 왼쪽 정렬이라
+       버튼이 화면 가운데에 붙어 있었다. 우측으로 민다. */
+    #gachaScreen .gacha-pull-row { display: flex; gap: 10px; justify-content: flex-end; }
     #gachaScreen .gacha-pull-console button { min-width: clamp(120px, 17vw, 170px); }
   }
 
@@ -7570,11 +7572,22 @@
        (background-size 100% 100% 로 늘려 쓰므로) */
   #gachaScreen .gacha-pull-console button {
     aspect-ratio: 3.69 / 1; height: auto !important;
+    /* ⚠ 폭을 안 잡으면 flex 가 늘려 385px 까지 커졌다(화면의 86%). 판 그림도 같이 늘어난다. */
+    width: clamp(150px, 22vw, 215px) !important;
+    flex: 0 0 auto !important; min-width: 0 !important;
     border: 0 !important; border-radius: 0 !important;
     box-shadow: none !important;
     background-size: 100% 100% !important; background-repeat: no-repeat !important;
     background-color: transparent !important;
+    /* ⚠ 판 안쪽 빈 패널의 한가운데에 글자를 놓는다.
+       justify-content 가 normal 이라 위에서부터 쌓여 글자가 20% 지점에 몰려 있었다. */
+    display: flex !important; flex-direction: column !important;
+    align-items: center !important; justify-content: center !important;
+    padding: 0 !important; gap: 1px;
+    line-height: 1.15;
   }
+  #gachaScreen .gacha-pull-label { font-size: clamp(12px, 2.4vh, 16px); font-weight: 800; }
+  #gachaScreen .gacha-pull-cost  { font-size: clamp(11px, 2.1vh, 14px); font-weight: 800; opacity: 0.92; }
   #gachaScreen .gacha-pull-console button:nth-of-type(1) {
     background-image: url('./icons/ui/plate/pull1.webp') !important;
     color: #2c4462 !important;
@@ -42074,7 +42087,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 873;
+  const APP_VERSION = 875;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
