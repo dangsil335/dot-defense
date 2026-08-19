@@ -7512,7 +7512,12 @@
     }
     #gachaScreen .gacha-banner-pickup-info,
     #gachaScreen .gacha-rotation-note { text-shadow: 0 1px 4px rgba(0,0,0,0.9); }
-    #gachaScreen .gacha-pickup-icons { justify-content: flex-start !important; }
+    /* 픽업 캐릭터 얼굴 — 카드 시절엔 자리가 없어 숨겨뒀는데(L2950) 이제 자리가 있다.
+       레퍼런스에서도 픽업 얼굴이 핵심 요소다. */
+    #gachaScreen .gacha-info-panel .gacha-pickup-icons {
+      display: flex !important; justify-content: flex-start !important;
+      margin-top: 8px !important;
+    }
 
     /* 하단 — 좌측 보조, 우측 뽑기 */
     #gachaScreen .gacha-secondary-actions {
@@ -7530,6 +7535,20 @@
     #gachaScreen .gacha-pull-row { display: flex; gap: 10px; }
     #gachaScreen .gacha-pull-console button { min-width: clamp(120px, 17vw, 170px); }
   }
+
+  /* ── 🏠 일러 뷰어 · 로비 보기 버튼 ─────────────────────────────
+     로비 일러가 있는 스킨에서만 뜬다. 치비 스왑과 같은 줄에 둔다. */
+  #illustViewer .ivw-lobby {
+    position: absolute; left: 14px; bottom: 14px; z-index: 6;
+    padding: 9px 16px; border-radius: var(--ss-pill, 999px);
+    background: linear-gradient(180deg, #5cb6ee, #3f8fce);
+    border: 1px solid rgba(255,255,255,0.28);
+    color: #fff; font-family: inherit; font-size: 13px; font-weight: 800;
+    box-shadow: 0 3px 0 rgba(32,78,120,0.9), 0 5px 14px rgba(6,14,28,0.4);
+    cursor: pointer; white-space: nowrap;
+  }
+  #illustViewer .ivw-lobby:active { transform: translateY(2px); box-shadow: 0 1px 0 rgba(32,78,120,0.9); }
+  #illustViewer .ivw-lobby[hidden] { display: none; }
 
   /* ── ⏳ 가챠 로테이션 안내 ─────────────────────────────────────
      픽업이 언제 바뀌는지 알려준다. 상시 배너에서는 문구가 달라진다. */
@@ -7655,6 +7674,8 @@
   <img id="ivwImg" class="ivw-img" alt="">
   <div id="ivwName" class="ivw-name"></div>
   <img id="ivwChibi" class="ivw-chibi" alt="" title="눌러서 크게 보기 (다시 누르면 되돌리기)">
+  <!-- 🏠 로비 배경 보기 — 이 스킨의 로비 일러가 있으면 버튼이 뜬다. 없으면 숨긴다. -->
+  <button id="ivwLobby" class="ivw-lobby" type="button" hidden>🏠 로비 보기</button>
   <div class="ivw-zoom">
     <button id="ivwZoomOut" class="ivw-zbtn" aria-label="축소">−</button>
     <button id="ivwZoomReset" class="ivw-zlv" aria-label="배율 초기화">1.0×</button>
@@ -41834,7 +41855,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 866;
+  const APP_VERSION = 868;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
@@ -42386,12 +42407,43 @@
       _ivw.chibiSrc = (rid.indexOf('__') >= 0 ? './icons/characters/skin/' : './icons/characters/') + rid + '.png';
       chibi.src = _ivw.chibiSrc;
     }
+    // 🏠 로비 배경 보기 — 이 스킨의 로비 일러가 있을 때만 버튼을 띄운다.
+    //   파일 목록이 없으므로 존재 여부는 Image 의 load/error 로 판정한다(일러 체인과 같은 방식).
+    const lob = document.getElementById('ivwLobby');
+    if (lob) {
+      const rid = exactId || charId;
+      const lobbySrc = './icons/ui/lobby/' + rid + '.webp';
+      lob.hidden = true;
+      // ⚠ 되돌릴 일러 주소는 _ivw.illustSrc 를 쓰면 안 된다 — 치비 스왑이 쓰는 변수라
+      //   서로 덮어써서 "일러 보기"를 눌러도 로비가 그대로 남았다. 전용 키를 쓴다.
+      _ivw.lobbySrc = ''; _ivw.lobbyPrevSrc = ''; _ivw.showingLobby = false;
+      lob.textContent = '🏠 로비 보기';
+      const probe = new Image();
+      probe.onload = () => { _ivw.lobbySrc = lobbySrc; lob.hidden = false; };
+      probe.onerror = () => { lob.hidden = true; };
+      probe.src = lobbySrc;
+      lob.onclick = () => {
+        if (!_ivw.lobbySrc || !img) return;
+        _ivw.showingLobby = !_ivw.showingLobby;
+        if (_ivw.showingLobby) {
+          _ivw.lobbyPrevSrc = img.getAttribute('src') || '';
+          img.src = _ivw.lobbySrc;
+          lob.textContent = '🖼 일러 보기';
+        } else {
+          if (_ivw.lobbyPrevSrc) img.src = _ivw.lobbyPrevSrc;
+          lob.textContent = '🏠 로비 보기';
+        }
+        img.style.display = '';
+        _ivwReset();
+      };
+    }
     el.classList.add('show');
     _ivwReset();
   }
   function closeIllustViewer() {
     const el = document.getElementById('illustViewer'); if (!el) return;
     el.classList.remove('show');
+    _ivw.showingLobby = false; _ivw.lobbySrc = ''; _ivw.lobbyPrevSrc = '';   // 다음에 열 때 일러부터
     _ivwReset();
   }
   (function _wireIllustViewer() {
