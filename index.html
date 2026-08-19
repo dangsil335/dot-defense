@@ -28439,8 +28439,34 @@
   // 파일 없으면 'missing'으로 마킹되어 fallback 동작
   preloadAllCharacterImages();
 
+  // 🔧 개발용 — 캐릭터 전체 해금 치트.
+  //   ?allchars=1 / __allChars(true) 로 켠다. 스킨 치트(_DEV_ALL_SKINS)와 같은 방식이다.
+  //   ⚠ META.gachaUnlocked 는 손대지 않는다. 판정만 우회하므로 끄면 원래대로 정확히 돌아온다.
+  //   ⚠ 켜면 selectedCharacter 강제 정리(아래 try 블록)도 통과하므로 해금 안 된 캐릭이 선택된 채 남을 수 있다.
+  //     끄고 나면 그 정리가 다시 돌아 standard 로 되돌린다.
+  let _DEV_ALL_CHARS = false;
+  try { _DEV_ALL_CHARS = localStorage.getItem('dev_all_chars') === '1'; } catch (e) {}
+  try {
+    const _qc = new URLSearchParams(location.search).get('allchars');
+    if (_qc === '1' || _qc === '0') {
+      _DEV_ALL_CHARS = (_qc === '1');
+      localStorage.setItem('dev_all_chars', _qc);
+    }
+  } catch (e) {}
+  window.__allChars = function (on) {
+    _DEV_ALL_CHARS = (on !== false);
+    try { localStorage.setItem('dev_all_chars', _DEV_ALL_CHARS ? '1' : '0'); } catch (e) {}
+    const n = Object.keys(CHARACTERS).length;
+    console.log(_DEV_ALL_CHARS
+      ? `🔓 캐릭터 ${n}명 전체 해금 (개발용). 끄려면 __allChars(false)`
+      : '🔒 원래 해금 상태로 복구됨');
+    setTimeout(() => location.reload(), 120);
+    return _DEV_ALL_CHARS ? 'ON — 새로고침합니다' : 'OFF — 새로고침합니다';
+  };
+
   function isCharUnlocked(id) {
     const c = CHARACTERS[id];
+    if (_DEV_ALL_CHARS) return true;
     if (!c.unlockBy) return true;
     // 가챠 캐릭터: META.gachaUnlocked 에 있어야 해금
     if (c.unlockBy.startsWith('gacha:')) {
@@ -41803,7 +41829,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 859;
+  const APP_VERSION = 860;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
