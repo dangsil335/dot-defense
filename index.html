@@ -6669,9 +6669,9 @@
     <button id="gachaBack" class="codex-back gacha-back-small">←</button>
     <div class="gacha-title">🎰 차원 스카우트 <span id="appVerLabel" class="app-ver-label"></span></div>
     <div class="gacha-currencies">
-      <span class="gacha-cur-chip"><span style="color:#88ccff">💎</span> <span id="crystal-count">0</span></span>
-      <span class="gacha-cur-chip"><span style="color:#ffd479">⭐</span> <span id="gacha-stardust">0</span></span>
-      <span class="gacha-cur-chip shard-open-chip" id="shardShopOpen" role="button" tabindex="0" title="별조각 상점"><span class="ss-gem" style="color:#c9a3ff">💠</span> <span id="shard-count">0</span> <span class="shard-open-arrow">›</span></span>
+      <span class="gacha-cur-chip"><i class="cur-ico cur-crystal"></i> <span id="crystal-count">0</span></span>
+      <span class="gacha-cur-chip"><i class="cur-ico cur-stardust"></i> <span id="gacha-stardust">0</span></span>
+      <span class="gacha-cur-chip shard-open-chip" id="shardShopOpen" role="button" tabindex="0" title="별조각 상점"><i class="cur-ico cur-shard ss-gem"></i> <span id="shard-count">0</span> <span class="shard-open-arrow">›</span></span>
     </div>
   </div>
 
@@ -6714,19 +6714,22 @@
     <div class="gacha-pull-row">
       <button id="gachaPull1" class="gacha-pull-btn-overlay">
         <div class="gacha-pull-label">1회 뽑기</div>
-        <div class="gacha-pull-cost"><span style="color:#88ccff">💎</span> 1</div>
+        <div class="gacha-pull-cost"><i class="cur-ico cur-crystal"></i> 1</div>
       </button>
       <button id="gachaPull10" class="gacha-pull-btn-overlay primary">
         <div class="gacha-pull-label">10회 뽑기</div>
-        <div class="gacha-pull-cost"><span style="color:#88ccff">💎</span> 9</div>
+        <div class="gacha-pull-cost"><i class="cur-ico cur-crystal"></i> 9</div>
       </button>
     </div>
   </div>
 
-  <!-- 보조 액션 (배너 밖에 두기) -->
+  <!-- 보조 액션 — 레퍼런스처럼 작은 원형 아이콘 줄 -->
   <div class="gacha-secondary-actions">
-    <button id="gachaConvertStardust" class="gacha-secondary-btn">
-      ⭐ 4,000 → 💎 1
+    <button id="gachaConvertStardust" class="gacha-round-btn" title="스타더스트 4,000 → 크리스탈 1">
+      <i class="gr-ico gr-exchange"></i>
+    </button>
+    <button id="gachaRatesBtn" class="gacha-round-btn" title="확률 상세" type="button">
+      <i class="gr-ico gr-rates"></i>
     </button>
   </div>
 </div>
@@ -7549,6 +7552,69 @@
   }
   #illustViewer .ivw-lobby:active { transform: translateY(2px); box-shadow: 0 1px 0 rgba(32,78,120,0.9); }
   #illustViewer .ivw-lobby[hidden] { display: none; }
+
+  /* ── 💎 재화 아이콘 — 이모지 대신 이미지 ────────────────────────
+     이모지는 기기마다 모양이 달라지고 톤도 안 맞았다.
+     재화 칩과 뽑기 버튼 비용, 두 곳에서 같은 아이콘을 쓴다. */
+  .cur-ico {
+    display: inline-block; vertical-align: -0.18em;
+    width: 1.15em; height: 1.15em;
+    background-size: contain; background-position: center; background-repeat: no-repeat;
+  }
+  .cur-crystal  { background-image: url('./icons/ui/currency/crystal.webp'); }
+  .cur-stardust { background-image: url('./icons/ui/currency/stardust.webp'); }
+  .cur-shard    { background-image: url('./icons/ui/currency/shard.webp'); }
+
+  /* ── 🎰 뽑기 버튼 판 ────────────────────────────────────────────
+     ⚠ 판 그림이 3.69:1 이다. 버튼을 그 비율로 맞춰야 안 찌그러진다.
+       (background-size 100% 100% 로 늘려 쓰므로) */
+  #gachaScreen .gacha-pull-console button {
+    aspect-ratio: 3.69 / 1; height: auto !important;
+    border: 0 !important; border-radius: 0 !important;
+    box-shadow: none !important;
+    background-size: 100% 100% !important; background-repeat: no-repeat !important;
+    background-color: transparent !important;
+  }
+  #gachaScreen .gacha-pull-console button:nth-of-type(1) {
+    background-image: url('./icons/ui/plate/pull1.webp') !important;
+    color: #2c4462 !important;
+  }
+  #gachaScreen .gacha-pull-console button:nth-of-type(2) {
+    background-image: url('./icons/ui/plate/pull10.webp') !important;
+    color: #4a3208 !important;
+  }
+  #gachaScreen .gacha-pull-console button:active { transform: translateY(2px); filter: brightness(0.96); }
+
+  /* ── 🔘 보조 원형 버튼 ─────────────────────────────────────────
+     레퍼런스 하단 좌측의 작은 원형 버튼 줄. 아이콘이 이미 원형 배경을 갖고 있어
+     버튼 자체는 테두리만 얇게 준다. */
+  #gachaScreen .gacha-secondary-actions { display: flex; gap: 8px; }
+  #gachaScreen .gacha-round-btn {
+    width: clamp(34px, 5.6vh, 44px); aspect-ratio: 1 / 1;
+    padding: 0; border-radius: 999px; cursor: pointer;
+    background: rgba(10,16,28,0.5) !important;
+    border: 1px solid rgba(255,255,255,0.20) !important;
+    box-shadow: 0 3px 9px rgba(4,10,20,0.45) !important;
+    display: inline-flex; align-items: center; justify-content: center;
+  }
+  #gachaScreen .gacha-round-btn:active { transform: translateY(2px); }
+  #gachaScreen .gr-ico {
+    display: block; width: 82%; height: 82%;
+    background-size: contain; background-position: center; background-repeat: no-repeat;
+  }
+  #gachaScreen .gr-exchange { background-image: url('./icons/ui/gacha/exchange.webp'); }
+  #gachaScreen .gr-history  { background-image: url('./icons/ui/gacha/history.webp'); }
+  #gachaScreen .gr-rates    { background-image: url('./icons/ui/gacha/rates.webp'); }
+
+  /* 🖼 픽업 캐릭터 얼굴 프레임 */
+  #gachaScreen .gacha-pickup-icon img {
+    border-radius: 6px;
+  }
+  #gachaScreen .gacha-pickup-icon {
+    position: relative; padding: 2px 8px 2px 2px;
+    background: rgba(8,14,26,0.55); border-radius: 999px;
+    border: 1px solid rgba(216,172,82,0.45);
+  }
 
   /* ── ⏳ 가챠 로테이션 안내 ─────────────────────────────────────
      픽업이 언제 바뀌는지 알려준다. 상시 배너에서는 문구가 달라진다. */
@@ -27078,6 +27144,27 @@
     }
   })();
 
+  // 📊 확률 상세 — 지금 보고 있는 배너의 실제 확률을 그대로 보여준다.
+  //   ⚠ bannerRates() 로 읽는다. 표시와 뽑기가 갈리면 안 된다.
+  (function wireGachaRates() {
+    const bind = () => {
+      const b = document.getElementById('gachaRatesBtn');
+      if (!b || b._wired) return;
+      b._wired = true;
+      b.onclick = () => {
+        const bn = getCurrentBanner();
+        const r = bannerRates(bn);
+        const ssr = (r.SSR * 100).toFixed(1), sr = (r.SR * 100).toFixed(0);
+        const core = bn.coreRate ? ` · 고유코어 ${(bn.coreRate * 100).toFixed(2)}%` : '';
+        const rest = Math.max(0, 100 - r.SSR * 100 - r.SR * 100 - (bn.coreRate || 0) * 100).toFixed(1);
+        const pool = (bn.pool.SSR || []).length;
+        toast(`SSR ${ssr}% (${pool}종) · SR ${sr}%${core} · 나머지 ${rest}% 는 별조각`);
+      };
+    };
+    bind();
+    document.addEventListener('DOMContentLoaded', bind);
+  })();
+
   function getCrystals() { return META.crystals || 0; }
   function spendCrystals(n) {
     if ((META.crystals || 0) < n) return false;
@@ -41855,7 +41942,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 868;
+  const APP_VERSION = 871;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
