@@ -37819,6 +37819,15 @@
   //     끄면 원래 보유 상태로 정확히 돌아온다. 기본값은 꺼짐이라 다른 사람에겐 영향 없다.
   let _DEV_ALL_SKINS = false;
   try { _DEV_ALL_SKINS = localStorage.getItem('dev_all_skins') === '1'; } catch (e) {}
+  // 📱 주소로도 켜고 끈다 — 휴대폰 브라우저엔 콘솔이 없다.
+  //   ?allskins=1 켜기 / ?allskins=0 끄기. 한 번 넣으면 저장되므로 다음부터는 주소 없이 들어와도 유지된다.
+  try {
+    const _q = new URLSearchParams(location.search).get('allskins');
+    if (_q === '1' || _q === '0') {
+      _DEV_ALL_SKINS = (_q === '1');
+      localStorage.setItem('dev_all_skins', _q);
+    }
+  } catch (e) {}
   function _skinOwned(charId, skinId) {
     if (_DEV_ALL_SKINS) return true;
     return !!(META.skins && META.skins.owned && META.skins.owned[_skinKey(charId, skinId)]);
@@ -41794,7 +41803,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 858;
+  const APP_VERSION = 859;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
