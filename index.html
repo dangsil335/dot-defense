@@ -5125,6 +5125,22 @@
 <div id="splash" aria-hidden="true">
   <img src="./icons/arczero_logo.png" alt="ARC ZERO · 아크 제로" class="splash-logo">
 </div>
+
+<!-- ===== 📱 v856 — 가로 유도 오버레이 =====
+     이 게임은 가로 전용이다. 그런데 모바일 브라우저 탭에서는 방향을 강제할 수 없다:
+       · manifest 의 orientation 은 홈 화면에 설치(PWA)했을 때만 먹는다. 일반 탭에선 무시된다
+       · screen.orientation.lock() 은 전체화면일 때만 되고, iOS Safari 는 아예 미지원이다
+     그래서 세로면 이 오버레이로 덮고 돌려달라고 안내한다. 이게 유일하게 어디서나 통하는 방법이다.
+     안드로이드에선 버튼으로 전체화면 + 방향 잠금을 시도한다. ===== -->
+<div id="rotateGate" aria-hidden="true">
+  <div class="rot-inner">
+    <div class="rot-phone"><span class="rot-phone-screen"></span></div>
+    <div class="rot-title">가로로 돌려주세요</div>
+    <div class="rot-desc">아크 제로는 가로 화면에 맞춰 만들어졌습니다.</div>
+    <button id="rotateLockBtn" type="button" hidden>전체화면으로 가로 고정</button>
+    <div class="rot-hint">화면 회전 잠금이 켜져 있으면 먼저 꺼주세요.</div>
+  </div>
+</div>
 <!-- ===== 메뉴 화면 (v218 — 그룹화 + 그리드 레이아웃) ===== -->
 <div id="menu" class="screen show">
   <!-- 🛰️ v461 — 로테이션 간판 캐릭터 백드롭 (진입마다 순환, 콘솔 뒤 시네마틱) -->
@@ -7537,6 +7553,49 @@
       bottom: 10px !important;
     }
   }
+
+  /* ── 📱 가로 유도 오버레이 ──────────────────────────────────────
+     ⚠ 뜨는 조건을 좁게 잡는다. 데스크톱 창을 좁게 쓰는 사람까지 막으면 안 된다.
+       세로 + 짧은 변 900px 이하 + 터치 기기(pointer: coarse) 를 전부 만족할 때만. */
+  #rotateGate { display: none; }
+  @media (orientation: portrait) and (max-width: 900px) and (pointer: coarse) {
+    #rotateGate {
+      display: flex !important; position: fixed; inset: 0; z-index: 99999;
+      align-items: center; justify-content: center;
+      background: #0b0d12;
+      color: #eef6ff; text-align: center; padding: 24px;
+      -webkit-user-select: none; user-select: none;
+    }
+    body.splash-active #rotateGate { display: none !important; }   /* 스플래시가 먼저 */
+  }
+  #rotateGate .rot-inner { max-width: 340px; }
+  #rotateGate .rot-phone {
+    width: 92px; height: 152px; margin: 0 auto 26px;
+    border: 4px solid #7fc4f0; border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    animation: rotHint 2.6s ease-in-out infinite;
+  }
+  #rotateGate .rot-phone-screen {
+    display: block; width: 62px; height: 112px;
+    background: rgba(127,196,240,0.18); border-radius: 5px;
+  }
+  @keyframes rotHint {
+    0%, 28%   { transform: rotate(0deg); }
+    48%, 78%  { transform: rotate(-90deg); }
+    100%      { transform: rotate(0deg); }
+  }
+  #rotateGate .rot-title { font-size: 21px; font-weight: 800; margin-bottom: 9px; }
+  #rotateGate .rot-desc  { font-size: 14px; color: #a9c0da; line-height: 1.6; }
+  #rotateGate #rotateLockBtn {
+    margin-top: 22px; padding: 13px 24px;
+    border-radius: 999px; border: 1px solid rgba(255,255,255,0.28);
+    background: linear-gradient(180deg, #5cb6ee, #3f8fce);
+    color: #fff; font-family: inherit; font-size: 15px; font-weight: 800;
+    box-shadow: 0 4px 0 rgba(32,78,120,0.9); cursor: pointer;
+  }
+  #rotateGate #rotateLockBtn:active { transform: translateY(2px); box-shadow: 0 2px 0 rgba(32,78,120,0.9); }
+  #rotateGate #rotateLockBtn[hidden] { display: none; }
+  #rotateGate .rot-hint { margin-top: 16px; font-size: 12px; color: #6b829c; }
 
   /* ── 도감 화면 잔재 정리 ───────────────────────────────────────
      도감만 전용 규칙이 남아 공용 크롬을 이기고 있었다.
@@ -37693,6 +37752,30 @@
   };
   function _skinsOf(charId) { return SKINS[charId] || []; }
   function _skinKey(charId, skinId) { return charId + '__' + skinId; }   // = 일러 파일 base (icons/illust/<charId>__<skinId>.png)
+  // 📱 가로 유도 — 전체화면 + 방향 잠금 시도.
+  //   ⚠ 되는 곳이 제한적이다. 안드로이드 크롬은 "전체화면일 때만" lock 이 먹고,
+  //     iOS 사파리는 screen.orientation.lock 자체가 없다. 그래서 실패해도 조용히 넘어가고
+  //     회전 안내 오버레이(#rotateGate)가 어디서나 통하는 안전망 역할을 한다.
+  (function initRotateGate() {
+    const btn = document.getElementById('rotateLockBtn');
+    if (!btn) return;
+    const canLock = !!(screen.orientation && typeof screen.orientation.lock === 'function');
+    const canFull = !!(document.documentElement.requestFullscreen || document.documentElement.webkitRequestFullscreen);
+    if (!canLock || !canFull) return;   // iOS 등 — 버튼을 아예 안 띄운다
+    btn.hidden = false;
+    btn.addEventListener('click', async () => {
+      try {
+        const el = document.documentElement;
+        await (el.requestFullscreen ? el.requestFullscreen() : el.webkitRequestFullscreen());
+        await screen.orientation.lock('landscape');
+      } catch (e) {
+        // 잠금 거부 — 오버레이가 그대로 떠 있으니 직접 돌리면 된다
+        btn.textContent = '기기에서 직접 돌려주세요';
+        btn.disabled = true;
+      }
+    });
+  })();
+
   // 🔧 개발용 — 스킨 전체 해금 치트 (배경 일러 테스트용).
   //   콘솔에서  __allSkins(true)  로 켜고  __allSkins(false)  로 끈다.
   //   ⚠ 저장 데이터(META.skins.owned)는 손대지 않는다. 보유 판정만 우회하므로
@@ -41632,7 +41715,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 855;
+  const APP_VERSION = 856;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
