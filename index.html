@@ -7497,8 +7497,8 @@
        ::before 의 background 한 줄만 바꾸면 된다 (docs/ui-cta-buttons.md). */
   @media (orientation: landscape) {
     #menu {
-      --cta-d:  clamp(68px, 16.5vh, 92px);           /* 새 게임 원 지름 */
-      --cta-d2: calc(var(--cta-d) * 0.88);           /* 차원 스카우트 — 한 단계 작게 */
+      --cta-d:  clamp(76px, 18.5vh, 104px);          /* CTA 아이콘 크기 */
+      --cta-d2: var(--cta-d);                        /* 둘을 같은 크기로 (함장 요청) */
     }
     /* 공통 — 원 + 아래 글자 */
     #menu .menu-btn-primary, #menu #gachaBtn {
@@ -41829,7 +41829,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 860;
+  const APP_VERSION = 861;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
