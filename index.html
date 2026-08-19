@@ -6689,6 +6689,10 @@
     <button id="gachaBannerNext" class="gacha-banner-arrow gacha-arrow-right" title="다음 배너">▶</button>
   </div>
 
+  <!-- 🗂 좌측 배너 썸네일 목록 (가로 화면 전용 — 레퍼런스 구조).
+       세로에서는 CSS 로 숨기고 기존 좌우 화살표를 쓴다. -->
+  <div id="gacha-banner-tabs" class="gacha-banner-tabs" aria-label="배너 선택"></div>
+
   <!-- 배너 정보 패널 (이미지 아래 — 이미지에 아무것도 겹치지 않음) -->
   <div class="gacha-info-panel">
     <div id="gacha-banner-name" class="gacha-banner-name">🌟 픽업 배너</div>
@@ -7410,230 +7414,122 @@
   }
   /* (여기 있던 6px 보정도 되돌렸다 — 위와 같은 진입 애니메이션 유령이었다) */
 
-  /* ── 가챠 화면 ─────────────────────────────────────────────────
-     세로로 쌓다 보니 가로 화면에서 배너가 356x201 로 쪼그라들어 있었다.
-     원본이 1672x941 인데 354x199 로 표시되고 좌우로 276px 씩 비었다.
-     레퍼런스 ⑤(별의 탑)처럼 좌측에 큰 배너, 우측에 정보·버튼으로 나눈다.
-     ⚠ 세로 화면은 건드리지 않는다 — 거기선 지금 세로 쌓기가 맞다. */
+  /* ── 🎰 가챠 화면 — 레퍼런스 구조 ────────────────────────────
+     배너 아트가 화면 전체 배경이 되고 UI 가 그 위에 얹힌다.
+     전에는 495x279 카드였다. 레퍼런스(명조)는 아트가 화면을 꽉 채운다.
+
+       ┌──────┬─────────────────────────────────────┐
+       │ 썸네일│  배너 이름 / 남은 시간 / 확률        │
+       │ 세로  │  픽업 아이콘                         │
+       │ 목록  │                    ← 아트는 배경     │
+       ├──────┴─────────────────────────────────────┤
+       │  보조            [1회]  [10회]              │
+       └────────────────────────────────────────────┘
+
+     ⚠ 세로 화면은 건드리지 않는다 — 거기선 기존 세로 쌓기가 맞다. */
   @media (orientation: landscape) and (min-width: 720px) {
-    /* ⚠ 반드시 .show 를 붙인다.
-       .screen 은 display:none 으로 숨고 .screen.show 에서 flex 가 된다.
-       #gachaScreen { display:grid !important } 로 쓰면 숨김까지 이겨서
-       가챠 화면이 항상 떠 있고 메인이 가려진다. */
     #gachaScreen.show {
       display: grid !important;
-      grid-template-columns: minmax(0, 1.32fr) minmax(0, 1fr);
-      grid-template-rows: auto auto auto 1fr;
-      align-content: start;
-      gap: 10px 14px !important;
-      padding: 14px !important;
-      max-width: 1180px; margin: 0 auto;
+      grid-template-columns: auto minmax(0, 1fr);
+      grid-template-rows: auto minmax(0, 1fr) auto;
+      grid-template-areas:
+        "top  top"
+        "tabs info"
+        "side pull";
+      align-content: stretch;
+      gap: 8px 14px !important;
+      padding: 12px 16px !important;
+      max-width: none; margin: 0;
+      /* ⚠ position 을 건드리지 않는다. .screen 이 position: fixed; inset: 0 이라
+         이미 전체 화면이고 컨테이닝 블록이다. relative 로 덮으면 화면이
+         콘텐츠 크기(713x270)로 쪼그라들어 배경 배너도 같이 줄어든다. */
+      overflow: hidden;
     }
-    #gachaScreen .gacha-top-bar          { grid-column: 1 / 3; grid-row: 1; max-width: none !important; }
-      /* ⚠ 기본 규칙이 width: min(100%, 70vh) 다. 세로로 쌓던 시절 16:9 를 지키려고
-         넣은 건데, 2단에서는 배너를 354px 에 묶어버린다(좌측 열이 493px 인데).
-         의도(높이로 상한)는 유지하되 실제 남는 높이로 계산한다.
-         상단바 44 + 패딩 28 + 여백 → 대략 110px 을 뺀다. */
-      #gachaScreen .gacha-fullbanner {
-        grid-column: 1; grid-row: 2 / 5; align-self: start; max-width: none !important;
-        width: min(100%, calc((100vh - 110px) * 16 / 9)) !important;
-        margin: 0 !important;
-      }
-    #gachaScreen .gacha-info-panel       { grid-column: 2; grid-row: 2; max-width: none !important; }
-    #gachaScreen .gacha-pull-console     { grid-column: 2; grid-row: 3; max-width: none !important; }
-    #gachaScreen .gacha-secondary-actions{ grid-column: 2; grid-row: 4; align-self: start; max-width: none !important; }
-  }
+    #gachaScreen .gacha-top-bar { grid-area: top; max-width: none !important; z-index: 3; }
 
-  /* 배너 — 카드 문법. 원본 비율(16:9)을 지킨다 */
-  #gachaScreen .gacha-fullbanner {
-    border-radius: var(--ss-r) !important;
-    box-shadow: 0 8px 22px rgba(6,14,28,0.45) !important;
-    border: 1px solid var(--ss-edge);
-    overflow: hidden;
-  }
-  /* img 는 기본 규칙(width/height 100% + object-fit: contain)을 그대로 쓴다.
-     height: auto 로 바꾸면 배너의 16:9 박스와 그림 높이가 어긋난다. */
-
-  /* 정보 패널 · 뽑기 콘솔 · 보조 액션 → 패널 문법 */
-  #gachaScreen .gacha-info-panel,
-  #gachaScreen .gacha-pull-console,
-  #gachaScreen .gacha-secondary-actions {
-    background: var(--ss-panel2) !important;
-    border: 1px solid var(--ss-edge) !important;
-    border-radius: var(--ss-r) !important;
-    box-shadow: var(--ss-shadow) !important;
-    -webkit-backdrop-filter: blur(9px); backdrop-filter: blur(9px);
-    box-sizing: border-box; padding: 12px 14px !important;
-  }
-
-  /* 뽑기 버튼 — 캡슐 + 립. 10회는 골드로 구분(주요 행동) */
-  #gachaScreen .gacha-pull-console button,
-  #gachaScreen .gacha-secondary-actions button {
-    border-radius: var(--ss-pill) !important;
-    border: 1px solid rgba(255,255,255,0.26) !important;
-    font-family: inherit !important; font-weight: 800;
-  }
-  #gachaScreen .gacha-pull-console button:nth-of-type(1) {
-    background: linear-gradient(180deg, #5cb6ee, #3f8fce) !important; color: #fff !important;
-    box-shadow: 0 4px 0 rgba(32,78,120,0.9), var(--ss-shadow) !important;
-  }
-  #gachaScreen .gacha-pull-console button:nth-of-type(2) {
-    background: linear-gradient(180deg, #ffe9b8, #e0b463) !important; color: #3a2708 !important;
-    box-shadow: 0 4px 0 #b39a63, var(--ss-shadow) !important;
-  }
-  #gachaScreen .gacha-secondary-actions button {
-    background: var(--ss-panel) !important; color: var(--ss-ink) !important;
-    box-shadow: 0 3px 0 rgba(20,34,56,0.8) !important;
-  }
-  #gachaScreen .gacha-pull-console button:active,
-  #gachaScreen .gacha-secondary-actions button:active {
-    transform: translateY(2px); box-shadow: 0 1px 0 rgba(32,78,120,0.9) !important;
-  }
-
-  /* ── 메인 CTA 2개를 원형 버튼 + 아래 글자로 ─────────────────────
-     가로 판 + 좌측 배지 + 우측 글자 구조를 버린다.
-     하단 독 발바닥과 같은 문법으로 통일: 원 안에 아이콘, 글자는 원 밖 아래.
-     ⚠ 위계는 크기로 준다 — 새 게임(주요)이 차원 스카우트보다 크다.
-     ⚠ 지금 아이콘은 임시다. icons/ui/cta/ 에 레이더·우주선이 오면
-       ::before 의 background 한 줄만 바꾸면 된다 (docs/ui-cta-buttons.md). */
-  @media (orientation: landscape) {
-    #menu {
-      --cta-d:  clamp(76px, 18.5vh, 104px);          /* CTA 아이콘 크기 */
-      --cta-d2: var(--cta-d);                        /* 둘을 같은 크기로 (함장 요청) */
+    /* 배너 아트 = 화면 전체 배경 */
+    #gachaScreen .gacha-fullbanner {
+      position: absolute !important; inset: 0 !important;
+      width: auto !important; height: auto !important;
+      max-width: none !important; aspect-ratio: auto !important;
+      margin: 0 !important; border: 0 !important; border-radius: 0 !important;
+      box-shadow: none !important; z-index: 0; pointer-events: none;
     }
-    /* 공통 — 원 + 아래 글자 */
-    #menu .menu-btn-primary, #menu #gachaBtn {
-      display: flex !important; flex-direction: column !important;
-      align-items: center !important; justify-content: flex-end !important;
-      padding: 0 !important; box-sizing: border-box;
-      aspect-ratio: 0.78 / 1 !important; height: auto !important;
-      overflow: visible !important;   /* 원 밖 라벨이 잘리면 안 된다 */
+    #gachaScreen .gacha-fullbanner-img {
+      width: 100% !important; height: 100% !important;
+      object-fit: cover !important; object-position: 62% 42% !important;
+    }
+    /* 글자 가독용 스크림 — 좌측을 더 어둡게. 텍스트가 거기 있다 */
+    #gachaScreen .gacha-fullbanner::before {
+      content: ''; position: absolute; inset: 0; z-index: 2; pointer-events: none;
+      background:
+        linear-gradient(90deg, rgba(6,10,20,0.86) 0%, rgba(6,10,20,0.62) 34%, rgba(6,10,20,0.12) 62%, rgba(6,10,20,0.30) 100%),
+        linear-gradient(180deg, rgba(6,10,20,0.55) 0%, rgba(6,10,20,0) 26%, rgba(6,10,20,0) 62%, rgba(6,10,20,0.72) 100%);
+    }
+    /* 좌우 화살표는 썸네일 목록이 대신한다 */
+    #gachaScreen .gacha-banner-arrow { display: none !important; }
+
+    /* 좌측 썸네일 목록 */
+    #gachaScreen .gacha-banner-tabs {
+      grid-area: tabs; z-index: 3;
+      display: flex; flex-direction: column; gap: 8px;
+      align-self: start; padding-top: 2px;
+    }
+    #gachaScreen .gacha-banner-tab {
+      position: relative; width: clamp(64px, 9vw, 92px); aspect-ratio: 16 / 10;
+      border-radius: 10px; cursor: pointer;
+      background-size: cover; background-position: 58% 45%;
+      border: 2px solid rgba(255,255,255,0.18);
+      box-shadow: 0 3px 10px rgba(4,10,20,0.5);
+      opacity: 0.62; transition: opacity .15s, border-color .15s, transform .15s;
+      padding: 0;
+    }
+    #gachaScreen .gacha-banner-tab:hover { opacity: 0.85; }
+    #gachaScreen .gacha-banner-tab.active {
+      opacity: 1; border-color: #8fd6ff;
+      box-shadow: 0 0 0 1px rgba(143,214,255,0.5), 0 4px 14px rgba(4,10,20,0.6);
+      transform: translateX(3px);
+    }
+    #gachaScreen .gacha-banner-tab-tag {
+      position: absolute; left: 0; bottom: 0;
+      padding: 1px 6px; border-radius: 0 8px 0 8px;
+      background: rgba(8,14,26,0.82); color: #cfe6ff;
+      font-size: 9.5px; font-weight: 800; letter-spacing: 0.3px;
+    }
+    #gachaScreen .gacha-banner-tab.active .gacha-banner-tab-tag { background: #3f8fce; color: #fff; }
+
+    /* 정보 — 배경 위에 글자만. 패널 상자를 두면 아트를 가린다 */
+    #gachaScreen .gacha-info-panel {
+      grid-area: info; align-self: start; z-index: 3;
       background: transparent !important; border: 0 !important;
-      color: #eef6ff !important; font-weight: 800; text-align: center !important;
-      text-shadow: 0 1px 3px rgba(0,0,0,0.85), 0 0 7px rgba(0,0,0,0.55) !important;
-      white-space: nowrap; overflow: visible;
+      box-shadow: none !important; backdrop-filter: none !important;
+      padding: 2px 0 0 !important; max-width: min(58%, 520px);
+      text-align: left;
     }
-    /* ⚠ v853 — 원을 없앤다. 아이콘을 원으로 둘러싸니 답답해 보였다.
-       아이콘은 아이콘대로 크게 두고, 글자만 아래 네모 프레임에 넣는다.
-       icons/ui/plate/ 는 계속 안 쓴다. */
-    #menu .menu-btn-primary::before, #menu #gachaBtn::before { display: none !important; }
-    /* CTA 숨김 — display:flex !important 보다 뒤에 와야 이긴다 */
-    #menu .menu-btn-primary.is-cta-hidden { display: none !important; }
+    #gachaScreen .gacha-banner-name {
+      font-size: clamp(16px, 3.1vh, 24px) !important; font-weight: 800;
+      text-shadow: 0 2px 6px rgba(0,0,0,0.85);
+    }
+    #gachaScreen .gacha-banner-pickup-info,
+    #gachaScreen .gacha-rotation-note { text-shadow: 0 1px 4px rgba(0,0,0,0.9); }
+    #gachaScreen .gacha-pickup-icons { justify-content: flex-start !important; }
 
-    /* 아이콘 — 원이 없으니 크게. 버튼 폭을 거의 다 쓴다 */
-    #menu .menu-btn-primary::after, #menu #gachaBtn::after {
-      position: absolute !important;
-      left: 0 !important; right: 0 !important; top: 0 !important; bottom: auto !important;
-      transform: none !important;
-      display: block !important; width: auto !important; height: auto !important;
-      aspect-ratio: 1 / 1 !important;
-      /* ⚠ 가챠는 옛 원형 칩 시절 규칙이 세 가지를 걸어놨다. 전부 되돌린다.
-           z-index -1  → 레이더가 버튼 배경 뒤로 깔려 안 보였다
-           opacity 0.55 → 반투명
-           mask radial-gradient(circle, #000 38%, transparent 70%)
-                        → 가운데만 남기는 글로우 마스크. 아이콘을 위쪽에 그리니
-                          상단이 마스크 밖으로 나가 흐릿하게 잘렸다 */
-      z-index: 2 !important; opacity: 1 !important;
-      -webkit-mask-image: none !important; mask-image: none !important;
-      -webkit-mask: none !important; mask: none !important;
-      background-color: transparent !important;
-      background-size: 94% !important; background-position: center top !important;
-      background-repeat: no-repeat !important;
-      box-shadow: none !important;
-      filter: drop-shadow(0 3px 5px rgba(6,12,24,0.5));
+    /* 하단 — 좌측 보조, 우측 뽑기 */
+    #gachaScreen .gacha-secondary-actions {
+      grid-area: side; align-self: end; justify-self: start; z-index: 3;
+      background: transparent !important; border: 0 !important;
+      box-shadow: none !important; backdrop-filter: none !important;
+      padding: 0 !important; max-width: none !important;
     }
-
-    /* 글자 — 아이콘 아래 네모 프레임 */
-    #menu .menu-btn-primary .cta-label,
-    #menu #gachaBtn .gacha-circle-label {
-      position: static !important; width: auto !important;
-      bottom: auto !important; left: auto !important; right: auto !important;
-      display: inline-block; box-sizing: border-box;
-      padding: 4px 10px !important; margin: 0 !important;
-      border-radius: 9px !important;
-      font-size: inherit !important; font-weight: 800; line-height: 1.15;
-      white-space: nowrap;
-      text-shadow: 0 1px 2px rgba(4,10,20,0.55) !important;
+    #gachaScreen .gacha-pull-console {
+      grid-area: pull; align-self: end; justify-self: end; z-index: 3;
+      background: transparent !important; border: 0 !important;
+      box-shadow: none !important; backdrop-filter: none !important;
+      padding: 0 !important; max-width: none !important;
     }
-    #menu .menu-btn-primary .cta-label {
-      background: linear-gradient(180deg, rgba(120,190,240,0.94), rgba(64,140,205,0.94)) !important;
-      border: 1.5px solid rgba(200,230,255,0.75) !important;
-      color: #08202f !important;
-      box-shadow: 0 3px 0 rgba(40,90,140,0.85), 0 5px 12px rgba(10,30,55,0.35) !important;
-    }
-    #menu #gachaBtn .gacha-circle-label {
-      background: linear-gradient(180deg, rgba(255,231,175,0.95), rgba(228,183,105,0.95)) !important;
-      border: 1.5px solid rgba(255,244,214,0.8) !important;
-      color: #3a2708 !important;
-      box-shadow: 0 3px 0 rgba(150,118,60,0.85), 0 5px 12px rgba(60,44,14,0.32) !important;
-    }
-    #menu .menu-btn-primary:active .cta-label,
-    #menu #gachaBtn:active .gacha-circle-label {
-      transform: translateY(2px);
-      box-shadow: 0 1px 0 rgba(40,90,140,0.85) !important;
-    }
-    #menu .menu-btn-primary { width: var(--cta-d) !important; font-size: clamp(11px, 1.9vh, 14px) !important; }
-    #menu #gachaBtn         { width: var(--cta-d2) !important; font-size: clamp(10px, 1.7vh, 12.5px) !important; }
-    /* 가챠 라벨은 텍스트 노드가 아니라 div 다 */
-    #menu #gachaBtn .gacha-circle-label {
-      position: static !important; width: auto !important; bottom: auto !important;
-      font-size: inherit !important; color: inherit !important; padding: 0 !important;
-      margin-top: 2px;
-    }
-    /* 배치 — 독 오른쪽에 가로로 나란히. 세로로 쌓으니 우측이 무거웠다.
-       바닥은 독과 같은 선(bottom 10px)에 맞춘다.
-       순서: [차원 스카우트] [새 게임] — 가장 중요한 게 오른쪽 코너 */
-    #menu .menu-cta-group {
-      width: var(--cta-d) !important; right: 16px !important; bottom: 10px !important;
-    }
-    #menu #gachaBtn {
-      right: calc(16px + var(--cta-d) + 12px) !important;
-      bottom: 10px !important;
-    }
+    #gachaScreen .gacha-pull-row { display: flex; gap: 10px; }
+    #gachaScreen .gacha-pull-console button { min-width: clamp(120px, 17vw, 170px); }
   }
-
-  /* ── 📱 가로 유도 오버레이 ──────────────────────────────────────
-     ⚠ 뜨는 조건을 좁게 잡는다. 데스크톱 창을 좁게 쓰는 사람까지 막으면 안 된다.
-       세로 + 짧은 변 900px 이하 + 터치 기기(pointer: coarse) 를 전부 만족할 때만. */
-  #rotateGate { display: none; }
-  @media (orientation: portrait) and (max-width: 900px) and (pointer: coarse) {
-    #rotateGate {
-      display: flex !important; position: fixed; inset: 0; z-index: 99999;
-      align-items: center; justify-content: center;
-      background: #0b0d12;
-      color: #eef6ff; text-align: center; padding: 24px;
-      -webkit-user-select: none; user-select: none;
-    }
-    body.splash-active #rotateGate { display: none !important; }   /* 스플래시가 먼저 */
-  }
-  #rotateGate .rot-inner { max-width: 340px; }
-  #rotateGate .rot-phone {
-    width: 92px; height: 152px; margin: 0 auto 26px;
-    border: 4px solid #7fc4f0; border-radius: 14px;
-    display: flex; align-items: center; justify-content: center;
-    animation: rotHint 2.6s ease-in-out infinite;
-  }
-  #rotateGate .rot-phone-screen {
-    display: block; width: 62px; height: 112px;
-    background: rgba(127,196,240,0.18); border-radius: 5px;
-  }
-  @keyframes rotHint {
-    0%, 28%   { transform: rotate(0deg); }
-    48%, 78%  { transform: rotate(-90deg); }
-    100%      { transform: rotate(0deg); }
-  }
-  #rotateGate .rot-title { font-size: 21px; font-weight: 800; margin-bottom: 9px; }
-  #rotateGate .rot-desc  { font-size: 14px; color: #a9c0da; line-height: 1.6; }
-  #rotateGate #rotateLockBtn {
-    margin-top: 22px; padding: 13px 24px;
-    border-radius: 999px; border: 1px solid rgba(255,255,255,0.28);
-    background: linear-gradient(180deg, #5cb6ee, #3f8fce);
-    color: #fff; font-family: inherit; font-size: 15px; font-weight: 800;
-    box-shadow: 0 4px 0 rgba(32,78,120,0.9); cursor: pointer;
-  }
-  #rotateGate #rotateLockBtn:active { transform: translateY(2px); box-shadow: 0 2px 0 rgba(32,78,120,0.9); }
-  #rotateGate #rotateLockBtn[hidden] { display: none; }
-  #rotateGate .rot-hint { margin-top: 16px; font-size: 12px; color: #6b829c; }
 
   /* ── ⏳ 가챠 로테이션 안내 ─────────────────────────────────────
      픽업이 언제 바뀌는지 알려준다. 상시 배너에서는 문구가 달라진다. */
@@ -41020,6 +40916,26 @@
         };
       };
     }
+    // 🗂 좌측 썸네일 목록 — 보이는 배너(오늘의 픽업 + 상시)만
+    const tabsEl = document.getElementById('gacha-banner-tabs');
+    if (tabsEl) {
+      const vis = visibleBanners();
+      const curIdx = getCurrentBannerIdx();
+      tabsEl.innerHTML = '';
+      vis.forEach((b, i) => {
+        const t = document.createElement('button');
+        t.type = 'button';
+        t.className = 'gacha-banner-tab' + (i === curIdx ? ' active' : '');
+        t.title = b.name;
+        t.style.backgroundImage = `url("${b.bannerImg}")`;
+        const tag = document.createElement('span');
+        tag.className = 'gacha-banner-tab-tag';
+        tag.textContent = (b.id === STANDARD_BANNER_ID) ? '상시' : '픽업';
+        t.appendChild(tag);
+        t.onclick = () => { if (i !== curIdx) { setBannerIdx(i); buildGacha(); } };
+        tabsEl.appendChild(t);
+      });
+    }
     const nameEl = document.getElementById('gacha-banner-name');
     if (nameEl) nameEl.textContent = banner.name;
     const infoEl = document.getElementById('gacha-banner-pickup-info');
@@ -41918,7 +41834,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 864;
+  const APP_VERSION = 866;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
