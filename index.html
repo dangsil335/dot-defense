@@ -27069,6 +27069,29 @@
     return idx < 0 ? 0 : idx;
   }
   function getCurrentBanner() { return GACHA_BANNERS[getCurrentBannerIdx()]; }
+
+  // ═══ ✨ 오늘의 픽업 ═══
+  //   배너는 전부 상시로 열어둔다. 매일 하나만 골라 SSR 확률에 보너스를 준다.
+  //   ⚠ 막지 않는 게 핵심이다. 원하는 캐릭은 아무 날에나 뽑을 수 있고,
+  //     오늘의 배너면 확률만 좋아진다. 싱글플레이어 게임이라 대기를 강요할 이유가 없다.
+  //   ⚠ 날짜로 결정하므로 서버가 필요 없고 오프라인에서도 모든 기기가 같은 배너를 가리킨다.
+  //     UTC 기준 일수를 쓴다 — 로컬 자정마다 바뀌면 시간대별로 어긋난다.
+  const TODAY_PICK_SSR_MUL = 1.5;   // SSR 1% → 1.5%
+  function getTodayBannerIdx() {
+    const d = new Date();
+    const days = Math.floor(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) / 86400000);
+    return ((days % GACHA_BANNERS.length) + GACHA_BANNERS.length) % GACHA_BANNERS.length;
+  }
+  function isTodayBanner(b) {
+    const t = GACHA_BANNERS[getTodayBannerIdx()];
+    return !!(b && t && b.id === t.id);
+  }
+  // 표시와 실제 뽑기가 같은 값을 쓰도록, 확률은 반드시 이걸로만 읽는다
+  function bannerRates(b) {
+    const r = b.rates;
+    if (!isTodayBanner(b)) return r;
+    return { SR: r.SR, SSR: Math.min(1, r.SSR * TODAY_PICK_SSR_MUL) };
+  }
   function setBannerIdx(idx) {
     const i = ((idx % GACHA_BANNERS.length) + GACHA_BANNERS.length) % GACHA_BANNERS.length;
     META.selectedBanner = GACHA_BANNERS[i].id;
@@ -27270,7 +27293,7 @@
         }
       }
     }
-    const rates = banner.rates;
+    const rates = bannerRates(banner);   // ✨ 오늘의 픽업이면 SSR 보정된 값
     const r = Math.random();
     let rarity;
     if (r < rates.SSR) rarity = 'SSR';
@@ -40948,7 +40971,7 @@
     if (nameEl) nameEl.textContent = banner.name;
     const infoEl = document.getElementById('gacha-banner-pickup-info');
     if (infoEl) {
-      const r = banner.rates;
+      const r = bannerRates(banner);   // ✨ 오늘의 픽업 보정 반영
       // 픽업 캐릭터 이름 표시 — 어떤 SSR이 픽업인지 명확히
       const featChar = banner.featured ? CHARACTERS[banner.featured] : null;
       const featName = featChar ? featChar.name : 'SSR';
@@ -41001,8 +41024,9 @@
       pickupEl.innerHTML = '';
       const ssrIds = banner.pool.SSR || [];
       const srIds  = banner.pool.SR  || [];
-      const ssrRate = (banner.rates.SSR * 100).toFixed(1);
-      const srRate  = (banner.rates.SR * 100).toFixed(0);
+      const _br = bannerRates(banner);
+      const ssrRate = (_br.SSR * 100).toFixed(1);
+      const srRate  = (_br.SR * 100).toFixed(0);
       // 픽업 SSR
       for (const id of ssrIds) {
         const ch = CHARACTERS[id];
@@ -41829,7 +41853,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 861;
+  const APP_VERSION = 862;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
