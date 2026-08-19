@@ -4452,6 +4452,34 @@
     opacity: 0; transition: opacity .7s ease;
   }
   #menu .menu-lobby-bg.show { opacity: 1; }
+
+  /* 🎐 배경 연출 — 커튼 흔들림
+     같은 배경을 한 장 더 깔고 마스크로 커튼 띠만 남긴 뒤 그 띠를 흔든다.
+     ⚠ transform 만 쓴다. SVG feTurbulence 로 진짜 천 일렁임을 줄 수도 있지만
+       2048px 이미지에 매 프레임 변위맵을 돌리면 모바일에서 프레임이 무너진다.
+       transform 은 합성 단계라 사실상 공짜다.
+     ⚠ 회전축을 위(커튼 봉)에 두면 아래가 크게 흔들려 실제 커튼처럼 보인다. */
+  .menu-lobby-fx {
+    position: absolute; inset: 0; z-index: -2; pointer-events: none;
+    opacity: 0; transition: opacity .7s ease;
+    background-repeat: no-repeat;
+    background-size: cover;
+    background-position: 50% 42%;      /* .menu-lobby-bg 와 반드시 같아야 겹친다 */
+    will-change: transform;
+  }
+  #menu .menu-lobby-fx.show { opacity: 1; }
+  #menu .menu-lobby-fx.curtain {
+    transform-origin: var(--fx-origin, 6% 0%);
+    animation: lobbyCurtain var(--fx-period, 7s) ease-in-out infinite alternate;
+  }
+  @keyframes lobbyCurtain {
+    from { transform: skewX(0deg)              scaleY(1); }
+    to   { transform: skewX(var(--fx-skew, 0.9deg)) scaleY(var(--fx-stretch, 1.012)); }
+  }
+  /* 움직임을 줄이도록 설정한 사용자에겐 흔들지 않는다 */
+  @media (prefers-reduced-motion: reduce) {
+    #menu .menu-lobby-fx.curtain { animation: none !important; }
+  }
   /* 배경에 캐릭터가 그려져 있으므로 컷아웃 캐릭터는 끈다 */
   #menu.has-lobby-bg .menu-hero-bg { display: none !important; }
   /* 별 배경도 끈다 — 로비 일러 위에 별이 겹치면 지저분하다 */
@@ -5153,6 +5181,9 @@
   <!-- 🖼 v806 — 로비 배경. icons/ui/lobby/<대표일러id>.webp (없으면 캐릭터 기본으로 폴백, 그것도 없으면 숨김).
        ⚠ 이 배경엔 캐릭터가 이미 그려져 있다 → 배경이 붙으면 hero 컷아웃은 끈다(캐릭터가 둘이 되므로). -->
   <img id="menu-lobby-bg" class="menu-lobby-bg" alt="">
+  <!-- 🎐 배경 연출 레이어 — 같은 배경을 한 장 더 깔고 일부만 마스크해서 흔든다.
+       배경마다 흔들 위치가 달라 LOBBY_FX 설정표로 켠다. 설정 없으면 안 뜬다. -->
+  <div id="menu-lobby-fx" class="menu-lobby-fx" aria-hidden="true"></div>
   <img id="menu-hero-bg" class="menu-hero-bg" alt="">
   <!-- 🐾 v749 — 메뉴 펫. 이동 없음(제자리 아이들) — 이유는 CSS 주석 참고. -->
   <div id="menuPet" class="menu-pet hide" role="button" tabindex="0" aria-label="대표 캐릭터">
@@ -39803,6 +39834,41 @@
   // 🖼 v806 — 로비 배경 적용. '<char>__<skin>' → 없으면 '<char>' → 그것도 없으면 숨김.
   //   파일 목록이 없으므로 존재 여부는 <img> 의 load/error 로 판정한다(일러 체인과 같은 방식).
   //   ⚠ 배경이 붙으면 #menu 에 has-lobby-bg 를 달아 hero 컷아웃·별 배경을 끄고 스크림을 켠다.
+  // ═══ 🎐 배경 연출 설정표 ═══
+  //   배경마다 흔들 자리가 다르므로 자동 적용이 안 된다. 여기 적은 것만 켜진다.
+  //   커튼 띠는 mask 로 잘라낸다 — 이미지를 새로 뽑을 필요가 없다.
+  //     side    커튼이 붙은 쪽
+  //     width   띠 폭 (화면 대비 %). 커튼 끝보다 살짝 넓게 잡아야 잘린 티가 안 난다
+  //     skew    최대 기울기. 1도만 넘어가도 과해 보인다
+  //     stretch 세로 신축. 천이 부풀었다 꺼지는 느낌
+  //     period  한 번 흔들리는 데 걸리는 시간
+  const LOBBY_FX = {
+    'blanche__orthodoxmage': { curtain: { side: 'left', width: 15, skew: 0.9, stretch: 1.012, period: 7 } },
+  };
+  function _applyLobbyFx(id, src) {
+    const fx = document.getElementById('menu-lobby-fx');
+    if (!fx) return;
+    const cfg = (id && LOBBY_FX[id]) ? LOBBY_FX[id].curtain : null;
+    if (!cfg || !src) {
+      fx.classList.remove('show', 'curtain');
+      fx.style.backgroundImage = '';
+      fx.style.webkitMaskImage = fx.style.maskImage = '';
+      return;
+    }
+    const w = cfg.width;
+    // 안쪽 끝을 흐리게 끊어야 경계가 안 보인다 (폭의 절반 지점부터 서서히)
+    const grad = cfg.side === 'right'
+      ? `linear-gradient(to left,  #000 0%, #000 ${w * 0.5}%, transparent ${w}%)`
+      : `linear-gradient(to right, #000 0%, #000 ${w * 0.5}%, transparent ${w}%)`;
+    fx.style.backgroundImage = `url("${src}")`;
+    fx.style.webkitMaskImage = grad;
+    fx.style.maskImage = grad;
+    fx.style.setProperty('--fx-origin', (cfg.side === 'right' ? (100 - w * 0.4) : (w * 0.4)) + '% 0%');
+    fx.style.setProperty('--fx-skew', (cfg.side === 'right' ? -cfg.skew : cfg.skew) + 'deg');
+    fx.style.setProperty('--fx-stretch', String(cfg.stretch));
+    fx.style.setProperty('--fx-period', cfg.period + 's');
+    fx.classList.add('show', 'curtain');
+  }
   function _applyLobbyBg(id) {
     const bg = document.getElementById('menu-lobby-bg');
     const menu = document.getElementById('menu');
@@ -39818,12 +39884,14 @@
       bg.onload = bg.onerror = null;
       if (i < tries.length) { step(); return; }
       bg.classList.remove('show'); menu.classList.remove('has-lobby-bg');
+      _applyLobbyFx(null, null);
       bg.removeAttribute('src');
     };
     const step = () => {
       const t = tries[i++];
       bg.onerror = fail;
-      bg.onload = () => { bg.onload = bg.onerror = null; bg.classList.add('show'); menu.classList.add('has-lobby-bg'); };
+      bg.onload = () => { bg.onload = bg.onerror = null; bg.classList.add('show'); menu.classList.add('has-lobby-bg');
+                          _applyLobbyFx(t, bg.src); };
       bg.src = './icons/ui/lobby/' + t + '.webp';
     };
     fail();   // i=0 에서 시작 → 첫 후보부터 시도
@@ -41726,7 +41794,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 857;
+  const APP_VERSION = 858;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
