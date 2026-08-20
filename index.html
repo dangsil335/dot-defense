@@ -7713,8 +7713,8 @@
     #menu .menu-btn-primary .cta-label,
     #menu #gachaBtn .gacha-circle-label { display: none !important; }
 
-    #menu .menu-btn-primary { width: var(--cta-d) !important; }
-    #menu #gachaBtn         { width: var(--cta-d2) !important; }
+    #menu .menu-btn-primary { width: var(--cta-d, 96px) !important; }   /* v878 폴백 — 아래 배치 주석 참조 */
+    #menu #gachaBtn         { width: var(--cta-d2, 96px) !important; }
     /* 가챠 라벨은 텍스트 노드가 아니라 div 다 */
     #menu #gachaBtn .gacha-circle-label {
       position: static !important; width: auto !important; bottom: auto !important;
@@ -7724,12 +7724,31 @@
     /* 배치 — 독 오른쪽에 가로로 나란히. 세로로 쌓으니 우측이 무거웠다.
        바닥은 독과 같은 선(bottom 10px)에 맞춘다.
        순서: [차원 스카우트] [새 게임] — 가장 중요한 게 오른쪽 코너 */
+    /* ⚠ v878 — position 을 여기서 직접 못 박는다.
+       원래 이 블록은 right/bottom 만 주고 절대배치는 3000줄 위(v817 블록)의
+       "position: absolute !important" 에 얹혀 있었다. 그런데 그 사이에
+       "#menu ... #gachaBtn ... { position: relative }" 가 또 있어서, 셋의 순서·중요도가
+       맞아떨어져야만 절대배치가 산다. 하나라도 어긋나면 버튼이 일반 흐름으로 떨어져
+       메뉴 콘텐츠 맨 아래(= 화면 밖)에 처박힌다 — 함장 폰에서 난 증상이 정확히 이거다
+       ("새 게임 왼쪽에 엄청 밑에 묻혀서 위에만 살짝 보인다").
+       멀리 있는 규칙에 기대지 않고 이 블록 안에서 자립하게 만든다.
+       ⚠ var() 에 폴백을 붙인 것도 같은 이유다. --cta-d 가 못 풀리면 값이 통째로
+         무효가 되어(unset) right/width 가 auto 로 떨어지고 역시 흐름으로 빠진다. */
+    #menu .menu-cta-group,
+    #menu #gachaBtn {
+      position: absolute !important;
+      top: auto !important; left: auto !important;
+    }
     #menu .menu-cta-group {
-      width: var(--cta-d) !important; right: 16px !important; bottom: 10px !important;
+      width: var(--cta-d, 96px) !important; right: 16px !important; bottom: 10px !important;
     }
     #menu #gachaBtn {
-      right: calc(16px + var(--cta-d) + 12px) !important;
+      width: var(--cta-d2, 96px) !important;
+      right: calc(16px + var(--cta-d, 96px) + 12px) !important;
       bottom: 10px !important;
+      /* ⚠ 세로 배치일 때 쓰던 margin 4px/8px 이 남아 있었다. 절대배치에선 bottom 에 그대로
+         더해져 혼자 8px 떠 있었다(가챠 322 / 새 게임·독 330). 바닥선을 맞춘다. */
+      margin: 0 !important;
     }
     /* 🔒 v877 — 튜토리얼 잠금 중 차원 스카우트가 "사라진" 것처럼 보이던 문제.
        .tut-locked 는 opacity .38 + grayscale .65 다. 독 버튼들은 아이콘 아래 글자가 남아
@@ -42121,7 +42140,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 877;
+  const APP_VERSION = 878;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
