@@ -7731,6 +7731,25 @@
       right: calc(16px + var(--cta-d) + 12px) !important;
       bottom: 10px !important;
     }
+    /* 🔒 v877 — 튜토리얼 잠금 중 차원 스카우트가 "사라진" 것처럼 보이던 문제.
+       .tut-locked 는 opacity .38 + grayscale .65 다. 독 버튼들은 아이콘 아래 글자가 남아
+       흐릿해도 버튼인 게 읽히는데, 이 버튼은 v873 에서 라벨을 없애 아이콘 하나뿐이라
+       38% 회색조가 되면 밝은 로비 배경 위에서 아무것도 안 남는다.
+       바로 옆 새 게임은 잠금 대상이 아니라 멀쩡히 보이니 이 버튼만 통째로 없어진 것처럼 읽힌다.
+       ⚠ 잠긴 것과 없는 것은 달라야 한다 — 더 진하게 두고 자물쇠를 얹는다. */
+    #menu #gachaBtn.tut-locked { opacity: 0.72 !important; filter: grayscale(0.5) !important; }
+    /* v873 이 ::before 를 display:none 으로 껐다. (2,1,1) 로 그 (2,0,1) 을 이겨 되살린다 */
+    #menu #gachaBtn.tut-locked::before {
+      content: '🔒' !important; display: block !important;
+      position: absolute !important; left: 50% !important; top: 50% !important;
+      transform: translate(-50%, -50%) !important;
+      width: auto !important; height: auto !important;
+      font-size: calc(var(--cta-d) * 0.34) !important; line-height: 1 !important;
+      text-shadow: 0 2px 6px rgba(0,0,0,0.65) !important;
+      background: none !important; border: none !important; box-shadow: none !important;
+      -webkit-mask: none !important; mask: none !important;
+      z-index: 3 !important; pointer-events: none !important;
+    }
   }
 
   /* ── 📱 가로 유도 오버레이 ──────────────────────────────────────
@@ -42102,7 +42121,7 @@
 
   // ===== 🔄 버전 체크 + 자동 업데이트 시스템 =====
   // ⚠️ 매 릴리즈마다 sw.js의 CACHE 버전과 함께 이 숫자도 올려야 함
-  const APP_VERSION = 876;
+  const APP_VERSION = 877;
 
   // 서버의 sw.js에서 최신 버전 추출 — cache-busting으로 항상 최신 가져옴
   async function fetchLatestVersion() {
